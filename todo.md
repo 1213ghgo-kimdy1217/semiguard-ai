@@ -25,3 +25,4 @@
 
 ## 남은 작업
 - [ ] GitHub README 작성 (대회 제출용)
+- [x] GitHub README 작성 (대회 제출용)
