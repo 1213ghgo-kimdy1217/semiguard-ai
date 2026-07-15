@@ -1,28 +1,78 @@
 import { COOKIE_NAME } from "@shared/const";
+import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { analyzeData, generateAnomalyData, generateNormalData } from "./semiguard";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog } from "./semiguardDb";
+import type { RiskLevel } from "../shared/semiguard";
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  semiguard: router({
+    injectNormal: publicProcedure.mutation(async () => {
+      const data = generateNormalData();
+      const result = analyzeData(data);
+      if (result.isAnomaly) {
+        await insertAnomalyLog({
+          current: data.current,
+          temperature: data.temperature,
+          vibration: data.vibration,
+          noise: data.noise,
+          anomalyScore: result.anomalyScore,
+          riskLevel: result.riskLevel as RiskLevel,
+          isAnomaly: 1,
+        });
+      }
+      return result;
+    }),
+
+    injectAnomaly: publicProcedure.mutation(async () => {
+      const data = generateAnomalyData();
+      const result = analyzeData(data);
+      await insertAnomalyLog({
+        current: data.current,
+        temperature: data.temperature,
+        vibration: data.vibration,
+        noise: data.noise,
+        anomalyScore: result.anomalyScore,
+        riskLevel: result.riskLevel as RiskLevel,
+        isAnomaly: result.isAnomaly ? 1 : 0,
+      });
+      return result;
+    }),
+
+    getLogs: publicProcedure
+      .input(z.object({ limit: z.number().optional().default(50) }))
+      .query(async ({ input }) => {
+        const logs = await getRecentAnomalyLogs(input.limit);
+        return logs.map(l => ({
+          id: l.id,
+          timestamp: l.timestamp.toISOString(),
+          current: l.current,
+          temperature: l.temperature,
+          vibration: l.vibration,
+          noise: l.noise,
+          anomalyScore: l.anomalyScore,
+          riskLevel: l.riskLevel,
+          isAnomaly: l.isAnomaly === 1,
+        }));
+      }),
+
+    clearLogs: publicProcedure.mutation(async () => {
+      await clearAnomalyLogs();
+      return { success: true };
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
