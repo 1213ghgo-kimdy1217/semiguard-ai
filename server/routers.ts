@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData } from "./semiguard";
 import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog } from "./semiguardDb";
+import { incrementVisitor, getTotalVisitors, getAnomalyStats } from "./semiguardDb";
 import type { RiskLevel } from "../shared/semiguard";
 
 export const appRouter = router({
@@ -71,6 +72,34 @@ export const appRouter = router({
     clearLogs: publicProcedure.mutation(async () => {
       await clearAnomalyLogs();
       return { success: true };
+    }),
+
+    // 방문자 카운터 증가 및 조회
+    trackVisit: publicProcedure.mutation(async () => {
+      const todayCount = await incrementVisitor();
+      const totalCount = await getTotalVisitors();
+      return { todayCount, totalCount };
+    }),
+
+    getStats: publicProcedure.query(async () => {
+      const [stats, totalVisitors] = await Promise.all([
+        getAnomalyStats(),
+        getTotalVisitors(),
+      ]);
+      // 정상 가동률: 전체 중 이상 아닌 비율
+      const uptimePct = stats.total > 0
+        ? Math.round(((stats.total - stats.anomalyCount) / stats.total) * 100)
+        : 100;
+      // 절감 비용: 위험 단계 탐지 1회 = 평균 5천만원 절감 (반도체 공장 비계획 정지 기준)
+      const savedCost = stats.dangerCount * 50_000_000;
+      return {
+        totalDetections: stats.total,
+        dangerCount: stats.dangerCount,
+        anomalyCount: stats.anomalyCount,
+        uptimePct,
+        savedCost,
+        totalVisitors,
+      };
     }),
   }),
 });

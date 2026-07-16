@@ -30,3 +30,13 @@ export const anomalyLogs = mysqlTable("anomaly_logs", {
 
 export type AnomalyLog = typeof anomalyLogs.$inferSelect;
 export type InsertAnomalyLog = typeof anomalyLogs.$inferInsert;
+
+// 방문자 카운터 테이블
+export const visitorStats = mysqlTable("visitor_stats", {
+  id: int("id").autoincrement().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull().unique(), // YYYY-MM-DD
+  count: int("count").notNull().default(0),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type VisitorStat = typeof visitorStats.$inferSelect;

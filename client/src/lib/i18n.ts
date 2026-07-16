@@ -52,6 +52,19 @@ export const translations = {
     unitC: "°C",
     unitMms: "mm/s",
     unitDb: "dB",
+    // 임팩트 통계
+    impactTitle: "임팩트 지표",
+    totalVisitors: "누적 방문자",
+    totalDetections: "총 탐지 횟수",
+    dangerCount: "위험 단계 탐지",
+    uptimePct: "정상 가동률",
+    savedCost: "예상 절감 비용",
+    savedCostUnit: "원",
+    impactDesc: "위험 단계 탐지 1회 = 비계획 정지 손실 약 5천만 원 절감 효과.",
+    // 랜딩
+    landingTitle: "AI 기반 반도체 장비 예지안전",
+    landingDesc: "SemiGuard AI는 반도체 장비의 센서 데이터를 실시간으로 분석하여 고장 전 이상을 탐지하고, 위험 단계에서 릴레이를 자동 차단합니다.",
+    landingBadge: "라이브 데모",
   },
   en: {
     appTitle: "SemiGuard AI",
@@ -95,6 +108,19 @@ export const translations = {
     unitC: "°C",
     unitMms: "mm/s",
     unitDb: "dB",
+    // Impact Metrics
+    impactTitle: "Impact Metrics",
+    totalVisitors: "Total Visitors",
+    totalDetections: "Total Detections",
+    dangerCount: "Danger Events",
+    uptimePct: "Uptime",
+    savedCost: "Est. Cost Saved",
+    savedCostUnit: "KRW",
+    impactDesc: "Each danger-level detection prevents ~₩50M in unplanned downtime losses.",
+    // Landing
+    landingTitle: "AI-Powered Semiconductor Equipment Safety",
+    landingDesc: "SemiGuard AI detects anomalies in real time using sensor data from semiconductor equipment, automatically tripping relays before failures occur.",
+    landingBadge: "Live Demo",
   },
 } as const;
 
