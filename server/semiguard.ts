@@ -96,6 +96,6 @@ export function generateWarningData(): SensorData {
 export function analyzeData(data: SensorData) {
   const anomalyScore = computeAnomalyScore(data);
   const riskLevel: RiskLevel = getRiskLevel(anomalyScore);
-  const isAnomaly = anomalyScore >= 50;
+  const isAnomaly = anomalyScore >= 70;
   return { sensorData: data, anomalyScore, riskLevel, isAnomaly };
 }
