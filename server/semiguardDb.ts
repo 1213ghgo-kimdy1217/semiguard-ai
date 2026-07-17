@@ -1,5 +1,5 @@
 import { desc, eq, sql, count as drizzleCount } from "drizzle-orm";
-import { anomalyLogs, visitorStats, type InsertAnomalyLog } from "../drizzle/schema";
+import { anomalyLogs, visitorStats, sampleStats, type InsertAnomalyLog } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
@@ -18,6 +18,38 @@ export async function clearAnomalyLogs() {
   const db = await getDb();
   if (!db) return;
   await db.delete(anomalyLogs);
+}
+
+// 전체 샘플 카운터 증가
+export async function incrementSampleCount(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(sampleStats).values({ key: "total_samples", value: 1 })
+    .onDuplicateKeyUpdate({ set: { value: sql`${sampleStats.value} + 1` } });
+}
+
+// 전체 샘플 수 조회
+export async function getTotalSamples(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select().from(sampleStats).where(eq(sampleStats.key, "total_samples")).limit(1);
+  return Number(rows[0]?.value ?? 0);
+}
+
+// 절감 비용 리셋 오프셋 저장 (리셋 시점의 dangerCount를 저장)
+export async function resetSavedCost(currentDangerCount: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(sampleStats).values({ key: "danger_reset_offset", value: currentDangerCount })
+    .onDuplicateKeyUpdate({ set: { value: currentDangerCount } });
+}
+
+// 절감 비용 리셋 오프셋 조회
+export async function getDangerResetOffset(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select().from(sampleStats).where(eq(sampleStats.key, "danger_reset_offset")).limit(1);
+  return Number(rows[0]?.value ?? 0);
 }
 
 // 오늘 방문자 수 증가 (upsert)

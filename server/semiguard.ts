@@ -43,15 +43,52 @@ export function generateNormalData(): SensorData {
 }
 
 export function generateAnomalyData(): SensorData {
-  // 이상 상태: 기준값에서 3~5 표준편차 벗어남
-  const rand = (mean: number, std: number, factor: number) =>
-    mean + std * factor * (Math.random() > 0.5 ? 1 : -1);
+  // 위험 상태: 3개 센서만 크게 이탈, 1개는 약간 이탈 → 점수 70~95 범위
+  // 4개 모두 z=3.5+ 이탈 시 항상 100이 되므로, 이탈 센서 수와 크기를 조절
+  const fields: (keyof typeof NORMAL_BASELINE)[] = ["current", "temperature", "vibration", "noise"];
+  // 3개 센서는 크게 이탈(z=2.8~3.8), 1개는 약간 이탈(z=1.0~1.5) → 총 점수 70~95
+  const shuffled = [...fields].sort(() => Math.random() - 0.5);
+  const bigDeviateFields = new Set(shuffled.slice(0, 3));
 
+  const result: Record<string, number> = { timestamp: Date.now() };
+  for (const field of fields) {
+    const { mean, std } = NORMAL_BASELINE[field];
+    const factor = bigDeviateFields.has(field)
+      ? 2.8 + Math.random() * 1.0   // z=2.8~3.8 → 점수 22.4~25(cap)
+      : 1.0 + Math.random() * 0.5;  // z=1.0~1.5 → 점수 8~12
+    const sign = Math.random() > 0.5 ? 1 : -1;
+    const val = mean + std * factor * sign;
+    result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+  }
+  return result as unknown as SensorData;
+}
+
+// 주의 단계 데이터: z-score 1.5~2.5 → 점수 30~49
+export function generateCautionData(): SensorData {
+  const rand = (mean: number, std: number) => {
+    const factor = 1.5 + Math.random() * 1.0;
+    return mean + std * factor * (Math.random() > 0.5 ? 1 : -1);
+  };
   return {
-    current:     parseFloat(rand(NORMAL_BASELINE.current.mean,     NORMAL_BASELINE.current.std,     4.0).toFixed(2)),
-    temperature: parseFloat(rand(NORMAL_BASELINE.temperature.mean, NORMAL_BASELINE.temperature.std, 4.5).toFixed(1)),
-    vibration:   parseFloat(rand(NORMAL_BASELINE.vibration.mean,   NORMAL_BASELINE.vibration.std,   5.0).toFixed(2)),
-    noise:       parseFloat(rand(NORMAL_BASELINE.noise.mean,       NORMAL_BASELINE.noise.std,       4.0).toFixed(1)),
+    current:     parseFloat(rand(NORMAL_BASELINE.current.mean,     NORMAL_BASELINE.current.std).toFixed(2)),
+    temperature: parseFloat(rand(NORMAL_BASELINE.temperature.mean, NORMAL_BASELINE.temperature.std).toFixed(1)),
+    vibration:   parseFloat(rand(NORMAL_BASELINE.vibration.mean,   NORMAL_BASELINE.vibration.std).toFixed(2)),
+    noise:       parseFloat(rand(NORMAL_BASELINE.noise.mean,       NORMAL_BASELINE.noise.std).toFixed(1)),
+    timestamp:   Date.now(),
+  };
+}
+
+// 경고 단계 데이터: z-score 2.5~3.5 → 점수 50~69
+export function generateWarningData(): SensorData {
+  const rand = (mean: number, std: number) => {
+    const factor = 2.5 + Math.random() * 1.0;
+    return mean + std * factor * (Math.random() > 0.5 ? 1 : -1);
+  };
+  return {
+    current:     parseFloat(rand(NORMAL_BASELINE.current.mean,     NORMAL_BASELINE.current.std).toFixed(2)),
+    temperature: parseFloat(rand(NORMAL_BASELINE.temperature.mean, NORMAL_BASELINE.temperature.std).toFixed(1)),
+    vibration:   parseFloat(rand(NORMAL_BASELINE.vibration.mean,   NORMAL_BASELINE.vibration.std).toFixed(2)),
+    noise:       parseFloat(rand(NORMAL_BASELINE.noise.mean,       NORMAL_BASELINE.noise.std).toFixed(1)),
     timestamp:   Date.now(),
   };
 }

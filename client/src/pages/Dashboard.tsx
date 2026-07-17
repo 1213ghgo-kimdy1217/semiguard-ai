@@ -177,10 +177,15 @@ export default function Dashboard() {
   const injectAnomaly = trpc.semiguard.injectAnomaly.useMutation();
   const clearLogs = trpc.semiguard.clearLogs.useMutation();
   const trackVisit = trpc.semiguard.trackVisit.useMutation();
+  const injectCaution = trpc.semiguard.injectCaution.useMutation();
+  const injectWarning = trpc.semiguard.injectWarning.useMutation();
+  const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
   const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 50 }, { refetchInterval: 5000 });
   const utils = trpc.useUtils();
   const { data: logsData, isLoading: logsLoading } = getLogs;
+
+  const [lastInjectedMode, setLastInjectedMode] = useState<RiskLevel | null>(null);
 
   const sensorData = current?.sensorData;
   const anomalyScore = current?.anomalyScore ?? 0;
@@ -204,7 +209,13 @@ export default function Dashboard() {
     autoPollingRef.current = setInterval(() => {
       const now = Date.now();
       const elapsed = Math.round((now - lastUpdateRef.current) / 1000);
-      const newData = generateNormalData();
+      // 자동 폴링: 80% 정상, 10% 주의, 10% 경고 (자연스러운 변동)
+      const roll = Math.random();
+      const newData = roll < 0.80
+        ? generateNormalData()
+        : roll < 0.90
+          ? generateSlightCautionData()
+          : generateSlightWarningData();
       const result = analyzeData(newData);
       setCurrent(result);
       setChartData(prev => {
@@ -230,6 +241,7 @@ export default function Dashboard() {
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
+      setLastInjectedMode("normal");
       toast.success("정상 상태 주입됨");
     } catch (e) {
       toast.error(t.error);
@@ -244,6 +256,7 @@ export default function Dashboard() {
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
+      setLastInjectedMode("danger");
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
         setTimeout(() => setRelayTripped(false), 2000);
@@ -254,6 +267,44 @@ export default function Dashboard() {
     } catch (e) {
       toast.error(t.error);
       setHeartbeatAlive(false);
+    }
+  };
+
+  const handleInjectCaution = async () => {
+    try {
+      const result = await injectCaution.mutateAsync();
+      setCurrent(result);
+      setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
+      await utils.semiguard.getStats.invalidate();
+      await utils.semiguard.getLogs.invalidate();
+      setLastInjectedMode("caution");
+      toast.warning("⚡ 주의 단계 주입됨");
+    } catch (e) {
+      toast.error(t.error);
+    }
+  };
+
+  const handleInjectWarning = async () => {
+    try {
+      const result = await injectWarning.mutateAsync();
+      setCurrent(result);
+      setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
+      await utils.semiguard.getStats.invalidate();
+      await utils.semiguard.getLogs.invalidate();
+      setLastInjectedMode("warning");
+      toast.warning("🔶 경고 단계 주입됨");
+    } catch (e) {
+      toast.error(t.error);
+    }
+  };
+
+  const handleResetCost = async () => {
+    try {
+      await resetCostMutation.mutateAsync();
+      await utils.semiguard.getStats.invalidate();
+      toast.success("절감 비용이 초기화되었습니다.");
+    } catch (e) {
+      toast.error(t.error);
     }
   };
 
@@ -284,6 +335,32 @@ export default function Dashboard() {
       temperature: 45.0 + (Math.random() - 0.5) * 2,
       vibration: 2.0 + (Math.random() - 0.5) * 0.3,
       noise: 55.0 + (Math.random() - 0.5) * 3,
+      timestamp: Date.now(),
+    };
+  }
+
+  // 자동 폴링용 약한 주의 데이터 (점수 25~40)
+  function generateSlightCautionData(): SensorData {
+    const rand = (mean: number, std: number) =>
+      mean + std * (1.2 + Math.random() * 0.8) * (Math.random() > 0.5 ? 1 : -1);
+    return {
+      current: parseFloat(rand(5.0, 0.5).toFixed(2)),
+      temperature: parseFloat(rand(45.0, 3.0).toFixed(1)),
+      vibration: parseFloat(rand(2.0, 0.3).toFixed(2)),
+      noise: parseFloat(rand(55.0, 4.0).toFixed(1)),
+      timestamp: Date.now(),
+    };
+  }
+
+  // 자동 폴링용 약한 경고 데이터 (점수 45~60)
+  function generateSlightWarningData(): SensorData {
+    const rand = (mean: number, std: number) =>
+      mean + std * (2.0 + Math.random() * 0.8) * (Math.random() > 0.5 ? 1 : -1);
+    return {
+      current: parseFloat(rand(5.0, 0.5).toFixed(2)),
+      temperature: parseFloat(rand(45.0, 3.0).toFixed(1)),
+      vibration: parseFloat(rand(2.0, 0.3).toFixed(2)),
+      noise: parseFloat(rand(55.0, 4.0).toFixed(1)),
       timestamp: Date.now(),
     };
   }
@@ -451,24 +528,51 @@ export default function Dashboard() {
                   <RiskGauge score={anomalyScore} riskLevel={riskLevel} t={t} />
                 </div>
 
-                {/* 시뮬레이터 */}
-                <div className="rounded-xl border p-4 flex flex-col gap-3"
+                {/* 시뮬레이터 - 4단계 버튼 */}
+                <div className="rounded-xl border p-4 flex flex-col gap-2.5"
                   style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
-                  <div>
+                  <div className="flex items-center justify-between mb-0.5">
                     <p className="text-xs font-semibold">{t.simulatorTitle}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">{t.simulatorDesc}</p>
+                    {lastInjectedMode && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                        style={{
+                          background: lastInjectedMode === "normal" ? "rgba(34,197,94,0.15)" : lastInjectedMode === "caution" ? "rgba(234,179,8,0.15)" : lastInjectedMode === "warning" ? "rgba(249,115,22,0.15)" : "rgba(239,68,68,0.15)",
+                          color: lastInjectedMode === "normal" ? "#22c55e" : lastInjectedMode === "caution" ? "#eab308" : lastInjectedMode === "warning" ? "#f97316" : "#ef4444",
+                        }}>
+                        {t[lastInjectedMode]}
+                      </span>
+                    )}
                   </div>
-                  <button onClick={handleInjectNormal} disabled={injectNormal.isPending}
-                    className="w-full py-2.5 rounded-lg text-sm font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
-                    style={{ background: "rgba(34,197,94,0.10)", borderColor: "#22c55e45", color: "#22c55e" }}>
-                    {injectNormal.isPending ? t.processing : `▶ ${t.injectNormal}`}
-                  </button>
-                  <button onClick={handleInjectAnomaly} disabled={injectAnomaly.isPending}
-                    className="w-full py-2.5 rounded-lg text-sm font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
-                    style={{ background: "rgba(239,68,68,0.10)", borderColor: "#ef444445", color: "#ef4444" }}>
-                    {injectAnomaly.isPending ? t.processing : `⚠ ${t.injectAnomaly}`}
-                  </button>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">{t.simulatorDesc}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <button onClick={handleInjectNormal} disabled={injectNormal.isPending}
+                      className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
+                      style={{ background: "rgba(34,197,94,0.10)", borderColor: "#22c55e45", color: "#22c55e" }}>
+                      {injectNormal.isPending ? "..." : `▶ ${t.injectNormal}`}
+                    </button>
+                    <button onClick={handleInjectCaution} disabled={injectCaution.isPending}
+                      className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
+                      style={{ background: "rgba(234,179,8,0.10)", borderColor: "#eab30845", color: "#eab308" }}>
+                      {injectCaution.isPending ? "..." : `⚡ ${t.injectCaution}`}
+                    </button>
+                    <button onClick={handleInjectWarning} disabled={injectWarning.isPending}
+                      className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
+                      style={{ background: "rgba(249,115,22,0.10)", borderColor: "#f9731645", color: "#f97316" }}>
+                      {injectWarning.isPending ? "..." : `🔶 ${t.injectWarning}`}
+                    </button>
+                    <button onClick={handleInjectAnomaly} disabled={injectAnomaly.isPending}
+                      className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
+                      style={{ background: "rgba(239,68,68,0.10)", borderColor: "#ef444445", color: "#ef4444" }}>
+                      {injectAnomaly.isPending ? "..." : `⚠ ${t.injectAnomaly}`}
+                    </button>
+                  </div>
                 </div>
+                {/* 절감 비용 리셋 버튼 */}
+                <button onClick={handleResetCost} disabled={resetCostMutation.isPending}
+                  className="w-full py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
+                  style={{ background: "rgba(255,255,255,0.03)", borderColor: "oklch(0.25 0.02 240)", color: "#6b7280" }}>
+                  {resetCostMutation.isPending ? t.processing : `↺ ${t.resetCost}`}
+                </button>
               </div>
             </div>
           </>

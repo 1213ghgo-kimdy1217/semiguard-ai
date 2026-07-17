@@ -40,3 +40,13 @@ export const visitorStats = mysqlTable("visitor_stats", {
 });
 
 export type VisitorStat = typeof visitorStats.$inferSelect;
+
+// 전체 샘플 카운터 (정상 포함 모든 측정값 집계용)
+export const sampleStats = mysqlTable("sample_stats", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 32 }).notNull().unique(), // 'total_samples', 'reset_offset'
+  value: int("value").notNull().default(0),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SampleStat = typeof sampleStats.$inferSelect;

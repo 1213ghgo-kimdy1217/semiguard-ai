@@ -3,9 +3,8 @@ import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { analyzeData, generateAnomalyData, generateNormalData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog } from "./semiguardDb";
-import { incrementVisitor, getTotalVisitors, getAnomalyStats } from "./semiguardDb";
+import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData } from "./semiguard";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats } from "./semiguardDb";
 import type { RiskLevel } from "../shared/semiguard";
 
 export const appRouter = router({
@@ -23,6 +22,7 @@ export const appRouter = router({
     injectNormal: publicProcedure.mutation(async () => {
       const data = generateNormalData();
       const result = analyzeData(data);
+      await incrementSampleCount();
       if (result.isAnomaly) {
         await insertAnomalyLog({
           current: data.current,
@@ -40,6 +40,39 @@ export const appRouter = router({
     injectAnomaly: publicProcedure.mutation(async () => {
       const data = generateAnomalyData();
       const result = analyzeData(data);
+      await incrementSampleCount();
+      await insertAnomalyLog({
+        current: data.current,
+        temperature: data.temperature,
+        vibration: data.vibration,
+        noise: data.noise,
+        anomalyScore: result.anomalyScore,
+        riskLevel: result.riskLevel as RiskLevel,
+        isAnomaly: result.isAnomaly ? 1 : 0,
+      });
+      return result;
+    }),
+
+    injectCaution: publicProcedure.mutation(async () => {
+      const data = generateCautionData();
+      const result = analyzeData(data);
+      await incrementSampleCount();
+      await insertAnomalyLog({
+        current: data.current,
+        temperature: data.temperature,
+        vibration: data.vibration,
+        noise: data.noise,
+        anomalyScore: result.anomalyScore,
+        riskLevel: result.riskLevel as RiskLevel,
+        isAnomaly: result.isAnomaly ? 1 : 0,
+      });
+      return result;
+    }),
+
+    injectWarning: publicProcedure.mutation(async () => {
+      const data = generateWarningData();
+      const result = analyzeData(data);
+      await incrementSampleCount();
       await insertAnomalyLog({
         current: data.current,
         temperature: data.temperature,
@@ -86,12 +119,15 @@ export const appRouter = router({
         getAnomalyStats(),
         getTotalVisitors(),
       ]);
-      // 정상 가동률: 전체 중 이상 아닌 비율
-      const uptimePct = stats.total > 0
-        ? Math.round(((stats.total - stats.anomalyCount) / stats.total) * 100)
+      const [totalSamples, dangerOffset] = await Promise.all([
+        getTotalSamples(),
+        getDangerResetOffset(),
+      ]);
+      const uptimePct = totalSamples > 0
+        ? Math.round(((totalSamples - stats.anomalyCount) / totalSamples) * 100)
         : 100;
-      // 절감 비용: 위험 단계 탐지 1회 = 평균 5천만원 절감 (반도체 공장 비계획 정지 기준)
-      const savedCost = stats.dangerCount * 50_000_000;
+      const effectiveDanger = Math.max(0, stats.dangerCount - dangerOffset);
+      const savedCost = effectiveDanger * 50_000_000;
       return {
         totalDetections: stats.total,
         dangerCount: stats.dangerCount,
@@ -100,6 +136,12 @@ export const appRouter = router({
         savedCost,
         totalVisitors,
       };
+    }),
+
+    resetSavedCost: publicProcedure.mutation(async () => {
+      const stats = await getAnomalyStats();
+      await resetSavedCost(stats.dangerCount);
+      return { success: true };
     }),
   }),
 });
