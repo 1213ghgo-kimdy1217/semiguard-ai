@@ -30,16 +30,15 @@ export interface AnomalyLogEntry {
 }
 
 export const RISK_THRESHOLDS = {
-  normal: 30,
-  caution: 50,
-  warning: 70,
+  normal: 29,
+  caution: 49,
+  warning: 69,
   danger: 100,
 } as const;
 
 export function getRiskLevel(score: number): RiskLevel {
-  if (score < RISK_THRESHOLDS.normal) return "normal";
-  if (score < RISK_THRESHOLDS.caution) return "caution";
-  if (score < RISK_THRESHOLDS.warning) return "warning";
+  if (score <= RISK_THRESHOLDS.normal) return "normal";
+  if (score <= RISK_THRESHOLDS.caution) return "caution";
+  if (score <= RISK_THRESHOLDS.warning) return "warning";
   return "danger";
 }
-

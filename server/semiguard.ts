@@ -81,7 +81,7 @@ export function generateCautionData(): SensorData {
 // 경고 단계 데이터: z-score 2.5~3.5 → 점수 50~69
 export function generateWarningData(): SensorData {
   const rand = (mean: number, std: number) => {
-    const factor = 2.5 + Math.random() * 1.0;
+    const factor = 2.0 + Math.random() * 1.5;  // z=2.0~3.5 → 점수 50~69 범위
     return mean + std * factor * (Math.random() > 0.5 ? 1 : -1);
   };
   return {

@@ -128,3 +128,25 @@
 .glow-yellow { box-shadow: 0 0 12px #eab30860, 0 0 24px #eab30830; }
 .glow-orange { box-shadow: 0 0 12px #f9731660, 0 0 24px #f9731630; }
 .glow-red { box-shadow: 0 0 16px #ef444470, 0 0 32px #ef444440; }
+
+/* 팝업 애니메이션 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

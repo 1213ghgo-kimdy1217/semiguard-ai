@@ -126,6 +126,8 @@ export const appRouter = router({
       const uptimePct = totalSamples > 0
         ? Math.round(((totalSamples - stats.anomalyCount) / totalSamples) * 100)
         : 100;
+      // 절감 비용: 위험 단계 탐지 1회 = 약 5천만 원 절감
+      // dangerOffset은 리셋 시점의 dangerCount이므로, 그 이후 새로 증가한 건수만 카운트
       const effectiveDanger = Math.max(0, stats.dangerCount - dangerOffset);
       const savedCost = effectiveDanger * 50_000_000;
       return {

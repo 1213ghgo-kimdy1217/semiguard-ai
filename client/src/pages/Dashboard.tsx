@@ -172,6 +172,7 @@ export default function Dashboard() {
   const [initialized, setInitialized] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [dangerAlert, setDangerAlert] = useState(false);
 
   const injectNormal = trpc.semiguard.injectNormal.useMutation();
   const injectAnomaly = trpc.semiguard.injectAnomaly.useMutation();
@@ -225,6 +226,7 @@ export default function Dashboard() {
       setHeartbeatAlive(true);
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
+        setDangerAlert(true);
         setTimeout(() => setRelayTripped(false), 2000);
       }
     }, 4000);
@@ -259,6 +261,7 @@ export default function Dashboard() {
       setLastInjectedMode("danger");
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
+        setDangerAlert(true);
         setTimeout(() => setRelayTripped(false), 2000);
         toast.error("⚠️ 위험 단계 도달! 릴레이 차단됨");
       } else {
@@ -377,14 +380,55 @@ export default function Dashboard() {
     const zNoise = Math.abs((data.noise - noiseMean) / noiseStd);
 
     const score = Math.min(100, Math.round(((zCurrent + zTemp + zVib + zNoise) / 4) * 25));
-    const riskLevel: RiskLevel = score < 25 ? "normal" : score < 50 ? "caution" : score < 75 ? "warning" : "danger";
-    const isAnomaly = score >= 50;
+    const riskLevel: RiskLevel = score <= 29 ? "normal" : score <= 49 ? "caution" : score <= 69 ? "warning" : "danger";
+    const isAnomaly = score >= 70;
 
     return { sensorData: data, anomalyScore: score, riskLevel, isAnomaly };
   }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "oklch(0.10 0.01 240)" }}>
+      {/* ── 위험 상태 팝업 ── */}
+      {dangerAlert && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.7)", animation: "fadeIn 0.3s ease-out" }}>
+          <div className="relative w-full max-w-md mx-4 rounded-2xl p-8 shadow-2xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.10))",
+              border: "2px solid rgb(239,68,68)",
+              animation: "slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1)"
+            }}>
+            <div className="flex flex-col items-center gap-4">
+              <div className="text-6xl animate-pulse">🚨</div>
+              <h2 className="text-2xl font-bold text-center" style={{ color: "rgb(239,68,68)" }}>
+                {lang === "ko" ? "위험 단계 도달!" : "DANGER LEVEL REACHED!"}
+              </h2>
+              <p className="text-center text-sm" style={{ color: "rgb(220,38,38)" }}>
+                {lang === "ko"
+                  ? "장비가 위험 상태에 도달했습니다. 즉시 점검이 필요합니다."
+                  : "Equipment has reached a dangerous state. Immediate inspection required."}
+              </p>
+              <div className="w-full h-1 rounded-full" style={{ background: "rgb(239,68,68)" }}>
+                <div className="h-full rounded-full" style={{
+                  background: "rgb(239,68,68)",
+                  animation: "pulse 1s ease-in-out infinite"
+                }} />
+              </div>
+              <button
+                onClick={() => setDangerAlert(false)}
+                className="mt-4 px-6 py-2 rounded-lg font-bold transition-all duration-200 active:scale-95"
+                style={{
+                  background: "rgb(239,68,68)",
+                  color: "white",
+                  boxShadow: "0 0 20px rgba(239,68,68,0.5)"
+                }}>
+                {lang === "ko" ? "확인" : "OK"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 헤더 ── */}
       <header className="sticky top-0 z-50 border-b flex items-center justify-between px-5 py-3"
         style={{ background: "oklch(0.115 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
