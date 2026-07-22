@@ -379,7 +379,13 @@ export default function Dashboard() {
     const zVib = Math.abs((data.vibration - vibMean) / vibStd);
     const zNoise = Math.abs((data.noise - noiseMean) / noiseStd);
 
-    const score = Math.min(100, Math.round(((zCurrent + zTemp + zVib + zNoise) / 4) * 25));
+    // 서버와 동일한 점수 계산: 각 센서 z-score에 8을 곱하고 25로 cap (최대 100)
+    const score = Math.min(100, Math.round(
+      Math.min(zCurrent * 8, 25) +
+      Math.min(zTemp * 8, 25) +
+      Math.min(zVib * 8, 25) +
+      Math.min(zNoise * 8, 25)
+    ));
     const riskLevel: RiskLevel = score <= 29 ? "normal" : score <= 49 ? "caution" : score <= 69 ? "warning" : "danger";
     const isAnomaly = score >= 70;
 
