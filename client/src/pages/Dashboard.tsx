@@ -239,7 +239,8 @@ export default function Dashboard() {
   const handleInjectNormal = async () => {
     try {
       const result = await injectNormal.mutateAsync();
-      setCurrent(result);
+      const analyzed = analyzeData(result.sensorData);
+      setCurrent(analyzed);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
@@ -254,12 +255,13 @@ export default function Dashboard() {
   const handleInjectAnomaly = async () => {
     try {
       const result = await injectAnomaly.mutateAsync();
-      setCurrent(result);
+      const analyzed = analyzeData(result.sensorData);
+      setCurrent(analyzed);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
       setLastInjectedMode("danger");
-      if (result.riskLevel === "danger") {
+      if (analyzed.riskLevel === "danger") {
         setRelayTripped(true);
         setDangerAlert(true);
         setTimeout(() => setRelayTripped(false), 2000);
@@ -276,7 +278,8 @@ export default function Dashboard() {
   const handleInjectCaution = async () => {
     try {
       const result = await injectCaution.mutateAsync();
-      setCurrent(result);
+      const analyzed = analyzeData(result.sensorData);
+      setCurrent(analyzed);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
@@ -290,7 +293,8 @@ export default function Dashboard() {
   const handleInjectWarning = async () => {
     try {
       const result = await injectWarning.mutateAsync();
-      setCurrent(result);
+      const analyzed = analyzeData(result.sensorData);
+      setCurrent(analyzed);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
