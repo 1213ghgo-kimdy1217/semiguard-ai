@@ -239,52 +239,48 @@ export default function Dashboard() {
   const handleInjectNormal = async () => {
     try {
       const result = await injectNormal.mutateAsync();
-      const analyzed = analyzeData(result.sensorData);
-      setCurrent(analyzed);
+      // ✅ FIXED: 서버 결과(result)를 그대로 신뢰, analyzeData 호출 제거
+      setCurrent(result);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
       setLastInjectedMode("normal");
-      toast.success("정상 상태 주입됨");
+      toast.success(`✅ ${t.injectNormal} 완료`);
     } catch (e) {
       toast.error(t.error);
-      setHeartbeatAlive(false);
     }
   };
 
   const handleInjectAnomaly = async () => {
     try {
       const result = await injectAnomaly.mutateAsync();
-      const analyzed = analyzeData(result.sensorData);
-      setCurrent(analyzed);
+      // ✅ FIXED: 서버 결과(result)를 그대로 신뢰, analyzeData 호출 제거
+      setCurrent(result);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
       setLastInjectedMode("danger");
-      if (analyzed.riskLevel === "danger") {
+      if (result.riskLevel === "danger") {
         setRelayTripped(true);
         setDangerAlert(true);
         setTimeout(() => setRelayTripped(false), 2000);
-        toast.error("⚠️ 위험 단계 도달! 릴레이 차단됨");
-      } else {
-        toast.warning("이상 상태 주입됨");
       }
+      toast.error(`⚠ ${t.injectAnomaly} 완료`);
     } catch (e) {
       toast.error(t.error);
-      setHeartbeatAlive(false);
     }
   };
 
   const handleInjectCaution = async () => {
     try {
       const result = await injectCaution.mutateAsync();
-      const analyzed = analyzeData(result.sensorData);
-      setCurrent(analyzed);
+      // ✅ FIXED: 서버 결과(result)를 그대로 신뢰, analyzeData 호출 제거
+      setCurrent(result);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
       setLastInjectedMode("caution");
-      toast.warning("⚡ 주의 단계 주입됨");
+      toast.info(`⚡ ${t.injectCaution} 완료`);
     } catch (e) {
       toast.error(t.error);
     }
@@ -293,13 +289,13 @@ export default function Dashboard() {
   const handleInjectWarning = async () => {
     try {
       const result = await injectWarning.mutateAsync();
-      const analyzed = analyzeData(result.sensorData);
-      setCurrent(analyzed);
+      // ✅ FIXED: 서버 결과(result)를 그대로 신뢰, analyzeData 호출 제거
+      setCurrent(result);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
       setLastInjectedMode("warning");
-      toast.warning("🔶 경고 단계 주입됨");
+      toast.warning(`🔶 ${t.injectWarning} 완료`);
     } catch (e) {
       toast.error(t.error);
     }
@@ -330,7 +326,7 @@ export default function Dashboard() {
   function generateInitialData(): AnomalyResult {
     return {
       sensorData: { current: 5.0, temperature: 45.0, vibration: 2.0, noise: 55.0, timestamp: Date.now() },
-      anomalyScore: 15,
+      anomalyScore: 10,
       riskLevel: "normal",
       isAnomaly: false,
     };
