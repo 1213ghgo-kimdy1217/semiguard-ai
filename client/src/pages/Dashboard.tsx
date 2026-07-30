@@ -1150,7 +1150,7 @@ export default function Dashboard() {
               try {
                 const { default: html2canvas } = await import('html2canvas');
                 const { jsPDF } = await import('jspdf');
-                // scale을 1로 낮추고 viewport 크기로 제한하여 안정성 확보
+                // html2canvas는 oklch 색상 미지원 → onclone에서 computed rgb로 교체
                 const canvas = await html2canvas(el, {
                   scale: 1,
                   useCORS: true,
@@ -1161,6 +1161,28 @@ export default function Dashboard() {
                   windowWidth: el.scrollWidth,
                   windowHeight: el.scrollHeight,
                   logging: false,
+                  onclone: (_cloneDoc: Document, clonedEl: HTMLElement) => {
+                    const CSS_PROPS = [
+                      'backgroundColor','color','borderColor',
+                      'borderTopColor','borderBottomColor','borderLeftColor','borderRightColor',
+                      'outlineColor','fill','stroke',
+                    ] as const;
+                    // oklch 색상을 브라우저가 계산한 rgb 값으로 교체
+                    const replaceOklch = (el: HTMLElement) => {
+                      const cs = window.getComputedStyle(el);
+                      CSS_PROPS.forEach(prop => {
+                        const val = cs[prop as keyof CSSStyleDeclaration] as string | undefined;
+                        if (val && val.includes('oklch')) {
+                          (el.style as unknown as Record<string, string>)[prop] = val;
+                        }
+                      });
+                      // boxShadow 별도 처리 (oklch 포함 시 제거)
+                      const shadow = cs.boxShadow;
+                      if (shadow && shadow.includes('oklch')) el.style.boxShadow = 'none';
+                    };
+                    replaceOklch(clonedEl);
+                    clonedEl.querySelectorAll<HTMLElement>('*').forEach(replaceOklch);
+                  },
                 });
                 const imgData = canvas.toDataURL('image/jpeg', 0.90);
                 const pdfW = canvas.width;
