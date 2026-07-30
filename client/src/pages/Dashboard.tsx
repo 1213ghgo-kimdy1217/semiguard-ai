@@ -6,6 +6,19 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { toast } from "sonner";
 
 // ─── 위험도 색상 매핑 ────────────────────────────────────────────────────────
+// ─── 버튼 스피너 ─────────────────────────────────────────────────────────────
+function ButtonSpinner({ color }: { color: string }) {
+  return (
+    <span className="inline-block w-3 h-3 rounded-full border-2 border-transparent"
+      style={{
+        borderTopColor: color,
+        borderRightColor: color,
+        animation: "spin 0.6s linear infinite",
+        verticalAlign: "middle",
+      }} />
+  );
+}
+
 const RISK_COLORS: Record<RiskLevel, string> = {
   normal: "#22c55e",
   caution: "#eab308",
@@ -598,22 +611,30 @@ export default function Dashboard() {
                     <button onClick={handleInjectNormal} disabled={injectNormal.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(34,197,94,0.10)", borderColor: "#22c55e45", color: "#22c55e" }}>
-                      {injectNormal.isPending ? "..." : `▶ ${t.injectNormal}`}
+                      {injectNormal.isPending
+                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#22c55e" /><span>처리 중...</span></span>
+                        : `▶ ${t.injectNormal}`}
                     </button>
                     <button onClick={handleInjectCaution} disabled={injectCaution.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(234,179,8,0.10)", borderColor: "#eab30845", color: "#eab308" }}>
-                      {injectCaution.isPending ? "..." : `⚡ ${t.injectCaution}`}
+                      {injectCaution.isPending
+                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#eab308" /><span>처리 중...</span></span>
+                        : `⚡ ${t.injectCaution}`}
                     </button>
                     <button onClick={handleInjectWarning} disabled={injectWarning.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(249,115,22,0.10)", borderColor: "#f9731645", color: "#f97316" }}>
-                      {injectWarning.isPending ? "..." : `🔶 ${t.injectWarning}`}
+                      {injectWarning.isPending
+                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#f97316" /><span>처리 중...</span></span>
+                        : `🔶 ${t.injectWarning}`}
                     </button>
                     <button onClick={handleInjectAnomaly} disabled={injectAnomaly.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(239,68,68,0.10)", borderColor: "#ef444445", color: "#ef4444" }}>
-                      {injectAnomaly.isPending ? "..." : `⚠ ${t.injectAnomaly}`}
+                      {injectAnomaly.isPending
+                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#ef4444" /><span>처리 중...</span></span>
+                        : `⚠ ${t.injectAnomaly}`}
                     </button>
                   </div>
                 </div>
@@ -621,7 +642,9 @@ export default function Dashboard() {
                 <button onClick={handleResetCost} disabled={resetCostMutation.isPending}
                   className="w-full py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                   style={{ background: "rgba(255,255,255,0.03)", borderColor: "oklch(0.25 0.02 240)", color: "#6b7280" }}>
-                  {resetCostMutation.isPending ? t.processing : `↺ ${t.resetCost}`}
+                  {resetCostMutation.isPending
+                    ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#6b7280" /><span>{t.processing}</span></span>
+                    : `↺ ${t.resetCost}`}
                 </button>
               </div>
             </div>
@@ -683,6 +706,10 @@ export default function Dashboard() {
       </main>
 
       <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
