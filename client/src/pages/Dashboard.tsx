@@ -1,12 +1,116 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
-import type { RiskLevel, SensorData, AnomalyResult } from "../../../shared/semiguard";
+import type { RiskLevel, SensorData, AnomalyResult, AnomalyLogEntry } from "../../../shared/semiguard";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { toast } from "sonner";
 
 // ─── 위험도 색상 매핑 ────────────────────────────────────────────────────────
 // ─── 버튼 스피너 ─────────────────────────────────────────────────────────────
+// ─── CSV 내보내기 ─────────────────────────────────────────────────────────────
+function exportLogsToCSV(logs: AnomalyLogEntry[], lang: "ko" | "en") {
+  const headers = lang === "ko"
+    ? ["발생 시각", "전류(A)", "온도(°C)", "진동(mm/s)", "소음(dB)", "이상 점수", "위험도", "이상 여부"]
+    : ["Time", "Current(A)", "Temp(°C)", "Vib(mm/s)", "Noise(dB)", "Score", "Level", "Anomaly"];
+  // 쉼표·따옴표·줄바꿈이 포함된 셀을 RFC 4180 방식으로 이스케이프
+  const escape = (v: string | number) => {
+    const s = String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const rows = logs.map(log => [
+    escape(new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : "en-US", { hour12: false })),
+    escape(log.current.toFixed(2)),
+    escape(log.temperature.toFixed(1)),
+    escape(log.vibration.toFixed(2)),
+    escape(log.noise.toFixed(1)),
+    escape(log.anomalyScore),
+    escape(log.riskLevel),
+    escape(log.isAnomaly ? (lang === "ko" ? "이상" : "Anomaly") : (lang === "ko" ? "정상" : "Normal")),
+  ]);
+  const csv = [headers.map(h => escape(h)), ...rows].map(r => r.join(",")).join("\n");
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `semiguard_logs_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Web Audio 경고음 ────────────────────────────────────────────────────────
+// AudioContext를 모듈 수준에서 지연 생성하여 재사용 (autoplay 정책 대응)
+let _audioCtx: AudioContext | null = null;
+function getAudioCtx(): AudioContext | null {
+  try {
+    if (!_audioCtx || _audioCtx.state === "closed") {
+      _audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return _audioCtx;
+  } catch (_) { return null; }
+}
+
+function playDangerAlertSound() {
+  try {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    // 브라우저 autoplay 정책: suspended 상태이면 resume 후 재생
+    const doPlay = () => {
+      const beepAt = (startTime: number, freq: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0.35, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+      const t0 = ctx.currentTime;
+      beepAt(t0,        880, 0.18);
+      beepAt(t0 + 0.22, 660, 0.18);
+      beepAt(t0 + 0.44, 880, 0.18);
+      beepAt(t0 + 0.66, 660, 0.28);
+    };
+    if (ctx.state === "suspended") {
+      ctx.resume().then(doPlay).catch(() => {});
+    } else {
+      doPlay();
+    }
+  } catch (_) { /* 브라우저 미지원 시 무시 */ }
+}
+
+// ─── 카운트업/다운 훅 ────────────────────────────────────────────────────────
+function useAnimatedScore(target: number, duration = 400): number {
+  const [displayed, setDisplayed] = useState(target);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    const from = displayed;
+    if (from === target) return;
+    const startTime = performance.now();
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      setDisplayed(Math.round(from + (target - from) * eased));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayed(target);
+        rafRef.current = null;
+      }
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
+  }, [target]);
+
+  return displayed;
+}
+
 function ButtonSpinner({ color }: { color: string }) {
   return (
     <span className="inline-block w-3 h-3 rounded-full border-2 border-transparent"
@@ -63,8 +167,9 @@ function SensorCard({ label, value, unit, color, icon }: {
 // ─── 위험도 게이지 ───────────────────────────────────────────────────────────
 function RiskGauge({ score, riskLevel, t }: { score: number; riskLevel: RiskLevel; t: Translation }) {
   const color = RISK_COLORS[riskLevel];
+  const animatedScore = useAnimatedScore(score);
   const circumference = 2 * Math.PI * 48;
-  const offset = circumference * (1 - score / 100);
+  const offset = circumference * (1 - animatedScore / 100);
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
@@ -79,7 +184,7 @@ function RiskGauge({ score, riskLevel, t }: { score: number; riskLevel: RiskLeve
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-          <span className="text-4xl font-bold font-mono leading-none" style={{ color, transition: "color 0.4s" }}>{score}</span>
+          <span className="text-4xl font-bold font-mono leading-none" style={{ color, transition: "color 0.4s" }}>{animatedScore}</span>
           <span className="text-[10px] text-muted-foreground tracking-wide">{t.riskScore}</span>
         </div>
       </div>
@@ -187,6 +292,12 @@ export default function Dashboard() {
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dangerAlert, setDangerAlert] = useState(false);
 
+  // ─── 경고음 콜백 ─────────────────────────────────────────────────────────
+  const playAlert = useCallback(() => {
+    playDangerAlertSound();
+  }, []);
+
+
   const injectNormal = trpc.semiguard.injectNormal.useMutation();
   const injectAnomaly = trpc.semiguard.injectAnomaly.useMutation();
   const clearLogs = trpc.semiguard.clearLogs.useMutation();
@@ -240,6 +351,7 @@ export default function Dashboard() {
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
         setDangerAlert(true);
+        playAlert();
         setTimeout(() => setRelayTripped(false), 2000);
       }
     }, 4000);
@@ -276,6 +388,7 @@ export default function Dashboard() {
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
         setDangerAlert(true);
+        playAlert();
         setTimeout(() => setRelayTripped(false), 2000);
       }
       toast.error(`⚠ ${t.injectAnomaly} 완료`);
@@ -655,11 +768,26 @@ export default function Dashboard() {
             <div className="flex items-center justify-between px-5 py-3 border-b"
               style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
               <p className="text-sm font-semibold">{t.anomalyLog}</p>
-              <button onClick={handleClearLogs}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (!logs || logs.length === 0) {
+                      toast.info(lang === "ko" ? "내보낼 로그가 없습니다." : "No logs to export.");
+                      return;
+                    }
+                    exportLogsToCSV(logs, lang);
+                    toast.success(t.exportCsvSuccess);
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95"
+                  style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
+                  ⬇ {t.exportCsv}
+                </button>
+                <button onClick={handleClearLogs}
                 className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-70"
                 style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
                 {t.clearLogs}
               </button>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">

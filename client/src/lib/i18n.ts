@@ -69,6 +69,8 @@ export const translations = {
     landingTitle: "AI 기반 반도체 장비 예지안전",
     landingDesc: "SemiGuard AI는 반도체 장비의 센서 데이터를 실시간으로 분석하여 고장 전 이상을 탐지하고, 위험 단계에서 릴레이를 자동 차단합니다.",
     landingBadge: "라이브 데모",
+    exportCsv: "CSV 내보내기",
+    exportCsvSuccess: "CSV 파일이 저장되었습니다.",
   },
   en: {
     appTitle: "SemiGuard AI",
@@ -129,6 +131,8 @@ export const translations = {
     landingTitle: "AI-Powered Semiconductor Equipment Safety",
     landingDesc: "SemiGuard AI detects anomalies in real time using sensor data from semiconductor equipment, automatically tripping relays before failures occur.",
     landingBadge: "Live Demo",
+    exportCsv: "Export CSV",
+    exportCsvSuccess: "CSV file saved.",
   },
 } as const;
 
