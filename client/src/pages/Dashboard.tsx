@@ -1149,14 +1149,34 @@ export default function Dashboard() {
               setPdfExporting(true);
               try {
                 const { default: html2canvas } = await import('html2canvas');
-                const { default: jsPDF } = await import('jspdf');
-                const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, backgroundColor: '#0d1117' });
-                const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, canvas.width, canvas.height);
+                const { jsPDF } = await import('jspdf');
+                // scale을 1로 낮추고 viewport 크기로 제한하여 안정성 확보
+                const canvas = await html2canvas(el, {
+                  scale: 1,
+                  useCORS: true,
+                  allowTaint: true,
+                  backgroundColor: isDark ? '#0d1117' : '#f5f7fa',
+                  width: el.scrollWidth,
+                  height: el.scrollHeight,
+                  windowWidth: el.scrollWidth,
+                  windowHeight: el.scrollHeight,
+                  logging: false,
+                });
+                const imgData = canvas.toDataURL('image/jpeg', 0.90);
+                const pdfW = canvas.width;
+                const pdfH = canvas.height;
+                const pdf = new jsPDF({
+                  orientation: pdfW > pdfH ? 'landscape' : 'portrait',
+                  unit: 'px',
+                  format: [pdfW, pdfH],
+                  hotfixes: ['px_scaling'],
+                });
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
                 pdf.save(`semiguard_report_${new Date().toISOString().slice(0,10)}.pdf`);
                 toast.success(lang === "ko" ? "PDF가 저장되었습니다." : "PDF saved successfully.");
               } catch (e) {
-                toast.error(lang === "ko" ? "PDF 내보내기 실패" : "PDF export failed");
+                console.error('PDF export error:', e);
+                toast.error(lang === "ko" ? "PDF 내보내기 실패: " + String(e) : "PDF export failed: " + String(e));
               } finally {
                 setPdfExporting(false);
               }
