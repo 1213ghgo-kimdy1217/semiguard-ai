@@ -642,6 +642,23 @@ export default function Dashboard() {
 
   const [lastInjectedMode, setLastInjectedMode] = useState<RiskLevel | null>(null);
 
+  // ─── 센서별 임계값 state ─────────────────────────────────────────────────────
+  const [sensorThresh, setSensorThresh] = useState({
+    currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,
+    tempCaution: 55.0, tempWarning: 70.0, tempDanger: 85.0,
+    vibCaution: 0.6, vibWarning: 0.8, vibDanger: 1.0,
+    noiseCaution: 65.0, noiseWarning: 75.0, noiseDanger: 85.0,
+  });
+  const [showSensorPanel, setShowSensorPanel] = useState(false);
+
+  // ─── 데모 자동 실행 state ────────────────────────────────────────────────────
+  const [demoRunning, setDemoRunning] = useState(false);
+  const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ─── 센서별 임계값 tRPC 훅 ──────────────────────────────────────────────────
+  const getSensorThresholdsQuery = trpc.semiguard.getSensorThresholds.useQuery(undefined, { staleTime: Infinity });
+  const saveSensorThresholdsMutation = trpc.semiguard.saveSensorThresholds.useMutation();
+
   const sensorData = current?.sensorData;
   const anomalyScore = current?.anomalyScore ?? 0;
   const riskLevel = current?.riskLevel ?? "normal";
@@ -1604,20 +1621,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-  // ─── 센서별 임계값 state ─────────────────────────────────────────────────────
-  const [sensorThresh, setSensorThresh] = useState({
-    currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,
-    tempCaution: 55.0, tempWarning: 70.0, tempDanger: 85.0,
-    vibCaution: 0.6, vibWarning: 0.8, vibDanger: 1.0,
-    noiseCaution: 65.0, noiseWarning: 75.0, noiseDanger: 85.0,
-  });
-  const [showSensorPanel, setShowSensorPanel] = useState(false);
-
-  // ─── 데모 자동 실행 state ────────────────────────────────────────────────────
-  const [demoRunning, setDemoRunning] = useState(false);
-  const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // ─── 센서별 임계값 tRPC 훅 ──────────────────────────────────────────────────
-  const getSensorThresholdsQuery = trpc.semiguard.getSensorThresholds.useQuery(undefined, { staleTime: Infinity });
-  const saveSensorThresholdsMutation = trpc.semiguard.saveSensorThresholds.useMutation();
