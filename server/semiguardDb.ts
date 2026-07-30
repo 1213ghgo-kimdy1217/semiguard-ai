@@ -75,22 +75,22 @@ export async function getTotalVisitors(): Promise<number> {
 export async function getDailyMaxRisk(): Promise<{ date: string; riskLevel: string }[]> {
   const db = await getDb();
   if (!db) return [];
-  // MySQL: DATE(timestamp) 기준으로 날짜별 최고 위험도를 FIELD() 정렬로 집계
-  const rows = await db.execute(sql`
-    SELECT
-      DATE(timestamp) AS date,
-      MAX(CASE riskLevel
+  // Drizzle 표준 쿼리 빌더로 날짜별 최고 위험도 집계
+  const rows = await db
+    .select({
+      date: sql<string>`DATE(${anomalyLogs.timestamp})`,
+      maxRiskOrder: sql<number>`MAX(CASE ${anomalyLogs.riskLevel}
         WHEN 'danger'  THEN 4
         WHEN 'warning' THEN 3
         WHEN 'caution' THEN 2
         ELSE 1
-      END) AS maxRiskOrder
-    FROM anomalyLogs
-    GROUP BY DATE(timestamp)
-    ORDER BY date ASC
-  `);
+      END)`,
+    })
+    .from(anomalyLogs)
+    .groupBy(sql`DATE(${anomalyLogs.timestamp})`)
+    .orderBy(sql`DATE(${anomalyLogs.timestamp}) ASC`);
   const riskMap: Record<number, string> = { 4: "danger", 3: "warning", 2: "caution", 1: "normal" };
-  return (rows as unknown as any[][])[0].map((r: any) => ({
+  return rows.map(r => ({
     date: String(r.date).slice(0, 10),
     riskLevel: riskMap[Number(r.maxRiskOrder)] ?? "normal",
   }));
