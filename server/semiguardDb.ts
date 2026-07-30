@@ -1,5 +1,5 @@
 import { desc, eq, sql, count as drizzleCount } from "drizzle-orm";
-import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, type InsertAnomalyLog } from "../drizzle/schema";
+import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, type InsertAnomalyLog } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
@@ -141,3 +141,36 @@ export async function getRecentScores(limit = 50): Promise<{ timestamp: Date; sc
 }
 
 // 이상 탐지 통계
+// 센서별 임계값 기본값
+const SENSOR_THRESHOLD_DEFAULTS = {
+  currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,
+  tempCaution: 55.0, tempWarning: 70.0, tempDanger: 85.0,
+  vibCaution: 0.6, vibWarning: 0.8, vibDanger: 1.0,
+  noiseCaution: 65.0, noiseWarning: 75.0, noiseDanger: 85.0,
+};
+
+export type SensorThresholdValues = typeof SENSOR_THRESHOLD_DEFAULTS;
+
+// 센서별 임계값 불러오기
+export async function getSensorThresholds(): Promise<SensorThresholdValues> {
+  const db = await getDb();
+  if (!db) return SENSOR_THRESHOLD_DEFAULTS;
+  const rows = await db.select().from(sensorThresholds).where(eq(sensorThresholds.key, "default")).limit(1);
+  if (!rows[0]) return SENSOR_THRESHOLD_DEFAULTS;
+  const r = rows[0];
+  return {
+    currentCaution: r.currentCaution, currentWarning: r.currentWarning, currentDanger: r.currentDanger,
+    tempCaution: r.tempCaution, tempWarning: r.tempWarning, tempDanger: r.tempDanger,
+    vibCaution: r.vibCaution, vibWarning: r.vibWarning, vibDanger: r.vibDanger,
+    noiseCaution: r.noiseCaution, noiseWarning: r.noiseWarning, noiseDanger: r.noiseDanger,
+  };
+}
+
+// 센서별 임계값 저장 (upsert)
+export async function saveSensorThresholds(values: SensorThresholdValues): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(sensorThresholds)
+    .values({ key: "default", ...values })
+    .onDuplicateKeyUpdate({ set: values });
+}

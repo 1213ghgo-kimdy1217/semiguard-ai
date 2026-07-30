@@ -62,3 +62,28 @@ export const thresholdSettings = mysqlTable("threshold_settings", {
 });
 
 export type ThresholdSetting = typeof thresholdSettings.$inferSelect;
+
+// 센서별 임계값 설정 테이블 (싱글톤 row: key='default')
+export const sensorThresholds = mysqlTable("sensor_thresholds", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 32 }).notNull().unique(), // 'default'
+  // 전류 (A) 임계값
+  currentCaution: float("current_caution").notNull().default(7.0),
+  currentWarning: float("current_warning").notNull().default(9.0),
+  currentDanger: float("current_danger").notNull().default(11.0),
+  // 온도 (°C) 임계값
+  tempCaution: float("temp_caution").notNull().default(55.0),
+  tempWarning: float("temp_warning").notNull().default(70.0),
+  tempDanger: float("temp_danger").notNull().default(85.0),
+  // 진동 (g) 임계값
+  vibCaution: float("vib_caution").notNull().default(0.6),
+  vibWarning: float("vib_warning").notNull().default(0.8),
+  vibDanger: float("vib_danger").notNull().default(1.0),
+  // 소음 (dB) 임계값
+  noiseCaution: float("noise_caution").notNull().default(65.0),
+  noiseWarning: float("noise_warning").notNull().default(75.0),
+  noiseDanger: float("noise_danger").notNull().default(85.0),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SensorThreshold = typeof sensorThresholds.$inferSelect;

@@ -322,6 +322,7 @@ function ScoreLineChart({
   data: { timestamp: string; score: number; riskLevel: string }[];
   lang: "ko" | "en";
 }) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; score: number; time: string; risk: string } | null>(null);
   const W = 800, H = 200, PAD = { top: 16, right: 16, bottom: 32, left: 44 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
@@ -393,7 +394,20 @@ function ScoreLineChart({
       {data.map((d, i) => (
         <circle key={i} cx={xScale(i)} cy={yScale(d.score)} r={3}
           fill={RISK_COLOR_MAP[d.riskLevel] ?? "#38bdf8"}
-          stroke="oklch(0.10 0.01 240)" strokeWidth={1} />
+          stroke="oklch(0.10 0.01 240)" strokeWidth={1}
+          style={{ cursor: "crosshair" }}
+          onMouseEnter={() => {
+            const d2 = new Date(d.timestamp);
+            setTooltip({
+              x: xScale(i),
+              y: yScale(d.score),
+              score: d.score,
+              time: `${d2.getHours().toString().padStart(2,"0")}:${d2.getMinutes().toString().padStart(2,"0")}:${d2.getSeconds().toString().padStart(2,"0")}`,
+              risk: d.riskLevel,
+            });
+          }}
+          onMouseLeave={() => setTooltip(null)}
+        />
       ))}
       {/* X축 레이블 */}
       {xLabels.map(xl => (
@@ -401,6 +415,21 @@ function ScoreLineChart({
       ))}
       {/* X축 선 */}
       <line x1={PAD.left} y1={PAD.top + innerH} x2={PAD.left + innerW} y2={PAD.top + innerH} stroke="oklch(0.25 0.02 240)" strokeWidth={1} />
+      {/* 툴팁 */}
+      {tooltip && (() => {
+        const TW = 110, TH = 44;
+        const tx = tooltip.x + TW + 8 > W ? tooltip.x - TW - 8 : tooltip.x + 8;
+        const ty = tooltip.y - TH / 2 < PAD.top ? PAD.top : tooltip.y + TH / 2 > H - PAD.bottom ? H - PAD.bottom - TH : tooltip.y - TH / 2;
+        const riskColor = RISK_COLOR_MAP[tooltip.risk] ?? "#38bdf8";
+        return (
+          <g style={{ pointerEvents: "none" }}>
+            <rect x={tx} y={ty} width={TW} height={TH} rx={6} fill="oklch(0.15 0.02 240)" stroke="oklch(0.28 0.03 240)" strokeWidth={1} />
+            <text x={tx + 8} y={ty + 15} fontSize={10} fill={riskColor} fontWeight="600">{`점수: ${tooltip.score}`}</text>
+            <text x={tx + 8} y={ty + 30} fontSize={9} fill="oklch(0.55 0.01 240)">{tooltip.time}</text>
+            <text x={tx + 8} y={ty + 42} fontSize={9} fill={riskColor} opacity={0.8}>{tooltip.risk}</text>
+          </g>
+        );
+      })()}
     </svg>
   );
 }
@@ -636,6 +665,54 @@ export default function Dashboard() {
   useEffect(() => {
     trackVisit.mutate();
   }, []);
+
+  // DB에서 센서 임계값 불러오기 (초기 1회)
+  useEffect(() => {
+    if (getSensorThresholdsQuery.data) {
+      setSensorThresh(getSensorThresholdsQuery.data);
+    }
+  }, [getSensorThresholdsQuery.data]);
+
+  // 데모 자동 실행 useEffect
+  useEffect(() => {
+    if (demoRunning) {
+      const modes = ["normal", "caution", "warning", "danger"] as const;
+      let step = 0;
+      demoIntervalRef.current = setInterval(async () => {
+        const mode = modes[step % modes.length];
+        step++;
+        try {
+          let result;
+          if (mode === "normal") result = await injectNormal.mutateAsync();
+          else if (mode === "caution") result = await injectCaution.mutateAsync();
+          else if (mode === "warning") result = await injectWarning.mutateAsync();
+          else result = await injectAnomaly.mutateAsync();
+          setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
+          setCurrent(result);
+          setChartData(prev => [...prev, { ...result.sensorData, label: `D${step}` }].slice(-MAX_CHART_POINTS));
+          if (result.riskLevel === "danger") {
+            setRelayTripped(true);
+            setDangerAlert(true);
+            playAlert();
+            setTimeout(() => setRelayTripped(false), 2000);
+          }
+          await utils.semiguard.getStats.invalidate();
+          await utils.semiguard.getLogs.invalidate();
+        } catch (_) {}
+      }, 3000);
+    } else {
+      if (demoIntervalRef.current) {
+        clearInterval(demoIntervalRef.current);
+        demoIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (demoIntervalRef.current) {
+        clearInterval(demoIntervalRef.current);
+        demoIntervalRef.current = null;
+      }
+    };
+  }, [demoRunning]);
 
   // 자동 폴링 (4초마다)
   useEffect(() => {
@@ -916,6 +993,22 @@ export default function Dashboard() {
             }}>
             {muted ? "🔕" : "🔔"}
           </button>
+          {/* 데모 자동 실행 토글 */}
+          <button
+            onClick={() => setDemoRunning(r => !r)}
+            title={demoRunning ? (lang === "ko" ? "데모 중지" : "Stop Demo") : (lang === "ko" ? "데모 자동 실행" : "Auto Demo")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95"
+            style={{
+              borderColor: demoRunning ? "oklch(0.65 0.20 30 / 0.6)" : "oklch(0.35 0.01 240)",
+              color: demoRunning ? "oklch(0.75 0.20 30)" : "oklch(0.50 0.01 240)",
+              background: demoRunning ? "oklch(0.65 0.20 30 / 0.12)" : "oklch(0.13 0.015 240)",
+            }}>
+            {demoRunning ? (
+              <><span className="inline-block w-2 h-2 rounded-sm" style={{ background: "oklch(0.75 0.20 30)", animation: "pulse 1s ease-in-out infinite" }} /> {lang === "ko" ? "데모 중" : "Demo ON"}</>
+            ) : (
+              <><span>▶</span> {lang === "ko" ? "데모" : "Demo"}</>
+            )}
+          </button>
         </div>
       </header>
 
@@ -1081,7 +1174,92 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* ── 왼쪽: 센서 카드 ── */}
+              {/* ── 센서별 임계값 설정 패널 ── */}
+              <div className="col-span-12 mb-2">
+                <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
+                  <button
+                    onClick={() => setShowSensorPanel(p => !p)}
+                    className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:opacity-80"
+                    style={{ background: "oklch(0.13 0.015 240)" }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🔬</span>
+                      <span className="text-xs font-semibold">{lang === "ko" ? "센서별 임계값 설정" : "Per-Sensor Threshold Settings"}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{showSensorPanel ? "▲" : "▼"}</span>
+                  </button>
+                  {showSensorPanel && (
+                    <div className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5"
+                      style={{ background: "oklch(0.115 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+                      {/* 전류 */}
+                      {[
+                        { key: "current" as const, label: lang === "ko" ? "전류 (A)" : "Current (A)", color: "#38bdf8", step: 0.1,
+                          caution: sensorThresh.currentCaution, warning: sensorThresh.currentWarning, danger: sensorThresh.currentDanger,
+                          setCaution: (v: number) => { const n = { ...sensorThresh, currentCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          setWarning: (v: number) => { const n = { ...sensorThresh, currentWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          setDanger:  (v: number) => { const n = { ...sensorThresh, currentDanger: v };  setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          min: 5, max: 20 },
+                        { key: "temp" as const, label: lang === "ko" ? "온도 (°C)" : "Temperature (°C)", color: "#fb923c", step: 1,
+                          caution: sensorThresh.tempCaution, warning: sensorThresh.tempWarning, danger: sensorThresh.tempDanger,
+                          setCaution: (v: number) => { const n = { ...sensorThresh, tempCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          setWarning: (v: number) => { const n = { ...sensorThresh, tempWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          setDanger:  (v: number) => { const n = { ...sensorThresh, tempDanger: v };  setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          min: 40, max: 120 },
+                        { key: "vib" as const, label: lang === "ko" ? "진동 (mm/s)" : "Vibration (mm/s)", color: "#a78bfa", step: 0.05,
+                          caution: sensorThresh.vibCaution, warning: sensorThresh.vibWarning, danger: sensorThresh.vibDanger,
+                          setCaution: (v: number) => { const n = { ...sensorThresh, vibCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          setWarning: (v: number) => { const n = { ...sensorThresh, vibWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          setDanger:  (v: number) => { const n = { ...sensorThresh, vibDanger: v };  setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          min: 0.3, max: 2.0 },
+                        { key: "noise" as const, label: lang === "ko" ? "소음 (dB)" : "Noise (dB)", color: "#34d399", step: 1,
+                          caution: sensorThresh.noiseCaution, warning: sensorThresh.noiseWarning, danger: sensorThresh.noiseDanger,
+                          setCaution: (v: number) => { const n = { ...sensorThresh, noiseCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          setWarning: (v: number) => { const n = { ...sensorThresh, noiseWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          setDanger:  (v: number) => { const n = { ...sensorThresh, noiseDanger: v };  setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
+                          min: 50, max: 100 },
+                      ].map(s => (
+                        <div key={s.key} className="flex flex-col gap-3 p-3 rounded-lg border" style={{ borderColor: `${s.color}30`, background: `${s.color}08` }}>
+                          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: s.color }}>{s.label}</p>
+                          {[
+                            { label: lang === "ko" ? "주의" : "Caution", val: s.caution, set: s.setCaution, color: "#eab308" },
+                            { label: lang === "ko" ? "경고" : "Warning", val: s.warning, set: s.setWarning, color: "#f97316" },
+                            { label: lang === "ko" ? "위험" : "Danger",  val: s.danger,  set: s.setDanger,  color: "#ef4444" },
+                          ].map(row => (
+                            <div key={row.label} className="flex flex-col gap-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-semibold" style={{ color: row.color }}>{row.label}</span>
+                                <span className="text-[9px] font-mono" style={{ color: row.color }}>{row.val.toFixed(s.step < 1 ? 2 : 0)}</span>
+                              </div>
+                              <input type="range" min={s.min} max={s.max} step={s.step} value={row.val}
+                                className="w-full h-1 rounded-full appearance-none cursor-pointer"
+                                style={{ accentColor: row.color }}
+                                onChange={e => row.set(Number(e.target.value))} />
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                      <div className="col-span-1 md:col-span-2 xl:col-span-4 flex justify-end">
+                        <button
+                          onClick={() => {
+                            const def = {
+                              currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,
+                              tempCaution: 55.0, tempWarning: 70.0, tempDanger: 85.0,
+                              vibCaution: 0.6, vibWarning: 0.8, vibDanger: 1.0,
+                              noiseCaution: 65.0, noiseWarning: 75.0, noiseDanger: 85.0,
+                            };
+                            setSensorThresh(def);
+                            saveSensorThresholdsMutation.mutate(def);
+                          }}
+                          className="text-[10px] px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 active:scale-95"
+                          style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
+                          {lang === "ko" ? "기본값으로 초기화" : "Reset to Default"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── 왼쪽: 센서 카드 (재배치) ── */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
                 {[
                   { label: t.current,     value: sensorData?.current     ?? 5.0,  unit: t.unitA,   color: "#38bdf8", icon: "⚡" },
@@ -1243,12 +1421,10 @@ export default function Dashboard() {
                   setActiveTab("log");
                 }}
               />
-            </div>
+        </div>
           </>
         ) : (
-          /* ── 이상 이력 로그 탭 ── */
-
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>{/* 이상 이력 로그 탭 */}
           {/* 탭 헤더 - 2행 구조 */}
           <div className="px-5 py-3 border-b flex flex-col gap-2"
             style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
@@ -1428,3 +1604,20 @@ export default function Dashboard() {
     </div>
   );
 }
+
+  // ─── 센서별 임계값 state ─────────────────────────────────────────────────────
+  const [sensorThresh, setSensorThresh] = useState({
+    currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,
+    tempCaution: 55.0, tempWarning: 70.0, tempDanger: 85.0,
+    vibCaution: 0.6, vibWarning: 0.8, vibDanger: 1.0,
+    noiseCaution: 65.0, noiseWarning: 75.0, noiseDanger: 85.0,
+  });
+  const [showSensorPanel, setShowSensorPanel] = useState(false);
+
+  // ─── 데모 자동 실행 state ────────────────────────────────────────────────────
+  const [demoRunning, setDemoRunning] = useState(false);
+  const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ─── 센서별 임계값 tRPC 훅 ──────────────────────────────────────────────────
+  const getSensorThresholdsQuery = trpc.semiguard.getSensorThresholds.useQuery(undefined, { staleTime: Infinity });
+  const saveSensorThresholdsMutation = trpc.semiguard.saveSensorThresholds.useMutation();

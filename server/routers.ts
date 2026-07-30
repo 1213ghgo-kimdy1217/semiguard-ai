@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds } from "./semiguardDb";
 import type { RiskLevel } from "../shared/semiguard";
 
 export const appRouter = router({
@@ -174,6 +174,20 @@ export const appRouter = router({
           score: r.score,
           riskLevel: r.riskLevel,
         }));
+      }),
+    getSensorThresholds: publicProcedure.query(async () => {
+      return await getSensorThresholds();
+    }),
+    saveSensorThresholds: publicProcedure
+      .input(z.object({
+        currentCaution: z.number(), currentWarning: z.number(), currentDanger: z.number(),
+        tempCaution: z.number(), tempWarning: z.number(), tempDanger: z.number(),
+        vibCaution: z.number(), vibWarning: z.number(), vibDanger: z.number(),
+        noiseCaution: z.number(), noiseWarning: z.number(), noiseDanger: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await saveSensorThresholds(input);
+        return { success: true };
       }),
   }),
 });
