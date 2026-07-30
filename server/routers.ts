@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores } from "./semiguardDb";
 import type { RiskLevel } from "../shared/semiguard";
 
 export const appRouter = router({
@@ -149,6 +149,32 @@ export const appRouter = router({
     getDailyMaxRisk: publicProcedure.query(async () => {
       return getDailyMaxRisk();
     }),
+
+    getThresholds: publicProcedure.query(async () => {
+      return getThresholds();
+    }),
+
+    saveThresholds: publicProcedure
+      .input(z.object({
+        normal: z.number().int().min(1).max(98),
+        caution: z.number().int().min(2).max(98),
+        warning: z.number().int().min(3).max(98),
+      }))
+      .mutation(async ({ input }) => {
+        await saveThresholds(input.normal, input.caution, input.warning);
+        return { success: true };
+      }),
+
+    getRecentScores: publicProcedure
+      .input(z.object({ limit: z.number().optional().default(50) }))
+      .query(async ({ input }) => {
+        const rows = await getRecentScores(input.limit);
+        return rows.map(r => ({
+          timestamp: r.timestamp.toISOString(),
+          score: r.score,
+          riskLevel: r.riskLevel,
+        }));
+      }),
   }),
 });
 

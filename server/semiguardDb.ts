@@ -1,5 +1,5 @@
 import { desc, eq, sql, count as drizzleCount } from "drizzle-orm";
-import { anomalyLogs, visitorStats, sampleStats, type InsertAnomalyLog } from "../drizzle/schema";
+import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, type InsertAnomalyLog } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
@@ -110,3 +110,34 @@ export async function getAnomalyStats(): Promise<{ total: number; dangerCount: n
     anomalyCount: Number(anomalyRows[0]?.cnt ?? 0),
   };
 }
+// 위험도 임계값 불러오기 (없으면 기본값 반환)
+export async function getThresholds(): Promise<{ normal: number; caution: number; warning: number }> {
+  const db = await getDb();
+  if (!db) return { normal: 29, caution: 49, warning: 69 };
+  const rows = await db.select().from(thresholdSettings).where(eq(thresholdSettings.key, "default")).limit(1);
+  if (!rows[0]) return { normal: 29, caution: 49, warning: 69 };
+  return { normal: rows[0].normalMax, caution: rows[0].cautionMax, warning: rows[0].warningMax };
+}
+
+// 위험도 임계값 저장 (upsert)
+export async function saveThresholds(normal: number, caution: number, warning: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(thresholdSettings)
+    .values({ key: "default", normalMax: normal, cautionMax: caution, warningMax: warning })
+    .onDuplicateKeyUpdate({ set: { normalMax: normal, cautionMax: caution, warningMax: warning } });
+}
+
+// 위험도 추이 (최근 N개 점수, 시간 오름차순)
+export async function getRecentScores(limit = 50): Promise<{ timestamp: Date; score: number; riskLevel: string }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({
+    timestamp: anomalyLogs.timestamp,
+    score: anomalyLogs.anomalyScore,
+    riskLevel: anomalyLogs.riskLevel,
+  }).from(anomalyLogs).orderBy(desc(anomalyLogs.timestamp)).limit(limit);
+  return rows.reverse(); // 시간 오름차순으로 반환
+}
+
+// 이상 탐지 통계

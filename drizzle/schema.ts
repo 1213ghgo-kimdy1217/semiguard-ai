@@ -50,3 +50,15 @@ export const sampleStats = mysqlTable("sample_stats", {
 });
 
 export type SampleStat = typeof sampleStats.$inferSelect;
+
+// 위험도 임계값 설정 테이블 (싱글톤 row: key='default')
+export const thresholdSettings = mysqlTable("threshold_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 32 }).notNull().unique(), // 'default'
+  normalMax: int("normal_max").notNull().default(29),
+  cautionMax: int("caution_max").notNull().default(49),
+  warningMax: int("warning_max").notNull().default(69),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ThresholdSetting = typeof thresholdSettings.$inferSelect;

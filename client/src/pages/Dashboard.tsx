@@ -310,6 +310,101 @@ function ImpactCard({ label, value, unit, icon, color }: {
 // ─── 월간 히트맵 캘린더 ──────────────────────────────────────────────────────
 const RISK_ORDER: Record<RiskLevel, number> = { normal: 1, caution: 2, warning: 3, danger: 4 };
 
+// ─── 위험도 점수 라인 차트 ────────────────────────────────────────────────────
+const RISK_COLOR_MAP: Record<string, string> = {
+  normal: "#22c55e", caution: "#eab308", warning: "#f97316", danger: "#ef4444",
+};
+
+function ScoreLineChart({
+  data,
+  lang,
+}: {
+  data: { timestamp: string; score: number; riskLevel: string }[];
+  lang: "ko" | "en";
+}) {
+  const W = 800, H = 200, PAD = { top: 16, right: 16, bottom: 32, left: 44 };
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+
+  if (data.length < 2) {
+    return (
+      <div className="flex items-center justify-center h-[200px] text-xs text-muted-foreground">
+        {lang === "ko" ? "데이터가 쌓이면 차트가 표시됩니다." : "Chart will appear as data accumulates."}
+      </div>
+    );
+  }
+
+  const minScore = 0, maxScore = 100;
+  const xScale = (i: number) => PAD.left + (i / (data.length - 1)) * innerW;
+  const yScale = (v: number) => PAD.top + innerH - ((v - minScore) / (maxScore - minScore)) * innerH;
+
+  // 위험 단계별 배경 밴드
+  const bands = [
+    { y1: yScale(70), y2: yScale(100), color: "rgba(239,68,68,0.06)" },
+    { y1: yScale(50), y2: yScale(70),  color: "rgba(249,115,22,0.06)" },
+    { y1: yScale(30), y2: yScale(50),  color: "rgba(234,179,8,0.06)" },
+    { y1: yScale(0),  y2: yScale(30),  color: "rgba(34,197,94,0.06)" },
+  ];
+
+  // 임계선
+  const threshLines = [
+    { y: yScale(70), color: "#ef4444", label: "70" },
+    { y: yScale(50), color: "#f97316", label: "50" },
+    { y: yScale(30), color: "#eab308", label: "30" },
+  ];
+
+  // 폴리라인 포인트
+  const points = data.map((d, i) => `${xScale(i)},${yScale(d.score)}`).join(" ");
+
+  // X축 레이블 (최대 6개)
+  const xLabels: { i: number; label: string }[] = [];
+  const step = Math.max(1, Math.floor((data.length - 1) / 5));
+  for (let i = 0; i < data.length; i += step) {
+    const d = new Date(data[i].timestamp);
+    xLabels.push({ i, label: `${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}` });
+  }
+  if (xLabels[xLabels.length - 1]?.i !== data.length - 1) {
+    const last = data[data.length - 1];
+    const d = new Date(last.timestamp);
+    xLabels.push({ i: data.length - 1, label: `${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}` });
+  }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 200 }}>
+      {/* 배경 밴드 */}
+      {bands.map((b, i) => (
+        <rect key={i} x={PAD.left} y={b.y1} width={innerW} height={Math.abs(b.y2 - b.y1)} fill={b.color} />
+      ))}
+      {/* 임계선 */}
+      {threshLines.map(tl => (
+        <g key={tl.label}>
+          <line x1={PAD.left} y1={tl.y} x2={PAD.left + innerW} y2={tl.y}
+            stroke={tl.color} strokeWidth={0.8} strokeDasharray="4 3" opacity={0.6} />
+          <text x={PAD.left - 4} y={tl.y + 4} textAnchor="end" fontSize={9} fill={tl.color} opacity={0.8}>{tl.label}</text>
+        </g>
+      ))}
+      {/* Y축 레이블 */}
+      {[0, 50, 100].map(v => (
+        <text key={v} x={PAD.left - 4} y={yScale(v) + 4} textAnchor="end" fontSize={9} fill="oklch(0.45 0.01 240)">{v}</text>
+      ))}
+      {/* 라인 */}
+      <polyline points={points} fill="none" stroke="oklch(0.65 0.18 200)" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />
+      {/* 점 */}
+      {data.map((d, i) => (
+        <circle key={i} cx={xScale(i)} cy={yScale(d.score)} r={3}
+          fill={RISK_COLOR_MAP[d.riskLevel] ?? "#38bdf8"}
+          stroke="oklch(0.10 0.01 240)" strokeWidth={1} />
+      ))}
+      {/* X축 레이블 */}
+      {xLabels.map(xl => (
+        <text key={xl.i} x={xScale(xl.i)} y={H - 4} textAnchor="middle" fontSize={9} fill="oklch(0.45 0.01 240)">{xl.label}</text>
+      ))}
+      {/* X축 선 */}
+      <line x1={PAD.left} y1={PAD.top + innerH} x2={PAD.left + innerW} y2={PAD.top + innerH} stroke="oklch(0.25 0.02 240)" strokeWidth={1} />
+    </svg>
+  );
+}
+
 function MonthlyHeatmap({
   dailyData,
   lang,
@@ -450,6 +545,15 @@ export default function Dashboard() {
 
   // ─── 위험도 임계값 state (클라이언트 전용) ───────────────────────────────────
   const [thresholds, setThresholds] = useState({ normal: 29, caution: 49, warning: 69 });
+  const saveThresholdsMutation = trpc.semiguard.saveThresholds.useMutation();
+  const getThresholdsQuery = trpc.semiguard.getThresholds.useQuery(undefined, { staleTime: Infinity });
+
+  // DB에서 임계값 불러오기 (초기 1회)
+  useEffect(() => {
+    if (getThresholdsQuery.data) {
+      setThresholds(getThresholdsQuery.data);
+    }
+  }, [getThresholdsQuery.data]);
   const [showThresholdPanel, setShowThresholdPanel] = useState(false);
 
   // 임계값 기반 riskLevel 판정 함수 (클라이언트 로컬 analyzeData에 사용)
@@ -904,9 +1008,16 @@ export default function Dashboard() {
                           <span className="text-xs font-mono font-bold" style={{ color: "#22c55e" }}>{thresholds.normal}</span>
                         </div>
                         <input type="range" min={10} max={thresholds.caution - 1} value={thresholds.normal}
-                          onChange={e => setThresholds(p => ({ ...p, normal: Number(e.target.value) }))}
                           className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                          style={{ accentColor: "#22c55e" }} />
+                          style={{ accentColor: "#22c55e" }}
+                          onChange={e => {
+                            const v = Number(e.target.value);
+                            setThresholds(p => {
+                              const n = { ...p, normal: v };
+                              saveThresholdsMutation.mutate(n);
+                              return n;
+                            });
+                          }} />
                         <p className="text-[9px] text-muted-foreground">{lang === "ko" ? "이 점수 이하 → 정상" : "Score ≤ this → Normal"}</p>
                       </div>
                       {/* 주의 임계값 */}
@@ -918,9 +1029,16 @@ export default function Dashboard() {
                           <span className="text-xs font-mono font-bold" style={{ color: "#eab308" }}>{thresholds.caution}</span>
                         </div>
                         <input type="range" min={thresholds.normal + 1} max={thresholds.warning - 1} value={thresholds.caution}
-                          onChange={e => setThresholds(p => ({ ...p, caution: Number(e.target.value) }))}
                           className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                          style={{ accentColor: "#eab308" }} />
+                          style={{ accentColor: "#eab308" }}
+                          onChange={e => {
+                            const v = Number(e.target.value);
+                            setThresholds(p => {
+                              const n = { ...p, caution: v };
+                              saveThresholdsMutation.mutate(n);
+                              return n;
+                            });
+                          }} />
                         <p className="text-[9px] text-muted-foreground">{lang === "ko" ? "이 점수 이하 → 주의" : "Score ≤ this → Caution"}</p>
                       </div>
                       {/* 경고 임계값 */}
@@ -932,15 +1050,26 @@ export default function Dashboard() {
                           <span className="text-xs font-mono font-bold" style={{ color: "#f97316" }}>{thresholds.warning}</span>
                         </div>
                         <input type="range" min={thresholds.caution + 1} max={89} value={thresholds.warning}
-                          onChange={e => setThresholds(p => ({ ...p, warning: Number(e.target.value) }))}
                           className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                          style={{ accentColor: "#f97316" }} />
+                          style={{ accentColor: "#f97316" }}
+                          onChange={e => {
+                            const v = Number(e.target.value);
+                            setThresholds(p => {
+                              const n = { ...p, warning: v };
+                              saveThresholdsMutation.mutate(n);
+                              return n;
+                            });
+                          }} />
                         <p className="text-[9px] text-muted-foreground">{lang === "ko" ? `이 점수 초과 → 위험 (현재 >${thresholds.warning})` : `Score > this → Danger (now >${thresholds.warning})`}</p>
                       </div>
                       {/* 초기화 버튼 */}
                       <div className="col-span-1 md:col-span-3 flex justify-end">
                         <button
-                          onClick={() => setThresholds({ normal: 29, caution: 49, warning: 69 })}
+                          onClick={() => {
+                            const def = { normal: 29, caution: 49, warning: 69 };
+                            setThresholds(def);
+                            saveThresholdsMutation.mutate(def);
+                          }}
                           className="text-[10px] px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 active:scale-95"
                           style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
                           {lang === "ko" ? "기본값으로 초기화" : "Reset to Default"}
@@ -1085,6 +1214,23 @@ export default function Dashboard() {
             </div>
             {/* ── 월간 히트맵 캘린더 ── */}
             <div className="mt-4">
+              {/* ── 위험도 점수 라인 차트 ── */}
+              <div className="rounded-xl border p-4 mb-4" style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+                    {lang === "ko" ? "위험도 점수 추이 (최근 50개)" : "Risk Score Trend (Last 50)"}
+                  </p>
+                  <div className="flex gap-3 text-[9px]">
+                    {(["normal","caution","warning","danger"] as const).map(r => (
+                      <span key={r} className="flex items-center gap-1">
+                        <span className="inline-block w-2 h-2 rounded-full" style={{ background: RISK_COLOR_MAP[r] }} />
+                        <span className="text-muted-foreground capitalize">{r}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <ScoreLineChart data={getRecentScoresQuery.data ?? []} lang={lang} />
+              </div>
               <MonthlyHeatmap
                 dailyData={getDailyMaxRisk.data ?? []}
                 lang={lang}
@@ -1281,3 +1427,7 @@ export default function Dashboard() {
     </div>
   );
 }
+  const getRecentScoresQuery = trpc.semiguard.getRecentScores.useQuery(
+    { limit: 50 },
+    { refetchInterval: 5000 }
+  );
