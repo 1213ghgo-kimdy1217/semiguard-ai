@@ -571,6 +571,21 @@ function MonthlyHeatmap({
 export default function Dashboard() {
   const [lang, setLang] = useState<Lang>("ko");
   const t = translations[lang] as Translation;
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try { return localStorage.getItem("semiguard_theme") !== "light"; } catch { return true; }
+  });
+  // ─── 테마 색상 팔레트 ─────────────────────────────────────────────────────
+  const th = {
+    bg:        isDark ? "oklch(0.10 0.01 240)"   : "oklch(0.97 0.005 240)",
+    bgCard:    isDark ? "oklch(0.13 0.015 240)"  : "oklch(0.99 0.003 240)",
+    bgCard2:   isDark ? "oklch(0.115 0.015 240)" : "oklch(0.96 0.005 240)",
+    border:    isDark ? "oklch(0.20 0.02 240)"   : "oklch(0.85 0.01 240)",
+    border2:   isDark ? "oklch(0.25 0.02 240)"   : "oklch(0.80 0.01 240)",
+    text:      isDark ? "oklch(0.90 0.01 240)"   : "oklch(0.15 0.01 240)",
+    textMuted: isDark ? "oklch(0.50 0.01 240)"   : "oklch(0.45 0.01 240)",
+    accent:    "oklch(0.65 0.18 200)",
+    header:    isDark ? "oklch(0.115 0.015 240)" : "oklch(0.98 0.005 240)",
+  };
 
   // ─── 위험도 임계값 state (클라이언트 전용) ───────────────────────────────────
   const [thresholds, setThresholds] = useState({ normal: 29, caution: 49, warning: 69 });
@@ -957,7 +972,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: "oklch(0.10 0.01 240)" }}>
+    <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
       {/* ── 위험 화면 플래시 효과 ── */}
       {dangerFlash && (
         <div
@@ -1011,7 +1026,7 @@ export default function Dashboard() {
 
       {/* ── 헤더 ── */}
       <header className="sticky top-0 z-50 border-b flex items-center justify-between px-5 py-3"
-        style={{ background: "oklch(0.115 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+        style={{ background: th.header, borderColor: th.border, transition: "background 0.3s ease" }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl font-bold"
             style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.20 220))" }}>
@@ -1031,6 +1046,22 @@ export default function Dashboard() {
             className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-200 hover:opacity-80 active:scale-95"
             style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
             {lang === "ko" ? "EN" : "한국어"}
+          </button>
+          {/* 다크/라이트 모드 전환 */}
+          <button
+            onClick={() => setIsDark(d => {
+              const next = !d;
+              try { localStorage.setItem("semiguard_theme", next ? "dark" : "light"); } catch {}
+              return next;
+            })}
+            title={isDark ? (lang === "ko" ? "라이트 모드" : "Light Mode") : (lang === "ko" ? "다크 모드" : "Dark Mode")}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base"
+            style={{
+              borderColor: isDark ? "oklch(0.35 0.01 240)" : "oklch(0.75 0.08 80 / 0.5)",
+              color: isDark ? "oklch(0.65 0.15 60)" : "oklch(0.40 0.08 80)",
+              background: isDark ? "oklch(0.15 0.01 240)" : "oklch(0.92 0.04 80 / 0.3)",
+            }}>
+            {isDark ? "☀️" : "🌙"}
           </button>
           {/* 음소거 토글 */}
           <button
@@ -1525,7 +1556,7 @@ export default function Dashboard() {
                 {/* 절감 비용 리셋 버튼 */}
                 <button onClick={handleResetCost} disabled={resetCostMutation.isPending}
                   className="w-full py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
-                  style={{ background: "rgba(255,255,255,0.03)", borderColor: "oklch(0.25 0.02 240)", color: "#6b7280" }}>
+                  style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", borderColor: th.border2, color: th.textMuted }}>
                   {resetCostMutation.isPending
                     ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#6b7280" /><span>{t.processing}</span></span>
                     : `↺ ${t.resetCost}`}
@@ -1565,10 +1596,10 @@ export default function Dashboard() {
         </div>
           </>
         ) : (
-        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>{/* 이상 이력 로그 탭 */}
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: th.border }}>{/* 이상 이력 로그 탭 */}
           {/* 탭 헤더 - 2행 구조 */}
           <div className="px-5 py-3 border-b flex flex-col gap-2"
-            style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+            style={{ background: th.bgCard, borderColor: th.border }}>
           {/* 1행: 제목 + CSV/클리어 버튼 */}
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">{t.anomalyLog}</p>
