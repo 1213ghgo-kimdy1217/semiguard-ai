@@ -646,13 +646,15 @@ export default function Dashboard() {
   const [sensorThresh, setSensorThresh] = useState({
     currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,
     tempCaution: 55.0, tempWarning: 70.0, tempDanger: 85.0,
-    vibCaution: 0.6, vibWarning: 0.8, vibDanger: 1.0,
+    vibCaution: 2.3, vibWarning: 2.6, vibDanger: 3.0,
     noiseCaution: 65.0, noiseWarning: 75.0, noiseDanger: 85.0,
   });
   const [showSensorPanel, setShowSensorPanel] = useState(false);
 
   // ─── 데모 자동 실행 state ────────────────────────────────────────────────────
   const [demoRunning, setDemoRunning] = useState(false);
+  const [demoSpeed, setDemoSpeed] = useState(3); // 1~10초
+  const [pdfExporting, setPdfExporting] = useState(false);
   const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ─── 센서별 임계값 tRPC 훅 ──────────────────────────────────────────────────
@@ -716,7 +718,7 @@ export default function Dashboard() {
           await utils.semiguard.getStats.invalidate();
           await utils.semiguard.getLogs.invalidate();
         } catch (_) {}
-      }, 3000);
+      }, demoSpeed * 1000);
     } else {
       if (demoIntervalRef.current) {
         clearInterval(demoIntervalRef.current);
@@ -729,7 +731,7 @@ export default function Dashboard() {
         demoIntervalRef.current = null;
       }
     };
-  }, [demoRunning]);
+  }, [demoRunning, demoSpeed]);
 
   // 자동 폴링 (4초마다)
   useEffect(() => {
@@ -933,7 +935,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "oklch(0.10 0.01 240)" }}>
+    <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: "oklch(0.10 0.01 240)" }}>
       {/* ── 위험 상태 팝업 ── */}
       {dangerAlert && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center"
@@ -1025,6 +1027,47 @@ export default function Dashboard() {
             ) : (
               <><span>▶</span> {lang === "ko" ? "데모" : "Demo"}</>
             )}
+          </button>
+          {/* 데모 속도 슬라이더 */}
+          {demoRunning && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs"
+              style={{ borderColor: "oklch(0.35 0.01 240)", background: "oklch(0.13 0.015 240)" }}>
+              <span style={{ color: "oklch(0.50 0.01 240)" }}>{lang === "ko" ? "속도" : "Speed"}</span>
+              <input
+                type="range" min={1} max={10} step={1}
+                value={demoSpeed}
+                onChange={e => setDemoSpeed(Number(e.target.value))}
+                className="w-20 h-1 accent-orange-400 cursor-pointer"
+              />
+              <span style={{ color: "oklch(0.65 0.18 200)", fontWeight: 700 }}>{demoSpeed}s</span>
+            </div>
+          )}
+          {/* PDF 내보내기 버튼 */}
+          <button
+            id="btn-export-pdf"
+            disabled={pdfExporting}
+            onClick={async () => {
+              const el = document.getElementById('dashboard-root');
+              if (!el) { toast.error(lang === "ko" ? "대시보드 요소를 찾을 수 없습니다." : "Dashboard element not found."); return; }
+              setPdfExporting(true);
+              try {
+                const { default: html2canvas } = await import('html2canvas');
+                const { default: jsPDF } = await import('jspdf');
+                const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, backgroundColor: '#0d1117' });
+                const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
+                pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, canvas.width, canvas.height);
+                pdf.save(`semiguard_report_${new Date().toISOString().slice(0,10)}.pdf`);
+                toast.success(lang === "ko" ? "PDF가 저장되었습니다." : "PDF saved successfully.");
+              } catch (e) {
+                toast.error(lang === "ko" ? "PDF 내보내기 실패" : "PDF export failed");
+              } finally {
+                setPdfExporting(false);
+              }
+            }}
+            title={lang === "ko" ? "PDF 내보내기" : "Export PDF"}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
+            style={{ borderColor: "oklch(0.35 0.01 240)", color: "oklch(0.65 0.18 200)", background: "oklch(0.13 0.015 240)" }}>
+            {pdfExporting ? <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid oklch(0.65 0.18 200)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "📄"} {lang === "ko" ? "PDF" : "PDF"}
           </button>
         </div>
       </header>
@@ -1226,7 +1269,7 @@ export default function Dashboard() {
                           setCaution: (v: number) => { const n = { ...sensorThresh, vibCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setWarning: (v: number) => { const n = { ...sensorThresh, vibWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setDanger:  (v: number) => { const n = { ...sensorThresh, vibDanger: v };  setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
-                          min: 0.3, max: 2.0 },
+                          min: 1.5, max: 5.0 },
                         { key: "noise" as const, label: lang === "ko" ? "소음 (dB)" : "Noise (dB)", color: "#34d399", step: 1,
                           caution: sensorThresh.noiseCaution, warning: sensorThresh.noiseWarning, danger: sensorThresh.noiseDanger,
                           setCaution: (v: number) => { const n = { ...sensorThresh, noiseCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
@@ -1260,7 +1303,7 @@ export default function Dashboard() {
                             const def = {
                               currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,
                               tempCaution: 55.0, tempWarning: 70.0, tempDanger: 85.0,
-                              vibCaution: 0.6, vibWarning: 0.8, vibDanger: 1.0,
+                              vibCaution: 2.3, vibWarning: 2.6, vibDanger: 3.0,
                               noiseCaution: 65.0, noiseWarning: 75.0, noiseDanger: 85.0,
                             };
                             setSensorThresh(def);
@@ -1279,13 +1322,27 @@ export default function Dashboard() {
               {/* ── 왼쪽: 센서 카드 (재배치) ── */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
                 {[
-                  { label: t.current,     value: sensorData?.current     ?? 5.0,  unit: t.unitA,   color: "#38bdf8", icon: "⚡" },
-                  { label: t.temperature, value: sensorData?.temperature ?? 45.0, unit: t.unitC,   color: "#fb923c", icon: "🌡" },
-                  { label: t.vibration,   value: sensorData?.vibration   ?? 2.0,  unit: t.unitMms, color: "#a78bfa", icon: "📳" },
-                  { label: t.noise,       value: sensorData?.noise       ?? 55.0, unit: t.unitDb,  color: "#34d399", icon: "🔊" },
-                ].map(card => (
+                  { label: t.current,     value: sensorData?.current     ?? 5.0,  unit: t.unitA,   color: "#38bdf8", icon: "⚡", sensorKey: "current" },
+                  { label: t.temperature, value: sensorData?.temperature ?? 45.0, unit: t.unitC,   color: "#fb923c", icon: "🌡", sensorKey: "temp" },
+                  { label: t.vibration,   value: sensorData?.vibration   ?? 2.0,  unit: t.unitMms, color: "#a78bfa", icon: "📳", sensorKey: "vib" },
+                  { label: t.noise,       value: sensorData?.noise       ?? 55.0, unit: t.unitDb,  color: "#34d399", icon: "🔊", sensorKey: "noise" },
+                ].map(card => {
+                  const alertLevel = (() => {
+                    const v = card.value;
+                    const k = card.sensorKey;
+                    const danger = sensorThresh[`${k}Danger` as keyof typeof sensorThresh];
+                    const warning = sensorThresh[`${k}Warning` as keyof typeof sensorThresh];
+                    const caution = sensorThresh[`${k}Caution` as keyof typeof sensorThresh];
+                    if (v >= danger) return "danger";
+                    if (v >= warning) return "warning";
+                    if (v >= caution) return "caution";
+                    return "normal";
+                  })();
+                  const blinkBorderColor = alertLevel === "danger" ? "#ef4444" : alertLevel === "warning" ? "#f97316" : alertLevel === "caution" ? "#eab308" : `${card.color}35`;
+                  const blinkAnim = alertLevel !== "normal" ? "sensorBlink 1s ease-in-out infinite" : "none";
+                  return (
                   <div key={card.label} className="rounded-xl p-4 border flex flex-col gap-2 transition-all duration-300"
-                    style={{ background: "rgba(255,255,255,0.025)", borderColor: `${card.color}35` }}>
+                    style={{ background: "rgba(255,255,255,0.025)", borderColor: blinkBorderColor, animation: blinkAnim, borderWidth: alertLevel !== "normal" ? "2px" : "1px" }}>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{card.label}</span>
                       <span className="text-base opacity-70">{card.icon}</span>
@@ -1299,7 +1356,8 @@ export default function Dashboard() {
                       <Sparkline data={scoreHistory} color={card.color} />
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* ── 가운데: 차트 ── */}
@@ -1616,6 +1674,10 @@ export default function Dashboard() {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
+        }
+        @keyframes sensorBlink {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); opacity: 1; }
+          50% { box-shadow: 0 0 12px 4px currentColor; opacity: 0.75; }
         }
       `}</style>
     </div>
