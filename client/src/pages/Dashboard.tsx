@@ -76,7 +76,7 @@ function getAudioCtx(): AudioContext | null {
   } catch (_) { return null; }
 }
 
-function playDangerAlertSound() {
+function playDangerAlertSound(volume = 0.35) {
   try {
     const ctx = getAudioCtx();
     if (!ctx) return;
@@ -89,7 +89,7 @@ function playDangerAlertSound() {
         gain.connect(ctx.destination);
         osc.type = "square";
         osc.frequency.setValueAtTime(freq, startTime);
-        gain.gain.setValueAtTime(0.35, startTime);
+        gain.gain.setValueAtTime(Math.max(0.001, volume), startTime);
         gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
         osc.start(startTime);
         osc.stop(startTime + duration);
@@ -606,8 +606,23 @@ export default function Dashboard() {
   const [showLanding, setShowLanding] = useState(true);
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dangerAlert, setDangerAlert] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const mutedRef = useRef(false); // stale closure 방지용 ref
+  const [muted, setMuted] = useState<boolean>(false);
+  const mutedRef = useRef<boolean>(false);
+  // localStorage에서 초기값 복원
+  useEffect(() => {
+    try {
+      const savedMuted = localStorage.getItem("semiguard_muted") === "true";
+      const savedVolume = parseFloat(localStorage.getItem("semiguard_volume") ?? "0.35");
+      setMuted(savedMuted);
+      mutedRef.current = savedMuted;
+      const vol = isNaN(savedVolume) ? 0.35 : Math.min(1, Math.max(0, savedVolume));
+      setVolume(vol);
+      volumeRef.current = vol;
+    } catch { /* localStorage 미지원 환경 무시 */ }
+  }, []);
+  const [volume, setVolume] = useState<number>(0.35);
+  const volumeRef = useRef<number>(0.35);
+  const [dangerFlash, setDangerFlash] = useState(false);
   const [logPage, setLogPage] = useState(1);
   const LOG_PAGE_SIZE = 10;
   const [scoreHistory, setScoreHistory] = useState<number[]>([10]);
@@ -615,7 +630,7 @@ export default function Dashboard() {
 
   // ─── 경고음 콜백 ─────────────────────────────────────────────────────────
   const playAlert = useCallback(() => {
-    if (!mutedRef.current) playDangerAlertSound();
+    if (!mutedRef.current) playDangerAlertSound(volumeRef.current);
   }, []); // mutedRef는 ref이므로 deps 불필요 — 항상 최신 muted 값 참조
 
   // 음소거 토글 시 재생 중인 소리 즉시 중단
@@ -713,6 +728,8 @@ export default function Dashboard() {
           if (result.riskLevel === "danger") {
             setRelayTripped(true);
             setDangerAlert(true);
+            setDangerFlash(true);
+            setTimeout(() => setDangerFlash(false), 600);
             playAlert();
             setTimeout(() => setRelayTripped(false), 2000);
           }
@@ -764,6 +781,8 @@ export default function Dashboard() {
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
         setDangerAlert(true);
+        setDangerFlash(true);
+        setTimeout(() => setDangerFlash(false), 600);
         playAlert();
         setTimeout(() => setRelayTripped(false), 2000);
       }
@@ -803,6 +822,8 @@ export default function Dashboard() {
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
         setDangerAlert(true);
+        setDangerFlash(true);
+        setTimeout(() => setDangerFlash(false), 600);
         playAlert();
         setTimeout(() => setRelayTripped(false), 2000);
       }
@@ -937,6 +958,16 @@ export default function Dashboard() {
 
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: "oklch(0.10 0.01 240)" }}>
+      {/* ── 위험 화면 플래시 효과 ── */}
+      {dangerFlash && (
+        <div
+          className="fixed inset-0 z-[1000] pointer-events-none"
+          style={{
+            background: "rgba(239, 68, 68, 0.35)",
+            animation: "dangerFlashAnim 0.6s ease-out forwards",
+          }}
+        />
+      )}
       {/* ── 위험 상태 팝업 ── */}
       {dangerAlert && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center"
@@ -1003,7 +1034,14 @@ export default function Dashboard() {
           </button>
           {/* 음소거 토글 */}
           <button
-            onClick={() => { setMuted(m => { mutedRef.current = !m; return !m; }); }}
+            onClick={() => {
+              setMuted(m => {
+                const next = !m;
+                mutedRef.current = next;
+                try { localStorage.setItem("semiguard_muted", String(next)); } catch {}
+                return next;
+              });
+            }}
             title={muted ? (lang === "ko" ? "소리 켜기" : "Unmute") : (lang === "ko" ? "소리 끄기" : "Mute")}
             className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base"
             style={{
@@ -1013,6 +1051,33 @@ export default function Dashboard() {
             }}>
             {muted ? "🔕" : "🔔"}
           </button>
+          {/* 볼륨 슬라이더 */}
+          {!muted && (
+            <div className="flex items-center gap-1.5" title={lang === "ko" ? "볼륨 조절" : "Volume"}>
+              <span style={{ fontSize: 11, color: "oklch(0.50 0.01 240)" }}>🔉</span>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={volume}
+                onChange={e => {
+                  const v = parseFloat(e.target.value);
+                  setVolume(v);
+                  volumeRef.current = v;
+                  try { localStorage.setItem("semiguard_volume", String(v)); } catch {}
+                }}
+                style={{
+                  width: 72,
+                  accentColor: "oklch(0.65 0.18 200)",
+                  cursor: "pointer",
+                }}
+              />
+              <span style={{ fontSize: 10, color: "oklch(0.50 0.01 240)", minWidth: 28, textAlign: "right" }}>
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+          )}
           {/* 데모 자동 실행 토글 */}
           <button
             onClick={() => setDemoRunning(r => !r)}
@@ -1679,6 +1744,12 @@ export default function Dashboard() {
         @keyframes sensorBlink {
           0%, 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); opacity: 1; }
           50% { box-shadow: 0 0 12px 4px currentColor; opacity: 0.75; }
+        }
+        @keyframes dangerFlashAnim {
+          0%   { opacity: 1; }
+          30%  { opacity: 0.8; }
+          60%  { opacity: 0.4; }
+          100% { opacity: 0; }
         }
       `}</style>
     </div>
