@@ -1148,52 +1148,34 @@ export default function Dashboard() {
               if (!el) { toast.error(lang === "ko" ? "대시보드 요소를 찾을 수 없습니다." : "Dashboard element not found."); return; }
               setPdfExporting(true);
               try {
-                const { default: html2canvas } = await import('html2canvas');
+                // html-to-image: oklch 포함 모든 CSS 색상 지원, html2canvas 대체
+                const { toJpeg } = await import('html-to-image');
                 const { jsPDF } = await import('jspdf');
-                // html2canvas는 oklch 색상 미지원 → onclone에서 computed rgb로 교체
-                const canvas = await html2canvas(el, {
-                  scale: 1,
-                  useCORS: true,
-                  allowTaint: true,
+                const dataUrl = await toJpeg(el, {
+                  quality: 0.92,
                   backgroundColor: isDark ? '#0d1117' : '#f5f7fa',
                   width: el.scrollWidth,
                   height: el.scrollHeight,
-                  windowWidth: el.scrollWidth,
-                  windowHeight: el.scrollHeight,
-                  logging: false,
-                  onclone: (_cloneDoc: Document, clonedEl: HTMLElement) => {
-                    const CSS_PROPS = [
-                      'backgroundColor','color','borderColor',
-                      'borderTopColor','borderBottomColor','borderLeftColor','borderRightColor',
-                      'outlineColor','fill','stroke',
-                    ] as const;
-                    // oklch 색상을 브라우저가 계산한 rgb 값으로 교체
-                    const replaceOklch = (el: HTMLElement) => {
-                      const cs = window.getComputedStyle(el);
-                      CSS_PROPS.forEach(prop => {
-                        const val = cs[prop as keyof CSSStyleDeclaration] as string | undefined;
-                        if (val && val.includes('oklch')) {
-                          (el.style as unknown as Record<string, string>)[prop] = val;
-                        }
-                      });
-                      // boxShadow 별도 처리 (oklch 포함 시 제거)
-                      const shadow = cs.boxShadow;
-                      if (shadow && shadow.includes('oklch')) el.style.boxShadow = 'none';
-                    };
-                    replaceOklch(clonedEl);
-                    clonedEl.querySelectorAll<HTMLElement>('*').forEach(replaceOklch);
-                  },
+                  style: { transform: 'none' },
+                  skipFonts: false,
+                  pixelRatio: 1,
                 });
-                const imgData = canvas.toDataURL('image/jpeg', 0.90);
-                const pdfW = canvas.width;
-                const pdfH = canvas.height;
+                // dataUrl에서 실제 이미지 크기 추출
+                const img = new Image();
+                await new Promise<void>((resolve, reject) => {
+                  img.onload = () => resolve();
+                  img.onerror = reject;
+                  img.src = dataUrl;
+                });
+                const pdfW = img.naturalWidth;
+                const pdfH = img.naturalHeight;
                 const pdf = new jsPDF({
                   orientation: pdfW > pdfH ? 'landscape' : 'portrait',
                   unit: 'px',
                   format: [pdfW, pdfH],
                   hotfixes: ['px_scaling'],
                 });
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+                pdf.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH);
                 pdf.save(`semiguard_report_${new Date().toISOString().slice(0,10)}.pdf`);
                 toast.success(lang === "ko" ? "PDF가 저장되었습니다." : "PDF saved successfully.");
               } catch (e) {
