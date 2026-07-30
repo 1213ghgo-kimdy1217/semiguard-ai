@@ -314,10 +314,12 @@ function MonthlyHeatmap({
   dailyData,
   lang,
   t,
+  onDateClick,
 }: {
   dailyData: { date: string; riskLevel: string }[];
   lang: "ko" | "en";
   t: import("@/lib/i18n").Translation;
+  onDateClick?: (date: string) => void;
 }) {
   const [calMonth, setCalMonth] = useState(() => {
     const now = new Date();
@@ -406,8 +408,10 @@ function MonthlyHeatmap({
           return (
             <div key={day}
               title={lvl ? `${key}: ${lang === "ko" ? { normal: "정상", caution: "주의", warning: "경고", danger: "위험" }[lvl] : lvl}` : key}
-              className="aspect-square flex items-center justify-center rounded text-[10px] font-mono transition-all duration-200 cursor-default select-none"
+              onClick={() => onDateClick?.(key)}
+              className="aspect-square flex items-center justify-center rounded text-[10px] font-mono transition-all duration-200 select-none"
               style={{
+                cursor: onDateClick ? "pointer" : "default",
                 background: lvl ? CELL_COLOR[lvl] : "rgba(255,255,255,0.04)",
                 border: isToday
                   ? "1.5px solid oklch(0.65 0.18 200)"
@@ -443,6 +447,21 @@ function MonthlyHeatmap({
 export default function Dashboard() {
   const [lang, setLang] = useState<Lang>("ko");
   const t = translations[lang] as Translation;
+
+  // ─── 위험도 임계값 state (클라이언트 전용) ───────────────────────────────────
+  const [thresholds, setThresholds] = useState({ normal: 29, caution: 49, warning: 69 });
+  const [showThresholdPanel, setShowThresholdPanel] = useState(false);
+
+  // 임계값 기반 riskLevel 판정 함수 (클라이언트 로컬 analyzeData에 사용)
+  const getLocalRiskLevel = useCallback((score: number): RiskLevel => {
+    if (score <= thresholds.normal) return "normal";
+    if (score <= thresholds.caution) return "caution";
+    if (score <= thresholds.warning) return "warning";
+    return "danger";
+  }, [thresholds]);
+
+  // ─── 히트맵 날짜 클릭 → 로그 탭 날짜 필터 state ──────────────────────────────
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [current, setCurrent] = useState<AnomalyResult | null>(null);
@@ -494,8 +513,13 @@ export default function Dashboard() {
   const riskLevel = current?.riskLevel ?? "normal";
   const logs = logsData ?? [];
   const filteredLogs = useMemo(
-    () => logFilter === "all" ? logs : logs.filter(l => l.riskLevel === logFilter),
-    [logs, logFilter]
+    () => {
+      let result = logs;
+      if (selectedDate) result = result.filter(l => l.timestamp.slice(0, 10) === selectedDate);
+      if (logFilter !== "all") result = result.filter(l => l.riskLevel === logFilter);
+      return result;
+    },
+    [logs, logFilter, selectedDate]
   );
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / LOG_PAGE_SIZE));
   const pagedLogs = useMemo(
@@ -704,7 +728,7 @@ export default function Dashboard() {
       Math.min(zNoise * 8, 25)
     ));
     const riskLevel: RiskLevel = score <= 29 ? "normal" : score <= 49 ? "caution" : score <= 69 ? "warning" : "danger";
-    const isAnomaly = score >= 70;
+    const isAnomaly = score > thresholds.warning;
 
     return { sensorData: data, anomalyScore: score, riskLevel, isAnomaly };
   }
@@ -850,6 +874,83 @@ export default function Dashboard() {
 
             {/* 메인 대시보드 그리드 */}
             <div className="grid grid-cols-12 gap-4">
+              {/* ── 임계값 설정 패널 (전체 너비) ── */}
+              <div className="col-span-12 mb-2">
+                <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
+                  <button
+                    onClick={() => setShowThresholdPanel(p => !p)}
+                    className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:opacity-80"
+                    style={{ background: "oklch(0.13 0.015 240)" }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">⚙️</span>
+                      <span className="text-xs font-semibold">{lang === "ko" ? "위험도 임계값 설정" : "Risk Threshold Settings"}</span>
+                      <span className="text-[10px] text-muted-foreground ml-1">
+                        {lang === "ko"
+                          ? `정상 ≤${thresholds.normal} / 주의 ≤${thresholds.caution} / 경고 ≤${thresholds.warning} / 위험 >${thresholds.warning}`
+                          : `Normal ≤${thresholds.normal} / Caution ≤${thresholds.caution} / Warning ≤${thresholds.warning} / Danger >${thresholds.warning}`}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{showThresholdPanel ? "▲" : "▼"}</span>
+                  </button>
+                  {showThresholdPanel && (
+                    <div className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-3 gap-5"
+                      style={{ background: "oklch(0.115 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+                      {/* 정상 임계값 */}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#22c55e" }}>
+                            {lang === "ko" ? "정상 최대 점수" : "Normal Max"}
+                          </label>
+                          <span className="text-xs font-mono font-bold" style={{ color: "#22c55e" }}>{thresholds.normal}</span>
+                        </div>
+                        <input type="range" min={10} max={thresholds.caution - 1} value={thresholds.normal}
+                          onChange={e => setThresholds(p => ({ ...p, normal: Number(e.target.value) }))}
+                          className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                          style={{ accentColor: "#22c55e" }} />
+                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? "이 점수 이하 → 정상" : "Score ≤ this → Normal"}</p>
+                      </div>
+                      {/* 주의 임계값 */}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#eab308" }}>
+                            {lang === "ko" ? "주의 최대 점수" : "Caution Max"}
+                          </label>
+                          <span className="text-xs font-mono font-bold" style={{ color: "#eab308" }}>{thresholds.caution}</span>
+                        </div>
+                        <input type="range" min={thresholds.normal + 1} max={thresholds.warning - 1} value={thresholds.caution}
+                          onChange={e => setThresholds(p => ({ ...p, caution: Number(e.target.value) }))}
+                          className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                          style={{ accentColor: "#eab308" }} />
+                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? "이 점수 이하 → 주의" : "Score ≤ this → Caution"}</p>
+                      </div>
+                      {/* 경고 임계값 */}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#f97316" }}>
+                            {lang === "ko" ? "경고 최대 점수" : "Warning Max"}
+                          </label>
+                          <span className="text-xs font-mono font-bold" style={{ color: "#f97316" }}>{thresholds.warning}</span>
+                        </div>
+                        <input type="range" min={thresholds.caution + 1} max={89} value={thresholds.warning}
+                          onChange={e => setThresholds(p => ({ ...p, warning: Number(e.target.value) }))}
+                          className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                          style={{ accentColor: "#f97316" }} />
+                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? `이 점수 초과 → 위험 (현재 >${thresholds.warning})` : `Score > this → Danger (now >${thresholds.warning})`}</p>
+                      </div>
+                      {/* 초기화 버튼 */}
+                      <div className="col-span-1 md:col-span-3 flex justify-end">
+                        <button
+                          onClick={() => setThresholds({ normal: 29, caution: 49, warning: 69 })}
+                          className="text-[10px] px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 active:scale-95"
+                          style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
+                          {lang === "ko" ? "기본값으로 초기화" : "Reset to Default"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* ── 왼쪽: 센서 카드 ── */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
                 {[
@@ -984,7 +1085,17 @@ export default function Dashboard() {
             </div>
             {/* ── 월간 히트맵 캘린더 ── */}
             <div className="mt-4">
-              <MonthlyHeatmap dailyData={getDailyMaxRisk.data ?? []} lang={lang} t={t} />
+              <MonthlyHeatmap
+                dailyData={getDailyMaxRisk.data ?? []}
+                lang={lang}
+                t={t}
+                onDateClick={(date) => {
+                  setSelectedDate(date);
+                  setLogFilter("all");
+                  setLogPage(1);
+                  setActiveTab("log");
+                }}
+              />
             </div>
           </>
         ) : (
@@ -1020,6 +1131,14 @@ export default function Dashboard() {
           </div>
           {/* 2행: 필터 버튼 */}
           <div className="flex items-center gap-1.5 flex-wrap">
+              {/* 날짜 필터 chip */}
+              {selectedDate && (
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border"
+                  style={{ borderColor: "oklch(0.65 0.18 200 / 0.6)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.12)" }}>
+                  📅 {selectedDate}
+                  <button onClick={() => setSelectedDate(null)} className="ml-1 hover:opacity-70 transition-opacity" title={lang === "ko" ? "날짜 필터 해제" : "Clear date filter"}>✕</button>
+                </div>
+              )}
               {(["all", "normal", "caution", "warning", "danger"] as const).map(f => {
                 const labelMap: Record<typeof f, string> = {
                   all:     lang === "ko" ? "전체" : "All",
