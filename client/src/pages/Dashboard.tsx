@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
 import type { RiskLevel, SensorData, AnomalyResult, AnomalyLogEntry } from "../../../shared/semiguard";
@@ -7,6 +7,29 @@ import { toast } from "sonner";
 
 // ─── 위험도 색상 매핑 ────────────────────────────────────────────────────────
 // ─── 버튼 스피너 ─────────────────────────────────────────────────────────────
+// ─── 미니 스파크라인 ──────────────────────────────────────────────────────────
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) return null;
+  const W = 80, H = 28;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * W;
+    const y = H - ((v - min) / range) * (H - 4) - 2;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const lastPt = pts.split(" ").pop()!;
+  const [lx, ly] = lastPt.split(",").map(Number);
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: "visible" }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5"
+        strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+      <circle cx={lx} cy={ly} r="2.5" fill={color} />
+    </svg>
+  );
+}
+
 // ─── CSV 내보내기 ─────────────────────────────────────────────────────────────
 function exportLogsToCSV(logs: AnomalyLogEntry[], lang: "ko" | "en") {
   const headers = lang === "ko"
@@ -41,6 +64,9 @@ function exportLogsToCSV(logs: AnomalyLogEntry[], lang: "ko" | "en") {
 // ─── Web Audio 경고음 ────────────────────────────────────────────────────────
 // AudioContext를 모듈 수준에서 지연 생성하여 재사용 (autoplay 정책 대응)
 let _audioCtx: AudioContext | null = null;
+// 재생 중인 oscillator 추적 (음소거 즉시 중단용)
+const _activeOscillators: OscillatorNode[] = [];
+
 function getAudioCtx(): AudioContext | null {
   try {
     if (!_audioCtx || _audioCtx.state === "closed") {
@@ -67,6 +93,11 @@ function playDangerAlertSound() {
         gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
         osc.start(startTime);
         osc.stop(startTime + duration);
+        _activeOscillators.push(osc);
+        osc.onended = () => {
+          const idx = _activeOscillators.indexOf(osc);
+          if (idx !== -1) _activeOscillators.splice(idx, 1);
+        };
       };
       const t0 = ctx.currentTime;
       beepAt(t0,        880, 0.18);
@@ -291,11 +322,23 @@ export default function Dashboard() {
   const [showLanding, setShowLanding] = useState(true);
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dangerAlert, setDangerAlert] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [logPage, setLogPage] = useState(1);
+  const LOG_PAGE_SIZE = 10;
+  const [scoreHistory, setScoreHistory] = useState<number[]>([10]);
 
   // ─── 경고음 콜백 ─────────────────────────────────────────────────────────
   const playAlert = useCallback(() => {
-    playDangerAlertSound();
-  }, []);
+    if (!muted) playDangerAlertSound();
+  }, [muted]);
+
+  // 음소거 토글 시 재생 중인 소리 즉시 중단
+  useEffect(() => {
+    if (muted) {
+      _activeOscillators.forEach(osc => { try { osc.stop(); } catch (_) {} });
+      _activeOscillators.length = 0;
+    }
+  }, [muted]);
 
 
   const injectNormal = trpc.semiguard.injectNormal.useMutation();
@@ -306,7 +349,7 @@ export default function Dashboard() {
   const injectWarning = trpc.semiguard.injectWarning.useMutation();
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
-  const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 50 }, { refetchInterval: 5000 });
+  const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 200 }, { refetchInterval: 5000 });
   const utils = trpc.useUtils();
   const { data: logsData, isLoading: logsLoading } = getLogs;
 
@@ -316,6 +359,11 @@ export default function Dashboard() {
   const anomalyScore = current?.anomalyScore ?? 0;
   const riskLevel = current?.riskLevel ?? "normal";
   const logs = logsData ?? [];
+  const totalPages = Math.max(1, Math.ceil(logs.length / LOG_PAGE_SIZE));
+  const pagedLogs = useMemo(
+    () => logs.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE),
+    [logs, logPage]
+  );
 
   // 초기 방문자 추적
   useEffect(() => {
@@ -342,6 +390,7 @@ export default function Dashboard() {
           ? generateSlightCautionData()
           : generateSlightWarningData();
       const result = analyzeData(newData);
+      setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
       setCurrent(result);
       setChartData(prev => {
         const updated = [...prev, { ...result.sensorData, label: `${elapsed}s` }];
@@ -365,6 +414,7 @@ export default function Dashboard() {
     try {
       const result = await injectNormal.mutateAsync();
       // ✅ FIXED: 서버 결과(result)를 그대로 신뢰, analyzeData 호출 제거
+      setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
       setCurrent(result);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
@@ -380,6 +430,7 @@ export default function Dashboard() {
     try {
       const result = await injectAnomaly.mutateAsync();
       // ✅ FIXED: 서버 결과(result)를 그대로 신뢰, analyzeData 호출 제거
+      setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
       setCurrent(result);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
@@ -401,6 +452,7 @@ export default function Dashboard() {
     try {
       const result = await injectCaution.mutateAsync();
       // ✅ FIXED: 서버 결과(result)를 그대로 신뢰, analyzeData 호출 제거
+      setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
       setCurrent(result);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
@@ -416,6 +468,7 @@ export default function Dashboard() {
     try {
       const result = await injectWarning.mutateAsync();
       // ✅ FIXED: 서버 결과(result)를 그대로 신뢰, analyzeData 호출 제거
+      setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
       setCurrent(result);
       setChartData(prev => [...prev, { ...result.sensorData, label: `${prev.length}` }].slice(-MAX_CHART_POINTS));
       await utils.semiguard.getStats.invalidate();
@@ -584,6 +637,18 @@ export default function Dashboard() {
             style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
             {lang === "ko" ? "EN" : "한국어"}
           </button>
+          {/* 음소거 토글 */}
+          <button
+            onClick={() => setMuted(m => !m)}
+            title={muted ? (lang === "ko" ? "소리 켜기" : "Unmute") : (lang === "ko" ? "소리 끄기" : "Mute")}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base"
+            style={{
+              borderColor: muted ? "oklch(0.35 0.01 240)" : "oklch(0.65 0.18 200 / 0.4)",
+              color: muted ? "oklch(0.45 0.01 240)" : "oklch(0.65 0.18 200)",
+              background: muted ? "oklch(0.15 0.01 240)" : "oklch(0.65 0.18 200 / 0.08)",
+            }}>
+            {muted ? "🔕" : "🔔"}
+          </button>
         </div>
       </header>
 
@@ -649,10 +714,28 @@ export default function Dashboard() {
             <div className="grid grid-cols-12 gap-4">
               {/* ── 왼쪽: 센서 카드 ── */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
-                <SensorCard label={t.current}     value={sensorData?.current     ?? 5.0}  unit={t.unitA}   color="#38bdf8" icon="⚡" />
-                <SensorCard label={t.temperature} value={sensorData?.temperature ?? 45.0} unit={t.unitC}   color="#fb923c" icon="🌡" />
-                <SensorCard label={t.vibration}   value={sensorData?.vibration   ?? 2.0}  unit={t.unitMms} color="#a78bfa" icon="📳" />
-                <SensorCard label={t.noise}       value={sensorData?.noise       ?? 55.0} unit={t.unitDb}  color="#34d399" icon="🔊" />
+                {[
+                  { label: t.current,     value: sensorData?.current     ?? 5.0,  unit: t.unitA,   color: "#38bdf8", icon: "⚡" },
+                  { label: t.temperature, value: sensorData?.temperature ?? 45.0, unit: t.unitC,   color: "#fb923c", icon: "🌡" },
+                  { label: t.vibration,   value: sensorData?.vibration   ?? 2.0,  unit: t.unitMms, color: "#a78bfa", icon: "📳" },
+                  { label: t.noise,       value: sensorData?.noise       ?? 55.0, unit: t.unitDb,  color: "#34d399", icon: "🔊" },
+                ].map(card => (
+                  <div key={card.label} className="rounded-xl p-4 border flex flex-col gap-2 transition-all duration-300"
+                    style={{ background: "rgba(255,255,255,0.025)", borderColor: `${card.color}35` }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{card.label}</span>
+                      <span className="text-base opacity-70">{card.icon}</span>
+                    </div>
+                    <div className="flex items-end gap-1.5">
+                      <span className="text-3xl font-bold font-mono leading-none" style={{ color: card.color }}>{card.value.toFixed(1)}</span>
+                      <span className="text-xs text-muted-foreground mb-0.5">{card.unit}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-[9px] text-muted-foreground opacity-60">{lang === "ko" ? "점수 추이" : "Score trend"}</span>
+                      <Sparkline data={scoreHistory} color={card.color} />
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* ── 가운데: 차트 ── */}
@@ -803,7 +886,7 @@ export default function Dashboard() {
                     <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Loading...</td></tr>
                   ) : !logs || logs.length === 0 ? (
                     <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">{t.noLogs}</td></tr>
-                  ) : logs.map(log => {
+                  ) : pagedLogs.map(log => {
                     const lvl = log.riskLevel as RiskLevel;
                     const color = RISK_COLORS[lvl];
                     return (
@@ -829,6 +912,55 @@ export default function Dashboard() {
                 </tbody>
               </table>
             </div>
+            {/* ── 페이지네이션 ── */}
+            {logs.length > LOG_PAGE_SIZE && (
+              <div className="flex items-center justify-between px-5 py-3 border-t"
+                style={{ borderColor: "oklch(0.20 0.02 240)", background: "oklch(0.12 0.015 240)" }}>
+                <span className="text-[11px] text-muted-foreground">
+                  {lang === "ko"
+                    ? `총 ${logs.length}개 중 ${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, logs.length)}개`
+                    : `${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, logs.length)} of ${logs.length}`}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setLogPage(p => Math.max(1, p - 1))}
+                    disabled={logPage === 1}
+                    className="px-2.5 py-1 rounded-lg text-xs border transition-all duration-150 disabled:opacity-30 hover:opacity-80 active:scale-95"
+                    style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.60 0.01 240)" }}>
+                    ‹ {lang === "ko" ? "이전" : "Prev"}
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - logPage) <= 1)
+                    .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) acc.push("…");
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, i) =>
+                      p === "…"
+                        ? <span key={`ell-${i}`} className="px-1 text-xs text-muted-foreground">…</span>
+                        : <button key={p}
+                            onClick={() => setLogPage(p as number)}
+                            className="w-7 h-7 rounded-lg text-xs border transition-all duration-150 hover:opacity-80 active:scale-95"
+                            style={{
+                              borderColor: logPage === p ? "oklch(0.65 0.18 200 / 0.6)" : "oklch(0.25 0.02 240)",
+                              color: logPage === p ? "oklch(0.65 0.18 200)" : "oklch(0.55 0.01 240)",
+                              background: logPage === p ? "oklch(0.65 0.18 200 / 0.12)" : "transparent",
+                              fontWeight: logPage === p ? 700 : 400,
+                            }}>
+                            {p}
+                          </button>
+                    )}
+                  <button
+                    onClick={() => setLogPage(p => Math.min(totalPages, p + 1))}
+                    disabled={logPage === totalPages}
+                    className="px-2.5 py-1 rounded-lg text-xs border transition-all duration-150 disabled:opacity-30 hover:opacity-80 active:scale-95"
+                    style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.60 0.01 240)" }}>
+                    {lang === "ko" ? "다음" : "Next"} ›
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
