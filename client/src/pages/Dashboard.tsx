@@ -307,6 +307,138 @@ function ImpactCard({ label, value, unit, icon, color }: {
   );
 }
 
+// ─── 월간 히트맵 캘린더 ──────────────────────────────────────────────────────
+const RISK_ORDER: Record<RiskLevel, number> = { normal: 1, caution: 2, warning: 3, danger: 4 };
+
+function MonthlyHeatmap({
+  dailyData,
+  lang,
+  t,
+}: {
+  dailyData: { date: string; riskLevel: string }[];
+  lang: "ko" | "en";
+  t: import("@/lib/i18n").Translation;
+}) {
+  const [calMonth, setCalMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  // 날짜별 최고 위험도 집계
+  const dayMap = useMemo(() => {
+    const map: Record<string, RiskLevel> = {};
+    for (const row of dailyData) {
+      map[row.date] = row.riskLevel as RiskLevel;
+    }
+    return map;
+  }, [dailyData]);
+
+  const year = calMonth.getFullYear();
+  const month = calMonth.getMonth();
+  const firstDow = new Date(year, month, 1).getDay(); // 0=일
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+  })();
+
+  const CELL_COLOR: Record<RiskLevel, string> = {
+    normal:  "rgba(34,197,94,0.55)",
+    caution: "rgba(234,179,8,0.65)",
+    warning: "rgba(249,115,22,0.70)",
+    danger:  "rgba(239,68,68,0.80)",
+  };
+  const CELL_BORDER: Record<RiskLevel, string> = {
+    normal:  "rgba(34,197,94,0.80)",
+    caution: "rgba(234,179,8,0.90)",
+    warning: "rgba(249,115,22,0.90)",
+    danger:  "rgba(239,68,68,1.00)",
+  };
+
+  const weekDays = lang === "ko"
+    ? ["일", "월", "화", "수", "목", "금", "토"]
+    : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+  const monthLabel = calMonth.toLocaleDateString(lang === "ko" ? "ko-KR" : "en-US", { year: "numeric", month: "long" });
+
+  // 범례 항목
+  const legend: { level: RiskLevel; label: string }[] = [
+    { level: "normal",  label: lang === "ko" ? "정상" : "Normal" },
+    { level: "caution", label: lang === "ko" ? "주의" : "Caution" },
+    { level: "warning", label: lang === "ko" ? "경고" : "Warning" },
+    { level: "danger",  label: lang === "ko" ? "위험" : "Danger" },
+  ];
+
+  return (
+    <div className="rounded-xl border p-5" style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+          {lang === "ko" ? "월간 위험도 히트맵" : "Monthly Risk Heatmap"}
+        </p>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+            className="w-6 h-6 flex items-center justify-center rounded text-xs border transition-all hover:opacity-80 active:scale-95"
+            style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.55 0.01 240)" }}>‹</button>
+          <span className="text-xs font-semibold min-w-[90px] text-center">{monthLabel}</span>
+          <button onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+            className="w-6 h-6 flex items-center justify-center rounded text-xs border transition-all hover:opacity-80 active:scale-95"
+            style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.55 0.01 240)" }}>›</button>
+        </div>
+      </div>
+
+      {/* 요일 헤더 */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {weekDays.map(d => (
+          <div key={d} className="text-center text-[9px] font-semibold text-muted-foreground py-0.5">{d}</div>
+        ))}
+      </div>
+
+      {/* 날짜 셀 */}
+      <div className="grid grid-cols-7 gap-1">
+        {/* 첫 주 빈 칸 */}
+        {Array.from({ length: firstDow }).map((_, i) => <div key={`empty-${i}`} />)}
+        {/* 날짜 */}
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+          const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const lvl = dayMap[key];
+          const isToday = key === todayStr;
+          return (
+            <div key={day}
+              title={lvl ? `${key}: ${lang === "ko" ? { normal: "정상", caution: "주의", warning: "경고", danger: "위험" }[lvl] : lvl}` : key}
+              className="aspect-square flex items-center justify-center rounded text-[10px] font-mono transition-all duration-200 cursor-default select-none"
+              style={{
+                background: lvl ? CELL_COLOR[lvl] : "rgba(255,255,255,0.04)",
+                border: isToday
+                  ? "1.5px solid oklch(0.65 0.18 200)"
+                  : lvl ? `1px solid ${CELL_BORDER[lvl]}` : "1px solid rgba(255,255,255,0.06)",
+                color: lvl ? "#fff" : "oklch(0.45 0.01 240)",
+                fontWeight: isToday ? 700 : 400,
+              }}>
+              {day}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 범례 */}
+      <div className="flex items-center gap-3 mt-4 flex-wrap">
+        <span className="text-[9px] text-muted-foreground">{lang === "ko" ? "범례:" : "Legend:"}</span>
+        {legend.map(({ level, label }) => (
+          <div key={level} className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded-sm" style={{ background: CELL_COLOR[level], border: `1px solid ${CELL_BORDER[level]}` }} />
+            <span className="text-[9px] text-muted-foreground">{label}</span>
+          </div>
+        ))}
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded-sm" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }} />
+          <span className="text-[9px] text-muted-foreground">{lang === "ko" ? "데이터 없음" : "No data"}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── 메인 대시보드 ───────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [lang, setLang] = useState<Lang>("ko");
@@ -326,6 +458,7 @@ export default function Dashboard() {
   const [logPage, setLogPage] = useState(1);
   const LOG_PAGE_SIZE = 10;
   const [scoreHistory, setScoreHistory] = useState<number[]>([10]);
+  const [logFilter, setLogFilter] = useState<RiskLevel | "all">("all");
 
   // ─── 경고음 콜백 ─────────────────────────────────────────────────────────
   const playAlert = useCallback(() => {
@@ -350,6 +483,7 @@ export default function Dashboard() {
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
   const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 200 }, { refetchInterval: 5000 });
+  const getDailyMaxRisk = trpc.semiguard.getDailyMaxRisk.useQuery(undefined, { refetchInterval: 10000 });
   const utils = trpc.useUtils();
   const { data: logsData, isLoading: logsLoading } = getLogs;
 
@@ -359,10 +493,14 @@ export default function Dashboard() {
   const anomalyScore = current?.anomalyScore ?? 0;
   const riskLevel = current?.riskLevel ?? "normal";
   const logs = logsData ?? [];
-  const totalPages = Math.max(1, Math.ceil(logs.length / LOG_PAGE_SIZE));
+  const filteredLogs = useMemo(
+    () => logFilter === "all" ? logs : logs.filter(l => l.riskLevel === logFilter),
+    [logs, logFilter]
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / LOG_PAGE_SIZE));
   const pagedLogs = useMemo(
-    () => logs.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE),
-    [logs, logPage]
+    () => filteredLogs.slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE),
+    [filteredLogs, logPage]
   );
 
   // 초기 방문자 추적
@@ -844,35 +982,81 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+            {/* ── 월간 히트맵 캘린더 ── */}
+            <div className="mt-4">
+              <MonthlyHeatmap dailyData={getDailyMaxRisk.data ?? []} lang={lang} t={t} />
+            </div>
           </>
         ) : (
           /* ── 이상 이력 로그 탭 ── */
-          <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
-            <div className="flex items-center justify-between px-5 py-3 border-b"
-              style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
-              <p className="text-sm font-semibold">{t.anomalyLog}</p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    if (!logs || logs.length === 0) {
-                      toast.info(lang === "ko" ? "내보낼 로그가 없습니다." : "No logs to export.");
-                      return;
-                    }
-                    exportLogsToCSV(logs, lang);
-                    toast.success(t.exportCsvSuccess);
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95"
-                  style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
-                  ⬇ {t.exportCsv}
-                </button>
-                <button onClick={handleClearLogs}
+
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
+          {/* 탭 헤더 - 2행 구조 */}
+          <div className="px-5 py-3 border-b flex flex-col gap-2"
+            style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+          {/* 1행: 제목 + CSV/클리어 버튼 */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">{t.anomalyLog}</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (!logs || logs.length === 0) {
+                    toast.info(lang === "ko" ? "내보낼 로그가 없습니다." : "No logs to export.");
+                    return;
+                  }
+                  exportLogsToCSV(logs, lang);
+                  toast.success(t.exportCsvSuccess);
+                }}
+                className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95"
+                style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
+                ⬇ {t.exportCsv}
+              </button>
+              <button onClick={handleClearLogs}
                 className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-70"
                 style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
                 {t.clearLogs}
               </button>
-              </div>
             </div>
-            <div className="overflow-x-auto">
+          </div>
+          {/* 2행: 필터 버튼 */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+              {(["all", "normal", "caution", "warning", "danger"] as const).map(f => {
+                const labelMap: Record<typeof f, string> = {
+                  all:     lang === "ko" ? "전체" : "All",
+                  normal:  lang === "ko" ? "정상" : "Normal",
+                  caution: lang === "ko" ? "주의" : "Caution",
+                  warning: lang === "ko" ? "경고" : "Warning",
+                  danger:  lang === "ko" ? "위험" : "Danger",
+                };
+                const colorMap: Record<typeof f, string> = {
+                  all:     "oklch(0.65 0.18 200)",
+                  normal:  "#22c55e",
+                  caution: "#eab308",
+                  warning: "#f97316",
+                  danger:  "#ef4444",
+                };
+                const isActive = logFilter === f;
+                return (
+                  <button key={f}
+                    onClick={() => { setLogFilter(f); setLogPage(1); }}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all duration-150 hover:opacity-90 active:scale-95"
+                    style={{
+                      borderColor: isActive ? `${colorMap[f]}80` : "oklch(0.22 0.02 240)",
+                      color: isActive ? colorMap[f] : "oklch(0.45 0.01 240)",
+                      background: isActive ? `${colorMap[f]}18` : "transparent",
+                    }}>
+                    {labelMap[f]}
+                    {f !== "all" && (
+                      <span className="ml-1 opacity-60">
+                        ({logs.filter(l => l.riskLevel === f).length})
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr style={{ background: "oklch(0.12 0.015 240)", borderBottom: "1px solid oklch(0.20 0.02 240)" }}>
@@ -918,8 +1102,8 @@ export default function Dashboard() {
                 style={{ borderColor: "oklch(0.20 0.02 240)", background: "oklch(0.12 0.015 240)" }}>
                 <span className="text-[11px] text-muted-foreground">
                   {lang === "ko"
-                    ? `총 ${logs.length}개 중 ${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, logs.length)}개`
-                    : `${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, logs.length)} of ${logs.length}`}
+                    ? `총 ${filteredLogs.length}개 중 ${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, filteredLogs.length)}개`
+                    : `${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, filteredLogs.length)} of ${filteredLogs.length}`}
                 </span>
                 <div className="flex items-center gap-1">
                   <button

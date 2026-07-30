@@ -71,6 +71,31 @@ export async function getTotalVisitors(): Promise<number> {
   return Number(rows[0]?.total ?? 0);
 }
 
+// 날짜별 최고 위험도 집계 (히트맵용)
+export async function getDailyMaxRisk(): Promise<{ date: string; riskLevel: string }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  // MySQL: DATE(timestamp) 기준으로 날짜별 최고 위험도를 FIELD() 정렬로 집계
+  const rows = await db.execute(sql`
+    SELECT
+      DATE(timestamp) AS date,
+      MAX(CASE riskLevel
+        WHEN 'danger'  THEN 4
+        WHEN 'warning' THEN 3
+        WHEN 'caution' THEN 2
+        ELSE 1
+      END) AS maxRiskOrder
+    FROM anomalyLogs
+    GROUP BY DATE(timestamp)
+    ORDER BY date ASC
+  `);
+  const riskMap: Record<number, string> = { 4: "danger", 3: "warning", 2: "caution", 1: "normal" };
+  return (rows as unknown as any[][])[0].map((r: any) => ({
+    date: String(r.date).slice(0, 10),
+    riskLevel: riskMap[Number(r.maxRiskOrder)] ?? "normal",
+  }));
+}
+
 // 이상 탐지 통계
 export async function getAnomalyStats(): Promise<{ total: number; dangerCount: number; anomalyCount: number }> {
   const db = await getDb();

@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk } from "./semiguardDb";
 import type { RiskLevel } from "../shared/semiguard";
 
 export const appRouter = router({
@@ -144,6 +144,10 @@ export const appRouter = router({
       const stats = await getAnomalyStats();
       await resetSavedCost(stats.dangerCount);
       return { success: true };
+    }),
+
+    getDailyMaxRisk: publicProcedure.query(async () => {
+      return getDailyMaxRisk();
     }),
   }),
 });
