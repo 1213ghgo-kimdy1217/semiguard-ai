@@ -610,6 +610,8 @@ export default function Dashboard() {
 
   // ─── 히트맵 날짜 클릭 → 로그 탭 날짜 필터 state ──────────────────────────────
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [dateStart, setDateStart] = useState<string>("");
+  const [dateEnd, setDateEnd] = useState<string>("");
 
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [current, setCurrent] = useState<AnomalyResult | null>(null);
@@ -700,10 +702,13 @@ export default function Dashboard() {
     () => {
       let result = logs;
       if (selectedDate) result = result.filter(l => l.timestamp.slice(0, 10) === selectedDate);
+      // 날짜 범위 필터 (dateStart ~ dateEnd)
+      if (dateStart) result = result.filter(l => l.timestamp.slice(0, 10) >= dateStart);
+      if (dateEnd)   result = result.filter(l => l.timestamp.slice(0, 10) <= dateEnd);
       if (logFilter !== "all") result = result.filter(l => l.riskLevel === logFilter);
       return result;
     },
-    [logs, logFilter, selectedDate]
+    [logs, logFilter, selectedDate, dateStart, dateEnd]
   );
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / LOG_PAGE_SIZE));
   const pagedLogs = useMemo(
@@ -1144,8 +1149,10 @@ export default function Dashboard() {
             id="btn-export-pdf"
             disabled={pdfExporting}
             onClick={async () => {
-              const el = document.getElementById('dashboard-root');
-              if (!el) { toast.error(lang === "ko" ? "대시보드 요소를 찾을 수 없습니다." : "Dashboard element not found."); return; }
+              // PDF 전용: 헤더/버튼 숨기고 센서+차트 영역만 캡처
+              const captureEl = document.getElementById('pdf-capture-area');
+              if (!captureEl) { toast.error(lang === "ko" ? "캡처 영역을 찾을 수 없습니다." : "Capture area not found."); return; }
+              const el = captureEl;
               setPdfExporting(true);
               try {
                 // html-to-image: oklch 포함 모든 CSS 색상 지원, html2canvas 대체
@@ -1252,7 +1259,7 @@ export default function Dashboard() {
             </div>
 
             {/* 메인 대시보드 그리드 */}
-            <div className="grid grid-cols-12 gap-4">
+            <div id="pdf-capture-area" className="grid grid-cols-12 gap-4">
               {/* ── 임계값 설정 패널 (전체 너비) ── */}
               <div className="col-span-12 mb-2">
                 <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
@@ -1624,17 +1631,57 @@ export default function Dashboard() {
           {/* 탭 헤더 - 2행 구조 */}
           <div className="px-5 py-3 border-b flex flex-col gap-2"
             style={{ background: th.bgCard, borderColor: th.border }}>
+          {/* 0행: 통계 요약 카드 */}
+          <div className="grid grid-cols-3 gap-2 mb-1">
+            {([
+              { label: lang === "ko" ? "위험" : "Danger",  count: logs.filter(l => (dateStart ? l.timestamp.slice(0,10) >= dateStart : true) && (dateEnd ? l.timestamp.slice(0,10) <= dateEnd : true) && l.riskLevel === "danger").length,  color: "#ef4444", bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.25)",   icon: "🔴" },
+              { label: lang === "ko" ? "경고" : "Warning", count: logs.filter(l => (dateStart ? l.timestamp.slice(0,10) >= dateStart : true) && (dateEnd ? l.timestamp.slice(0,10) <= dateEnd : true) && l.riskLevel === "warning").length, color: "#f97316", bg: "rgba(249,115,22,0.08)",  border: "rgba(249,115,22,0.25)",  icon: "🟠" },
+              { label: lang === "ko" ? "주의" : "Caution", count: logs.filter(l => (dateStart ? l.timestamp.slice(0,10) >= dateStart : true) && (dateEnd ? l.timestamp.slice(0,10) <= dateEnd : true) && l.riskLevel === "caution").length, color: "#eab308", bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   icon: "🟡" },
+            ] as const).map(s => (
+              <div key={s.label} className="rounded-lg p-2.5 border flex items-center justify-between"
+                style={{ background: s.bg, borderColor: s.border }}>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">{s.icon}</span>
+                  <span className="text-[10px] font-semibold" style={{ color: s.color }}>{s.label}</span>
+                </div>
+                <span className="text-lg font-bold font-mono" style={{ color: s.color }}>{s.count}</span>
+              </div>
+            ))}
+          </div>
+          {/* 날짜 범위 필터 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "기간" : "Period"}:</span>
+            <input type="date" value={dateStart}
+              onChange={e => { setDateStart(e.target.value); setLogPage(1); }}
+              className="text-[10px] px-2 py-1 rounded-lg border outline-none"
+              style={{ background: th.bgCard2, borderColor: th.border, color: th.text, colorScheme: isDark ? "dark" : "light" }} />
+            <span className="text-[10px]" style={{ color: th.textMuted }}>~</span>
+            <input type="date" value={dateEnd}
+              onChange={e => { setDateEnd(e.target.value); setLogPage(1); }}
+              className="text-[10px] px-2 py-1 rounded-lg border outline-none"
+              style={{ background: th.bgCard2, borderColor: th.border, color: th.text, colorScheme: isDark ? "dark" : "light" }} />
+            {(dateStart || dateEnd) && (
+              <button onClick={() => { setDateStart(""); setDateEnd(""); setLogPage(1); }}
+                className="text-[10px] px-2 py-1 rounded-lg border transition-all hover:opacity-70"
+                style={{ borderColor: th.border2, color: th.textMuted }}>
+                {lang === "ko" ? "초기화" : "Reset"}
+              </button>
+            )}
+            <span className="text-[10px] ml-auto" style={{ color: th.textMuted }}>
+              {lang === "ko" ? `${filteredLogs.length}건 표시` : `${filteredLogs.length} records`}
+            </span>
+          </div>
           {/* 1행: 제목 + CSV/클리어 버튼 */}
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">{t.anomalyLog}</p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => {
-                  if (!logs || logs.length === 0) {
+                  if (!filteredLogs || filteredLogs.length === 0) {
                     toast.info(lang === "ko" ? "내보낼 로그가 없습니다." : "No logs to export.");
                     return;
                   }
-                  exportLogsToCSV(logs, lang);
+                  exportLogsToCSV(filteredLogs, lang);
                   toast.success(t.exportCsvSuccess);
                 }}
                 className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95"
