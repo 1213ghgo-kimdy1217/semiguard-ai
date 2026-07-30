@@ -608,6 +608,7 @@ export default function Dashboard() {
   const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 200 }, { refetchInterval: 5000 });
   const getDailyMaxRisk = trpc.semiguard.getDailyMaxRisk.useQuery(undefined, { refetchInterval: 10000 });
   const utils = trpc.useUtils();
+  const getRecentScoresQuery = trpc.semiguard.getRecentScores.useQuery({ limit: 50 }, { refetchInterval: 5000 });
   const { data: logsData, isLoading: logsLoading } = getLogs;
 
   const [lastInjectedMode, setLastInjectedMode] = useState<RiskLevel | null>(null);
@@ -1427,7 +1428,3 @@ export default function Dashboard() {
     </div>
   );
 }
-  const getRecentScoresQuery = trpc.semiguard.getRecentScores.useQuery(
-    { limit: 50 },
-    { refetchInterval: 5000 }
-  );
