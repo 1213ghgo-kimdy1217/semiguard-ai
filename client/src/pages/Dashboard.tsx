@@ -615,8 +615,8 @@ export default function Dashboard() {
 
   // ─── 경고음 콜백 ─────────────────────────────────────────────────────────
   const playAlert = useCallback(() => {
-    if (!muted) playDangerAlertSound();
-  }, [muted]);
+    if (!mutedRef.current) playDangerAlertSound();
+  }, []); // mutedRef는 ref이므로 deps 불필요 — 항상 최신 muted 값 참조
 
   // 음소거 토글 시 재생 중인 소리 즉시 중단
   useEffect(() => {
