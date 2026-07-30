@@ -145,7 +145,7 @@ export async function getRecentScores(limit = 50): Promise<{ timestamp: Date; sc
 const SENSOR_THRESHOLD_DEFAULTS = {
   currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,
   tempCaution: 55.0, tempWarning: 70.0, tempDanger: 85.0,
-  vibCaution: 0.6, vibWarning: 0.8, vibDanger: 1.0,
+  vibCaution: 2.3, vibWarning: 2.6, vibDanger: 3.0,
   noiseCaution: 65.0, noiseWarning: 75.0, noiseDanger: 85.0,
 };
 

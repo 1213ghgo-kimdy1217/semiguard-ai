@@ -607,6 +607,7 @@ export default function Dashboard() {
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dangerAlert, setDangerAlert] = useState(false);
   const [muted, setMuted] = useState(false);
+  const mutedRef = useRef(false); // stale closure 방지용 ref
   const [logPage, setLogPage] = useState(1);
   const LOG_PAGE_SIZE = 10;
   const [scoreHistory, setScoreHistory] = useState<number[]>([10]);
@@ -1002,7 +1003,7 @@ export default function Dashboard() {
           </button>
           {/* 음소거 토글 */}
           <button
-            onClick={() => setMuted(m => !m)}
+            onClick={() => { setMuted(m => { mutedRef.current = !m; return !m; }); }}
             title={muted ? (lang === "ko" ? "소리 켜기" : "Unmute") : (lang === "ko" ? "소리 끄기" : "Mute")}
             className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base"
             style={{

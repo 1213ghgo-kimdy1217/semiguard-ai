@@ -63,34 +63,52 @@ export function generateAnomalyData(): SensorData {
   return result as unknown as SensorData;
 }
 
-// 주의 단계 데이터: z-score 1.5~2.5 → 점수 30~49
+// 주의 단계 데이터: 점수 30~49 보장
+// 4개 센서 모두 이탈 시 점수가 60+ 로 올라가므로, 2개만 중간 이탈(z=1.8~2.3), 2개는 정상
 export function generateCautionData(): SensorData {
-  const rand = (mean: number, std: number) => {
-    const factor = 1.5 + Math.random() * 1.0;
-    return mean + std * factor * (Math.random() > 0.5 ? 1 : -1);
-  };
-  return {
-    current:     parseFloat(rand(NORMAL_BASELINE.current.mean,     NORMAL_BASELINE.current.std).toFixed(2)),
-    temperature: parseFloat(rand(NORMAL_BASELINE.temperature.mean, NORMAL_BASELINE.temperature.std).toFixed(1)),
-    vibration:   parseFloat(rand(NORMAL_BASELINE.vibration.mean,   NORMAL_BASELINE.vibration.std).toFixed(2)),
-    noise:       parseFloat(rand(NORMAL_BASELINE.noise.mean,       NORMAL_BASELINE.noise.std).toFixed(1)),
-    timestamp:   Date.now(),
-  };
+  const fields: (keyof typeof NORMAL_BASELINE)[] = ["current", "temperature", "vibration", "noise"];
+  const shuffled = [...fields].sort(() => Math.random() - 0.5);
+  const devFields = new Set(shuffled.slice(0, 2)); // 2개만 이탈
+  const result: Record<string, number> = { timestamp: Date.now() };
+  for (const field of fields) {
+    const { mean, std } = NORMAL_BASELINE[field];
+    if (devFields.has(field)) {
+      // 이탈: z=1.8~2.3 → 점수 14.4~18.4 per sensor, 2개 합산 28~37
+      const factor = 1.8 + Math.random() * 0.5;
+      const sign = Math.random() > 0.5 ? 1 : -1;
+      const val = mean + std * factor * sign;
+      result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+    } else {
+      // 정상: z=0~0.5 → 점수 0~4 per sensor
+      const val = mean + (Math.random() - 0.5) * std * 0.8;
+      result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+    }
+  }
+  return result as unknown as SensorData;
 }
 
-// 경고 단계 데이터: z-score 2.5~3.5 → 점수 50~69
+// 경고 단계 데이터: 점수 50~69 보장
+// 3개 센서 이탈(z=2.0~2.5), 1개 정상 → 3*16~20 + 1*2 = 50~62
 export function generateWarningData(): SensorData {
-  const rand = (mean: number, std: number) => {
-    const factor = 2.0 + Math.random() * 1.5;  // z=2.0~3.5 → 점수 50~69 범위
-    return mean + std * factor * (Math.random() > 0.5 ? 1 : -1);
-  };
-  return {
-    current:     parseFloat(rand(NORMAL_BASELINE.current.mean,     NORMAL_BASELINE.current.std).toFixed(2)),
-    temperature: parseFloat(rand(NORMAL_BASELINE.temperature.mean, NORMAL_BASELINE.temperature.std).toFixed(1)),
-    vibration:   parseFloat(rand(NORMAL_BASELINE.vibration.mean,   NORMAL_BASELINE.vibration.std).toFixed(2)),
-    noise:       parseFloat(rand(NORMAL_BASELINE.noise.mean,       NORMAL_BASELINE.noise.std).toFixed(1)),
-    timestamp:   Date.now(),
-  };
+  const fields: (keyof typeof NORMAL_BASELINE)[] = ["current", "temperature", "vibration", "noise"];
+  const shuffled = [...fields].sort(() => Math.random() - 0.5);
+  const devFields = new Set(shuffled.slice(0, 3)); // 3개 이탈
+  const result: Record<string, number> = { timestamp: Date.now() };
+  for (const field of fields) {
+    const { mean, std } = NORMAL_BASELINE[field];
+    if (devFields.has(field)) {
+      // 이탈: z=2.0~2.5 → 점수 16~20 per sensor, 3개 합산 48~60
+      const factor = 2.0 + Math.random() * 0.5;
+      const sign = Math.random() > 0.5 ? 1 : -1;
+      const val = mean + std * factor * sign;
+      result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+    } else {
+      // 정상: z=0~0.5 → 점수 0~4
+      const val = mean + (Math.random() - 0.5) * std * 0.8;
+      result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+    }
+  }
+  return result as unknown as SensorData;
 }
 
 export function analyzeData(data: SensorData) {
