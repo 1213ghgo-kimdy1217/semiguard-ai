@@ -697,6 +697,14 @@ export default function Dashboard() {
   const LOG_PAGE_SIZE = 10;
   const [scoreHistory, setScoreHistory] = useState<number[]>([10]);
   const [logFilter, setLogFilter] = useState<RiskLevel | "all">("all");
+  const [llmAnalysis, setLlmAnalysis] = useState<{
+    primaryCause: string;
+    details: string;
+    recommendation: string;
+    score: number;
+    riskLevel: string;
+  } | null>(null);
+  const [llmLoading, setLlmLoading] = useState(false);
 
   // ─── 경고음 콜백 ─────────────────────────────────────────────────────────
   const playAlert = useCallback(() => {
@@ -720,6 +728,7 @@ export default function Dashboard() {
   const injectWarning = trpc.semiguard.injectWarning.useMutation();
   const autoFetch = trpc.semiguard.autoFetch.useMutation();
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
+  const analyzeAnomalyMutation = trpc.semiguard.analyzeAnomaly.useMutation();
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
   const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 200 }, { refetchInterval: 5000 });
   const getDailyMaxRisk = trpc.semiguard.getDailyMaxRisk.useQuery(undefined, { refetchInterval: 10000 });
@@ -816,6 +825,7 @@ export default function Dashboard() {
             setTimeout(() => setDangerFlash(false), 600);
             playAlert();
             setTimeout(() => setRelayTripped(false), 2000);
+            triggerLlmAnalysis(result);
           }
           await utils.semiguard.getStats.invalidate();
           await utils.semiguard.getLogs.invalidate();
@@ -876,6 +886,7 @@ export default function Dashboard() {
         setTimeout(() => setDangerFlash(false), 600);
         playAlert();
         setTimeout(() => setRelayTripped(false), 2000);
+        triggerLlmAnalysis(result);
       }
     }, 4000);
 
@@ -883,6 +894,37 @@ export default function Dashboard() {
       if (autoPollingRef.current) clearInterval(autoPollingRef.current);
     };
   }, [initialized]);
+
+  // LLM 이상 원인 분석 트리거 (30초 throttle)
+  const lastLlmCallRef = useRef<number>(0);
+  const triggerLlmAnalysis = useCallback(async (result: AnomalyResult) => {
+    if (!result.sensorData) return;
+    // 30초 이내 중복 호출 방지
+    const now = Date.now();
+    if (now - lastLlmCallRef.current < 30_000) return;
+    lastLlmCallRef.current = now;
+    setLlmLoading(true);
+    try {
+      const analysis = await analyzeAnomalyMutation.mutateAsync({
+        current: result.sensorData.current,
+        temperature: result.sensorData.temperature,
+        vibration: result.sensorData.vibration,
+        noise: result.sensorData.noise,
+        anomalyScore: result.anomalyScore,
+        riskLevel: result.riskLevel,
+        lang: lang,
+      });
+      setLlmAnalysis({
+        ...analysis,
+        score: result.anomalyScore,
+        riskLevel: result.riskLevel,
+      });
+    } catch {
+      // 분석 실패 시 무시
+    } finally {
+      setLlmLoading(false);
+    }
+  }, [lang]);
 
   const handleInjectNormal = async () => {
     try {
@@ -917,6 +959,7 @@ export default function Dashboard() {
         setTimeout(() => setDangerFlash(false), 600);
         playAlert();
         setTimeout(() => setRelayTripped(false), 2000);
+        triggerLlmAnalysis(result);
       }
       toast.error(`⚠ ${t.injectAnomaly} 완료`);
     } catch (e) {
@@ -950,6 +993,9 @@ export default function Dashboard() {
       await utils.semiguard.getStats.invalidate();
       await utils.semiguard.getLogs.invalidate();
       setLastInjectedMode("warning");
+      if (result.riskLevel === "warning" || result.riskLevel === "danger") {
+        triggerLlmAnalysis(result);
+      }
       toast.warning(`🔶 ${t.injectWarning} 완료`);
     } catch (e) {
       toast.error(t.error);
@@ -1160,8 +1206,41 @@ export default function Dashboard() {
                   animation: "pulse 1s ease-in-out infinite"
                 }} />
               </div>
+              {/* LLM 분석 결과 */}
+              {llmLoading && (
+                <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg"
+                  style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  <div className="w-4 h-4 rounded-full border-2 border-red-400 border-t-transparent animate-spin flex-shrink-0" />
+                  <span className="text-xs" style={{ color: "rgb(220,38,38)" }}>
+                    {lang === "ko" ? "AI 이상 원인 분석 중..." : "AI analyzing anomaly cause..."}
+                  </span>
+                </div>
+              )}
+              {llmAnalysis && !llmLoading && (
+                <div className="w-full rounded-xl p-4 text-left"
+                  style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm">🤖</span>
+                    <span className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
+                      {lang === "ko" ? "AI 이상 원인 분석" : "AI Anomaly Analysis"}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold mb-1" style={{ color: "rgb(239,68,68)" }}>
+                    {llmAnalysis.primaryCause}
+                  </p>
+                  <p className="text-xs mb-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+                    {llmAnalysis.details}
+                  </p>
+                  <div className="flex items-start gap-1.5">
+                    <span className="text-xs mt-0.5">💡</span>
+                    <p className="text-xs" style={{ color: "rgba(255,200,100,0.9)" }}>
+                      {llmAnalysis.recommendation}
+                    </p>
+                  </div>
+                </div>
+              )}
               <button
-                onClick={() => setDangerAlert(false)}
+                onClick={() => { setDangerAlert(false); }}
                 className="mt-4 px-6 py-2 rounded-lg font-bold transition-all duration-200 active:scale-95"
                 style={{
                   background: "rgb(239,68,68)",
@@ -1170,6 +1249,58 @@ export default function Dashboard() {
                 }}>
                 {lang === "ko" ? "확인" : "OK"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* LLM 분석 결과 플로팅 패널 (위험/경고 탐지 후 dangerAlert 닫혀도 유지) */}
+      {llmAnalysis && !dangerAlert && (
+        <div className="fixed bottom-6 right-6 z-[500] w-80 rounded-2xl shadow-2xl"
+          style={{
+            background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
+            border: `1px solid ${llmAnalysis.riskLevel === "danger" ? "rgba(239,68,68,0.5)" : "rgba(249,115,22,0.5)"}`,
+            animation: "slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1)"
+          }}>
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🤖</span>
+                <span className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
+                  {lang === "ko" ? "AI 이상 원인 분석" : "AI Anomaly Analysis"}
+                </span>
+              </div>
+              <button
+                onClick={() => setLlmAnalysis(null)}
+                className="w-5 h-5 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70"
+                style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}>
+                ✕
+              </button>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                style={{
+                  background: llmAnalysis.riskLevel === "danger" ? "rgba(239,68,68,0.15)" : "rgba(249,115,22,0.15)",
+                  color: llmAnalysis.riskLevel === "danger" ? "rgb(239,68,68)" : "rgb(249,115,22)",
+                  border: `1px solid ${llmAnalysis.riskLevel === "danger" ? "rgba(239,68,68,0.3)" : "rgba(249,115,22,0.3)"}`
+                }}>
+                {lang === "ko"
+                  ? (llmAnalysis.riskLevel === "danger" ? "위험" : llmAnalysis.riskLevel === "warning" ? "경고" : "주의")
+                  : llmAnalysis.riskLevel}
+                &nbsp;{llmAnalysis.score.toFixed(0)}점
+              </span>
+            </div>
+            <p className="text-sm font-bold mb-2" style={{ color: th.text }}>
+              {llmAnalysis.primaryCause}
+            </p>
+            <p className="text-xs mb-3 leading-relaxed" style={{ color: th.textMuted }}>
+              {llmAnalysis.details}
+            </p>
+            <div className="flex items-start gap-1.5 rounded-lg p-2"
+              style={{ background: isDark ? "rgba(255,200,100,0.06)" : "rgba(180,120,0,0.06)", border: "1px solid rgba(255,200,100,0.15)" }}>
+              <span className="text-xs mt-0.5 flex-shrink-0">💡</span>
+              <p className="text-xs leading-relaxed" style={{ color: isDark ? "rgba(255,200,100,0.9)" : "oklch(0.40 0.10 80)" }}>
+                {llmAnalysis.recommendation}
+              </p>
             </div>
           </div>
         </div>

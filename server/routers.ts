@@ -6,6 +6,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
 import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
+import { invokeLLM } from "./_core/llm";
 import type { RiskLevel } from "../shared/semiguard";
 
 export const appRouter = router({
@@ -221,6 +222,75 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await saveSensorThresholds(input);
         return { success: true };
+      }),
+    analyzeAnomaly: publicProcedure
+      .input(z.object({
+        current: z.number(),
+        temperature: z.number(),
+        vibration: z.number(),
+        noise: z.number(),
+        anomalyScore: z.number(),
+        riskLevel: z.string(),
+        lang: z.enum(["ko", "en"]).default("ko"),
+      }))
+      .mutation(async ({ input }) => {
+        const { current, temperature, vibration, noise, anomalyScore, riskLevel, lang } = input;
+        const isKo = lang === "ko";
+
+        const riskLabel = isKo
+          ? (riskLevel === "danger" ? "위험" : riskLevel === "warning" ? "경고" : riskLevel === "caution" ? "주의" : "정상")
+          : riskLevel;
+
+        const systemPrompt = isKo
+          ? `당신은 반도체 공정 설비 이상 탐지 전문 AI입니다. 센서 데이터를 분석하여 이상 원인을 간결하고 전문적으로 설명합니다. 정상 기준값: 전류 5.0A(+-0.5), 온도 45도C(+-3), 진동 2.0mm/s(+-0.3), 소음 55dB(+-4). 반드시 JSON만 반환하세요.`
+          : `You are an AI specialist in semiconductor process equipment anomaly detection. Normal baseline: Current 5.0A(+-0.5), Temperature 45C(+-3), Vibration 2.0mm/s(+-0.3), Noise 55dB(+-4). Respond ONLY with JSON.`;
+
+        const userPrompt = isKo
+          ? `센서 데이터: 전류 ${current.toFixed(2)}A, 온도 ${temperature.toFixed(1)}도C, 진동 ${vibration.toFixed(2)}mm/s, 소음 ${noise.toFixed(1)}dB, 이상점수 ${anomalyScore.toFixed(1)}/100, 위험도 ${riskLabel}. 이상 원인과 권장 조치를 JSON으로 반환하세요.`
+          : `Sensor data: Current ${current.toFixed(2)}A, Temperature ${temperature.toFixed(1)}C, Vibration ${vibration.toFixed(2)}mm/s, Noise ${noise.toFixed(1)}dB, Anomaly score ${anomalyScore.toFixed(1)}/100, Risk ${riskLabel}. Return anomaly cause and recommendation as JSON.`;
+
+        try {
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "anomaly_analysis",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    primaryCause: { type: "string" },
+                    details: { type: "string" },
+                    recommendation: { type: "string" },
+                  },
+                  required: ["primaryCause", "details", "recommendation"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+          const content = response.choices[0]?.message?.content;
+          if (typeof content === "string") {
+            return JSON.parse(content) as { primaryCause: string; details: string; recommendation: string };
+          }
+          throw new Error("LLM returned no content");
+        } catch {
+          return isKo
+            ? {
+                primaryCause: "복합 센서 이상 감지",
+                details: `이상 점수 ${anomalyScore.toFixed(0)}점으로 ${riskLabel} 단계가 감지되었습니다. 전류(${current.toFixed(2)}A), 온도(${temperature.toFixed(1)}도C), 진동(${vibration.toFixed(2)}mm/s), 소음(${noise.toFixed(1)}dB) 값을 확인하십시오.`,
+                recommendation: "즉시 설비 점검 및 운전 중단을 고려하십시오.",
+              }
+            : {
+                primaryCause: "Multiple sensor anomaly detected",
+                details: `Anomaly score ${anomalyScore.toFixed(0)} triggered ${riskLabel} alert. Check current(${current.toFixed(2)}A), temperature(${temperature.toFixed(1)}C), vibration(${vibration.toFixed(2)}mm/s), noise(${noise.toFixed(1)}dB).`,
+                recommendation: "Consider immediate equipment inspection and shutdown.",
+              };
+        }
       }),
   }),
 });
