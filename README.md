@@ -203,3 +203,32 @@ MIT License © 2026 SemiGuard Team
 ---
 
 > 💡 **대회 출품작**: 충남반도체마이스터고등학교 교내 AI 프로젝트 대회
+
+---
+
+## 🔗 외부 사용 내역 | External Resources
+
+### 사용 AI 모델
+
+| 모델 / 서비스 | 용도 |
+|-------------|------|
+| Manus Built-in LLM API (GPT-4o 기반) | 이상 원인 자연어 분석 (한국어·영어·일본어) |
+| Manus AI Agent | 프로젝트 설계, 코드 생성, 디버깅 보조 |
+
+### 사용 오픈소스 패키지
+
+| 패키지 | 라이선스 | 용도 |
+|--------|---------|------|
+| React 19 | MIT | 프론트엔드 UI 프레임워크 |
+| tRPC 11 | MIT | 타입 안전 API 통신 |
+| Drizzle ORM | Apache-2.0 | 데이터베이스 ORM |
+| Recharts | MIT | 센서 데이터 시각화 차트 |
+| Tailwind CSS 4 | MIT | UI 스타일링 |
+| shadcn/ui | MIT | UI 컴포넌트 라이브러리 |
+| Vitest | MIT | 유닛 테스트 |
+| jsPDF | MIT | PDF 리포트 내보내기 |
+
+### 외부 자문
+
+- 반도체 장비 센서 파라미터(전류·온도·진동·소음 정상 범위) 설정에 있어 **충남반도체마이스터고등학교 장비과 담당 교사**의 도메인 자문을 참고하였습니다.
+- Isolation Forest 알고리즘 원리는 공개 논문 및 강의 자료를 참고하여 TypeScript로 직접 구현하였습니다.
