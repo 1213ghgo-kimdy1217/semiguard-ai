@@ -424,9 +424,13 @@ function ScoreLineChart({
         return (
           <g style={{ pointerEvents: "none" }}>
             <rect x={tx} y={ty} width={TW} height={TH} rx={6} fill="oklch(0.15 0.02 240)" stroke="oklch(0.28 0.03 240)" strokeWidth={1} />
-            <text x={tx + 8} y={ty + 15} fontSize={10} fill={riskColor} fontWeight="600">{`점수: ${tooltip.score}`}</text>
+            <text x={tx + 8} y={ty + 15} fontSize={10} fill={riskColor} fontWeight="600">{`${lang === "ko" ? "점수" : "Score"}: ${tooltip.score}`}</text>
             <text x={tx + 8} y={ty + 30} fontSize={9} fill="oklch(0.55 0.01 240)">{tooltip.time}</text>
-            <text x={tx + 8} y={ty + 42} fontSize={9} fill={riskColor} opacity={0.8}>{tooltip.risk}</text>
+            <text x={tx + 8} y={ty + 42} fontSize={9} fill={riskColor} opacity={0.8}>{
+              lang === "ko"
+                ? tooltip.risk === "danger" ? "위험" : tooltip.risk === "warning" ? "경고" : tooltip.risk === "caution" ? "주의" : "정상"
+                : tooltip.risk.charAt(0).toUpperCase() + tooltip.risk.slice(1)
+            }</text>
           </g>
         );
       })()}
@@ -439,12 +443,20 @@ function MonthlyHeatmap({
   lang,
   t,
   onDateClick,
+  isDark,
 }: {
   dailyData: { date: string; riskLevel: string }[];
   lang: "ko" | "en";
   t: import("@/lib/i18n").Translation;
   onDateClick?: (date: string) => void;
+  isDark: boolean;
 }) {
+  const th = {
+    bgCard:    isDark ? "oklch(0.13 0.015 240)"  : "oklch(0.99 0.003 240)",
+    border:    isDark ? "oklch(0.20 0.02 240)"   : "oklch(0.85 0.01 240)",
+    border2:   isDark ? "oklch(0.25 0.02 240)"   : "oklch(0.80 0.01 240)",
+    textMuted: isDark ? "oklch(0.50 0.01 240)"   : "oklch(0.45 0.01 240)",
+  };
   const [calMonth, setCalMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -496,7 +508,7 @@ function MonthlyHeatmap({
   ];
 
   return (
-    <div className="rounded-xl border p-5" style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+    <div className="rounded-xl border p-5" style={{ background: th.bgCard, borderColor: th.border }}>
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
@@ -1159,7 +1171,7 @@ export default function Dashboard() {
             style={{
               borderColor: muted ? "oklch(0.35 0.01 240)" : "oklch(0.65 0.18 200 / 0.4)",
               color: muted ? "oklch(0.45 0.01 240)" : "oklch(0.65 0.18 200)",
-              background: muted ? "oklch(0.15 0.01 240)" : "oklch(0.65 0.18 200 / 0.08)",
+              background: muted ? (isDark ? "oklch(0.15 0.01 240)" : "oklch(0.88 0.01 240)") : "oklch(0.65 0.18 200 / 0.08)",
             }}>
             {muted ? "🔕" : "🔔"}
           </button>
@@ -1198,7 +1210,7 @@ export default function Dashboard() {
             style={{
               borderColor: demoRunning ? "oklch(0.65 0.20 30 / 0.6)" : "oklch(0.35 0.01 240)",
               color: demoRunning ? "oklch(0.75 0.20 30)" : "oklch(0.50 0.01 240)",
-              background: demoRunning ? "oklch(0.65 0.20 30 / 0.12)" : "oklch(0.13 0.015 240)",
+              background: demoRunning ? "oklch(0.65 0.20 30 / 0.12)" : th.bgCard,
             }}>
             {demoRunning ? (
               <><span className="inline-block w-2 h-2 rounded-sm" style={{ background: "oklch(0.75 0.20 30)", animation: "pulse 1s ease-in-out infinite" }} /> {lang === "ko" ? "데모 중" : "Demo ON"}</>
@@ -1209,7 +1221,7 @@ export default function Dashboard() {
           {/* 데모 속도 슬라이더 */}
           {demoRunning && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs"
-              style={{ borderColor: "oklch(0.35 0.01 240)", background: "oklch(0.13 0.015 240)" }}>
+              style={{ borderColor: th.border2, background: th.bgCard }}>
               <span style={{ color: "oklch(0.50 0.01 240)" }}>{lang === "ko" ? "속도" : "Speed"}</span>
               <input
                 type="range" min={1} max={10} step={1}
@@ -1270,7 +1282,7 @@ export default function Dashboard() {
             }}
             title={lang === "ko" ? "PDF 내보내기" : "Export PDF"}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
-            style={{ borderColor: "oklch(0.35 0.01 240)", color: "oklch(0.65 0.18 200)", background: "oklch(0.13 0.015 240)" }}>
+            style={{ borderColor: th.border2, color: "oklch(0.65 0.18 200)", background: th.bgCard }}>
             {pdfExporting ? <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid oklch(0.65 0.18 200)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "📄"} {lang === "ko" ? "PDF" : "PDF"}
           </button>
         </div>
@@ -1278,7 +1290,7 @@ export default function Dashboard() {
 
       {/* ── 랜딩 섹션 ── */}
       {showLanding && (
-        <div className="border-b px-5 py-6" style={{ borderColor: "oklch(0.20 0.02 240)", background: "linear-gradient(135deg, oklch(0.13 0.015 240), oklch(0.12 0.01 240))" }}>
+        <div className="border-b px-5 py-6" style={{ borderColor: th.border, background: isDark ? "linear-gradient(135deg, oklch(0.13 0.015 240), oklch(0.12 0.01 240))" : "linear-gradient(135deg, oklch(0.97 0.005 240), oklch(0.95 0.008 240))" }}>
           <div className="max-w-4xl mx-auto flex items-start justify-between gap-6">
             <div className="flex-1">
               <div className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
@@ -1290,7 +1302,7 @@ export default function Dashboard() {
             </div>
             <button onClick={() => setShowLanding(false)}
               className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-70"
-              style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
+              style={{ borderColor: th.border2, color: th.textMuted }}>
               ✕
             </button>
           </div>
@@ -1298,7 +1310,7 @@ export default function Dashboard() {
       )}
 
       {/* ── 탭 ── */}
-      <div className="flex border-b px-5" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
+      <div className="flex border-b px-5" style={{ borderColor: th.border }}>
         {(["dashboard", "log"] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className="px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 mr-1"
@@ -1342,7 +1354,7 @@ export default function Dashboard() {
                   <button
                     onClick={() => setShowThresholdPanel(p => !p)}
                     className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:opacity-80"
-                    style={{ background: "oklch(0.13 0.015 240)" }}>
+                    style={{ background: th.bgCard }}>
                     <div className="flex items-center gap-2">
                       <span className="text-base">⚙️</span>
                       <span className="text-xs font-semibold">{lang === "ko" ? "위험도 임계값 설정" : "Risk Threshold Settings"}</span>
@@ -1356,7 +1368,7 @@ export default function Dashboard() {
                   </button>
                   {showThresholdPanel && (
                     <div className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-3 gap-5"
-                      style={{ background: "oklch(0.115 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+                      style={{ background: th.bgCard2, borderColor: th.border }}>
                       {/* 정상 임계값 */}
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-between">
@@ -1429,7 +1441,7 @@ export default function Dashboard() {
                             saveThresholdsMutation.mutate(def);
                           }}
                           className="text-[10px] px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 active:scale-95"
-                          style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
+                          style={{ borderColor: th.border2, color: th.textMuted }}>
                           {lang === "ko" ? "기본값으로 초기화" : "Reset to Default"}
                         </button>
                       </div>
@@ -1444,7 +1456,7 @@ export default function Dashboard() {
                   <button
                     onClick={() => setShowSensorPanel(p => !p)}
                     className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:opacity-80"
-                    style={{ background: "oklch(0.13 0.015 240)" }}>
+                    style={{ background: th.bgCard }}>
                     <div className="flex items-center gap-2">
                       <span className="text-base">🔬</span>
                       <span className="text-xs font-semibold">{lang === "ko" ? "센서별 임계값 설정" : "Per-Sensor Threshold Settings"}</span>
@@ -1453,7 +1465,7 @@ export default function Dashboard() {
                   </button>
                   {showSensorPanel && (
                     <div className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5"
-                      style={{ background: "oklch(0.115 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+                      style={{ background: th.bgCard2, borderColor: th.border }}>
                       {/* 전류 */}
                       {[
                         { key: "current" as const, label: lang === "ko" ? "전류 (A)" : "Current (A)", color: "#38bdf8", step: 0.1,
@@ -1514,7 +1526,7 @@ export default function Dashboard() {
                             saveSensorThresholdsMutation.mutate(def);
                           }}
                           className="text-[10px] px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 active:scale-95"
-                          style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
+                          style={{ borderColor: th.border2, color: th.textMuted }}>
                           {lang === "ko" ? "기본값으로 초기화" : "Reset to Default"}
                         </button>
                       </div>
@@ -1567,7 +1579,7 @@ export default function Dashboard() {
               {/* ── 가운데: 차트 ── */}
               <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
                 {/* 전류 + 온도 */}
-                <div className="rounded-xl border p-4" style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+                <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
                     {t.current} <span className="text-[#38bdf8]">●</span> / {t.temperature} <span className="text-[#fb923c]">●</span>
                   </p>
@@ -1583,7 +1595,7 @@ export default function Dashboard() {
                   </ResponsiveContainer>
                 </div>
                 {/* 진동 + 소음 */}
-                <div className="rounded-xl border p-4" style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+                <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
                     {t.vibration} <span className="text-[#a78bfa]">●</span> / {t.noise} <span className="text-[#34d399]">●</span>
                   </p>
@@ -1615,7 +1627,7 @@ export default function Dashboard() {
 
                 {/* 시뮬레이터 - 4단계 버튼 */}
                 <div className="rounded-xl border p-4 flex flex-col gap-2.5"
-                  style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+                  style={{ background: th.bgCard, borderColor: th.border }}>
                   <div className="flex items-center justify-between mb-0.5">
                     <p className="text-xs font-semibold">{t.simulatorTitle}</p>
                     {lastInjectedMode && (
@@ -1673,7 +1685,7 @@ export default function Dashboard() {
             {/* ── 월간 히트맵 캘린더 ── */}
             <div className="mt-4">
               {/* ── 위험도 점수 라인 차트 ── */}
-              <div className="rounded-xl border p-4 mb-4" style={{ background: "oklch(0.13 0.015 240)", borderColor: "oklch(0.20 0.02 240)" }}>
+              <div className="rounded-xl border p-4 mb-4" style={{ background: th.bgCard, borderColor: th.border }}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                     {lang === "ko" ? "위험도 점수 추이 (최근 50개)" : "Risk Score Trend (Last 50)"}
@@ -1693,6 +1705,7 @@ export default function Dashboard() {
                 dailyData={getDailyMaxRisk.data ?? []}
                 lang={lang}
                 t={t}
+                isDark={isDark}
                 onDateClick={(date) => {
                   setSelectedDate(date);
                   setLogFilter("all");
@@ -1748,7 +1761,7 @@ export default function Dashboard() {
           </div>
           {/* 날짜 범위 필터 */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "기간" : "Period"}:</span>
+            <span className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "기간 (연-월-일)" : "Period (YYYY-MM-DD)"}:</span>
             <input type="date" value={dateStart}
               onChange={e => { setDateStart(e.target.value); setLogPage(1); }}
               className="text-[10px] px-2 py-1 rounded-lg border outline-none"
@@ -1788,7 +1801,7 @@ export default function Dashboard() {
               </button>
               <button onClick={handleClearLogs}
                 className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-70"
-                style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.50 0.01 240)" }}>
+                style={{ borderColor: th.border2, color: th.textMuted }}>
                 {t.clearLogs}
               </button>
             </div>
@@ -1842,7 +1855,7 @@ export default function Dashboard() {
           <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr style={{ background: "oklch(0.12 0.015 240)", borderBottom: "1px solid oklch(0.20 0.02 240)" }}>
+                  <tr style={{ background: th.bgCard2, borderBottom: `1px solid ${th.border}` }}>
                     {[t.logTime, t.logCurrent, t.logTemp, t.logVib, t.logNoise, t.logScore, t.logLevel].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-muted-foreground font-semibold uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
@@ -1885,7 +1898,7 @@ export default function Dashboard() {
             {/* ── 페이지네이션 ── */}
             {logs.length > LOG_PAGE_SIZE && (
               <div className="flex items-center justify-between px-5 py-3 border-t"
-                style={{ borderColor: "oklch(0.20 0.02 240)", background: "oklch(0.12 0.015 240)" }}>
+                style={{ borderColor: th.border, background: th.bgCard2 }}>
                 <span className="text-[11px] text-muted-foreground">
                   {lang === "ko"
                     ? `총 ${filteredLogs.length}개 중 ${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, filteredLogs.length)}개`
