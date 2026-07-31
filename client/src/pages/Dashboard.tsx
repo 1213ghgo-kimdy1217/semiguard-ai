@@ -926,7 +926,7 @@ export default function Dashboard() {
     } finally {
       setLlmLoading(false);
     }
-  }, [lang]);
+  }, [lang, analyzeAnomalyMutation]);
 
   const handleInjectNormal = async () => {
     try {
