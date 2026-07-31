@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
 import type { RiskLevel, SensorData, AnomalyResult, AnomalyLogEntry } from "../../../shared/semiguard";
@@ -595,6 +596,7 @@ export default function Dashboard() {
   const [isDark, setIsDark] = useState<boolean>(() => {
     try { return localStorage.getItem("semiguard_theme") !== "light"; } catch { return true; }
   });
+  const isMobile = useIsMobile();
   // ─── 테마 색상 팔레트 ─────────────────────────────────────────────────────
   const th = {
     bg:        isDark ? "oklch(0.10 0.01 240)"   : "oklch(0.97 0.005 240)",
@@ -1127,7 +1129,7 @@ export default function Dashboard() {
       )}
 
       {/* ── 헤더 ── */}
-      <header className="sticky top-0 z-50 border-b flex items-center justify-between px-5 py-3"
+      <header className="sticky top-0 z-50 border-b flex items-center justify-between px-3 sm:px-5 py-3"
         style={{ background: th.header, borderColor: th.border, transition: "background 0.3s ease" }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl font-bold"
@@ -1139,11 +1141,11 @@ export default function Dashboard() {
             <p className="text-[10px] text-muted-foreground leading-tight">{t.appSubtitle}</p>
           </div>
         </div>
-        <div className="flex items-center gap-5">
-          <HeartbeatIndicator alive={heartbeatAlive} t={t} />
-          <div className="w-px h-5 bg-border" />
+        <div className="flex items-center gap-2 sm:gap-4">
+          {!isMobile && <HeartbeatIndicator alive={heartbeatAlive} t={t} />}
+          {!isMobile && <div className="w-px h-5 bg-border" />}
           <AlertPanel riskLevel={riskLevel} relayTripped={relayTripped} t={t} />
-          <div className="w-px h-5 bg-border" />
+          {!isMobile && <div className="w-px h-5 bg-border" />}
           <button onClick={() => setLang(l => l === "ko" ? "en" : "ko")}
             className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-200 hover:opacity-80 active:scale-95"
             style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
@@ -1184,8 +1186,8 @@ export default function Dashboard() {
             }}>
             {muted ? "🔕" : "🔔"}
           </button>
-          {/* 볼륨 슬라이더 */}
-          {!muted && (
+          {/* 볼륨 슬라이더 - 모바일 숨김 */}
+          {!muted && !isMobile && (
             <div className="flex items-center gap-1.5" title={lang === "ko" ? "볼륨 조절" : "Volume"}>
               <span style={{ fontSize: 11, color: "oklch(0.50 0.01 240)" }}>🔉</span>
               <input
@@ -1227,8 +1229,8 @@ export default function Dashboard() {
               <><span>▶</span> {lang === "ko" ? "데모" : "Demo"}</>
             )}
           </button>
-          {/* 데모 속도 슬라이더 */}
-          {demoRunning && (
+          {/* 데모 속도 슬라이더 - 모바일 숨김 */}
+          {demoRunning && !isMobile && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs"
               style={{ borderColor: th.border2, background: th.bgCard }}>
               <span style={{ color: "oklch(0.50 0.01 240)" }}>{lang === "ko" ? "속도" : "Speed"}</span>
@@ -1332,7 +1334,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <main className="flex-1 p-5">
+      <main className="flex-1 p-3 sm:p-5">
         {activeTab === "dashboard" ? (
           <>
             {/* 임팩트 통계 섹션 */}
@@ -1344,7 +1346,7 @@ export default function Dashboard() {
             </div>
 
             {/* 절감 비용 카드 */}
-            <div className="rounded-xl border p-5 mb-6 flex flex-col gap-2"
+            <div className="rounded-xl border p-4 sm:p-5 mb-6 flex flex-col gap-2"
               style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.10), rgba(34,197,94,0.05))", borderColor: "rgba(34,197,94,0.30)" }}>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t.savedCost}</p>
               <div className="flex items-end gap-2">
@@ -1545,7 +1547,8 @@ export default function Dashboard() {
               </div>
 
               {/* ── 왼쪽: 센서 카드 (재배치) ── */}
-              <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
+              <div className="col-span-12 lg:col-span-3">
+              <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
                 {[
                   { label: t.current,     value: sensorData?.current     ?? 5.0,  unit: t.unitA,   color: "#38bdf8", icon: "⚡", sensorKey: "current" },
                   { label: t.temperature, value: sensorData?.temperature ?? 45.0, unit: t.unitC,   color: "#fb923c", icon: "🌡", sensorKey: "temp" },
@@ -1583,6 +1586,7 @@ export default function Dashboard() {
                   </div>
                   );
                 })}
+              </div>
               </div>
 
               {/* ── 가운데: 차트 ── */}
@@ -1769,7 +1773,7 @@ export default function Dashboard() {
             })()}
           </div>
           {/* 날짜 범위 필터 */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
             <span className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "기간 (연-월-일)" : "Period (YYYY-MM-DD)"}:</span>
             <input type="date" value={dateStart}
               onChange={e => { setDateStart(e.target.value); setLogPage(1); }}
