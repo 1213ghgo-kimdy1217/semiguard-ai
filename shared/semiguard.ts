@@ -36,9 +36,12 @@ export const RISK_THRESHOLDS = {
   danger: 100,
 } as const;
 
-export function getRiskLevel(score: number): RiskLevel {
-  if (score <= RISK_THRESHOLDS.normal) return "normal";
-  if (score <= RISK_THRESHOLDS.caution) return "caution";
-  if (score <= RISK_THRESHOLDS.warning) return "warning";
+export function getRiskLevel(
+  score: number,
+  thresholds: { normal: number; caution: number; warning: number } = RISK_THRESHOLDS
+): RiskLevel {
+  if (score <= thresholds.normal) return "normal";
+  if (score <= thresholds.caution) return "caution";
+  if (score <= thresholds.warning) return "warning";
   return "danger";
 }

@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
 import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds } from "./semiguardDb";
+import { getRiskLevel } from "../shared/semiguard";
 import type { RiskLevel } from "../shared/semiguard";
 
 export const appRouter = router({
@@ -20,8 +21,10 @@ export const appRouter = router({
 
   semiguard: router({
     injectNormal: publicProcedure.mutation(async () => {
+    const dbThresholds = await getThresholds();
     const data = generateNormalData();
     const result = analyzeData(data);
+    const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
     await incrementSampleCount();
     await insertAnomalyLog({
       current: data.current,
@@ -29,15 +32,17 @@ export const appRouter = router({
       vibration: data.vibration,
       noise: data.noise,
       anomalyScore: result.anomalyScore,
-      riskLevel: result.riskLevel as RiskLevel,
-      isAnomaly: result.isAnomaly ? 1 : 0,
+      riskLevel,
+      isAnomaly: riskLevel === "danger" ? 1 : 0,
     });
-    return result;
+    return { ...result, riskLevel, isAnomaly: riskLevel === "danger" };
   }),
 
     injectAnomaly: publicProcedure.mutation(async () => {
+      const dbThresholds = await getThresholds();
       const data = generateAnomalyData();
       const result = analyzeData(data);
+      const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       await insertAnomalyLog({
         current: data.current,
@@ -45,15 +50,17 @@ export const appRouter = router({
         vibration: data.vibration,
         noise: data.noise,
         anomalyScore: result.anomalyScore,
-        riskLevel: result.riskLevel as RiskLevel,
-        isAnomaly: result.isAnomaly ? 1 : 0,
+        riskLevel,
+        isAnomaly: riskLevel === "danger" ? 1 : 0,
       });
-      return result;
+      return { ...result, riskLevel, isAnomaly: riskLevel === "danger" };
     }),
 
     injectCaution: publicProcedure.mutation(async () => {
+      const dbThresholds = await getThresholds();
       const data = generateCautionData();
       const result = analyzeData(data);
+      const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       await insertAnomalyLog({
         current: data.current,
@@ -61,15 +68,17 @@ export const appRouter = router({
         vibration: data.vibration,
         noise: data.noise,
         anomalyScore: result.anomalyScore,
-        riskLevel: result.riskLevel as RiskLevel,
-        isAnomaly: result.isAnomaly ? 1 : 0,
+        riskLevel,
+        isAnomaly: riskLevel === "danger" ? 1 : 0,
       });
-      return result;
+      return { ...result, riskLevel, isAnomaly: riskLevel === "danger" };
     }),
 
     injectWarning: publicProcedure.mutation(async () => {
+      const dbThresholds = await getThresholds();
       const data = generateWarningData();
       const result = analyzeData(data);
+      const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       await insertAnomalyLog({
         current: data.current,
@@ -77,10 +86,10 @@ export const appRouter = router({
         vibration: data.vibration,
         noise: data.noise,
         anomalyScore: result.anomalyScore,
-        riskLevel: result.riskLevel as RiskLevel,
-        isAnomaly: result.isAnomaly ? 1 : 0,
+        riskLevel,
+        isAnomaly: riskLevel === "danger" ? 1 : 0,
       });
-      return result;
+      return { ...result, riskLevel, isAnomaly: riskLevel === "danger" };
     }),
 
     autoFetch: publicProcedure.mutation(async () => {
@@ -91,7 +100,9 @@ export const appRouter = router({
         : roll < 0.90
           ? generateSlightCautionData()
           : generateSlightWarningData();
+      const dbThresholds = await getThresholds();
       const result = analyzeData(data);
+      const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       await insertAnomalyLog({
         current: data.current,
@@ -99,10 +110,10 @@ export const appRouter = router({
         vibration: data.vibration,
         noise: data.noise,
         anomalyScore: result.anomalyScore,
-        riskLevel: result.riskLevel as RiskLevel,
-        isAnomaly: result.isAnomaly ? 1 : 0,
+        riskLevel,
+        isAnomaly: riskLevel === "danger" ? 1 : 0,
       });
-      return result;
+      return { ...result, riskLevel, isAnomaly: riskLevel === "danger" };
     }),
 
     getLogs: publicProcedure
