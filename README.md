@@ -4,17 +4,16 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Language](https://img.shields.io/badge/Language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
-[![AI](https://img.shields.io/badge/AI-Isolation%20Forest-orange.svg)](#ai-이상탐지-엔진)
+[![AI](https://img.shields.io/badge/AI-LLM%20%2B%20Isolation%20Forest-orange.svg)](#ai-이상탐지-엔진)
+[![i18n](https://img.shields.io/badge/i18n-KO%20%7C%20EN%20%7C%20JA-blueviolet.svg)](#다국어-지원)
 
 ---
 
 ## 📌 프로젝트 개요 | Overview
 
-**SemiGuard AI**는 반도체 제조 현장의 장비 전장부에서 발생하는 이상 징후를 AI가 실시간으로 탐지하고, 위험 단계 도달 시 릴레이를 자동 차단하여 장비 손상과 생산 손실을 예방하는 **예지안전(Predictive Safety) 웹 시스템**입니다.
+**SemiGuard AI**는 반도체 제조 현장의 장비 센서 데이터를 실시간으로 분석하여 고장 전 이상을 자동 탐지하고, LLM이 원인을 즉시 진단하여 비계획 정지 손실을 예방하는 **예지보전(Predictive Maintenance) 웹 시스템**입니다.
 
-반도체 공장에서 장비 1대가 비계획 정지(Unplanned Downtime)되면 수억 원의 손실이 발생합니다. 기존의 사후 대응 방식에서 벗어나, **AI가 고장 전에 미리 감지**하는 것이 이 프로젝트의 핵심입니다.
-
-**SemiGuard AI** is a predictive safety web system that uses AI to detect anomalies in semiconductor equipment in real time, automatically tripping a relay when danger is detected to prevent equipment damage and production loss.
+반도체 공장에서 장비 1대가 비계획 정지(Unplanned Downtime)되면 수억 원의 손실이 발생합니다. 기존의 사후 대응 방식에서 벗어나, **AI가 고장 전에 미리 감지하고 원인까지 설명**하는 것이 이 프로젝트의 핵심입니다.
 
 ---
 
@@ -24,28 +23,30 @@
 |----------|-------------|
 | 장비 고장 후 수리 (사후 대응) | 고장 전 이상 징후 탐지 (예지 대응) |
 | 수동 점검 (주기적, 인력 의존) | AI 자동 모니터링 (24/7, 실시간) |
-| 고장 원인 파악 어려움 | 4가지 센서 데이터 기반 근거 제시 |
-| 장비 1대 정지 시 수억 원 손실 | 조기 경보로 손실 최소화 |
+| 고장 원인 파악 어려움 | LLM이 센서 데이터 기반 원인 자연어 진단 |
+| 장비 1대 정지 시 수억 원 손실 | 조기 경보 + 예상 절감 비용 자동 산출 |
 
 ---
 
 ## 🏗 시스템 아키텍처 | Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    SemiGuard AI                         │
-├─────────────┬───────────────────────┬───────────────────┤
-│  센서 레이어  │      AI 엔진           │   대시보드 레이어   │
-│             │                       │                   │
-│  전류 (A)   │  Isolation Forest     │  실시간 라인 차트   │
-│  온도 (°C)  │  이상 점수 계산 (0~100) │  위험도 게이지      │
-│  진동 (mm/s)│  위험도 4단계 판정     │  경고등 / 부저      │
-│  소음 (dB)  │  릴레이 차단 트리거    │  이상 이력 로그     │
-└─────────────┴───────────────────────┴───────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                      SemiGuard AI                           │
+├──────────────┬──────────────────────┬───────────────────────┤
+│  센서 레이어   │      AI 엔진          │     대시보드 레이어     │
+│              │                      │                       │
+│  전류 (A)    │  Isolation Forest    │  실시간 라인 차트        │
+│  온도 (°C)   │  이상 점수 0~100 산출  │  위험도 게이지           │
+│  진동 (mm/s) │  위험도 4단계 판정     │  LLM 이상 원인 분석 패널  │
+│  소음 (dB)   │  LLM 원인 분석 (3개국) │  이상 이력 + AI 분석 로그 │
+└──────────────┴──────────────────────┴───────────────────────┘
 
-[아두이노 센서] → [Python 백엔드 (FastAPI + AI)] → [React 대시보드]
-                                                  ↓
-                                         [MySQL DB (이상 이력)]
+[센서 데이터] → [Isolation Forest 이상 탐지] → [LLM 원인 분석 (KO/EN/JA)]
+                                              ↓
+                                   [MySQL DB 이상 이력 저장]
+                                              ↓
+                                   [React 실시간 대시보드]
 ```
 
 ---
@@ -54,7 +55,7 @@
 
 Isolation Forest 알고리즘의 핵심 원리를 기반으로 구현된 이상탐지 엔진입니다.
 
-**알고리즘 원리**: 정상 데이터는 고립시키기 어렵고(많은 분기 필요), 이상 데이터는 쉽게 고립됩니다(적은 분기). 각 센서의 z-score를 계산하여 정상 기준값에서 벗어난 정도를 이상 점수(0~100)로 환산합니다.
+**알고리즘 원리**: 각 센서의 z-score를 계산하여 정상 기준값에서 벗어난 정도를 이상 점수(0~100)로 환산합니다. 정상 데이터는 고립시키기 어렵고, 이상 데이터는 쉽게 고립됩니다.
 
 **위험도 4단계**:
 
@@ -65,7 +66,7 @@ Isolation Forest 알고리즘의 핵심 원리를 기반으로 구현된 이상�
 | 경고 (Warning) | 50 ~ 69 | 🟠 주황 | 점검 준비 |
 | 위험 (Danger) | 70 ~ 100 | 🔴 빨강 | 릴레이 차단 |
 
-**정상 기준값 (학습 데이터 기반)**:
+**정상 기준값**:
 
 | 센서 | 정상 평균 | 표준편차 |
 |------|---------|---------|
@@ -76,16 +77,31 @@ Isolation Forest 알고리즘의 핵심 원리를 기반으로 구현된 이상�
 
 ---
 
+## 🧠 LLM 이상 원인 분석 | LLM Anomaly Diagnosis
+
+위험/경고 단계 탐지 시 LLM이 센서 데이터를 분석하여 **주요 원인 → 상세 분석 → 권장 조치** 3단계로 자연어 설명을 생성합니다.
+
+- **3개 언어 동시 생성**: 탐지 즉시 한국어·영어·일본어 분석 결과를 병렬로 LLM 호출하여 DB에 저장
+- **이상 이력 연동**: 각 이상 로그에 LLM 분석 결과가 함께 저장되어 과거 탐지 건 조회 가능
+- **AI 분석 히스토리 패널**: 최근 5건의 LLM 분석 결과를 시간순으로 조회
+- **언어 전환 즉시 반영**: 언어 설정 변경 시 저장된 분석 결과도 해당 언어로 즉시 표시
+
+---
+
 ## ✨ 주요 기능 | Key Features
 
-- **실시간 센서 대시보드**: 전류·온도·진동·소음 4종 센서값을 라인 차트로 실시간 시각화 (4초 자동 갱신)
+- **실시간 센서 대시보드**: 전류·온도·진동·소음 4종 센서값을 라인 차트로 실시간 시각화
 - **AI 위험도 게이지**: 이상 점수 0~100을 원형 게이지와 4단계 색상으로 직관적 표현
-- **장비 상태 시뮬레이터**: 정상 주입 / 이상 주입 버튼으로 심사위원이 직접 AI 반응 체험 가능
-- **자동 릴레이 차단**: 위험 단계(70점 이상) 도달 시 릴레이 차단 시뮬레이션 및 경고 알림
-- **경고등 / 부저**: 위험 단계에서 깜빡임 애니메이션으로 시각적 경보 표현
-- **Heartbeat 인디케이터**: AI 시스템 정상 작동 여부 실시간 표시
-- **이상 이력 로그**: 탐지된 이상 이벤트를 DB에 저장하고 테이블로 조회
-- **한국어 / 영어 다국어 지원**: 우측 상단 버튼으로 즉시 전환
+- **LLM 이상 원인 분석**: 위험 탐지 시 AI가 원인·상세·권장 조치를 자연어로 즉시 진단
+- **예상 절감 비용 자동 산출**: 위험 단계 탐지 1회당 약 5천만 원 절감 효과 누적 표시
+- **장비 상태 시뮬레이터**: 정상/이상/주의/경고 주입 버튼으로 AI 반응 직접 체험
+- **자동 데모 모드**: 설정 속도로 자동 데이터 주입 및 AI 분석 시연
+- **이상 이력 로그**: 탐지된 이상 이벤트와 LLM 분석 결과를 DB에 저장하고 테이블로 조회
+- **AI 분석 히스토리 패널**: 최근 LLM 분석 결과 5건 모아보기
+- **임계값 커스터마이징**: 위험도 4단계 및 센서별 임계값을 UI에서 직접 조정
+- **PDF 리포트 내보내기**: 현재 대시보드 상태를 PDF로 저장
+- **CSV 이상 이력 내보내기**: 이상 로그를 CSV 파일로 다운로드
+- **한국어 / 영어 / 일본어 다국어 지원**: 우측 상단 버튼으로 즉시 전환
 
 ---
 
@@ -96,7 +112,8 @@ Isolation Forest 알고리즘의 핵심 원리를 기반으로 구현된 이상�
 | **프론트엔드** | React 19, TypeScript, Tailwind CSS 4, Recharts |
 | **백엔드** | Node.js, Express, tRPC 11 |
 | **데이터베이스** | MySQL (Drizzle ORM) |
-| **AI 엔진** | Isolation Forest (TypeScript 구현) |
+| **AI 이상탐지** | Isolation Forest (TypeScript 구현) |
+| **AI 원인 분석** | Manus Built-in LLM API (GPT-4o 기반) |
 | **테스트** | Vitest |
 | **배포** | Manus Cloud (Autoscale) |
 
@@ -106,7 +123,7 @@ Isolation Forest 알고리즘의 핵심 원리를 기반으로 구현된 이상�
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/your-team/semiguard-ai.git
+git clone https://github.com/1213ghgo-kimdy1217/semiguard-ai.git
 cd semiguard-ai
 
 # 2. 의존성 설치
@@ -117,7 +134,7 @@ DATABASE_URL=mysql://...
 JWT_SECRET=your-secret
 
 # 4. DB 마이그레이션
-pnpm db:push
+pnpm drizzle-kit generate
 
 # 5. 개발 서버 실행
 pnpm dev
@@ -145,14 +162,14 @@ pnpm test
 ```
 semiguard-ai/
 ├── client/src/
-│   ├── pages/Dashboard.tsx    # 메인 대시보드 UI
-│   └── lib/i18n.ts            # 한국어/영어 다국어
+│   ├── pages/Dashboard.tsx    # 메인 대시보드 UI (실시간 모니터링, LLM 패널)
+│   └── lib/i18n.ts            # 한국어/영어/일본어 다국어
 ├── server/
-│   ├── semiguard.ts           # AI 이상탐지 엔진
-│   ├── semiguardDb.ts         # DB 쿼리 헬퍼
+│   ├── semiguard.ts           # AI 이상탐지 엔진 (Isolation Forest)
+│   ├── semiguardDb.ts         # DB 쿼리 헬퍼 (3개 언어 LLM 저장)
 │   ├── semiguard.test.ts      # 유닛 테스트
 │   └── routers.ts             # tRPC API 라우터
-├── drizzle/schema.ts          # DB 스키마 (anomaly_logs)
+├── drizzle/schema.ts          # DB 스키마 (anomaly_logs + llm_analysis_ko/en/ja)
 └── shared/semiguard.ts        # 공유 타입 정의
 ```
 
@@ -162,7 +179,7 @@ semiguard-ai/
 
 본 프로젝트는 다음 AI 도구를 활용하여 개발되었습니다:
 - **Manus AI**: 프로젝트 설계, 코드 생성, 디버깅 보조
-- **AI 모델**: 코드 리뷰 및 최적화 제안
+- **Manus Built-in LLM API**: 이상 원인 자연어 분석 (런타임 기능)
 
 핵심 알고리즘(이상탐지 엔진), 도메인 지식(반도체 장비 파라미터), 아키텍처 설계는 팀원이 직접 설계하였습니다.
 
@@ -185,4 +202,4 @@ MIT License © 2026 SemiGuard Team
 
 ---
 
-> 💡 **대회 출품작**: 제4회 NAVER OGQ마켓 AI Competition — 전기·전자·메카트로닉스 트랙
+> 💡 **대회 출품작**: 충남반도체마이스터고등학교 교내 AI 프로젝트 대회
