@@ -534,7 +534,7 @@ function MonthlyHeatmap({
     ? ["일", "월", "화", "수", "목", "금", "토"]
     : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-  const monthLabel = calMonth.toLocaleDateString(lang === "ko" ? "ko-KR" : "en-US", { year: "numeric", month: "long" });
+  const monthLabel = calMonth.toLocaleDateString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { year: "numeric", month: "long" });
 
   // 범례 항목
   const legend: { level: RiskLevel; label: string }[] = [
@@ -1131,10 +1131,10 @@ export default function Dashboard() {
                 style={{ borderColor: `${color}30`, background: `${color}10` }}>
                 <div>
                   <p className="text-xs font-semibold" style={{ color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)" }}>
-                    {lang === "ko" ? "이상 이력 상세" : "Anomaly Detail"}
+                    {lang === "ko" ? "이상 이력 상세" : lang === "ja" ? "異常履歴詳細" : "Anomaly Detail"}
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: isDark ? "oklch(0.50 0.01 240)" : "oklch(0.45 0.01 240)" }}>
-                    {new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : "en-US", { hour12: false })}
+                    {new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1152,7 +1152,7 @@ export default function Dashboard() {
               {/* 이상 점수 */}
               <div className="px-5 pt-4 pb-2 flex items-center justify-between">
                 <span className="text-[11px] font-semibold" style={{ color: isDark ? "oklch(0.60 0.01 240)" : "oklch(0.40 0.01 240)" }}>
-                  {lang === "ko" ? "이상 점수" : "Anomaly Score"}
+                  {lang === "ko" ? "이상 점수" : lang === "ja" ? "異常スコア" : "Anomaly Score"}
                 </span>
                 <span className="text-2xl font-bold font-mono" style={{ color }}>{log.anomalyScore}</span>
               </div>
@@ -1213,11 +1213,13 @@ export default function Dashboard() {
             <div className="flex flex-col items-center gap-4">
               <div className="text-6xl animate-pulse">🚨</div>
               <h2 className="text-2xl font-bold text-center" style={{ color: "rgb(239,68,68)" }}>
-                {lang === "ko" ? "위험 단계 도달!" : "DANGER LEVEL REACHED!"}
+                {lang === "ko" ? "위험 단계 도달!" : lang === "ja" ? "危険レベル到達！" : "DANGER LEVEL REACHED!"}
               </h2>
               <p className="text-center text-sm" style={{ color: "rgb(220,38,38)" }}>
                 {lang === "ko"
                   ? "장비가 위험 상태에 도달했습니다. 즉시 점검이 필요합니다."
+                  : lang === "ja"
+                  ? "装置が危険な状態に達しました。即時点検が必要です。"
                   : "Equipment has reached a dangerous state. Immediate inspection required."}
               </p>
               <div className="w-full h-1 rounded-full" style={{ background: "rgb(239,68,68)" }}>
@@ -1232,7 +1234,7 @@ export default function Dashboard() {
                   style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
                   <div className="w-4 h-4 rounded-full border-2 border-red-400 border-t-transparent animate-spin flex-shrink-0" />
                   <span className="text-xs" style={{ color: "rgb(220,38,38)" }}>
-                    {lang === "ko" ? "AI 이상 원인 분석 중..." : "AI analyzing anomaly cause..."}
+                    {lang === "ko" ? "AI 이상 원인 분석 중..." : lang === "ja" ? "AI異常原因分析中..." : "AI analyzing anomaly cause..."}
                   </span>
                 </div>
               )}
@@ -1242,7 +1244,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm">🤖</span>
                     <span className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
-                      {lang === "ko" ? "AI 이상 원인 분석" : "AI Anomaly Analysis"}
+                      {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
                     </span>
                   </div>
                   <p className="text-sm font-bold mb-1" style={{ color: "rgb(239,68,68)" }}>
@@ -1286,7 +1288,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <span className="text-base">🤖</span>
                 <span className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
-                  {lang === "ko" ? "AI 이상 원인 분석" : "AI Anomaly Analysis"}
+                  {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
                 </span>
               </div>
               <button
@@ -1346,7 +1348,15 @@ export default function Dashboard() {
               style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}>✕</button>
           </div>
           <div className="max-h-80 overflow-y-auto">
-            {!llmHistoryQuery.data || llmHistoryQuery.data.length === 0 ? (
+            {llmHistoryQuery.isLoading ? (
+              <div className="px-4 py-6 flex justify-center">
+                <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "oklch(0.75 0.18 200)", borderTopColor: "transparent" }} />
+              </div>
+            ) : llmHistoryQuery.isError ? (
+              <div className="px-4 py-6 text-center text-xs" style={{ color: "rgb(239,68,68)" }}>
+                {lang === "ko" ? "분석 이력을 불러오지 못했습니다." : lang === "ja" ? "分析履歴を取得できませんでした。" : "Failed to load analysis history."}
+              </div>
+            ) : !llmHistoryQuery.data || llmHistoryQuery.data.length === 0 ? (
               <div className="px-4 py-6 text-center text-xs text-muted-foreground">
                 {lang === "ko" ? "저장된 AI 분석 결과가 없습니다." : lang === "ja" ? "保存されたAI分析結果がありません。" : "No AI analysis results saved yet."}
               </div>
@@ -2072,7 +2082,7 @@ export default function Dashboard() {
               <button
                 onClick={() => {
                   if (!filteredLogs || filteredLogs.length === 0) {
-                    toast.info(lang === "ko" ? "내보낼 로그가 없습니다." : "No logs to export.");
+                    toast.info(lang === "ko" ? "내보낼 로그가 없습니다." : lang === "ja" ? "エクスポートするログがありません。" : "No logs to export.");
                     return;
                   }
                   exportLogsToCSV(filteredLogs, lang);
@@ -2096,7 +2106,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border"
                   style={{ borderColor: "oklch(0.65 0.18 200 / 0.6)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.12)" }}>
                   📅 {selectedDate}
-                  <button onClick={() => setSelectedDate(null)} className="ml-1 hover:opacity-70 transition-opacity" title={lang === "ko" ? "날짜 필터 해제" : "Clear date filter"}>✕</button>
+                  <button onClick={() => setSelectedDate(null)} className="ml-1 hover:opacity-70 transition-opacity" title={lang === "ko" ? "날짜 필터 해제" : lang === "ja" ? "日付フィルター解除" : "Clear date filter"}>✕</button>
                 </div>
               )}
               {(["all", "normal", "caution", "warning", "danger"] as const).map(f => {
@@ -2157,9 +2167,9 @@ export default function Dashboard() {
                         className="border-b transition-colors hover:bg-white/[0.04] cursor-pointer"
                         style={{ borderColor: "oklch(0.17 0.015 240)" }}
                         onClick={() => setSelectedLog(log)}
-                        title={lang === "ko" ? "클릭하여 상세 보기" : "Click for details"}>
+                        title={lang === "ko" ? "클릭하여 상세 보기" : lang === "ja" ? "クリックして詳細を表示" : "Click for details"}>
                         <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                          {new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : "en-US", { hour12: false })}
+                          {new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false })}
                         </td>
                         <td className="px-4 py-3 font-mono">{log.current.toFixed(2)}</td>
                         <td className="px-4 py-3 font-mono">{log.temperature.toFixed(1)}</td>
