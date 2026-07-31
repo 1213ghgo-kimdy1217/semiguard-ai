@@ -1179,10 +1179,12 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
-              {/* LLM 분석 결과 (저장된 경우) */}
-              {log.llmAnalysis && (() => {
+              {/* LLM 분석 결과 (저장된 경우) - 현재 언어에 맞는 컬럼 표시 */}
+              {(log.llmAnalysisKo || log.llmAnalysisEn) && (() => {
+                const raw = lang === "ko" ? log.llmAnalysisKo : lang === "ja" ? log.llmAnalysisJa : log.llmAnalysisEn;
+                const fallback = log.llmAnalysisKo || log.llmAnalysisEn || log.llmAnalysisJa;
                 try {
-                  const a = JSON.parse(log.llmAnalysis!);
+                  const a = JSON.parse(raw ?? fallback ?? "");
                   return (
                     <div className="px-5 pb-5 flex flex-col gap-2">
                       <div className="rounded-xl p-3 border" style={{ background: "oklch(0.75 0.18 200 / 0.06)", borderColor: "oklch(0.75 0.18 200 / 0.25)" }}>
@@ -1362,7 +1364,9 @@ export default function Dashboard() {
               </div>
             ) : llmHistoryQuery.data.map((item) => {
               let parsed: { primaryCause?: string; recommendation?: string } = {};
-              try { parsed = JSON.parse(item.llmAnalysis); } catch {}
+              const rawItem = lang === "ko" ? item.llmAnalysisKo : lang === "ja" ? item.llmAnalysisJa : item.llmAnalysisEn;
+              const fallbackItem = item.llmAnalysisKo || item.llmAnalysisEn || item.llmAnalysisJa;
+              try { parsed = JSON.parse(rawItem ?? fallbackItem ?? ""); } catch {}
               const lvlColor = item.riskLevel === "danger" ? "rgb(239,68,68)" : item.riskLevel === "warning" ? "rgb(249,115,22)" : "rgb(234,179,8)";
               return (
                 <div key={item.id} className="px-4 py-3 border-b last:border-0" style={{ borderColor: isDark ? "oklch(0.18 0.015 240)" : "oklch(0.90 0.005 240)" }}>
@@ -2183,8 +2187,8 @@ export default function Dashboard() {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          {log.llmAnalysis ? (
-                            <span title={(() => { try { const a = JSON.parse(log.llmAnalysis!); return a.primaryCause; } catch { return ""; } })()}
+                          {(log.llmAnalysisKo || log.llmAnalysisEn) ? (
+                            <span title={(() => { try { const raw = lang === "ko" ? log.llmAnalysisKo : lang === "ja" ? log.llmAnalysisJa : log.llmAnalysisEn; const a = JSON.parse(raw ?? log.llmAnalysisKo ?? log.llmAnalysisEn ?? ""); return a.primaryCause; } catch { return ""; } })()}
                               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border"
                               style={{ color: "oklch(0.75 0.18 200)", background: "oklch(0.75 0.18 200 / 0.10)", borderColor: "oklch(0.75 0.18 200 / 0.30)" }}>
                               🤖 AI

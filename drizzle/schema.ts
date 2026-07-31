@@ -26,7 +26,9 @@ export const anomalyLogs = mysqlTable("anomaly_logs", {
   anomalyScore: float("anomaly_score").notNull(),
   riskLevel: mysqlEnum("risk_level", ["normal", "caution", "warning", "danger"]).notNull(),
   isAnomaly: int("is_anomaly").notNull().default(0),
-  llmAnalysis: text("llm_analysis"),
+  llmAnalysisKo: text("llm_analysis_ko"),
+  llmAnalysisEn: text("llm_analysis_en"),
+  llmAnalysisJa: text("llm_analysis_ja"),
 });
 
 export type AnomalyLog = typeof anomalyLogs.$inferSelect;

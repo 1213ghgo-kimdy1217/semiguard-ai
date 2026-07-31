@@ -8,11 +8,11 @@ export async function insertAnomalyLog(entry: InsertAnomalyLog) {
   await db.insert(anomalyLogs).values(entry);
 }
 
-// 특정 로그에 LLM 분석 결과 업데이트
-export async function updateAnomalyLogLlm(id: number, llmAnalysis: string) {
+// 특정 로그에 LLM 분석 결과 업데이트 (3개 언어)
+export async function updateAnomalyLogLlm(id: number, ko: string, en: string, ja: string) {
   const db = await getDb();
   if (!db) return;
-  await db.update(anomalyLogs).set({ llmAnalysis }).where(eq(anomalyLogs.id, id));
+  await db.update(anomalyLogs).set({ llmAnalysisKo: ko, llmAnalysisEn: en, llmAnalysisJa: ja }).where(eq(anomalyLogs.id, id));
 }
 
 // 가장 최근 삽입된 로그 ID 조회
@@ -23,8 +23,8 @@ export async function getLastInsertedLogId(): Promise<number | null> {
   return rows[0]?.id ?? null;
 }
 
-// LLM 분석 결과가 있는 최근 로그 N건 조회 (히스토리 패널용)
-export async function getLlmHistory(limit = 5): Promise<{ id: number; timestamp: Date; riskLevel: string; anomalyScore: number; llmAnalysis: string }[]> {
+// LLM 분석 결과가 있는 최근 로그 N건 조회 (히스토리 패널용) - 3개 언어
+export async function getLlmHistory(limit = 5): Promise<{ id: number; timestamp: Date; riskLevel: string; anomalyScore: number; llmAnalysisKo: string | null; llmAnalysisEn: string | null; llmAnalysisJa: string | null }[]> {
   const db = await getDb();
   if (!db) return [];
   const rows = await db.select({
@@ -32,12 +32,14 @@ export async function getLlmHistory(limit = 5): Promise<{ id: number; timestamp:
     timestamp: anomalyLogs.timestamp,
     riskLevel: anomalyLogs.riskLevel,
     anomalyScore: anomalyLogs.anomalyScore,
-    llmAnalysis: anomalyLogs.llmAnalysis,
+    llmAnalysisKo: anomalyLogs.llmAnalysisKo,
+    llmAnalysisEn: anomalyLogs.llmAnalysisEn,
+    llmAnalysisJa: anomalyLogs.llmAnalysisJa,
   }).from(anomalyLogs)
-    .where(sql`llm_analysis IS NOT NULL`)
+    .where(sql`llm_analysis_ko IS NOT NULL OR llm_analysis_en IS NOT NULL`)
     .orderBy(desc(anomalyLogs.timestamp))
     .limit(limit);
-  return rows.filter(r => r.llmAnalysis != null) as { id: number; timestamp: Date; riskLevel: string; anomalyScore: number; llmAnalysis: string }[];
+  return rows;
 }
 
 export async function getRecentAnomalyLogs(limit = 50) {
