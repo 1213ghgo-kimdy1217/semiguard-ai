@@ -640,6 +640,7 @@ export default function Dashboard() {
   const [volume, setVolume] = useState<number>(0.35);
   const volumeRef = useRef<number>(0.35);
   const [dangerFlash, setDangerFlash] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<import("../../../shared/semiguard").AnomalyLogEntry | null>(null);
   const [logPage, setLogPage] = useState(1);
   const LOG_PAGE_SIZE = 10;
   const [scoreHistory, setScoreHistory] = useState<number[]>([10]);
@@ -989,6 +990,81 @@ export default function Dashboard() {
         />
       )}
       {/* ── 위험 상태 팝업 ── */}
+      {/* ── 이상 이력 상세 모달 ── */}
+      {selectedLog && (() => {
+        const log = selectedLog;
+        const lvl = log.riskLevel as RiskLevel;
+        const color = RISK_COLORS[lvl];
+        const sensorItems = [
+          { label: lang === "ko" ? "전류" : "Current",     value: log.current.toFixed(2),    unit: "A",    icon: "⚡", color: "#38bdf8" },
+          { label: lang === "ko" ? "온도" : "Temperature", value: log.temperature.toFixed(1), unit: "°C",   icon: "🌡", color: "#fb923c" },
+          { label: lang === "ko" ? "진동" : "Vibration",   value: log.vibration.toFixed(2),   unit: "mm/s", icon: "📳", color: "#a78bfa" },
+          { label: lang === "ko" ? "소음" : "Noise",       value: log.noise.toFixed(1),       unit: "dB",   icon: "🔊", color: "#34d399" },
+        ];
+        return (
+          <div className="fixed inset-0 z-[1100] flex items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.65)", animation: "fadeIn 0.2s ease-out" }}
+            onClick={() => setSelectedLog(null)}>
+            <div className="relative w-full max-w-sm mx-4 rounded-2xl shadow-2xl overflow-hidden"
+              style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", border: `1px solid ${color}40` }}
+              onClick={e => e.stopPropagation()}>
+              {/* 헤더 */}
+              <div className="px-5 py-4 border-b flex items-center justify-between"
+                style={{ borderColor: `${color}30`, background: `${color}10` }}>
+                <div>
+                  <p className="text-xs font-semibold" style={{ color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)" }}>
+                    {lang === "ko" ? "이상 이력 상세" : "Anomaly Detail"}
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: isDark ? "oklch(0.50 0.01 240)" : "oklch(0.45 0.01 240)" }}>
+                    {new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : "en-US", { hour12: false })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
+                    style={{ color, background: RISK_BG[lvl], borderColor: RISK_BORDER[lvl] }}>
+                    {lang === "ko"
+                      ? lvl === "danger" ? "위험" : lvl === "warning" ? "경고" : lvl === "caution" ? "주의" : "정상"
+                      : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                  </span>
+                  <button onClick={() => setSelectedLog(null)}
+                    className="text-lg leading-none hover:opacity-60 transition-opacity"
+                    style={{ color: isDark ? "oklch(0.50 0.01 240)" : "oklch(0.45 0.01 240)" }}>✕</button>
+                </div>
+              </div>
+              {/* 이상 점수 */}
+              <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+                <span className="text-[11px] font-semibold" style={{ color: isDark ? "oklch(0.60 0.01 240)" : "oklch(0.40 0.01 240)" }}>
+                  {lang === "ko" ? "이상 점수" : "Anomaly Score"}
+                </span>
+                <span className="text-2xl font-bold font-mono" style={{ color }}>{log.anomalyScore}</span>
+              </div>
+              {/* 점수 바 */}
+              <div className="px-5 pb-4">
+                <div className="w-full h-2 rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                  <div className="h-2 rounded-full transition-all duration-700"
+                    style={{ width: `${Math.min(log.anomalyScore, 100)}%`, background: color }} />
+                </div>
+              </div>
+              {/* 센서 값 그리드 */}
+              <div className="px-5 pb-5 grid grid-cols-2 gap-2">
+                {sensorItems.map(s => (
+                  <div key={s.label} className="rounded-xl p-3 border flex flex-col gap-1"
+                    style={{ background: `${s.color}0d`, borderColor: `${s.color}30` }}>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm">{s.icon}</span>
+                      <span className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: s.color }}>{s.label}</span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-bold font-mono" style={{ color: s.color }}>{s.value}</span>
+                      <span className="text-[9px]" style={{ color: isDark ? "oklch(0.50 0.01 240)" : "oklch(0.45 0.01 240)" }}>{s.unit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {dangerAlert && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center"
           style={{ background: "rgba(0,0,0,0.7)", animation: "fadeIn 0.3s ease-out" }}>
@@ -1633,20 +1709,42 @@ export default function Dashboard() {
             style={{ background: th.bgCard, borderColor: th.border }}>
           {/* 0행: 통계 요약 카드 */}
           <div className="grid grid-cols-3 gap-2 mb-1">
-            {([
-              { label: lang === "ko" ? "위험" : "Danger",  count: logs.filter(l => (dateStart ? l.timestamp.slice(0,10) >= dateStart : true) && (dateEnd ? l.timestamp.slice(0,10) <= dateEnd : true) && l.riskLevel === "danger").length,  color: "#ef4444", bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.25)",   icon: "🔴" },
-              { label: lang === "ko" ? "경고" : "Warning", count: logs.filter(l => (dateStart ? l.timestamp.slice(0,10) >= dateStart : true) && (dateEnd ? l.timestamp.slice(0,10) <= dateEnd : true) && l.riskLevel === "warning").length, color: "#f97316", bg: "rgba(249,115,22,0.08)",  border: "rgba(249,115,22,0.25)",  icon: "🟠" },
-              { label: lang === "ko" ? "주의" : "Caution", count: logs.filter(l => (dateStart ? l.timestamp.slice(0,10) >= dateStart : true) && (dateEnd ? l.timestamp.slice(0,10) <= dateEnd : true) && l.riskLevel === "caution").length, color: "#eab308", bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   icon: "🟡" },
-            ] as const).map(s => (
-              <div key={s.label} className="rounded-lg p-2.5 border flex items-center justify-between"
-                style={{ background: s.bg, borderColor: s.border }}>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm">{s.icon}</span>
-                  <span className="text-[10px] font-semibold" style={{ color: s.color }}>{s.label}</span>
-                </div>
-                <span className="text-lg font-bold font-mono" style={{ color: s.color }}>{s.count}</span>
-              </div>
-            ))}
+            {(() => {
+              // 날짜 범위 기준 필터된 로그
+              const rangedLogs = logs.filter(l =>
+                (dateStart ? l.timestamp.slice(0,10) >= dateStart : true) &&
+                (dateEnd   ? l.timestamp.slice(0,10) <= dateEnd   : true)
+              );
+              const totalAbnormal = rangedLogs.filter(l => l.riskLevel !== "normal").length;
+              const stats = [
+                { label: lang === "ko" ? "위험" : "Danger",  count: rangedLogs.filter(l => l.riskLevel === "danger").length,  color: "#ef4444", bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.25)",   icon: "🔴" },
+                { label: lang === "ko" ? "경고" : "Warning", count: rangedLogs.filter(l => l.riskLevel === "warning").length, color: "#f97316", bg: "rgba(249,115,22,0.08)",  border: "rgba(249,115,22,0.25)",  icon: "🟠" },
+                { label: lang === "ko" ? "주의" : "Caution", count: rangedLogs.filter(l => l.riskLevel === "caution").length, color: "#eab308", bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   icon: "🟡" },
+              ];
+              return stats.map(s => {
+                const pct = totalAbnormal > 0 ? Math.round(s.count / totalAbnormal * 100) : 0;
+                return (
+                  <div key={s.label} className="rounded-lg p-2.5 border flex flex-col gap-1"
+                    style={{ background: s.bg, borderColor: s.border }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs">{s.icon}</span>
+                        <span className="text-[10px] font-semibold" style={{ color: s.color }}>{s.label}</span>
+                      </div>
+                      <span className="text-base font-bold font-mono" style={{ color: s.color }}>{s.count}</span>
+                    </div>
+                    {/* 비율 바 */}
+                    <div className="w-full h-1 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                      <div className="h-1 rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, background: s.color }} />
+                    </div>
+                    <span className="text-[9px] font-mono text-right" style={{ color: s.color, opacity: 0.75 }}>
+                      {totalAbnormal > 0 ? `${pct}%` : "-"}
+                    </span>
+                  </div>
+                );
+              });
+            })()}
           </div>
           {/* 날짜 범위 필터 */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -1759,8 +1857,11 @@ export default function Dashboard() {
                     const lvl = log.riskLevel as RiskLevel;
                     const color = RISK_COLORS[lvl];
                     return (
-                      <tr key={log.id} className="border-b transition-colors hover:bg-white/[0.015]"
-                        style={{ borderColor: "oklch(0.17 0.015 240)" }}>
+                      <tr key={log.id}
+                        className="border-b transition-colors hover:bg-white/[0.04] cursor-pointer"
+                        style={{ borderColor: "oklch(0.17 0.015 240)" }}
+                        onClick={() => setSelectedLog(log)}
+                        title={lang === "ko" ? "클릭하여 상세 보기" : "Click for details"}>
                         <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
                           {new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : "en-US", { hour12: false })}
                         </td>
