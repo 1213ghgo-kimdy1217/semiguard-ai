@@ -20,22 +20,20 @@ export const appRouter = router({
 
   semiguard: router({
     injectNormal: publicProcedure.mutation(async () => {
-      const data = generateNormalData();
-      const result = analyzeData(data);
-      await incrementSampleCount();
-      if (result.isAnomaly) {
-        await insertAnomalyLog({
-          current: data.current,
-          temperature: data.temperature,
-          vibration: data.vibration,
-          noise: data.noise,
-          anomalyScore: result.anomalyScore,
-          riskLevel: result.riskLevel as RiskLevel,
-          isAnomaly: 1,
-        });
-      }
-      return result;
-    }),
+    const data = generateNormalData();
+    const result = analyzeData(data);
+    await incrementSampleCount();
+    await insertAnomalyLog({
+      current: data.current,
+      temperature: data.temperature,
+      vibration: data.vibration,
+      noise: data.noise,
+      anomalyScore: result.anomalyScore,
+      riskLevel: result.riskLevel as RiskLevel,
+      isAnomaly: result.isAnomaly ? 1 : 0,
+    });
+    return result;
+  }),
 
     injectAnomaly: publicProcedure.mutation(async () => {
       const data = generateAnomalyData();
@@ -103,9 +101,11 @@ export const appRouter = router({
       }),
 
     clearLogs: publicProcedure.mutation(async () => {
-      await clearAnomalyLogs();
-      return { success: true };
-    }),
+    await clearAnomalyLogs();
+    // 로그 초기화 시 danger_reset_offset도 0으로 리셋
+    await resetSavedCost(0);
+    return { success: true };
+  }),
 
     // 방문자 카운터 증가 및 조회
     trackVisit: publicProcedure.mutation(async () => {

@@ -1726,7 +1726,7 @@ export default function Dashboard() {
                   setActiveTab("log");
                 }}
               />
-        </div>
+              </div>
           </>
         ) : (
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: th.border }}>{/* 이상 이력 로그 탭 */}
