@@ -8,6 +8,38 @@ export async function insertAnomalyLog(entry: InsertAnomalyLog) {
   await db.insert(anomalyLogs).values(entry);
 }
 
+// 특정 로그에 LLM 분석 결과 업데이트
+export async function updateAnomalyLogLlm(id: number, llmAnalysis: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(anomalyLogs).set({ llmAnalysis }).where(eq(anomalyLogs.id, id));
+}
+
+// 가장 최근 삽입된 로그 ID 조회
+export async function getLastInsertedLogId(): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({ id: anomalyLogs.id }).from(anomalyLogs).orderBy(desc(anomalyLogs.id)).limit(1);
+  return rows[0]?.id ?? null;
+}
+
+// LLM 분석 결과가 있는 최근 로그 N건 조회 (히스토리 패널용)
+export async function getLlmHistory(limit = 5): Promise<{ id: number; timestamp: Date; riskLevel: string; anomalyScore: number; llmAnalysis: string }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({
+    id: anomalyLogs.id,
+    timestamp: anomalyLogs.timestamp,
+    riskLevel: anomalyLogs.riskLevel,
+    anomalyScore: anomalyLogs.anomalyScore,
+    llmAnalysis: anomalyLogs.llmAnalysis,
+  }).from(anomalyLogs)
+    .where(sql`llm_analysis IS NOT NULL`)
+    .orderBy(desc(anomalyLogs.timestamp))
+    .limit(limit);
+  return rows.filter(r => r.llmAnalysis != null) as { id: number; timestamp: Date; riskLevel: string; anomalyScore: number; llmAnalysis: string }[];
+}
+
 export async function getRecentAnomalyLogs(limit = 50) {
   const db = await getDb();
   if (!db) return [];

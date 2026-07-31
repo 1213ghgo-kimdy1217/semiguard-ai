@@ -27,6 +27,7 @@ export interface AnomalyLogEntry {
   anomalyScore: number;
   riskLevel: RiskLevel;
   isAnomaly: boolean;
+  llmAnalysis?: string | null;
 }
 
 export const RISK_THRESHOLDS = {

@@ -32,7 +32,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 }
 
 // ─── CSV 내보내기 ─────────────────────────────────────────────────────────────
-function exportLogsToCSV(logs: AnomalyLogEntry[], lang: "ko" | "en") {
+function exportLogsToCSV(logs: AnomalyLogEntry[], lang: Lang) {
   const headers = lang === "ko"
     ? ["발생 시각", "전류(A)", "온도(°C)", "진동(mm/s)", "소음(dB)", "이상 점수", "위험도", "이상 여부"]
     : ["Time", "Current(A)", "Temp(°C)", "Vib(mm/s)", "Noise(dB)", "Score", "Level", "Anomaly"];
@@ -42,7 +42,7 @@ function exportLogsToCSV(logs: AnomalyLogEntry[], lang: "ko" | "en") {
     return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const rows = logs.map(log => [
-    escape(new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : "en-US", { hour12: false })),
+    escape(new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false })),
     escape(log.current.toFixed(2)),
     escape(log.temperature.toFixed(1)),
     escape(log.vibration.toFixed(2)),
@@ -349,7 +349,7 @@ function ScoreLineChart({
   isDark = true,
 }: {
   data: { timestamp: string; score: number; riskLevel: string }[];
-  lang: "ko" | "en";
+  lang: Lang;
   isDark?: boolean;
 }) {
   const chartTextColor = isDark ? "oklch(0.45 0.01 240)" : "oklch(0.30 0.01 240)";
@@ -483,7 +483,7 @@ function MonthlyHeatmap({
   isDark,
 }: {
   dailyData: { date: string; riskLevel: string }[];
-  lang: "ko" | "en";
+  lang: Lang;
   t: import("@/lib/i18n").Translation;
   onDateClick?: (date: string) => void;
   isDark: boolean;
@@ -705,6 +705,8 @@ export default function Dashboard() {
     riskLevel: string;
   } | null>(null);
   const [llmLoading, setLlmLoading] = useState(false);
+  const [showAiHistory, setShowAiHistory] = useState(false);
+  const llmHistoryQuery = trpc.semiguard.getLlmHistory.useQuery(undefined, { refetchInterval: 10000 });
 
   // ─── 경고음 콜백 ─────────────────────────────────────────────────────────
   const playAlert = useCallback(() => {
@@ -1177,6 +1179,24 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
+              {/* LLM 분석 결과 (저장된 경우) */}
+              {log.llmAnalysis && (() => {
+                try {
+                  const a = JSON.parse(log.llmAnalysis!);
+                  return (
+                    <div className="px-5 pb-5 flex flex-col gap-2">
+                      <div className="rounded-xl p-3 border" style={{ background: "oklch(0.75 0.18 200 / 0.06)", borderColor: "oklch(0.75 0.18 200 / 0.25)" }}>
+                        <p className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "oklch(0.75 0.18 200)" }}>
+                          🤖 {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
+                        </p>
+                        <p className="text-[11px] font-semibold mb-1" style={{ color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)" }}>{a.primaryCause}</p>
+                        <p className="text-[10px] leading-relaxed mb-1.5" style={{ color: isDark ? "oklch(0.60 0.01 240)" : "oklch(0.40 0.01 240)" }}>{a.details}</p>
+                        <p className="text-[10px] font-medium" style={{ color: "oklch(0.75 0.18 200)" }}>→ {a.recommendation}</p>
+                      </div>
+                    </div>
+                  );
+                } catch { return null; }
+              })()}
             </div>
           </div>
         );
@@ -1306,6 +1326,66 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ── AI 분석 히스토리 패널 ── */}
+      {showAiHistory && (
+        <div className="fixed bottom-6 left-6 z-[490] w-80 rounded-2xl shadow-2xl overflow-hidden"
+          style={{
+            background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
+            border: "1px solid oklch(0.75 0.18 200 / 0.35)",
+            animation: "slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1)"
+          }}>
+          <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: "oklch(0.75 0.18 200 / 0.20)", background: "oklch(0.75 0.18 200 / 0.06)" }}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">📋</span>
+              <span className="text-xs font-bold" style={{ color: "oklch(0.75 0.18 200)" }}>
+                {lang === "ko" ? "AI 분석 히스토리 (최근 5건)" : lang === "ja" ? "AI分析履歴（直近5件）" : "AI Analysis History (Last 5)"}
+              </span>
+            </div>
+            <button onClick={() => setShowAiHistory(false)}
+              className="w-5 h-5 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70"
+              style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}>✕</button>
+          </div>
+          <div className="max-h-80 overflow-y-auto">
+            {!llmHistoryQuery.data || llmHistoryQuery.data.length === 0 ? (
+              <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+                {lang === "ko" ? "저장된 AI 분석 결과가 없습니다." : lang === "ja" ? "保存されたAI分析結果がありません。" : "No AI analysis results saved yet."}
+              </div>
+            ) : llmHistoryQuery.data.map((item) => {
+              let parsed: { primaryCause?: string; recommendation?: string } = {};
+              try { parsed = JSON.parse(item.llmAnalysis); } catch {}
+              const lvlColor = item.riskLevel === "danger" ? "rgb(239,68,68)" : item.riskLevel === "warning" ? "rgb(249,115,22)" : "rgb(234,179,8)";
+              return (
+                <div key={item.id} className="px-4 py-3 border-b last:border-0" style={{ borderColor: isDark ? "oklch(0.18 0.015 240)" : "oklch(0.90 0.005 240)" }}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[9px] font-mono text-muted-foreground">
+                      {new Date(item.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false })}
+                    </span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: lvlColor, background: `${lvlColor}18`, border: `1px solid ${lvlColor}30` }}>
+                      {lang === "ko" ? (item.riskLevel === "danger" ? "위험" : item.riskLevel === "warning" ? "경고" : "주의") : lang === "ja" ? (item.riskLevel === "danger" ? "危険" : item.riskLevel === "warning" ? "警告" : "注意") : item.riskLevel} {item.anomalyScore}
+                    </span>
+                  </div>
+                  {parsed.primaryCause && <p className="text-[11px] font-semibold mb-1" style={{ color: isDark ? "oklch(0.88 0.01 240)" : "oklch(0.15 0.01 240)" }}>{parsed.primaryCause}</p>}
+                  {parsed.recommendation && <p className="text-[10px]" style={{ color: "oklch(0.75 0.18 200)" }}>→ {parsed.recommendation}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {/* AI 히스토리 토글 버튼 */}
+      {!showAiHistory && (
+        <button
+          onClick={() => setShowAiHistory(true)}
+          className="fixed bottom-6 left-6 z-[490] flex items-center gap-2 px-3 py-2 rounded-xl shadow-lg text-xs font-bold border transition-all duration-200 hover:opacity-90 active:scale-95"
+          style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", borderColor: "oklch(0.75 0.18 200 / 0.40)", color: "oklch(0.75 0.18 200)" }}>
+          📋 {lang === "ko" ? "AI 분석 이력" : lang === "ja" ? "AI分析履歴" : "AI History"}
+          {llmHistoryQuery.data && llmHistoryQuery.data.length > 0 && (
+            <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "oklch(0.75 0.18 200)", color: "white" }}>
+              {llmHistoryQuery.data.length}
+            </span>
+          )}
+        </button>
+      )}
       {/* ── 헤더 ── */}
       <header className="sticky top-0 z-50 border-b flex items-center justify-between px-3 sm:px-5 py-3"
         style={{ background: th.header, borderColor: th.border, transition: "background 0.3s ease" }}>
@@ -1324,10 +1404,11 @@ export default function Dashboard() {
           {!isMobile && <div className="w-px h-5 bg-border" />}
           <AlertPanel riskLevel={riskLevel} relayTripped={relayTripped} t={t} />
           {!isMobile && <div className="w-px h-5 bg-border" />}
-          <button onClick={() => setLang(l => l === "ko" ? "en" : "ko")}
+          <button onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")}
             className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-200 hover:opacity-80 active:scale-95"
-            style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
-            {lang === "ko" ? "EN" : "한국어"}
+            style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}
+            title={lang === "ko" ? "영어로 전환" : lang === "en" ? "日本語に切替" : "한국어로 전환"}>
+            {lang === "ko" ? "EN" : lang === "en" ? "日本語" : "한국어"}
           </button>
           {/* 다크/라이트 모드 전환 */}
           <button
@@ -2058,16 +2139,16 @@ export default function Dashboard() {
               <table className="w-full text-xs">
                 <thead>
                   <tr style={{ background: th.bgCard2, borderBottom: `1px solid ${th.border}` }}>
-                    {[t.logTime, t.logCurrent, t.logTemp, t.logVib, t.logNoise, t.logScore, t.logLevel].map(h => (
+                    {[t.logTime, t.logCurrent, t.logTemp, t.logVib, t.logNoise, t.logScore, t.logLevel, lang === "ko" ? "AI 분석" : lang === "ja" ? "AI分析" : "AI Analysis"].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-muted-foreground font-semibold uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {logsLoading ? (
-                    <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">Loading...</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Loading...</td></tr>
                   ) : !logs || logs.length === 0 ? (
-                    <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">{t.noLogs}</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">{t.noLogs}</td></tr>
                   ) : pagedLogs.map(log => {
                     const lvl = log.riskLevel as RiskLevel;
                     const color = RISK_COLORS[lvl];
@@ -2090,6 +2171,17 @@ export default function Dashboard() {
                             style={{ color, background: RISK_BG[lvl], borderColor: RISK_BORDER[lvl] }}>
                             {t[lvl]}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {log.llmAnalysis ? (
+                            <span title={(() => { try { const a = JSON.parse(log.llmAnalysis!); return a.primaryCause; } catch { return ""; } })()}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                              style={{ color: "oklch(0.75 0.18 200)", background: "oklch(0.75 0.18 200 / 0.10)", borderColor: "oklch(0.75 0.18 200 / 0.30)" }}>
+                              🤖 AI
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground opacity-40">—</span>
+                          )}
                         </td>
                       </tr>
                     );

@@ -1,0 +1,1 @@
+ALTER TABLE `anomaly_logs` ADD `llm_analysis` text;

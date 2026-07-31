@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
 import { invokeLLM } from "./_core/llm";
 import type { RiskLevel } from "../shared/semiguard";
@@ -121,7 +121,7 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().optional().default(50) }))
       .query(async ({ input }) => {
         const logs = await getRecentAnomalyLogs(input.limit);
-        return logs.map(l => ({
+          return logs.map(l => ({
           id: l.id,
           timestamp: l.timestamp.toISOString(),
           current: l.current,
@@ -131,6 +131,7 @@ export const appRouter = router({
           anomalyScore: l.anomalyScore,
           riskLevel: l.riskLevel,
           isAnomaly: l.isAnomaly === 1,
+          llmAnalysis: l.llmAnalysis ?? null,
         }));
       }),
 
@@ -231,24 +232,28 @@ export const appRouter = router({
         noise: z.number(),
         anomalyScore: z.number(),
         riskLevel: z.string(),
-        lang: z.enum(["ko", "en"]).default("ko"),
+        lang: z.enum(["ko", "en", "ja"]).default("ko"),
+        logId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { current, temperature, vibration, noise, anomalyScore, riskLevel, lang } = input;
+        const { current, temperature, vibration, noise, anomalyScore, riskLevel, lang, logId } = input;
         const isKo = lang === "ko";
-
+        const isJa = lang === "ja";
         const riskLabel = isKo
           ? (riskLevel === "danger" ? "위험" : riskLevel === "warning" ? "경고" : riskLevel === "caution" ? "주의" : "정상")
+          : isJa
+          ? (riskLevel === "danger" ? "危険" : riskLevel === "warning" ? "警告" : riskLevel === "caution" ? "注意" : "正常")
           : riskLevel;
-
         const systemPrompt = isKo
           ? `당신은 반도체 공정 설비 이상 탐지 전문 AI입니다. 센서 데이터를 분석하여 이상 원인을 간결하고 전문적으로 설명합니다. 정상 기준값: 전류 5.0A(+-0.5), 온도 45도C(+-3), 진동 2.0mm/s(+-0.3), 소음 55dB(+-4). 반드시 JSON만 반환하세요.`
+          : isJa
+          ? `あなたは半導体プロセス設備の異常検知専門AIです。センサーデータを分析し、異常原因を簡潔かつ専門的に説明します。正常基準値: 電流5.0A(±0.5)、温度45°C(±3)、振動2.0mm/s(±0.3)、騒音55dB(±4)。必ずJSONのみを返してください。`
           : `You are an AI specialist in semiconductor process equipment anomaly detection. Normal baseline: Current 5.0A(+-0.5), Temperature 45C(+-3), Vibration 2.0mm/s(+-0.3), Noise 55dB(+-4). Respond ONLY with JSON.`;
-
         const userPrompt = isKo
           ? `센서 데이터: 전류 ${current.toFixed(2)}A, 온도 ${temperature.toFixed(1)}도C, 진동 ${vibration.toFixed(2)}mm/s, 소음 ${noise.toFixed(1)}dB, 이상점수 ${anomalyScore.toFixed(1)}/100, 위험도 ${riskLabel}. 이상 원인과 권장 조치를 JSON으로 반환하세요.`
+          : isJa
+          ? `センサーデータ: 電流${current.toFixed(2)}A、温度${temperature.toFixed(1)}°C、振動${vibration.toFixed(2)}mm/s、騒音${noise.toFixed(1)}dB、異常スコア${anomalyScore.toFixed(1)}/100、危険度${riskLabel}。異常原因と推奨措置をJSONで返してください。`
           : `Sensor data: Current ${current.toFixed(2)}A, Temperature ${temperature.toFixed(1)}C, Vibration ${vibration.toFixed(2)}mm/s, Noise ${noise.toFixed(1)}dB, Anomaly score ${anomalyScore.toFixed(1)}/100, Risk ${riskLabel}. Return anomaly cause and recommendation as JSON.`;
-
         try {
           const response = await invokeLLM({
             messages: [
@@ -273,26 +278,41 @@ export const appRouter = router({
               },
             },
           });
-          const content = response.choices[0]?.message?.content;
-          if (typeof content === "string") {
-            return JSON.parse(content) as { primaryCause: string; details: string; recommendation: string };
+          const llmContent = response.choices[0]?.message?.content;
+          if (typeof llmContent === "string") {
+            const result = JSON.parse(llmContent) as { primaryCause: string; details: string; recommendation: string };
+            // DB에 LLM 분석 결과 저장
+            const targetId = logId ?? await getLastInsertedLogId();
+            if (targetId) {
+              await updateAnomalyLogLlm(targetId, JSON.stringify(result));
+            }
+            return result;
           }
           throw new Error("LLM returned no content");
         } catch {
-          return isKo
+          const fallback = isKo
             ? {
                 primaryCause: "복합 센서 이상 감지",
                 details: `이상 점수 ${anomalyScore.toFixed(0)}점으로 ${riskLabel} 단계가 감지되었습니다. 전류(${current.toFixed(2)}A), 온도(${temperature.toFixed(1)}도C), 진동(${vibration.toFixed(2)}mm/s), 소음(${noise.toFixed(1)}dB) 값을 확인하십시오.`,
                 recommendation: "즉시 설비 점검 및 운전 중단을 고려하십시오.",
+              }
+            : isJa
+            ? {
+                primaryCause: "複合センサー異常検知",
+                details: `異常スコア${anomalyScore.toFixed(0)}点で${riskLabel}レベルが検知されました。電流(${current.toFixed(2)}A)、温度(${temperature.toFixed(1)}°C)、振動(${vibration.toFixed(2)}mm/s)、騒音(${noise.toFixed(1)}dB)の値を確認してください。`,
+                recommendation: "直ちに設備点検および運転停止を検討してください。",
               }
             : {
                 primaryCause: "Multiple sensor anomaly detected",
                 details: `Anomaly score ${anomalyScore.toFixed(0)} triggered ${riskLabel} alert. Check current(${current.toFixed(2)}A), temperature(${temperature.toFixed(1)}C), vibration(${vibration.toFixed(2)}mm/s), noise(${noise.toFixed(1)}dB).`,
                 recommendation: "Consider immediate equipment inspection and shutdown.",
               };
+          return fallback;
         }
       }),
+    getLlmHistory: publicProcedure.query(async () => {
+      return getLlmHistory(5);
+    }),
   }),
 });
-
 export type AppRouter = typeof appRouter;
