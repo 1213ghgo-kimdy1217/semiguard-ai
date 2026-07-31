@@ -318,10 +318,19 @@ const RISK_COLOR_MAP: Record<string, string> = {
 function ScoreLineChart({
   data,
   lang,
+  isDark = true,
 }: {
   data: { timestamp: string; score: number; riskLevel: string }[];
   lang: "ko" | "en";
+  isDark?: boolean;
 }) {
+  const chartTextColor = isDark ? "oklch(0.45 0.01 240)" : "oklch(0.30 0.01 240)";
+  const chartAxisColor = isDark ? "oklch(0.25 0.02 240)" : "oklch(0.75 0.01 240)";
+  const chartDotStroke = isDark ? "oklch(0.10 0.01 240)" : "oklch(0.95 0.005 240)";
+  const tooltipBg      = isDark ? "oklch(0.15 0.02 240)" : "oklch(0.97 0.005 240)";
+  const tooltipBorder  = isDark ? "oklch(0.28 0.03 240)" : "oklch(0.80 0.01 240)";
+  const tooltipTime    = isDark ? "oklch(0.55 0.01 240)" : "oklch(0.40 0.01 240)";
+
   const [tooltip, setTooltip] = useState<{ x: number; y: number; score: number; time: string; risk: string } | null>(null);
   const W = 800, H = 200, PAD = { top: 16, right: 16, bottom: 32, left: 44 };
   const innerW = W - PAD.left - PAD.right;
@@ -386,7 +395,7 @@ function ScoreLineChart({
       ))}
       {/* Y축 레이블 */}
       {[0, 50, 100].map(v => (
-        <text key={v} x={PAD.left - 4} y={yScale(v) + 4} textAnchor="end" fontSize={9} fill="oklch(0.45 0.01 240)">{v}</text>
+        <text key={v} x={PAD.left - 4} y={yScale(v) + 4} textAnchor="end" fontSize={9} fill={chartTextColor}>{v}</text>
       ))}
       {/* 라인 */}
       <polyline points={points} fill="none" stroke="oklch(0.65 0.18 200)" strokeWidth={1.8} strokeLinejoin="round" strokeLinecap="round" />
@@ -394,7 +403,7 @@ function ScoreLineChart({
       {data.map((d, i) => (
         <circle key={i} cx={xScale(i)} cy={yScale(d.score)} r={3}
           fill={RISK_COLOR_MAP[d.riskLevel] ?? "#38bdf8"}
-          stroke="oklch(0.10 0.01 240)" strokeWidth={1}
+          stroke={chartDotStroke} strokeWidth={1}
           style={{ cursor: "crosshair" }}
           onMouseEnter={() => {
             const d2 = new Date(d.timestamp);
@@ -411,10 +420,10 @@ function ScoreLineChart({
       ))}
       {/* X축 레이블 */}
       {xLabels.map(xl => (
-        <text key={xl.i} x={xScale(xl.i)} y={H - 4} textAnchor="middle" fontSize={9} fill="oklch(0.45 0.01 240)">{xl.label}</text>
+        <text key={xl.i} x={xScale(xl.i)} y={H - 4} textAnchor="middle" fontSize={9} fill={chartTextColor}>{xl.label}</text>
       ))}
       {/* X축 선 */}
-      <line x1={PAD.left} y1={PAD.top + innerH} x2={PAD.left + innerW} y2={PAD.top + innerH} stroke="oklch(0.25 0.02 240)" strokeWidth={1} />
+      <line x1={PAD.left} y1={PAD.top + innerH} x2={PAD.left + innerW} y2={PAD.top + innerH} stroke={chartAxisColor} strokeWidth={1} />
       {/* 툴팁 */}
       {tooltip && (() => {
         const TW = 110, TH = 44;
@@ -423,9 +432,9 @@ function ScoreLineChart({
         const riskColor = RISK_COLOR_MAP[tooltip.risk] ?? "#38bdf8";
         return (
           <g style={{ pointerEvents: "none" }}>
-            <rect x={tx} y={ty} width={TW} height={TH} rx={6} fill="oklch(0.15 0.02 240)" stroke="oklch(0.28 0.03 240)" strokeWidth={1} />
+            <rect x={tx} y={ty} width={TW} height={TH} rx={6} fill={tooltipBg} stroke={tooltipBorder} strokeWidth={1} />
             <text x={tx + 8} y={ty + 15} fontSize={10} fill={riskColor} fontWeight="600">{`${lang === "ko" ? "점수" : "Score"}: ${tooltip.score}`}</text>
-            <text x={tx + 8} y={ty + 30} fontSize={9} fill="oklch(0.55 0.01 240)">{tooltip.time}</text>
+            <text x={tx + 8} y={ty + 30} fontSize={9} fill={tooltipTime}>{tooltip.time}</text>
             <text x={tx + 8} y={ty + 42} fontSize={9} fill={riskColor} opacity={0.8}>{
               lang === "ko"
                 ? tooltip.risk === "danger" ? "위험" : tooltip.risk === "warning" ? "경고" : tooltip.risk === "caution" ? "주의" : "정상"
@@ -517,11 +526,11 @@ function MonthlyHeatmap({
         <div className="flex items-center gap-2">
           <button onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
             className="w-6 h-6 flex items-center justify-center rounded text-xs border transition-all hover:opacity-80 active:scale-95"
-            style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.55 0.01 240)" }}>‹</button>
+            style={{ borderColor: th.border2, color: th.textMuted }}>‹</button>
           <span className="text-xs font-semibold min-w-[90px] text-center">{monthLabel}</span>
           <button onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
             className="w-6 h-6 flex items-center justify-center rounded text-xs border transition-all hover:opacity-80 active:scale-95"
-            style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.55 0.01 240)" }}>›</button>
+            style={{ borderColor: th.border2, color: th.textMuted }}>›</button>
         </div>
       </div>
 
@@ -548,11 +557,11 @@ function MonthlyHeatmap({
               className="aspect-square flex items-center justify-center rounded text-[10px] font-mono transition-all duration-200 select-none"
               style={{
                 cursor: onDateClick ? "pointer" : "default",
-                background: lvl ? CELL_COLOR[lvl] : "rgba(255,255,255,0.04)",
+                background: lvl ? CELL_COLOR[lvl] : (isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"),
                 border: isToday
                   ? "1.5px solid oklch(0.65 0.18 200)"
-                  : lvl ? `1px solid ${CELL_BORDER[lvl]}` : "1px solid rgba(255,255,255,0.06)",
-                color: lvl ? "#fff" : "oklch(0.45 0.01 240)",
+                  : lvl ? `1px solid ${CELL_BORDER[lvl]}` : `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.10)"}`,
+                color: lvl ? (isDark ? "#fff" : "#111") : (isDark ? "oklch(0.45 0.01 240)" : "oklch(0.30 0.01 240)"),
                 fontWeight: isToday ? 700 : 400,
               }}>
               {day}
@@ -1699,7 +1708,7 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </div>
-                <ScoreLineChart data={getRecentScoresQuery.data ?? []} lang={lang} />
+                <ScoreLineChart data={getRecentScoresQuery.data ?? []} lang={lang} isDark={isDark} />
               </div>
               <MonthlyHeatmap
                 dailyData={getDailyMaxRisk.data ?? []}
