@@ -236,6 +236,33 @@ function RiskGauge({ score, riskLevel, t }: { score: number; riskLevel: RiskLeve
 }
 
 // ─── Heartbeat 인디케이터 ───────────────────────────────────────────────────
+
+// ─── 카운트업 애니메이션 훅 ──────────────────────────────────────────────────
+function useCountUp(target: number, duration = 800) {
+  const [display, setDisplay] = useState(target);
+  const prevRef = useRef(target);
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    const from = prevRef.current;
+    const to = target;
+    if (from === to) return;
+    prevRef.current = to;
+    const start = performance.now();
+    const animate = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(from + (to - from) * eased));
+      if (progress < 1) rafRef.current = requestAnimationFrame(animate);
+    };
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(animate);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [target, duration]);
+  return display;
+}
+
 function HeartbeatIndicator({ alive, t }: { alive: boolean; t: Translation }) {
   return (
     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold"
@@ -663,6 +690,8 @@ export default function Dashboard() {
   const [volume, setVolume] = useState<number>(0.35);
   const volumeRef = useRef<number>(0.35);
   const [dangerFlash, setDangerFlash] = useState(false);
+  const [newLogCount, setNewLogCount] = useState(0);
+  const prevLogCountRef = useRef(0);
   const [selectedLog, setSelectedLog] = useState<import("../../../shared/semiguard").AnomalyLogEntry | null>(null);
   const [logPage, setLogPage] = useState(1);
   const LOG_PAGE_SIZE = 10;
@@ -689,6 +718,7 @@ export default function Dashboard() {
   const trackVisit = trpc.semiguard.trackVisit.useMutation();
   const injectCaution = trpc.semiguard.injectCaution.useMutation();
   const injectWarning = trpc.semiguard.injectWarning.useMutation();
+  const autoFetch = trpc.semiguard.autoFetch.useMutation();
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
   const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 200 }, { refetchInterval: 5000 });
@@ -712,6 +742,7 @@ export default function Dashboard() {
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoSpeed, setDemoSpeed] = useState(3); // 1~10초
   const [pdfExporting, setPdfExporting] = useState(false);
+  const displayedSavedCost = useCountUp(getStats.data?.savedCost ?? 0, 1000);
   const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ─── 센서별 임계값 tRPC 훅 ──────────────────────────────────────────────────
@@ -722,6 +753,15 @@ export default function Dashboard() {
   const anomalyScore = current?.anomalyScore ?? 0;
   const riskLevel = current?.riskLevel ?? "normal";
   const logs = logsData ?? [];
+  // 새 기록 배너: logs 개수 증가 감지
+  useEffect(() => {
+    const prev = prevLogCountRef.current;
+    const curr = logs.length;
+    if (curr > prev && prev > 0) {
+      setNewLogCount(n => n + (curr - prev));
+    }
+    prevLogCountRef.current = curr;
+  }, [logs.length]);
   const filteredLogs = useMemo(
     () => {
       let result = logs;
@@ -815,6 +855,13 @@ export default function Dashboard() {
           ? generateSlightCautionData()
           : generateSlightWarningData();
       const result = analyzeData(newData);
+      // 서버 DB에도 저장 (fire-and-forget)
+      autoFetch.mutate(undefined, {
+        onSuccess: () => {
+          utils.semiguard.getLogs.invalidate();
+          utils.semiguard.getStats.invalidate();
+        }
+      });
       setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
       setCurrent(result);
       setChartData(prev => {
@@ -1351,7 +1398,7 @@ export default function Dashboard() {
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t.savedCost}</p>
               <div className="flex items-end gap-2">
                 <span className="text-3xl font-bold font-mono" style={{ color: "#22c55e" }}>
-                  ₩{(getStats.data?.savedCost ?? 0).toLocaleString()}
+                  ₩{displayedSavedCost.toLocaleString()}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">{t.impactDesc}</p>
@@ -1730,6 +1777,17 @@ export default function Dashboard() {
           </>
         ) : (
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: th.border }}>{/* 이상 이력 로그 탭 */}
+          {/* 새 기록 알림 배너 */}
+          {newLogCount > 0 && (
+            <div
+              className="flex items-center justify-between px-4 py-2 text-sm font-semibold cursor-pointer"
+              style={{ background: "rgba(34,197,94,0.15)", borderBottom: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}
+              onClick={() => setNewLogCount(0)}
+            >
+              <span>🔔 {lang === "ko" ? `새 기록 ${newLogCount}건이 추가되었습니다` : `${newLogCount} new record${newLogCount > 1 ? "s" : ""} added`}</span>
+              <span className="text-xs opacity-70">{lang === "ko" ? "클릭하여 닫기" : "Click to dismiss"}</span>
+            </div>
+          )}
           {/* 탭 헤더 - 2행 구조 */}
           <div className="px-5 py-3 border-b flex flex-col gap-2"
             style={{ background: th.bgCard, borderColor: th.border }}>

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData } from "./semiguard";
+import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
 import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds } from "./semiguardDb";
 import type { RiskLevel } from "../shared/semiguard";
 
@@ -69,6 +69,28 @@ export const appRouter = router({
 
     injectWarning: publicProcedure.mutation(async () => {
       const data = generateWarningData();
+      const result = analyzeData(data);
+      await incrementSampleCount();
+      await insertAnomalyLog({
+        current: data.current,
+        temperature: data.temperature,
+        vibration: data.vibration,
+        noise: data.noise,
+        anomalyScore: result.anomalyScore,
+        riskLevel: result.riskLevel as RiskLevel,
+        isAnomaly: result.isAnomaly ? 1 : 0,
+      });
+      return result;
+    }),
+
+    autoFetch: publicProcedure.mutation(async () => {
+      // 자동 폴링: 80% 정상, 10% 약한 주의, 10% 약한 경고
+      const roll = Math.random();
+      const data = roll < 0.80
+        ? generateNormalData()
+        : roll < 0.90
+          ? generateSlightCautionData()
+          : generateSlightWarningData();
       const result = analyzeData(data);
       await incrementSampleCount();
       await insertAnomalyLog({

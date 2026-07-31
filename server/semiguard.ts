@@ -111,6 +111,49 @@ export function generateWarningData(): SensorData {
   return result as unknown as SensorData;
 }
 
+// 약한 주의: 1개 센서 살짝 이탈 (점수 10~25 → 주의 단계 진입)
+export function generateSlightCautionData(): SensorData {
+  const fields: (keyof typeof NORMAL_BASELINE)[] = ["current", "temperature", "vibration", "noise"];
+  const devField = fields[Math.floor(Math.random() * fields.length)];
+  const result: Record<string, number> = { timestamp: Date.now() };
+  for (const field of fields) {
+    const { mean, std } = NORMAL_BASELINE[field];
+    if (field === devField) {
+      // z=1.3~1.7 → 점수 10~14 per sensor
+      const factor = 1.3 + Math.random() * 0.4;
+      const sign = Math.random() > 0.5 ? 1 : -1;
+      const val = mean + std * factor * sign;
+      result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+    } else {
+      const val = mean + (Math.random() - 0.5) * std * 0.6;
+      result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+    }
+  }
+  return result as unknown as SensorData;
+}
+
+// 약한 경고: 2개 센서 이탈 (점수 30~50 → 경고 단계)
+export function generateSlightWarningData(): SensorData {
+  const fields: (keyof typeof NORMAL_BASELINE)[] = ["current", "temperature", "vibration", "noise"];
+  const shuffled = [...fields].sort(() => Math.random() - 0.5);
+  const devFields = new Set(shuffled.slice(0, 2));
+  const result: Record<string, number> = { timestamp: Date.now() };
+  for (const field of fields) {
+    const { mean, std } = NORMAL_BASELINE[field];
+    if (devFields.has(field)) {
+      // z=1.5~2.0 → 점수 12~16 per sensor, 2개 합산 24~32
+      const factor = 1.5 + Math.random() * 0.5;
+      const sign = Math.random() > 0.5 ? 1 : -1;
+      const val = mean + std * factor * sign;
+      result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+    } else {
+      const val = mean + (Math.random() - 0.5) * std * 0.6;
+      result[field] = parseFloat(val.toFixed(field === "temperature" || field === "noise" ? 1 : 2));
+    }
+  }
+  return result as unknown as SensorData;
+}
+
 export function analyzeData(data: SensorData) {
   const anomalyScore = computeAnomalyScore(data);
   const riskLevel: RiskLevel = getRiskLevel(anomalyScore);
