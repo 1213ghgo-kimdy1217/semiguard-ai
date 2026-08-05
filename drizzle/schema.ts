@@ -18,6 +18,7 @@ export type InsertUser = typeof users.$inferInsert;
 // 이상 이력 로그 테이블
 export const anomalyLogs = mysqlTable("anomaly_logs", {
   id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(), // 사용자별 데이터 격리
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   current: float("current").notNull(),
   temperature: float("temperature").notNull(),
@@ -33,6 +34,18 @@ export const anomalyLogs = mysqlTable("anomaly_logs", {
 
 export type AnomalyLog = typeof anomalyLogs.$inferSelect;
 export type InsertAnomalyLog = typeof anomalyLogs.$inferInsert;
+
+// 데이터 공유 권한 테이블
+export const dataSharing = mysqlTable("data_sharing", {
+  id: int("id").autoincrement().primaryKey(),
+  ownerId: int("owner_id").notNull(), // 데이터 소유자
+  sharedWithUserId: int("shared_with_user_id").notNull(), // 공유 대상 사용자
+  permission: mysqlEnum("permission", ["view", "edit"]).default("view").notNull(), // 권한 수준
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DataSharing = typeof dataSharing.$inferSelect;
+export type InsertDataSharing = typeof dataSharing.$inferInsert;
 
 // 방문자 카운터 테이블
 export const visitorStats = mysqlTable("visitor_stats", {
@@ -90,3 +103,16 @@ export const sensorThresholds = mysqlTable("sensor_thresholds", {
 });
 
 export type SensorThreshold = typeof sensorThresholds.$inferSelect;
+
+// 사용자별 통계 테이블 (각 사용자의 절감 비용, 이상 탐지 횟수 등)
+export const userStats = mysqlTable("user_stats", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().unique(),
+  totalAnomalies: int("total_anomalies").notNull().default(0),
+  totalSavedCost: int("total_saved_cost").notNull().default(0),
+  dangerResetOffset: int("danger_reset_offset").notNull().default(0),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserStat = typeof userStats.$inferSelect;
+export type InsertUserStat = typeof userStats.$inferInsert;

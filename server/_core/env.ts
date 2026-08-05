@@ -7,4 +7,11 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Social login
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  naverClientId: process.env.NAVER_CLIENT_ID ?? "",
+  naverClientSecret: process.env.NAVER_CLIENT_SECRET ?? "",
+  kakaoClientId: process.env.KAKAO_CLIENT_ID ?? "",
+  kakaoClientSecret: process.env.KAKAO_CLIENT_SECRET ?? "",
 };

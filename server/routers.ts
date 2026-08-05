@@ -28,6 +28,7 @@ export const appRouter = router({
     const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
     await incrementSampleCount();
     await insertAnomalyLog({
+      userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
       current: data.current,
       temperature: data.temperature,
       vibration: data.vibration,
@@ -46,6 +47,7 @@ export const appRouter = router({
       const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       await insertAnomalyLog({
+        userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
         current: data.current,
         temperature: data.temperature,
         vibration: data.vibration,
@@ -64,6 +66,7 @@ export const appRouter = router({
       const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       await insertAnomalyLog({
+        userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
         current: data.current,
         temperature: data.temperature,
         vibration: data.vibration,
@@ -82,6 +85,7 @@ export const appRouter = router({
       const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       await insertAnomalyLog({
+        userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
         current: data.current,
         temperature: data.temperature,
         vibration: data.vibration,
@@ -106,6 +110,7 @@ export const appRouter = router({
       const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       await insertAnomalyLog({
+        userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
         current: data.current,
         temperature: data.temperature,
         vibration: data.vibration,

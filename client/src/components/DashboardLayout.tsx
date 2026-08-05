@@ -57,6 +57,7 @@ export default function DashboardLayout({
   }
 
   if (!user) {
+    const [, setLocation] = useLocation();
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
@@ -69,7 +70,7 @@ export default function DashboardLayout({
             </p>
           </div>
           <Button
-            onClick={() => startLogin()}
+            onClick={() => setLocation("/login")}
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"
           >

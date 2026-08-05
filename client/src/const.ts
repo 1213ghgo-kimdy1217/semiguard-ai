@@ -29,3 +29,45 @@ export const startLogin = () => {
 
   window.location.href = url.toString();
 };
+
+// Social login functions
+export const startGoogleLogin = () => {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const redirectUri = `${window.location.origin}/api/oauth/google/callback`;
+  const scope = "openid email profile";
+  const responseType = "code";
+
+  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", responseType);
+  url.searchParams.set("scope", scope);
+
+  window.location.href = url.toString();
+};
+
+export const startNaverLogin = () => {
+  const clientId = import.meta.env.VITE_NAVER_CLIENT_ID;
+  const redirectUri = `${window.location.origin}/api/oauth/naver/callback`;
+  const state = crypto.randomUUID();
+
+  const url = new URL("https://nid.naver.com/oauth2.0/authorize");
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("state", state);
+
+  window.location.href = url.toString();
+};
+
+export const startKakaoLogin = () => {
+  const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID;
+  const redirectUri = `${window.location.origin}/api/oauth/kakao/callback`;
+
+  const url = new URL("https://kauth.kakao.com/oauth/authorize");
+  url.searchParams.set("client_id", clientId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+
+  window.location.href = url.toString();
+};
