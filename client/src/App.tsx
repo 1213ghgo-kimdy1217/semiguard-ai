@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Dashboard from "./pages/Dashboard";
 import { Login } from "./pages/Login";
+import Signup from "./pages/Signup";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useEffect, useState } from "react";
 
@@ -48,6 +49,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <Switch>
+      <Route path={"/signup"} component={Signup} />
       <Route path={"/login"} component={Login} />
       <Route path={"/"}>
         <ProtectedRoute>
@@ -55,7 +57,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path={"/404"} component={NotFound} />
-      <Route component={NotFound} />
+      <Route component={Signup} />
     </Switch>
   );
 }

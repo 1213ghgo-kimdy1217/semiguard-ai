@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
@@ -618,6 +619,7 @@ function MonthlyHeatmap({
 
 // ─── 메인 대시보드 ───────────────────────────────────────────────────────────
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const [lang, setLang] = useState<Lang>("ko");
   const t = translations[lang] as Translation;
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -1568,6 +1570,22 @@ export default function Dashboard() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
             style={{ borderColor: th.border2, color: "oklch(0.65 0.18 200)", background: th.bgCard }}>
             {pdfExporting ? <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid oklch(0.65 0.18 200)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "📄"} {lang === "ko" ? "PDF" : "PDF"}
+          </button>
+          {/* 로그아웃 버튼 */}
+          <button
+            onClick={async () => {
+              try {
+                await fetch("/api/trpc/auth.logout", { method: "POST" });
+                setLocation("/login");
+              } catch (e) {
+                console.error("Logout error:", e);
+                toast.error(lang === "ko" ? "로그아웃 실패" : "Logout failed");
+              }
+            }}
+            title={lang === "ko" ? "로그아웃" : "Logout"}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95"
+            style={{ borderColor: "oklch(0.65 0.20 30 / 0.6)", color: "oklch(0.75 0.20 30)", background: "oklch(0.65 0.20 30 / 0.12)" }}>
+            🚪 {lang === "ko" ? "로그아웃" : "Logout"}
           </button>
         </div>
       </header>

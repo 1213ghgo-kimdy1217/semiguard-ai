@@ -1,8 +1,57 @@
-import { startLogin, startGoogleLogin, startNaverLogin, startKakaoLogin } from "@/const";
+import { startGoogleLogin, startNaverLogin, startKakaoLogin } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useLocation } from "wouter";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export function Login() {
+  const [, setLocation] = useLocation();
+  const [badgeNumber, setBadgeNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!badgeNumber.trim()) {
+      toast.error("회사 명찰 번호를 입력해주세요.");
+      return;
+    }
+    if (!password) {
+      toast.error("비밀번호를 입력해주세요.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/trpc/auth.login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          badgeNumber,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("로그인 실패");
+      }
+
+      toast.success("로그인이 완료되었습니다!");
+      setLocation("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("로그인 실패: 명찰 번호 또는 비밀번호를 확인해주세요.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
       <Card className="w-full max-w-md p-8 bg-slate-800 border-slate-700">
@@ -20,6 +69,73 @@ export function Login() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-slate-800 text-slate-400">로그인</span>
+            </div>
+          </div>
+
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="space-y-4">
+            {/* Badge Number */}
+            <div className="space-y-2">
+              <Label htmlFor="badgeNumber" className="text-slate-300 text-sm font-medium">
+                회사 명찰 번호
+              </Label>
+              <Input
+                id="badgeNumber"
+                type="text"
+                placeholder="예: EMP-2024-001"
+                value={badgeNumber}
+                onChange={(e) => setBadgeNumber(e.target.value)}
+                className="bg-slate-700 border-slate-600 text-white placeholder-slate-500"
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-slate-300 text-sm font-medium">
+                비밀번호
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="비밀번호 입력"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-slate-700 border-slate-600 text-white placeholder-slate-500"
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Login Button */}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 h-auto"
+            >
+              {isLoading ? "로그인 중..." : "로그인"}
+            </Button>
+          </form>
+
+          {/* Signup Link */}
+          <div className="text-center">
+            <p className="text-slate-400 text-sm">
+              계정이 없으신가요?{" "}
+              <button
+                onClick={() => setLocation("/signup")}
+                className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
+              >
+                회원가입
+              </button>
+            </p>
+          </div>
+
+          {/* Divider - Social Login */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-600"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-slate-800 text-slate-400">소셜 로그인</span>
             </div>
           </div>
 
@@ -72,15 +188,6 @@ export function Login() {
                 <path d="M12 2C6.48 2 2 5.58 2 10c0 2.54 1.19 4.85 3.1 6.4.38.34.6.84.5 1.32-.08.37-.31.68-.62.85-.31.17-.68.17-.99 0-.76-.42-1.44-.95-2.03-1.56C2.46 14.76 1 12.54 1 10c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10c-.55 0-1 .45-1 1s.45 1 1 1c5.52 0 10-4.48 10-10S17.52 2 12 2z" />
               </svg>
               Kakao로 로그인
-            </Button>
-
-            {/* Manus Login */}
-            <Button
-              onClick={() => startLogin()}
-              variant="outline"
-              className="w-full border-slate-600 text-slate-300 hover:bg-slate-700 font-semibold py-2 h-auto"
-            >
-              Manus로 로그인
             </Button>
           </div>
 

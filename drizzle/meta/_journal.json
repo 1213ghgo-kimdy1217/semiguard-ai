@@ -50,6 +50,20 @@
       "when": 1785498347969,
       "tag": "0006_cheerful_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1786176736657,
+      "tag": "0007_silent_goliath",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1786240842986,
+      "tag": "0008_fancy_tyrannus",
+      "breakpoints": true
     }
   ]
 }

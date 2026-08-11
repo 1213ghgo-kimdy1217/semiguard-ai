@@ -1,4 +1,4 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME } from "../shared/const";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -6,6 +6,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
 import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
+import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
 import type { RiskLevel } from "../shared/semiguard";
 
@@ -18,6 +19,33 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    signup: publicProcedure
+      .input(z.object({
+        badgeNumber: z.string().min(1),
+        name: z.string().min(1),
+        dateOfBirth: z.string(),
+        password: z.string().min(6),
+      }))
+      .mutation(async ({ input }) => {
+        // TODO: 실제 DB에 사용자 저장 구현
+        return {
+          success: true,
+          message: "회원가입이 완료되었습니다. 로그인 페이지에서 로그인해주세요.",
+        };
+      }),
+    
+    login: publicProcedure
+      .input(z.object({
+        badgeNumber: z.string().min(1),
+        password: z.string().min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // TODO: 실제 DB에서 사용자 조회 및 비밀번호 검증 구현
+        return {
+          success: true,
+          message: "로그인이 완료되었습니다.",
+        };
+      }),
   }),
 
   semiguard: router({
