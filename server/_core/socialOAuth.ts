@@ -22,9 +22,11 @@ interface GoogleTokenResponse {
 }
 
 interface GoogleUserInfo {
-  sub: string;
-  email: string;
-  name: string;
+  // The v2 userinfo endpoint returns `id`; OpenID Connect responses may expose `sub`.
+  id?: string;
+  sub?: string;
+  email?: string;
+  name?: string;
   picture?: string;
 }
 
@@ -181,8 +183,13 @@ export function registerSocialOAuthRoutes(app: Express) {
       // Get user info
       const googleUserInfo = await getGoogleUserInfo(tokenResponse.data.access_token);
 
+      const googleId = googleUserInfo.sub || googleUserInfo.id;
+      if (!googleId) {
+        throw new Error("Google user identifier is missing");
+      }
+
       const userInfo: SocialUserInfo = {
-        id: googleUserInfo.sub,
+        id: googleId,
         email: googleUserInfo.email,
         name: googleUserInfo.name,
         provider: "google",

@@ -131,6 +131,30 @@ describe("social OAuth callbacks", () => {
     }
   );
 
+  it("uses the Google v2 userinfo id when sub is absent", async () => {
+    vi.mocked(axios.post).mockResolvedValueOnce({ data: { access_token: "google-token" } });
+    vi.mocked(axios.get).mockResolvedValueOnce({
+      data: {
+        id: "google-v2-user-1",
+        email: "v2@example.com",
+        name: "Google V2 User",
+      },
+    });
+    const { state, cookie } = buildState("google");
+
+    const response = await requestCallback("google", state, cookie);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe("/");
+    expect(db.upsertUser).toHaveBeenCalledWith(
+      expect.objectContaining({ openId: "google_google-v2-user-1", loginMethod: "google" })
+    );
+    expect(sdk.createSessionToken).toHaveBeenCalledWith(
+      "google_google-v2-user-1",
+      expect.objectContaining({ name: "Google V2 User" })
+    );
+  });
+
   it("creates a session cookie and redirects to the dashboard after Google login", async () => {
     vi.mocked(axios.post).mockResolvedValueOnce({ data: { access_token: "google-token" } });
     vi.mocked(axios.get).mockResolvedValueOnce({
