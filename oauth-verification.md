@@ -14,3 +14,7 @@
 ## 2026-08-12 Google 재로그인 검증
 
 사용자가 배포된 로그인 페이지에서 Google 버튼을 눌렀고, Google 계정의 기존 인증 세션과 동의 기록으로 별도 계정 입력 없이 인증 후 대시보드로 이동했다. 브라우저에서 `/api/trpc/auth.me`를 호출한 결과 HTTP 200이며 `loginMethod: "google"`, `openId: "google_108663582798959432999"`가 반환되었다. 이전의 `google_undefined` 문제는 재현되지 않았고 사이트 세션 쿠키와 대시보드 보호 라우팅이 정상 작동했다.
+
+## 2026-08-12 최신 배포 재로그인 검증
+
+사용자가 최신 배포본에서 로그아웃 후 Google 버튼을 눌렀고, 기존 Google 인증 세션으로 자동 로그인되어 대시보드에 도착했다. `/api/trpc/auth.me`는 HTTP 200을 반환했고 `loginMethod: "google"`, `openId: "google_108663582798959432999"`를 확인했다. `google_undefined`는 재현되지 않았다.

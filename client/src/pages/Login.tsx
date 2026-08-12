@@ -14,6 +14,14 @@ export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const oauthError = new URLSearchParams(window.location.search).get("oauth_error");
   const oauthProviderLabel = oauthError === "google" ? "Google" : oauthError === "naver" ? "Naver" : oauthError === "kakao" ? "Kakao" : "소셜 로그인";
+  const isOauthEnabled = !import.meta.env.DEV;
+  const handleSocialLogin = (start: () => void) => {
+    if (!isOauthEnabled) {
+      toast.info("개발 미리보기에서는 소셜 로그인을 사용할 수 없습니다. 배포된 사이트에서 이용해주세요.");
+      return;
+    }
+    start();
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,12 +159,20 @@ export function Login() {
             </div>
           </div>
 
+          {!isOauthEnabled && (
+            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-xs leading-relaxed text-cyan-100" role="status">
+              개발 미리보기에서는 OAuth 제공자의 등록된 콜백 주소와 달라 소셜 로그인을 잠시 비활성화했습니다. 실제 소셜 로그인은 배포된 사이트에서 이용해주세요.
+            </div>
+          )}
+
           {/* Social Login Buttons */}
           <div className="space-y-3">
             {/* Google Login */}
             <Button
-              onClick={() => startGoogleLogin()}
-              className="w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-2 h-auto"
+              onClick={() => handleSocialLogin(startGoogleLogin)}
+              disabled={!isOauthEnabled}
+              title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
+              className={`w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-2 h-auto disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
@@ -181,8 +197,10 @@ export function Login() {
 
             {/* Naver Login */}
             <Button
-              onClick={() => startNaverLogin()}
-              className="w-full bg-[#00C73C] hover:bg-[#00B833] text-white font-semibold py-2 h-auto"
+              onClick={() => handleSocialLogin(startNaverLogin)}
+              disabled={!isOauthEnabled}
+              title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
+              className={`w-full bg-[#00C73C] hover:bg-[#00B833] text-white font-semibold py-2 h-auto disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm0 22c-5.52 0-10-4.48-10-10S6.48 2 12 2s10 4.48 10 10-4.48 10-10 10z" />
@@ -193,8 +211,10 @@ export function Login() {
 
             {/* Kakao Login */}
             <Button
-              onClick={() => startKakaoLogin()}
-              className="w-full bg-[#FFE812] hover:bg-[#F0D800] text-slate-900 font-semibold py-2 h-auto"
+              onClick={() => handleSocialLogin(startKakaoLogin)}
+              disabled={!isOauthEnabled}
+              title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
+              className={`w-full bg-[#FFE812] hover:bg-[#F0D800] text-slate-900 font-semibold py-2 h-auto disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 5.58 2 10c0 2.54 1.19 4.85 3.1 6.4.38.34.6.84.5 1.32-.08.37-.31.68-.62.85-.31.17-.68.17-.99 0-.76-.42-1.44-.95-2.03-1.56C2.46 14.76 1 12.54 1 10c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10c-.55 0-1 .45-1 1s.45 1 1 1c5.52 0 10-4.48 10-10S17.52 2 12 2z" />

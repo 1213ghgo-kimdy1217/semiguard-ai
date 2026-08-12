@@ -123,3 +123,18 @@
 - [x] Google 소셜 로그인 사용자 식별자 매핑 수정 (`openId`가 `google_undefined`로 저장되는 문제 해결)
 - [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증
 - [ ] 배포 OAuth 성공 콜백에 제공자·식별자 존재 여부·리다이렉트 완료 구조화 로그 추가 및 확인
+
+## 대시보드 슬라이드 메뉴 개선 (2026-08-12)
+- [x] 대시보드 헤더 조작 버튼을 메뉴 패널로 이동
+- [x] 왼쪽에서 오른쪽으로 열리는 슬라이드 아웃 메뉴 구현
+- [x] 메뉴 열기·닫기·바깥 영역 클릭·Escape 키 접근성 처리
+- [x] 모바일·데스크톱 반응형 레이아웃 및 메뉴 시각 검증
+- [x] 메뉴 이동 후 기존 언어·테마·음소거·볼륨·데모·PDF·로그아웃 동작 회귀 테스트 (TypeScript·Vitest 17개 통과)
+- [x] 개발 미리보기에서 메뉴 작업 후 발생한 로그인·라우팅 오류 재현
+- [x] 개발 미리보기 인증 오류와 메뉴 UI 오류를 분리해 수정 (Google redirect_uri_mismatch)
+- [ ] 배포 로그인 흐름을 보호한 상태에서 메뉴 변경본 재검증
+- [x] 개발 미리보기 Google OAuth redirect_uri_mismatch는 배포 도메인과 다른 콜백 URL을 사용해 발생함을 문서화하고 테스트 경로를 분리
+- [x] 개발 모드에서 `?menu=open`으로 슬라이드 메뉴 열린 상태를 캡처할 수 있는 시각 검증 경로 추가
+- [x] 메뉴 프론트엔드 계약 테스트를 현재 Vitest include 경로에 맞게 정리 (server/dashboard-menu.contract.test.ts)
+- [x] 개발 모드 소셜 로그인 버튼을 배포 도메인 안내 상태로 보호해 redirect_uri_mismatch 재발 방지
+- [x] 개발 모드 OAuth 보호 UI와 메뉴 시각 검증 경로의 분리 동작 기록
