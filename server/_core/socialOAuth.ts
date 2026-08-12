@@ -99,7 +99,7 @@ function redirectToSocialLoginError(res: Response, redirectUri: string, provider
 }
 
 async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
-  const response = await axios.get("https://www.googleapis.com/oauth2/v2/userinfo", {
+  const response = await axios.get("https://openidconnect.googleapis.com/v1/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   return response.data;
