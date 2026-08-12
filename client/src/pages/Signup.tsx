@@ -64,15 +64,19 @@ export function Signup() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          badgeNumber: formData.badgeNumber,
-          name: formData.name,
-          dateOfBirth: formData.dateOfBirth,
-          password: formData.password,
+          json: {
+            badgeNumber: formData.badgeNumber.trim(),
+            name: formData.name.trim(),
+            dateOfBirth: formData.dateOfBirth,
+            password: formData.password,
+          },
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("회원가입 실패");
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.error) {
+        const message = payload?.error?.json?.message ?? payload?.error?.message;
+        throw new Error(message || "회원가입 실패");
       }
 
       toast.success("회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
@@ -83,7 +87,7 @@ export function Signup() {
       }, 1500);
     } catch (error) {
       console.error("Signup error:", error);
-      toast.error("회원가입 중 오류가 발생했습니다.");
+      toast.error(error instanceof Error ? error.message : "회원가입 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }

@@ -35,13 +35,17 @@ export function Login() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          badgeNumber,
-          password,
+          json: {
+            badgeNumber: badgeNumber.trim(),
+            password,
+          },
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("로그인 실패");
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.error) {
+        const message = payload?.error?.json?.message ?? payload?.error?.message;
+        throw new Error(message || "로그인 실패");
       }
 
       toast.success("로그인이 완료되었습니다!");

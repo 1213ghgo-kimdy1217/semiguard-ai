@@ -89,4 +89,44 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUserByBadgeNumber(badgeNumber: string) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured");
+  }
+
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.badgeNumber, badgeNumber))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createLocalUser(input: {
+  badgeNumber: string;
+  name: string;
+  dateOfBirth: string;
+  passwordHash: string;
+}) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured");
+  }
+
+  const openId = `local_${input.badgeNumber}`;
+  await db.insert(users).values({
+    openId,
+    badgeNumber: input.badgeNumber,
+    name: input.name,
+    dateOfBirth: new Date(`${input.dateOfBirth}T00:00:00.000Z`),
+    passwordHash: input.passwordHash,
+    loginMethod: "password",
+    lastSignedIn: new Date(),
+  });
+
+  return getUserByOpenId(openId);
+}
+
 // TODO: add feature queries here as your schema grows.

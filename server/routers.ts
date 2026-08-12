@@ -1,5 +1,7 @@
-import { COOKIE_NAME } from "../shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { z } from "zod";
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
@@ -9,6 +11,25 @@ import { getRiskLevel } from "../shared/semiguard";
 import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
 import type { RiskLevel } from "../shared/semiguard";
+import * as db from "./db";
+import { sdk } from "./_core/sdk";
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const derivedKey = scryptSync(password, salt, 64).toString("hex");
+  return `scrypt$${salt}$${derivedKey}`;
+}
+
+function verifyPassword(password: string, encodedHash: string): boolean {
+  const [algorithm, salt, storedHex] = encodedHash.split("$");
+  if (algorithm !== "scrypt" || !salt || !storedHex || !/^[0-9a-f]+$/i.test(storedHex)) {
+    return false;
+  }
+
+  const storedKey = Buffer.from(storedHex, "hex");
+  const derivedKey = scryptSync(password, salt, storedKey.length);
+  return storedKey.length === derivedKey.length && timingSafeEqual(storedKey, derivedKey);
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -21,30 +42,56 @@ export const appRouter = router({
     }),
     signup: publicProcedure
       .input(z.object({
-        badgeNumber: z.string().min(1),
-        name: z.string().min(1),
-        dateOfBirth: z.string(),
-        password: z.string().min(6),
+        badgeNumber: z.string().trim().min(1).max(64),
+        name: z.string().trim().min(1).max(120),
+        dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        password: z.string().min(6).max(128),
       }))
       .mutation(async ({ input }) => {
-        // TODO: 실제 DB에 사용자 저장 구현
+        const badgeNumber = input.badgeNumber.trim();
+        const existingUser = await db.getUserByBadgeNumber(badgeNumber);
+        if (existingUser) {
+          throw new TRPCError({ code: "CONFLICT", message: "이미 가입된 회사 명찰 번호입니다." });
+        }
+
+        await db.createLocalUser({
+          badgeNumber,
+          name: input.name.trim(),
+          dateOfBirth: input.dateOfBirth,
+          passwordHash: hashPassword(input.password),
+        });
+
         return {
           success: true,
           message: "회원가입이 완료되었습니다. 로그인 페이지에서 로그인해주세요.",
-        };
+        } as const;
       }),
-    
+
     login: publicProcedure
       .input(z.object({
-        badgeNumber: z.string().min(1),
-        password: z.string().min(1),
+        badgeNumber: z.string().trim().min(1).max(64),
+        password: z.string().min(1).max(128),
       }))
       .mutation(async ({ input, ctx }) => {
-        // TODO: 실제 DB에서 사용자 조회 및 비밀번호 검증 구현
+        const user = await db.getUserByBadgeNumber(input.badgeNumber.trim());
+        if (!user?.passwordHash || !verifyPassword(input.password, user.passwordHash)) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "회사 명찰 번호 또는 비밀번호가 올바르지 않습니다." });
+        }
+
+        const sessionToken = await sdk.createSessionToken(user.openId, {
+          name: user.name ?? "",
+          expiresInMs: ONE_YEAR_MS,
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, {
+          ...cookieOptions,
+          maxAge: ONE_YEAR_MS,
+        });
+
         return {
           success: true,
           message: "로그인이 완료되었습니다.",
-        };
+        } as const;
       }),
   }),
 
