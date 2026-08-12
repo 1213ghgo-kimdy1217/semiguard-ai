@@ -143,6 +143,13 @@ async function handleSocialLogin(
 
     const cookieOptions = getSessionCookieOptions(req);
     res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+    console.info("[Social OAuth] Session established", {
+      provider: userInfo.provider,
+      hasProviderId: Boolean(userInfo.id),
+      redirect: "/",
+      cookieSecure: cookieOptions.secure,
+      cookieSameSite: cookieOptions.sameSite,
+    });
 
     res.redirect(302, "/");
   } catch (error) {
