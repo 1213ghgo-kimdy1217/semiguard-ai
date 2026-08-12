@@ -1,4 +1,4 @@
-import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS, OAUTH_STATE_COOKIE, decodeOAuthState } from "@shared/const";
 import { parse as parseCookieHeader } from "cookie";
 import type { Express, Request, Response } from "express";
 import axios from "axios";
@@ -69,6 +69,33 @@ function getQueryParam(req: Request, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+function getOAuthRedirectUri(req: Request, state: string | undefined, provider: SocialUserInfo["provider"]): string {
+  if (!state) throw new Error("OAuth state is missing");
+
+  const decoded = decodeOAuthState(state);
+  const expectedNonce = parseCookieHeader(req.headers.cookie ?? "")[OAUTH_STATE_COOKIE];
+  if (!decoded.nonce || !expectedNonce || decoded.nonce !== expectedNonce) {
+    throw new Error("OAuth state validation failed");
+  }
+
+  const redirectUri = new URL(decoded.redirectUri);
+  const expectedPath = `/api/oauth/${provider}/callback`;
+  if (!['http:', 'https:'].includes(redirectUri.protocol) || redirectUri.pathname !== expectedPath || redirectUri.search) {
+    throw new Error("OAuth redirect URI is invalid");
+  }
+
+  return redirectUri.toString();
+}
+
+function redirectToSocialLoginError(res: Response, redirectUri: string, provider: SocialUserInfo["provider"]) {
+  try {
+    const origin = new URL(redirectUri).origin;
+    res.redirect(302, `${origin}/login?oauth_error=${provider}`);
+  } catch {
+    res.status(500).json({ error: `${provider} OAuth callback failed` });
+  }
+}
+
 async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
   const response = await axios.get("https://www.googleapis.com/oauth2/v2/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -127,25 +154,28 @@ export function registerSocialOAuthRoutes(app: Express) {
   app.get("/api/oauth/google/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
+    let redirectUri = "";
 
-    if (!code) {
-      res.status(400).json({ error: "code is required" });
+    if (!code || !state) {
+      res.status(400).json({ error: "code and state are required" });
       return;
     }
 
     try {
-      const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/google/callback`;
+      redirectUri = getOAuthRedirectUri(req, state, "google");
 
       // Exchange code for token
+      const googleTokenBody = new URLSearchParams({
+        client_id: ENV.googleClientId,
+        client_secret: ENV.googleClientSecret,
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: redirectUri,
+      });
       const tokenResponse = await axios.post<GoogleTokenResponse>(
         "https://oauth2.googleapis.com/token",
-        {
-          client_id: ENV.googleClientId,
-          client_secret: ENV.googleClientSecret,
-          code,
-          grant_type: "authorization_code",
-          redirect_uri: redirectUri,
-        }
+        googleTokenBody,
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
 
       // Get user info
@@ -161,7 +191,7 @@ export function registerSocialOAuthRoutes(app: Express) {
       await handleSocialLogin(req, res, userInfo);
     } catch (error) {
       console.error("[Google OAuth] Callback failed", error);
-      res.status(500).json({ error: "Google OAuth callback failed" });
+      redirectToSocialLoginError(res, redirectUri, "google");
     }
   });
 
@@ -169,28 +199,28 @@ export function registerSocialOAuthRoutes(app: Express) {
   app.get("/api/oauth/naver/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
+    let redirectUri = "";
 
-    if (!code) {
-      res.status(400).json({ error: "code is required" });
+    if (!code || !state) {
+      res.status(400).json({ error: "code and state are required" });
       return;
     }
 
     try {
-      const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/naver/callback`;
+      redirectUri = getOAuthRedirectUri(req, state, "naver");
 
       // Exchange code for token
+      const naverTokenBody = new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: ENV.naverClientId,
+        client_secret: ENV.naverClientSecret,
+        code,
+        state,
+      });
       const tokenResponse = await axios.post<NaverTokenResponse>(
         "https://nid.naver.com/oauth2.0/token",
-        null,
-        {
-          params: {
-            grant_type: "authorization_code",
-            client_id: ENV.naverClientId,
-            client_secret: ENV.naverClientSecret,
-            code,
-            state,
-          },
-        }
+        naverTokenBody,
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
 
       // Get user info
@@ -210,38 +240,36 @@ export function registerSocialOAuthRoutes(app: Express) {
       await handleSocialLogin(req, res, userInfo);
     } catch (error) {
       console.error("[Naver OAuth] Callback failed", error);
-      res.status(500).json({ error: "Naver OAuth callback failed" });
+      redirectToSocialLoginError(res, redirectUri, "naver");
     }
   });
 
   // Kakao OAuth callback
   app.get("/api/oauth/kakao/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
+    const state = getQueryParam(req, "state");
+    let redirectUri = "";
 
-    if (!code) {
-      res.status(400).json({ error: "code is required" });
+    if (!code || !state) {
+      res.status(400).json({ error: "code and state are required" });
       return;
     }
 
     try {
-      const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/kakao/callback`;
+      redirectUri = getOAuthRedirectUri(req, state, "kakao");
 
       // Exchange code for token
+      const kakaoTokenBody = new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: ENV.kakaoClientId,
+        client_secret: ENV.kakaoClientSecret,
+        code,
+        redirect_uri: redirectUri,
+      });
       const tokenResponse = await axios.post<KakaoTokenResponse>(
         "https://kauth.kakao.com/oauth/token",
-        null,
-        {
-          params: {
-            grant_type: "authorization_code",
-            client_id: ENV.kakaoClientId,
-            client_secret: ENV.kakaoClientSecret,
-            code,
-            redirect_uri: redirectUri,
-          },
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
+        kakaoTokenBody,
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
 
       // Get user info
@@ -257,7 +285,7 @@ export function registerSocialOAuthRoutes(app: Express) {
       await handleSocialLogin(req, res, userInfo);
     } catch (error) {
       console.error("[Kakao OAuth] Callback failed", error);
-      res.status(500).json({ error: "Kakao OAuth callback failed" });
+      redirectToSocialLoginError(res, redirectUri, "kakao");
     }
   });
 }

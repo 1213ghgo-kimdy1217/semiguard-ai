@@ -34,14 +34,17 @@ export const startLogin = () => {
 export const startGoogleLogin = () => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const redirectUri = `${window.location.origin}/api/oauth/google/callback`;
+  const nonce = crypto.randomUUID();
+  document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
+  const state = encodeOAuthState({ redirectUri, nonce });
   const scope = "openid email profile";
-  const responseType = "code";
 
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("response_type", responseType);
+  url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", scope);
+  url.searchParams.set("state", state);
 
   window.location.href = url.toString();
 };
@@ -49,7 +52,9 @@ export const startGoogleLogin = () => {
 export const startNaverLogin = () => {
   const clientId = import.meta.env.VITE_NAVER_CLIENT_ID;
   const redirectUri = `${window.location.origin}/api/oauth/naver/callback`;
-  const state = crypto.randomUUID();
+  const nonce = crypto.randomUUID();
+  document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
+  const state = encodeOAuthState({ redirectUri, nonce });
 
   const url = new URL("https://nid.naver.com/oauth2.0/authorize");
   url.searchParams.set("client_id", clientId);
@@ -63,11 +68,15 @@ export const startNaverLogin = () => {
 export const startKakaoLogin = () => {
   const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID;
   const redirectUri = `${window.location.origin}/api/oauth/kakao/callback`;
+  const nonce = crypto.randomUUID();
+  document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
+  const state = encodeOAuthState({ redirectUri, nonce });
 
   const url = new URL("https://kauth.kakao.com/oauth/authorize");
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("response_type", "code");
+  url.searchParams.set("state", state);
 
   window.location.href = url.toString();
 };

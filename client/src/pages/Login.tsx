@@ -12,6 +12,8 @@ export function Login() {
   const [badgeNumber, setBadgeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const oauthError = new URLSearchParams(window.location.search).get("oauth_error");
+  const oauthProviderLabel = oauthError === "google" ? "Google" : oauthError === "naver" ? "Naver" : oauthError === "kakao" ? "Kakao" : "소셜 로그인";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +63,12 @@ export function Login() {
             <h1 className="text-3xl font-bold text-white">SemiGuard AI</h1>
             <p className="text-slate-300">반도체 장비 예지안전 시스템</p>
           </div>
+
+          {oauthError && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="alert">
+              {oauthProviderLabel} 로그인에 실패했습니다. 제공자의 앱 설정 또는 등록된 로그인 계정을 확인한 뒤 다시 시도해주세요.
+            </div>
+          )}
 
           {/* Divider */}
           <div className="relative">
