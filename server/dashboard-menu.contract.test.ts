@@ -27,4 +27,12 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain("setDemoRunning(r => !r)");
     expect(dashboardSource).toContain('localStorage.setItem("semiguard_muted"');
   });
+
+  it("exposes account linking for all supported social providers", () => {
+    expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
+    expect(dashboardSource).toContain("startGoogleLink");
+    expect(dashboardSource).toContain("startNaverLink");
+    expect(dashboardSource).toContain("startKakaoLink");
+    expect(dashboardSource).toContain("unlinkSocialMutation");
+  });
 });

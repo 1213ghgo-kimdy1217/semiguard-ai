@@ -4,7 +4,7 @@ import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
 import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
@@ -92,6 +92,15 @@ export const appRouter = router({
           success: true,
           message: "로그인이 완료되었습니다.",
         } as const;
+      }),
+
+    socialLinks: protectedProcedure.query(({ ctx }) => db.getSocialAccountLinksForUser(ctx.user.id)),
+
+    unlinkSocial: protectedProcedure
+      .input(z.object({ provider: z.enum(["google", "naver", "kakao"]) }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteSocialAccountLink(ctx.user.id, input.provider);
+        return { success: true } as const;
       }),
   }),
 

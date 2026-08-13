@@ -6,6 +6,7 @@ import { translations, type Lang, type Translation } from "@/lib/i18n";
 import type { RiskLevel, SensorData, AnomalyResult, AnomalyLogEntry } from "../../../shared/semiguard";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { toast } from "sonner";
+import { startGoogleLink, startNaverLink, startKakaoLink } from "@/const";
 
 // ─── 위험도 색상 매핑 ────────────────────────────────────────────────────────
 // ─── 버튼 스피너 ─────────────────────────────────────────────────────────────
@@ -646,6 +647,14 @@ export default function Dashboard() {
   const [thresholds, setThresholds] = useState({ normal: 29, caution: 49, warning: 69 });
   const saveThresholdsMutation = trpc.semiguard.saveThresholds.useMutation();
   const getThresholdsQuery = trpc.semiguard.getThresholds.useQuery(undefined, { staleTime: Infinity });
+  const socialLinksQuery = trpc.auth.socialLinks.useQuery();
+  const unlinkSocialMutation = trpc.auth.unlinkSocial.useMutation({
+    onSuccess: () => {
+      void socialLinksQuery.refetch();
+      toast.success(lang === "ko" ? "소셜 계정 연결을 해제했습니다." : "Social account unlinked.");
+    },
+    onError: () => toast.error(lang === "ko" ? "소셜 계정 연결 해제에 실패했습니다." : "Failed to unlink social account."),
+  });
 
   // DB에서 임계값 불러오기 (초기 1회)
   useEffect(() => {
@@ -727,6 +736,15 @@ export default function Dashboard() {
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    const provider = new URLSearchParams(window.location.search).get("social_linked");
+    if (!provider) return;
+    const label = provider === "google" ? "Google" : provider === "naver" ? "Naver" : provider === "kakao" ? "Kakao" : "소셜 계정";
+    toast.success(lang === "ko" ? `${label} 계정이 연결되었습니다.` : `${label} account linked successfully.`);
+    void socialLinksQuery.refetch();
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }, [lang]);
 
   // ─── 경고음 콜백 ─────────────────────────────────────────────────────────
   const playAlert = useCallback(() => {
@@ -1115,6 +1133,13 @@ export default function Dashboard() {
     return { sensorData: data, anomalyScore: score, riskLevel, isAnomaly };
   }
 
+  const socialProviderItems: Array<{ provider: "google" | "naver" | "kakao"; label: string; start: () => void }> = [
+    { provider: "google", label: "Google", start: startGoogleLink },
+    { provider: "naver", label: "Naver", start: startNaverLink },
+    { provider: "kakao", label: "Kakao", start: startKakaoLink },
+  ];
+  const linkedProviders = new Set((socialLinksQuery.data ?? []).map((link) => link.provider));
+
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
       {/* ── 위험 화면 플래시 효과 ── */}
@@ -1450,6 +1475,33 @@ export default function Dashboard() {
               >
                 ×
               </button>
+            </div>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+              {lang === "ko" ? "소셜 계정 연동" : lang === "ja" ? "ソーシャルアカウント連携" : "Connected accounts"}
+            </p>
+            <div className="rounded-xl border p-3 mb-5" style={{ borderColor: th.border2, background: th.bgCard2 }}>
+              <p className="text-[10px] leading-relaxed text-muted-foreground mb-3">
+                {lang === "ko" ? "회원가입한 계정에 소셜 로그인을 연결하면 다음부터 간편하게 로그인할 수 있습니다." : lang === "ja" ? "登録済みのアカウントにソーシャルログインを連携できます。" : "Connect a social account to sign in more easily next time."}
+              </p>
+              <div className="space-y-2">
+                {socialProviderItems.map(({ provider, label, start }) => {
+                  const linked = linkedProviders.has(provider);
+                  return (
+                    <div key={provider} className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2" style={{ borderColor: th.border, background: th.bg }}>
+                      <span className="text-xs font-semibold">{label}</span>
+                      <button
+                        type="button"
+                        disabled={unlinkSocialMutation.isPending}
+                        onClick={() => linked ? unlinkSocialMutation.mutate({ provider }) : start()}
+                        className="min-h-8 rounded-md border px-2.5 text-[10px] font-bold transition-all hover:opacity-80 active:scale-95 disabled:opacity-50"
+                        style={{ borderColor: linked ? "rgba(34,197,94,0.45)" : th.border2, color: linked ? "rgb(34,197,94)" : th.accent, background: linked ? "rgba(34,197,94,0.10)" : th.bgCard2 }}
+                      >
+                        {linked ? (lang === "ko" ? "연결됨 · 해제" : lang === "ja" ? "連携済み · 解除" : "Linked · Unlink") : (lang === "ko" ? "연결하기" : lang === "ja" ? "連携する" : "Connect")}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
               {lang === "ko" ? "화면 및 알림" : lang === "ja" ? "画面と通知" : "Display & alerts"}

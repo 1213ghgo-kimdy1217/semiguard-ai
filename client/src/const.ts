@@ -30,53 +30,38 @@ export const startLogin = () => {
   window.location.href = url.toString();
 };
 
-// Social login functions
-export const startGoogleLogin = () => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  const redirectUri = `${window.location.origin}/api/oauth/google/callback`;
+// Social login and account-linking functions
+export type SocialAuthMode = "login" | "link";
+
+function startSocialOAuth(provider: "google" | "naver" | "kakao", mode: SocialAuthMode) {
+  const clientIds = {
+    google: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    naver: import.meta.env.VITE_NAVER_CLIENT_ID,
+    kakao: import.meta.env.VITE_KAKAO_CLIENT_ID,
+  } as const;
+  const authorizationEndpoints = {
+    google: "https://accounts.google.com/o/oauth2/v2/auth",
+    naver: "https://nid.naver.com/oauth2.0/authorize",
+    kakao: "https://kauth.kakao.com/oauth/authorize",
+  } as const;
+  const redirectUri = `${window.location.origin}/api/oauth/${provider}/callback`;
   const nonce = crypto.randomUUID();
   document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
-  const state = encodeOAuthState({ redirectUri, nonce });
-  const scope = "openid email profile";
+  const state = encodeOAuthState({ redirectUri, nonce, mode });
 
-  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", scope);
-  url.searchParams.set("state", state);
-
-  window.location.href = url.toString();
-};
-
-export const startNaverLogin = () => {
-  const clientId = import.meta.env.VITE_NAVER_CLIENT_ID;
-  const redirectUri = `${window.location.origin}/api/oauth/naver/callback`;
-  const nonce = crypto.randomUUID();
-  document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
-  const state = encodeOAuthState({ redirectUri, nonce });
-
-  const url = new URL("https://nid.naver.com/oauth2.0/authorize");
-  url.searchParams.set("client_id", clientId);
+  const url = new URL(authorizationEndpoints[provider]);
+  url.searchParams.set("client_id", clientIds[provider]);
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", state);
+  if (provider === "google") url.searchParams.set("scope", "openid email profile");
 
   window.location.href = url.toString();
-};
+}
 
-export const startKakaoLogin = () => {
-  const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID;
-  const redirectUri = `${window.location.origin}/api/oauth/kakao/callback`;
-  const nonce = crypto.randomUUID();
-  document.cookie = `${OAUTH_STATE_COOKIE}=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
-  const state = encodeOAuthState({ redirectUri, nonce });
-
-  const url = new URL("https://kauth.kakao.com/oauth/authorize");
-  url.searchParams.set("client_id", clientId);
-  url.searchParams.set("redirect_uri", redirectUri);
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("state", state);
-
-  window.location.href = url.toString();
-};
+export const startGoogleLogin = () => startSocialOAuth("google", "login");
+export const startNaverLogin = () => startSocialOAuth("naver", "login");
+export const startKakaoLogin = () => startSocialOAuth("kakao", "login");
+export const startGoogleLink = () => startSocialOAuth("google", "link");
+export const startNaverLink = () => startSocialOAuth("naver", "link");
+export const startKakaoLink = () => startSocialOAuth("kakao", "link");

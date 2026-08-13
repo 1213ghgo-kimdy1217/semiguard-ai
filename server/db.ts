@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, socialAccountLinks, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -86,6 +86,95 @@ export async function getUserByOpenId(openId: string) {
 
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export type SocialProvider = "google" | "naver" | "kakao";
+
+export async function getSocialAccountLink(provider: SocialProvider, providerUserId: string) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured");
+  }
+
+  const result = await db
+    .select()
+    .from(socialAccountLinks)
+    .where(and(
+      eq(socialAccountLinks.provider, provider),
+      eq(socialAccountLinks.providerUserId, providerUserId),
+    ))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getSocialAccountLinksForUser(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured");
+  }
+
+  return db
+    .select({
+      provider: socialAccountLinks.provider,
+      email: socialAccountLinks.email,
+      providerUserId: socialAccountLinks.providerUserId,
+      createdAt: socialAccountLinks.createdAt,
+    })
+    .from(socialAccountLinks)
+    .where(eq(socialAccountLinks.userId, userId));
+}
+
+export async function createSocialAccountLink(input: {
+  userId: number;
+  provider: SocialProvider;
+  providerUserId: string;
+  email?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured");
+  }
+
+  await db.insert(socialAccountLinks).values({
+    userId: input.userId,
+    provider: input.provider,
+    providerUserId: input.providerUserId,
+    email: input.email ?? null,
+  });
+}
+
+export async function deleteSocialAccountLink(userId: number, provider: SocialProvider) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured");
+  }
+
+  await db
+    .delete(socialAccountLinks)
+    .where(and(
+      eq(socialAccountLinks.userId, userId),
+      eq(socialAccountLinks.provider, provider),
+    ));
+}
+
+export async function touchUser(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured");
+  }
+
+  await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
+}
+
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not configured");
+  }
+
+  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 

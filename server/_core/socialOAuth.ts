@@ -66,6 +66,15 @@ interface KakaoUserInfo {
   };
 }
 
+type SocialOAuthErrorReason = "unlinked" | "link_required" | "already_linked" | "failed";
+
+class SocialOAuthPolicyError extends Error {
+  constructor(public readonly reason: Exclude<SocialOAuthErrorReason, "failed">) {
+    super(reason);
+    this.name = "SocialOAuthPolicyError";
+  }
+}
+
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
   return typeof value === "string" ? value : undefined;
@@ -89,13 +98,23 @@ function getOAuthRedirectUri(req: Request, state: string | undefined, provider: 
   return redirectUri.toString();
 }
 
-function redirectToSocialLoginError(res: Response, redirectUri: string, provider: SocialUserInfo["provider"]) {
+function redirectToSocialLoginError(
+  res: Response,
+  redirectUri: string,
+  provider: SocialUserInfo["provider"],
+  reason: SocialOAuthErrorReason = "failed",
+) {
   try {
     const origin = new URL(redirectUri).origin;
-    res.redirect(302, `${origin}/login?oauth_error=${provider}`);
+    const params = new URLSearchParams({ oauth_error: `${provider}_${reason}` });
+    res.redirect(302, `${origin}/login?${params.toString()}`);
   } catch {
     res.status(500).json({ error: `${provider} OAuth callback failed` });
   }
+}
+
+function getSocialOAuthErrorReason(error: unknown): SocialOAuthErrorReason {
+  return error instanceof SocialOAuthPolicyError ? error.reason : "failed";
 }
 
 async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
@@ -122,40 +141,71 @@ async function getKakaoUserInfo(accessToken: string): Promise<KakaoUserInfo> {
 async function handleSocialLogin(
   req: Request,
   res: Response,
-  userInfo: SocialUserInfo
+  userInfo: SocialUserInfo,
+  redirectUri: string,
+  mode: "login" | "link",
 ) {
-  try {
-    // Create or update user in database
-    const openId = `${userInfo.provider}_${userInfo.id}`;
-    await db.upsertUser({
-      openId,
-      name: userInfo.name || null,
-      email: userInfo.email || null,
-      loginMethod: userInfo.provider,
-      lastSignedIn: new Date(),
-    });
+  const providerLink = await db.getSocialAccountLink(userInfo.provider, userInfo.id);
 
-    // Create session token
-    const sessionToken = await sdk.createSessionToken(openId, {
-      name: userInfo.name || "",
-      expiresInMs: ONE_YEAR_MS,
-    });
+  if (mode === "link") {
+    let currentUser;
+    try {
+      currentUser = await sdk.authenticateRequest(req);
+    } catch {
+      currentUser = null;
+    }
 
-    const cookieOptions = getSessionCookieOptions(req);
-    res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-    console.info("[Social OAuth] Session established", {
+    if (!currentUser) {
+      throw new SocialOAuthPolicyError("link_required");
+    }
+    if (providerLink && providerLink.userId !== currentUser.id) {
+      throw new SocialOAuthPolicyError("already_linked");
+    }
+    if (!providerLink) {
+      await db.createSocialAccountLink({
+        userId: currentUser.id,
+        provider: userInfo.provider,
+        providerUserId: userInfo.id,
+        email: userInfo.email ?? null,
+      });
+    }
+
+    const origin = new URL(redirectUri).origin;
+    console.info("[Social OAuth] Account linked", {
       provider: userInfo.provider,
       hasProviderId: Boolean(userInfo.id),
-      redirect: "/",
-      cookieSecure: cookieOptions.secure,
-      cookieSameSite: cookieOptions.sameSite,
+      redirect: "/?social_linked=true",
     });
-
-    res.redirect(302, "/");
-  } catch (error) {
-    console.error("[Social OAuth] Login failed", error);
-    res.status(500).json({ error: "Social login failed" });
+    res.redirect(302, `${origin}/?social_linked=${userInfo.provider}`);
+    return;
   }
+
+  if (!providerLink) {
+    throw new SocialOAuthPolicyError("unlinked");
+  }
+
+  const user = await db.getUserById(providerLink.userId);
+  if (!user) {
+    throw new Error("Linked local user was not found");
+  }
+  await db.touchUser(user.id);
+
+  const sessionToken = await sdk.createSessionToken(user.openId, {
+    name: user.name ?? "",
+    expiresInMs: ONE_YEAR_MS,
+  });
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+  console.info("[Social OAuth] Session established", {
+    provider: userInfo.provider,
+    hasProviderId: Boolean(userInfo.id),
+    redirect: "/",
+    cookieSecure: cookieOptions.secure,
+    cookieSameSite: cookieOptions.sameSite,
+  });
+
+  const origin = new URL(redirectUri).origin;
+  res.redirect(302, `${origin}/`);
 }
 
 export function registerSocialOAuthRoutes(app: Express) {
@@ -202,10 +252,11 @@ export function registerSocialOAuthRoutes(app: Express) {
         provider: "google",
       };
 
-      await handleSocialLogin(req, res, userInfo);
+      const mode = decodeOAuthState(state).mode ?? "login";
+      await handleSocialLogin(req, res, userInfo, redirectUri, mode);
     } catch (error) {
       console.error("[Google OAuth] Callback failed", error);
-      redirectToSocialLoginError(res, redirectUri, "google");
+      redirectToSocialLoginError(res, redirectUri, "google", getSocialOAuthErrorReason(error));
     }
   });
 
@@ -251,10 +302,11 @@ export function registerSocialOAuthRoutes(app: Express) {
         provider: "naver",
       };
 
-      await handleSocialLogin(req, res, userInfo);
+      const mode = decodeOAuthState(state).mode ?? "login";
+      await handleSocialLogin(req, res, userInfo, redirectUri, mode);
     } catch (error) {
       console.error("[Naver OAuth] Callback failed", error);
-      redirectToSocialLoginError(res, redirectUri, "naver");
+      redirectToSocialLoginError(res, redirectUri, "naver", getSocialOAuthErrorReason(error));
     }
   });
 
@@ -296,10 +348,11 @@ export function registerSocialOAuthRoutes(app: Express) {
         provider: "kakao",
       };
 
-      await handleSocialLogin(req, res, userInfo);
+      const mode = decodeOAuthState(state).mode ?? "login";
+      await handleSocialLogin(req, res, userInfo, redirectUri, mode);
     } catch (error) {
       console.error("[Kakao OAuth] Callback failed", error);
-      redirectToSocialLoginError(res, redirectUri, "kakao");
+      redirectToSocialLoginError(res, redirectUri, "kakao", getSocialOAuthErrorReason(error));
     }
   });
 }

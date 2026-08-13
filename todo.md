@@ -109,7 +109,7 @@
 - [x] Naver OAuth 콜백 실패 원인 점검 및 수정
 - [x] Kakao OAuth 콜백 실패 원인 점검 및 수정
 - [x] 소셜 로그인 실패 시 사용자 친화적인 로그인 페이지 안내 추가
-- [ ] 모바일 환경에서 Google·Naver·Kakao 소셜 로그인 성공 흐름 검증
+- [ ] 모바일 환경에서 Google·Naver·Kakao 소셜 로그인 성공 흐름 검증 (Google 실배포 확인; Naver·Kakao 실제 확인 필요)
 - [x] Kakao OAuth 자격 증명 Vitest 테스트 추가
 - [x] Google·Naver·Kakao 각 제공자 콜백 처리 및 실패 리다이렉트 Vitest 테스트 추가
 - [x] 세션 쿠키 설정과 로그인 후 `/` 리다이렉트 서버 테스트 추가
@@ -118,11 +118,11 @@
 - [x] 실제 배포 환경에서 OAuth 완료 후 콜백 응답·쿠키·auth.me를 직접 확인해 세션 흐름 기록 (Google 실제 검증)
 - [x] 배포 콜백의 쿠키 설정·리다이렉트·사용자 저장 흐름 수정 및 재검증 (Google 실제 검증)
 - [x] 로컬 명찰번호·비밀번호 로그인 세션도 함께 검증
-- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증
+- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증 (Google 실배포 확인; Naver·Kakao 실제 확인 필요)
 - [x] 실제 배포 환경에서 OAuth 완료 후 콜백 응답·쿠키·auth.me를 직접 확인해 세션 흐름 기록 (Google 실제 검증)
 - [x] Google 소셜 로그인 사용자 식별자 매핑 수정 (`openId`가 `google_undefined`로 저장되는 문제 해결)
-- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증
-- [ ] 배포 OAuth 성공 콜백에 제공자·식별자 존재 여부·리다이렉트 완료 구조화 로그 추가 및 확인
+- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증 (Google 실배포 확인; Naver·Kakao 실제 확인 필요)
+- [x] 배포 OAuth 성공 콜백에 제공자·식별자 존재 여부·리다이렉트 완료 구조화 로그 추가 및 확인 (민감정보 없는 로그 코드·회귀 테스트 확인, 운영 로그 조회 제한 기록)
 
 ## 대시보드 슬라이드 메뉴 개선 (2026-08-12)
 - [x] 대시보드 헤더 조작 버튼을 메뉴 패널로 이동
@@ -132,9 +132,16 @@
 - [x] 메뉴 이동 후 기존 언어·테마·음소거·볼륨·데모·PDF·로그아웃 동작 회귀 테스트 (TypeScript·Vitest 17개 통과)
 - [x] 개발 미리보기에서 메뉴 작업 후 발생한 로그인·라우팅 오류 재현
 - [x] 개발 미리보기 인증 오류와 메뉴 UI 오류를 분리해 수정 (Google redirect_uri_mismatch)
-- [ ] 배포 로그인 흐름을 보호한 상태에서 메뉴 변경본 재검증
+- [ ] 배포 로그인 흐름을 보호한 상태에서 메뉴 변경본 재검증 (배포 사이트에서 실제 메뉴 열기 필요)
 - [x] 개발 미리보기 Google OAuth redirect_uri_mismatch는 배포 도메인과 다른 콜백 URL을 사용해 발생함을 문서화하고 테스트 경로를 분리
 - [x] 개발 모드에서 `?menu=open`으로 슬라이드 메뉴 열린 상태를 캡처할 수 있는 시각 검증 경로 추가
 - [x] 메뉴 프론트엔드 계약 테스트를 현재 Vitest include 경로에 맞게 정리 (server/dashboard-menu.contract.test.ts)
 - [x] 개발 모드 소셜 로그인 버튼을 배포 도메인 안내 상태로 보호해 redirect_uri_mismatch 재발 방지
 - [x] 개발 모드 OAuth 보호 UI와 메뉴 시각 검증 경로의 분리 동작 기록
+
+## 회원가입 후 소셜 계정 연동 (2026-08-12)
+- [x] 소셜 로그인에서 신규 사용자 자동 생성 차단
+- [x] 기존 로컬 사용자와 Google·Naver·Kakao 식별자 연결 모델 구현
+- [x] 회원가입 후 대시보드에서 소셜 계정 연결 UI 추가
+- [x] 연결되지 않은 소셜 로그인 시 회원가입·연결 안내 표시
+- [x] 로컬 로그인·소셜 연결·미연결 로그인 회귀 테스트 추가 (TypeScript·Vitest 27개 통과)

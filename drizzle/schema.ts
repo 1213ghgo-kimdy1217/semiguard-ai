@@ -1,4 +1,4 @@
-import { date, float, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { date, float, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -17,6 +17,23 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+// 기존 로컬 사용자와 연결된 소셜 계정 식별자
+export const socialAccountLinks = mysqlTable("social_account_links", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  provider: mysqlEnum("provider", ["google", "naver", "kakao"]).notNull(),
+  providerUserId: varchar("provider_user_id", { length: 128 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  providerIdentityUnique: uniqueIndex("social_account_provider_identity").on(table.provider, table.providerUserId),
+  userProviderUnique: uniqueIndex("social_account_user_provider").on(table.userId, table.provider),
+}));
+
+export type SocialAccountLink = typeof socialAccountLinks.$inferSelect;
+export type InsertSocialAccountLink = typeof socialAccountLinks.$inferInsert;
 
 // 이상 이력 로그 테이블
 export const anomalyLogs = mysqlTable("anomaly_logs", {

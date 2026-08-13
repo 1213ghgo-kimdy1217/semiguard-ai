@@ -13,7 +13,17 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const oauthError = new URLSearchParams(window.location.search).get("oauth_error");
-  const oauthProviderLabel = oauthError === "google" ? "Google" : oauthError === "naver" ? "Naver" : oauthError === "kakao" ? "Kakao" : "소셜 로그인";
+  const oauthParts = oauthError?.split("_") ?? [];
+  const oauthProvider = oauthParts[0];
+  const oauthReason = oauthParts.slice(1).join("_");
+  const oauthProviderLabel = oauthProvider === "google" ? "Google" : oauthProvider === "naver" ? "Naver" : oauthProvider === "kakao" ? "Kakao" : "소셜 로그인";
+  const oauthPolicyMessage = oauthReason === "unlinked"
+    ? `${oauthProviderLabel} 계정이 아직 연결되지 않았습니다. 먼저 회사 명찰 번호와 비밀번호로 회원가입·로그인한 뒤 대시보드 메뉴에서 연결해주세요.`
+    : oauthReason === "link_required"
+      ? "소셜 계정을 연결하려면 먼저 회사 명찰 번호와 비밀번호로 로그인해주세요."
+      : oauthReason === "already_linked"
+        ? "이 소셜 계정은 이미 다른 SemiGuard 계정에 연결되어 있습니다."
+        : `${oauthProviderLabel} 로그인에 실패했습니다. 제공자의 앱 설정 또는 등록된 로그인 계정을 확인한 뒤 다시 시도해주세요.`;
   const isOauthEnabled = !import.meta.env.DEV;
   const handleSocialLogin = (start: () => void) => {
     if (!isOauthEnabled) {
@@ -78,7 +88,7 @@ export function Login() {
 
           {oauthError && (
             <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="alert">
-              {oauthProviderLabel} 로그인에 실패했습니다. 제공자의 앱 설정 또는 등록된 로그인 계정을 확인한 뒤 다시 시도해주세요.
+              {oauthPolicyMessage}
             </div>
           )}
 
