@@ -2011,25 +2011,50 @@ export default function Dashboard() {
                   borderColor: "oklch(0.75 0.18 200 / 0.4)",
                   color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)"
                 }}>
-                <div className="flex items-center justify-between pb-2 border-b mb-2" style={{ borderColor: th.border }}>
-                  <h4 className="text-xs font-bold flex items-center gap-1.5">
-                    📂 {lang === "ko" ? "과거 상담 기록" : lang === "ja" ? "過去の相談履歴" : "Consultation History"}
-                  </h4>
-                  <div className="flex items-center gap-2">
-                    {chatSessionsQuery.data && chatSessionsQuery.data.length > 0 && (
+                <div className="flex flex-col gap-2 pb-2 border-b mb-2" style={{ borderColor: th.border }}>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold flex items-center gap-1.5">
+                      📂 {lang === "ko" ? "과거 상담 기록" : lang === "ja" ? "過去の相談履歴" : "Consultation History"}
+                    </h4>
+                    <div className="flex items-center gap-2">
+                      {chatSessionsQuery.data && chatSessionsQuery.data.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowDeleteAllConfirm(true)}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-bold text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                          🗑️ {lang === "ko" ? "전체 초기화" : lang === "ja" ? "すべてリセット" : "Clear All"}
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => setShowDeleteAllConfirm(true)}
-                        className="px-1.5 py-0.5 rounded text-[10px] font-bold text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-all">
-                        🗑️ {lang === "ko" ? "전체 초기화" : lang === "ja" ? "すべてリセット" : "Clear All"}
+                        onClick={() => setShowHistoryPanel(false)}
+                        className="text-xs text-muted-foreground hover:opacity-70">
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  {/* 검색창 */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder={lang === "ko" ? "과거 대화 내용 검색..." : lang === "ja" ? "過去の会話を検索..." : "Search past consultations..."}
+                      value={searchKeyword}
+                      onChange={(e) => setSearchKeyword(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs rounded-lg border outline-none transition-all focus:ring-1 focus:ring-sky-500"
+                      style={{
+                        background: isDark ? "oklch(0.12 0.01 240)" : "oklch(0.99 0.002 240)",
+                        borderColor: th.border2,
+                        color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)"
+                      }}
+                    />
+                    {searchKeyword && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchKeyword("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground hover:opacity-70">
+                        ✕
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => setShowHistoryPanel(false)}
-                      className="text-xs text-muted-foreground hover:opacity-70">
-                      ✕
-                    </button>
                   </div>
                 </div>
 
