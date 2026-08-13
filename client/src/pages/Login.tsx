@@ -23,7 +23,9 @@ export function Login() {
       ? "소셜 계정을 연결하려면 먼저 회사 명찰 번호와 비밀번호로 로그인해주세요."
       : oauthReason === "already_linked"
         ? "이 소셜 계정은 이미 다른 SemiGuard 계정에 연결되어 있습니다."
-        : `${oauthProviderLabel} 로그인에 실패했습니다. 제공자의 앱 설정 또는 등록된 로그인 계정을 확인한 뒤 다시 시도해주세요.`;
+        : oauthProvider === "kakao"
+          ? "Kakao 로그인에 실패했습니다. 카카오 디벨로퍼스에서 카카오 로그인 활성화, 리다이렉트 URI, 프로필 닉네임 동의항목을 확인한 뒤 잠시 후 다시 시도해주세요."
+          : `${oauthProviderLabel} 로그인에 실패했습니다. 제공자의 앱 설정 또는 등록된 로그인 계정을 확인한 뒤 다시 시도해주세요.`;
   const isOauthEnabled = !import.meta.env.DEV;
   const handleSocialLogin = (start: () => void) => {
     if (!isOauthEnabled) {

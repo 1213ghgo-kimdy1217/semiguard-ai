@@ -59,10 +59,14 @@ interface KakaoTokenResponse {
 
 interface KakaoUserInfo {
   id: number;
-  kakao_account: {
+  kakao_account?: {
     profile_nickname?: string;
     email?: string;
     name?: string;
+  };
+  properties?: {
+    nickname?: string;
+    profile_image?: string;
   };
 }
 
@@ -341,10 +345,20 @@ export function registerSocialOAuthRoutes(app: Express) {
       // Get user info
       const kakaoUserInfo = await getKakaoUserInfo(tokenResponse.data.access_token);
 
+      if (!kakaoUserInfo.id) {
+        throw new Error("Kakao user identifier is missing");
+      }
+
+      const kakaoAccount = kakaoUserInfo.kakao_account ?? {};
+      const kakaoProperties = kakaoUserInfo.properties ?? {};
       const userInfo: SocialUserInfo = {
         id: String(kakaoUserInfo.id),
-        email: kakaoUserInfo.kakao_account.email,
-        name: kakaoUserInfo.kakao_account.name || kakaoUserInfo.kakao_account.profile_nickname,
+        email: kakaoAccount.email,
+        name:
+          kakaoAccount.name ||
+          kakaoAccount.profile_nickname ||
+          kakaoProperties.nickname ||
+          "Kakao 사용자",
         provider: "kakao",
       };
 

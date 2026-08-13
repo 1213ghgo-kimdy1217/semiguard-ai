@@ -109,7 +109,7 @@
 - [x] Naver OAuth 콜백 실패 원인 점검 및 수정
 - [x] Kakao OAuth 콜백 실패 원인 점검 및 수정
 - [x] 소셜 로그인 실패 시 사용자 친화적인 로그인 페이지 안내 추가
-- [ ] 모바일 환경에서 Google·Naver·Kakao 소셜 로그인 성공 흐름 검증 (Google 실배포 확인; Naver·Kakao 실제 확인 필요)
+- [ ] 모바일 환경에서 Google·Naver·Kakao 소셜 로그인 성공 흐름 검증 (Google 실배포 확인; Naver·Kakao 실제 인증 필요)
 - [x] Kakao OAuth 자격 증명 Vitest 테스트 추가
 - [x] Google·Naver·Kakao 각 제공자 콜백 처리 및 실패 리다이렉트 Vitest 테스트 추가
 - [x] 세션 쿠키 설정과 로그인 후 `/` 리다이렉트 서버 테스트 추가
@@ -118,10 +118,10 @@
 - [x] 실제 배포 환경에서 OAuth 완료 후 콜백 응답·쿠키·auth.me를 직접 확인해 세션 흐름 기록 (Google 실제 검증)
 - [x] 배포 콜백의 쿠키 설정·리다이렉트·사용자 저장 흐름 수정 및 재검증 (Google 실제 검증)
 - [x] 로컬 명찰번호·비밀번호 로그인 세션도 함께 검증
-- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증 (Google 실배포 확인; Naver·Kakao 실제 확인 필요)
+- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증 (Google 실배포 확인; Naver·Kakao 실제 auth.me 확인 필요)
 - [x] 실제 배포 환경에서 OAuth 완료 후 콜백 응답·쿠키·auth.me를 직접 확인해 세션 흐름 기록 (Google 실제 검증)
 - [x] Google 소셜 로그인 사용자 식별자 매핑 수정 (`openId`가 `google_undefined`로 저장되는 문제 해결)
-- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증 (Google 실배포 확인; Naver·Kakao 실제 확인 필요)
+- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증 (Google 실배포 확인; Naver·Kakao 실제 auth.me 확인 필요)
 - [x] 배포 OAuth 성공 콜백에 제공자·식별자 존재 여부·리다이렉트 완료 구조화 로그 추가 및 확인 (민감정보 없는 로그 코드·회귀 테스트 확인, 운영 로그 조회 제한 기록)
 
 ## 대시보드 슬라이드 메뉴 개선 (2026-08-12)
@@ -132,7 +132,7 @@
 - [x] 메뉴 이동 후 기존 언어·테마·음소거·볼륨·데모·PDF·로그아웃 동작 회귀 테스트 (TypeScript·Vitest 17개 통과)
 - [x] 개발 미리보기에서 메뉴 작업 후 발생한 로그인·라우팅 오류 재현
 - [x] 개발 미리보기 인증 오류와 메뉴 UI 오류를 분리해 수정 (Google redirect_uri_mismatch)
-- [ ] 배포 로그인 흐름을 보호한 상태에서 메뉴 변경본 재검증 (배포 사이트에서 실제 메뉴 열기 필요)
+- [ ] 배포 로그인 흐름을 보호한 상태에서 메뉴 변경본 재검증 (실제 배포 사이트에서 메뉴 열기·닫기 필요)
 - [x] 개발 미리보기 Google OAuth redirect_uri_mismatch는 배포 도메인과 다른 콜백 URL을 사용해 발생함을 문서화하고 테스트 경로를 분리
 - [x] 개발 모드에서 `?menu=open`으로 슬라이드 메뉴 열린 상태를 캡처할 수 있는 시각 검증 경로 추가
 - [x] 메뉴 프론트엔드 계약 테스트를 현재 Vitest include 경로에 맞게 정리 (server/dashboard-menu.contract.test.ts)
@@ -145,3 +145,17 @@
 - [x] 회원가입 후 대시보드에서 소셜 계정 연결 UI 추가
 - [x] 연결되지 않은 소셜 로그인 시 회원가입·연결 안내 표시
 - [x] 로컬 로그인·소셜 연결·미연결 로그인 회귀 테스트 추가 (TypeScript·Vitest 27개 통과)
+
+## Kakao KOE006 로그인 오류 수정 (2026-08-13)
+- [ ] Kakao KOE006 원인과 배포 도메인·리다이렉트 URI·로그인 활성화 설정 비교
+- [ ] Kakao OAuth 설정에 필요한 정확한 관리자 콘솔 값 안내 및 코드 설정 점검
+- [ ] Kakao 계정 연결·로그인 성공/실패 흐름 재검증
+- [ ] Kakao 오류 수정본 테스트와 체크포인트 저장 (테스트 완료, 배포 체크포인트 대기)
+
+## Kakao 콜백 후 서버 인증 실패 수정 (2026-08-13)
+- [x] Kakao 토큰 교환·사용자 조회 중 실제 실패 단계 확인 (운영 로그에서 `kakao_account` 누락 확인)
+- [x] Kakao Client Secret과 REST API 키 사용 계약 점검 (토큰 교환까지 성공해 자격 증명 확인)
+- [x] Kakao 동의항목 부족 시 필요한 설정과 사용자 안내 보강 (선택 응답 방어 처리 및 로그인 안내)
+- [ ] 배포 Kakao 로그인·기존 사용자 계정 연결 성공 확인
+- [x] Kakao 사용자 정보에서 선택 동의항목으로 `kakao_account`가 없을 때도 ID 기반 로그인·연결이 가능하도록 방어 처리
+- [x] Kakao 동의항목 부족·프로필 정보 미동의 시 로그인 화면에 구체적 해결 안내 표시

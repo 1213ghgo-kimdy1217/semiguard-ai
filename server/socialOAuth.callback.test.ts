@@ -185,6 +185,30 @@ describe("social OAuth callbacks", () => {
     },
   );
 
+  it("links Kakao by id when optional kakao_account data is absent", async () => {
+    vi.mocked(axios.post).mockResolvedValueOnce({ data: { access_token: "kakao-token" } });
+    vi.mocked(axios.get).mockResolvedValueOnce({
+      data: { id: 987654, properties: { nickname: "Kakao User" } },
+    });
+    vi.mocked(sdk.authenticateRequest).mockResolvedValue({
+      id: 42,
+      openId: "local_EMP-42",
+      name: "Local User",
+    } as any);
+    const { state, cookie } = buildState("kakao", "link");
+
+    const response = await requestCallback("kakao", state, cookie);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe("http://localhost:3000/?social_linked=kakao");
+    expect(db.createSocialAccountLink).toHaveBeenCalledWith({
+      userId: 42,
+      provider: "kakao",
+      providerUserId: "987654",
+      email: null,
+    });
+  });
+
   it("rejects linking a provider that belongs to another local user", async () => {
     mockProviderResponse("google");
     vi.mocked(sdk.authenticateRequest).mockResolvedValue({ id: 42, openId: "local_EMP-42", name: "Local User" } as any);
