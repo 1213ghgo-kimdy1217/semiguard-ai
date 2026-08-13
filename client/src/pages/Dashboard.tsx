@@ -738,6 +738,24 @@ export default function Dashboard() {
   }, [menuOpen]);
 
   useEffect(() => {
+    document.title = "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템";
+    
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', 'SemiGuard AI는 반도체 제조 장비의 전류, 온도, 진동, 소음 센서 데이터를 Isolation Forest AI로 실시간 분석하여 고장 징후를 조기에 탐지하고 LLM으로 원인을 진단하는 스마트 예지안전 솔루션입니다.');
+
+    let metaKw = document.querySelector('meta[name="keywords"]');
+    if (!metaKw) {
+      metaKw = document.createElement('meta');
+      metaKw.setAttribute('name', 'keywords');
+      document.head.appendChild(metaKw);
+    }
+    metaKw.setAttribute('content', 'SemiGuard AI, 반도체 예지보전, 이상탐지, 센서 모니터링, 예지안전 시스템');
+
     const provider = new URLSearchParams(window.location.search).get("social_linked");
     if (!provider) return;
     const label = provider === "google" ? "Google" : provider === "naver" ? "Naver" : provider === "kakao" ? "Kakao" : "소셜 계정";
@@ -1543,7 +1561,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h1 className="text-sm font-bold tracking-wide">{t.appTitle}</h1>
-            <p className="text-[10px] text-muted-foreground leading-tight">{t.appSubtitle}</p>
+            <h2 className="text-[10px] text-muted-foreground leading-tight m-0 font-normal">{t.appSubtitle}</h2>
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">

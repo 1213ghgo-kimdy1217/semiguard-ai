@@ -7,8 +7,30 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { useEffect } from "react";
+
 export function Login() {
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    document.title = "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템";
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute('content', 'SemiGuard AI는 반도체 제조 장비의 전류, 온도, 진동, 소음 센서 데이터를 Isolation Forest AI로 실시간 분석하여 고장 징후를 조기에 탐지하고 LLM으로 원인을 진단하는 스마트 예지안전 솔루션입니다.');
+
+    let metaKw = document.querySelector('meta[name="keywords"]');
+    if (!metaKw) {
+      metaKw = document.createElement('meta');
+      metaKw.setAttribute('name', 'keywords');
+      document.head.appendChild(metaKw);
+    }
+    metaKw.setAttribute('content', 'SemiGuard AI, 반도체 예지보전, 이상탐지, 센서 모니터링, 예지안전 시스템');
+  }, []);
   const [badgeNumber, setBadgeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -85,7 +107,7 @@ export function Login() {
           {/* Header */}
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-white">SemiGuard AI</h1>
-            <p className="text-slate-300">반도체 장비 예지안전 시스템</p>
+            <h2 className="text-slate-300 text-sm font-normal m-0">반도체 장비 예지안전 시스템</h2>
           </div>
 
           {oauthError && (
