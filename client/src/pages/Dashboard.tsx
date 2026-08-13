@@ -1874,8 +1874,8 @@ export default function Dashboard() {
                     <h3 className="text-sm font-bold" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
                       {lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Expert Engineer"}
                     </h3>
-                    <span className="px-2 py-0.5 rounded text-[9px] font-mono border" style={{ borderColor: "oklch(0.75 0.18 200 / 0.3)", background: "oklch(0.75 0.18 200 / 0.1)", color: "oklch(0.75 0.18 200)" }}>
-                      {lang === "ko" ? `대화 ${chatMessages.length}개 (최근 12개 유지)` : lang === "ja" ? `会話 ${chatMessages.length}件 (直近12件維持)` : `Msgs ${chatMessages.length} (Windowed 12)`}
+                    <span className="px-2 py-0.5 rounded text-[9px] font-mono border whitespace-nowrap shrink-0" style={{ borderColor: "oklch(0.75 0.18 200 / 0.3)", background: "oklch(0.75 0.18 200 / 0.1)", color: "oklch(0.75 0.18 200)" }}>
+                      {lang === "ko" ? `대화 ${chatMessages.length}개 (최근 12개)` : lang === "ja" ? `会話 ${chatMessages.length}件 (直近12件)` : `Msgs ${chatMessages.length} (Win 12)`}
                     </span>
                   </div>
                   <p className="text-[10px] text-muted-foreground">
@@ -1885,19 +1885,19 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handleResetChat}
                   title={lang === "ko" ? "새 상담 시작 (대화 초기화)" : lang === "ja" ? "新しい相談 (会話リセット)" : "New Consultation"}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
                   style={{ borderColor: "oklch(0.75 0.18 200 / 0.4)", background: "oklch(0.75 0.18 200 / 0.10)", color: "oklch(0.75 0.18 200)" }}>
                   🔄 {lang === "ko" ? "새 상담" : lang === "ja" ? "新規相談" : "New Chat"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsChatOpen(false)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border shrink-0"
                   style={{ borderColor: th.border2, color: th.textMuted }}>
                   ✕
                 </button>
