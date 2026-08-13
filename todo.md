@@ -254,3 +254,7 @@
 - [x] AI 답변 메시지 말풍선 하단 또는 옆에 '복사' 버튼 추가 및 `navigator.clipboard.writeText` 연동 (완료)
 - [x] 복사 성공 시 일시적으로 '복사됨!' 피드백 상태 표시 (✅ 아이콘 전환 완료)
 - [x] TypeScript 컴파일 및 Vitest 전체 회귀 테스트 통과 검증 (30개 테스트 전체 통과)
+
+## 챗봇 입력창 Enter 전송 및 Shift + Enter 줄바꿈 단축키 추가 (2026-08-13)
+- [x] 챗봇 입력 컨트롤(textarea)에 `onKeyDown` 핸들러 추가 (Enter는 메시지 전송, Shift + Enter는 기본 줄바꿈 허용) (완료)
+- [x] TypeScript 컴파일 및 Vitest 전체 회귀 테스트 통과 검증 (30개 테스트 전체 통과)

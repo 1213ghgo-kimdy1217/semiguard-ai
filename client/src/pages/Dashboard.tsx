@@ -2291,21 +2291,32 @@ export default function Dashboard() {
             </div>
 
             {/* 입력 폼 영역 */}
-            <div className="p-4 border-t flex gap-2" style={{ borderColor: th.border, background: th.bgCard }}>
-              <input
-                type="text"
+            <div className="p-4 border-t flex items-end gap-2" style={{ borderColor: th.border, background: th.bgCard }}>
+              <textarea
+                rows={1}
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleSendChatMessage(); } }}
-                placeholder={lang === "ko" ? "설비 이상 상태에 대해 질문해 주세요..." : lang === "ja" ? "設備の状態について質問してください..." : "Ask about equipment anomaly state..."}
-                className="flex-1 rounded-xl border px-3.5 py-2.5 text-xs outline-none transition-all focus:ring-2 focus:ring-cyan-500/40"
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void handleSendChatMessage();
+                  }
+                }}
+                placeholder={
+                  lang === "ko"
+                    ? "설비 이상 상태에 대해 질문해 주세요... (Enter: 전송, Shift + Enter: 줄바꿈)"
+                    : lang === "ja"
+                    ? "設備の状態について質問してください... (Enter: 送信, Shift + Enter: 改行)"
+                    : "Ask about equipment anomaly... (Enter: Send, Shift + Enter: Newline)"
+                }
+                className="flex-1 rounded-xl border px-3.5 py-2 text-xs outline-none transition-all focus:ring-2 focus:ring-cyan-500/40 resize-none max-h-24 custom-scrollbar"
                 style={{ borderColor: th.border2, background: th.bgCard2, color: th.text }}
               />
               <button
                 type="button"
                 onClick={() => void handleSendChatMessage()}
                 disabled={isChatLoading || !chatInput.trim()}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-95 disabled:opacity-40 active:scale-95 flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-95 disabled:opacity-40 active:scale-95 flex items-center gap-1.5 shrink-0"
                 style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))" }}>
                 <span>{lang === "ko" ? "전송" : lang === "ja" ? "送信" : "Send"}</span>
                 <span>📤</span>
