@@ -2069,7 +2069,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                   {chatSessionsQuery.isLoading ? (
                     <div className="flex items-center justify-center py-8 text-xs text-muted-foreground gap-2">
                       <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
@@ -2110,12 +2110,16 @@ export default function Dashboard() {
                             console.error("Failed to load session messages:", err);
                           }
                         }}
-                        className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all hover:opacity-90 flex items-center justify-between ${
-                          activeSessionId === session.id ? "ring-2 ring-sky-500" : ""
+                        className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex items-center justify-between ${
+                          activeSessionId === session.id ? "ring-2 ring-sky-500 shadow-sm" : ""
                         }`}
                         style={{
-                          background: activeSessionId === session.id ? "oklch(0.75 0.18 200 / 0.15)" : isDark ? "oklch(0.18 0.015 240)" : "oklch(0.95 0.005 240)",
-                          borderColor: th.border2
+                          background: activeSessionId === session.id
+                            ? "oklch(0.75 0.18 200 / 0.18)"
+                            : isDark
+                            ? "oklch(0.17 0.015 240)"
+                            : "oklch(0.96 0.005 240)",
+                          borderColor: activeSessionId === session.id ? "oklch(0.75 0.18 200)" : th.border2
                         }}>
                         <div className="truncate flex-1 pr-2">
                           <p className="font-bold truncate">{session.title}</p>
