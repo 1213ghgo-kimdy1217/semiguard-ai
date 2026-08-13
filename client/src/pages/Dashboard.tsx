@@ -735,6 +735,7 @@ export default function Dashboard() {
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     {
@@ -2075,7 +2076,18 @@ export default function Dashboard() {
                       <span>{lang === "ko" ? "기록 불러오는 중..." : lang === "ja" ? "履歴を読み込んでいます..." : "Loading history..."}</span>
                     </div>
                   ) : chatSessionsQuery.data && chatSessionsQuery.data.length > 0 ? (
-                    chatSessionsQuery.data.map((session) => (
+                    (() => {
+                      const filtered = chatSessionsQuery.data.filter(session =>
+                        session.title.toLowerCase().includes(searchKeyword.toLowerCase())
+                      );
+                      if (filtered.length === 0) {
+                        return (
+                          <p className="text-[11px] text-muted-foreground text-center py-6">
+                            {lang === "ko" ? "검색 결과가 없습니다." : lang === "ja" ? "検索結果がありません。" : "No matching consultations found."}
+                          </p>
+                        );
+                      }
+                      return filtered.map((session) => (
                       <div
                         key={session.id}
                         onClick={async () => {
@@ -2128,7 +2140,8 @@ export default function Dashboard() {
                           🗑️
                         </button>
                       </div>
-                    ))
+                    ));
+                    })()
                   ) : (
                     <p className="text-[11px] text-muted-foreground text-center py-6">
                       {lang === "ko" ? "저장된 상담 기록이 없습니다." : lang === "ja" ? "保存された相談履歴がありません。" : "No saved consultations."}
