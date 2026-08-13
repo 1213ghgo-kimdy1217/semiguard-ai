@@ -193,3 +193,11 @@
 - [x] 클라이언트 대시보드 챗봇에 '상담 기록' 패널 및 목록 보기, 과거 기록 불러오기 기능 추가 (개념 설계 및 아키텍처 반영 완료)
 - [x] '새 상담' 시 기존 대화를 DB 세션으로 안전하게 보관하고 새로운 빈 세션으로 전환하는 로직 구현 (완료)
 - [x] 다국어(KO/EN/JA) 지원 및 Vitest 회귀 테스트 통과 검증 (TypeScript 검사 및 Vitest 29개 테스트 전체 통과)
+
+## 프론트엔드 챗봇 상담 기록 패널 및 보관형 새 상담 UX (2026-08-13)
+- [x] Dashboard.tsx에 activeSessionId 및 showHistoryPanel 상태 추가 (완료)
+- [x] trpc.semiguard.getChatSessions 및 createChatSession, getChatMessages 연동 (완료)
+- [x] 챗봇 헤더에 '상담 기록' 버튼 추가 및 과거 세션 목록 패널 UI 구현 (다국어 KO/EN/JA 지원 완료)
+- [x] '새 상담' 확인 모달 시 기존 대화를 DB에 저장하고 새로운 세션으로 전환하는 로직 구현 (완료)
+- [x] 과거 세션 클릭 시 해당 대화를 로드하여 챗봇 창에 표시하는 기능 구현 (완료)
+- [x] TypeScript 및 Vitest 전체 회귀 테스트 통과 검증 (30개 테스트 통과)

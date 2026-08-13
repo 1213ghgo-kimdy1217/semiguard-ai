@@ -722,16 +722,25 @@ export default function Dashboard() {
   const [showAiHistory, setShowAiHistory] = useState(false);
   const llmHistoryQuery = trpc.semiguard.getLlmHistory.useQuery(undefined, { refetchInterval: 10000 });
 
-  // 대화형 AI 상담 챗봇 상태
+  // 대화형 AI 상담 챗봇 상태 및 세션 보관 관리
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+
+  const chatUtils = trpc.useUtils();
+  const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
+  const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
+  const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
+  const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
+
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     {
       role: "assistant",
       content: lang === "ko"
         ? "안녕하세요! 반도체 설비 예지안전 수석 엔지니어 AI입니다. 현재 센서 상태와 이상 이력에 대해 무엇이든 물어보세요. 점검 순서나 즉시 조치법을 안내해 드립니다."
         : lang === "ja"
-        ? "こんにちは！半導体設備予知保全シニアエンジニアAIです。現在のセンサー状態や異常履歴について何でもご相談ください。"
+        ? "こんにちは！半導体設備予知保全シニアエンジニアAIです。現在のセンサー状態や異常履歴について何でもご質問ください。"
         : "Hello! I am your senior predictive maintenance AI engineer. Ask me anything about current sensor states or troubleshooting steps.",
     },
   ]);
@@ -739,18 +748,40 @@ export default function Dashboard() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatMutation = trpc.semiguard.chatWithAi.useMutation();
 
-  const handleResetChat = () => {
-    setChatMessages([
-      {
-        role: "assistant",
-        content: lang === "ko"
-          ? "대화가 초기화되었습니다. 새로운 상담을 시작합니다. 현재 센서 상태와 이상 이력에 대해 무엇이든 물어보세요."
-          : lang === "ja"
-          ? "会話がリセットされました。新しい相談を開始します。センサー状態や異常履歴について何でもご質問ください。"
-          : "Conversation has been reset. Starting a new consultation. Ask me anything about sensor states or anomaly history.",
-      },
-    ]);
-    setShowResetConfirmModal(false);
+  // 최초 챗봇 오픈 시 세션이 없으면 기본 세션 생성
+  useEffect(() => {
+    if (isChatOpen && activeSessionId === null) {
+      createSessionMutation.mutateAsync({ title: lang === "ko" ? "새로운 상담" : lang === "ja" ? "新しい相談" : "New Consultation" }).then((res) => {
+        setActiveSessionId(res.sessionId);
+        chatUtils.semiguard.getChatSessions.invalidate();
+      }).catch(err => console.error("Failed to create chat session:", err));
+    }
+  }, [isChatOpen]);
+
+  const handleResetChat = async () => {
+    try {
+      const newTitle = chatMessages.length > 1 ? chatMessages[1].content.slice(0, 25) + "..." : (lang === "ko" ? "새로운 상담" : "New Consultation");
+      const res = await createSessionMutation.mutateAsync({ title: newTitle });
+      setActiveSessionId(res.sessionId);
+      const initialMsg = lang === "ko"
+        ? "새로운 상담 세션이 시작되었습니다. 이전 상담 기록은 상단의 '상담 기록' 버튼에서 언제든지 다시 확인하실 수 있습니다."
+        : lang === "ja"
+        ? "新しい相談セッションが開始されました。過去の相談履歴は上部の「相談履歴」ボタンからいつでもご確認いただけます。"
+        : "A new consultation session has started. Previous conversation history remains accessible via the 'History' button.";
+      
+      setChatMessages([
+        {
+          role: "assistant",
+          content: initialMsg,
+        },
+      ]);
+      await saveMessageMutation.mutateAsync({ sessionId: res.sessionId, role: "assistant", content: initialMsg });
+      chatUtils.semiguard.getChatSessions.invalidate();
+    } catch (e) {
+      console.error("Reset chat session error:", e);
+    } finally {
+      setShowResetConfirmModal(false);
+    }
   };
 
   const handleSendChatMessage = async (textToSend?: string) => {
@@ -761,6 +792,10 @@ export default function Dashboard() {
     setChatMessages(nextMessages);
     if (!textToSend) setChatInput("");
     setIsChatLoading(true);
+
+    if (activeSessionId !== null) {
+      saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "user", content: text.trim() }).catch(err => console.error("Failed to save user message:", err));
+    }
 
     try {
       const sensorContext = {
@@ -776,7 +811,13 @@ export default function Dashboard() {
         messages: nextMessages.map(m => ({ role: m.role, content: m.content })),
         lang,
       });
-      setChatMessages(prev => [...prev, { role: "assistant", content: res.reply }]);
+      const aiReply = res.reply;
+      setChatMessages(prev => [...prev, { role: "assistant", content: aiReply }]);
+
+      if (activeSessionId !== null) {
+        saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "assistant", content: aiReply }).catch(err => console.error("Failed to save AI message:", err));
+        chatUtils.semiguard.getChatSessions.invalidate();
+      }
     } catch {
       setChatMessages(prev => [
         ...prev,
@@ -1890,8 +1931,16 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
+                  onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+                  title={lang === "ko" ? "과거 상담 기록 보기" : lang === "ja" ? "過去の相談履歴を見る" : "View Consultation History"}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
+                  style={{ borderColor: "oklch(0.65 0.22 145 / 0.4)", background: "oklch(0.65 0.22 145 / 0.10)", color: "oklch(0.75 0.18 145)" }}>
+                  📂 {lang === "ko" ? "기록" : lang === "ja" ? "履歴" : "History"}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowResetConfirmModal(true)}
-                  title={lang === "ko" ? "새 상담 시작 (대화 초기화)" : lang === "ja" ? "新しい相談 (会話リセット)" : "New Consultation"}
+                  title={lang === "ko" ? "새 상담 시작 (이전 대화 보관)" : lang === "ja" ? "新しい相談 (会話保存)" : "New Consultation"}
                   className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
                   style={{ borderColor: "oklch(0.75 0.18 200 / 0.4)", background: "oklch(0.75 0.18 200 / 0.10)", color: "oklch(0.75 0.18 200)" }}>
                   🔄 {lang === "ko" ? "새 상담" : lang === "ja" ? "新規相談" : "New Chat"}
@@ -1947,6 +1996,95 @@ export default function Dashboard() {
                       {lang === "ko" ? "초기화 (새 상담)" : lang === "ja" ? "リセット (新規相談)" : "Reset & New Chat"}
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* 상담 기록 사이드 패널 */}
+            {showHistoryPanel && (
+              <div className="absolute top-16 right-4 bottom-4 w-72 z-[570] rounded-xl shadow-2xl border p-3 flex flex-col backdrop-blur-md animate-fadeIn"
+                style={{
+                  background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
+                  borderColor: "oklch(0.75 0.18 200 / 0.4)",
+                  color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)"
+                }}>
+                <div className="flex items-center justify-between pb-2 border-b mb-2" style={{ borderColor: th.border }}>
+                  <h4 className="text-xs font-bold flex items-center gap-1.5">
+                    📂 {lang === "ko" ? "과거 상담 기록" : lang === "ja" ? "過去の相談履歴" : "Consultation History"}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setShowHistoryPanel(false)}
+                    className="text-xs text-muted-foreground hover:opacity-70">
+                    ✕
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                  {chatSessionsQuery.isLoading ? (
+                    <div className="flex items-center justify-center py-8 text-xs text-muted-foreground gap-2">
+                      <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span>{lang === "ko" ? "기록 불러오는 중..." : lang === "ja" ? "履歴を読み込んでいます..." : "Loading history..."}</span>
+                    </div>
+                  ) : chatSessionsQuery.data && chatSessionsQuery.data.length > 0 ? (
+                    chatSessionsQuery.data.map((session) => (
+                      <div
+                        key={session.id}
+                        onClick={async () => {
+                          setActiveSessionId(session.id);
+                          setShowHistoryPanel(false);
+                          // 해당 세션 메시지 조회
+                          try {
+                            const res = await chatUtils.client.semiguard.getChatMessages.query({ sessionId: session.id });
+                            if (res && res.length > 0) {
+                              setChatMessages(res.map(m => ({ role: m.role as "user" | "assistant", content: m.content })));
+                            } else {
+                              setChatMessages([
+                                {
+                                  role: "assistant",
+                                  content: lang === "ko" ? "저장된 대화가 없는 세션입니다." : lang === "ja" ? "保存された会話のないセッションです。" : "Empty session.",
+                                },
+                              ]);
+                            }
+                          } catch (err) {
+                            console.error("Failed to load session messages:", err);
+                          }
+                        }}
+                        className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all hover:opacity-90 flex items-center justify-between ${
+                          activeSessionId === session.id ? "ring-2 ring-sky-500" : ""
+                        }`}
+                        style={{
+                          background: activeSessionId === session.id ? "oklch(0.75 0.18 200 / 0.15)" : isDark ? "oklch(0.18 0.015 240)" : "oklch(0.95 0.005 240)",
+                          borderColor: th.border2
+                        }}>
+                        <div className="truncate flex-1 pr-2">
+                          <p className="font-bold truncate">{session.title}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {new Date(session.updatedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm(lang === "ko" ? "이 상담 기록을 삭제하시겠습니까?" : lang === "ja" ? "この相談履歴を削除しますか？" : "Delete this consultation history?")) {
+                              await deleteSessionMutation.mutateAsync({ sessionId: session.id });
+                              chatUtils.semiguard.getChatSessions.invalidate();
+                              if (activeSessionId === session.id) {
+                                handleResetChat();
+                              }
+                            }
+                          }}
+                          className="text-red-400 hover:text-red-500 p-1 text-xs"
+                          title="삭제">
+                          🗑️
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground text-center py-6">
+                      {lang === "ko" ? "저장된 상담 기록이 없습니다." : lang === "ja" ? "保存された相談履歴がありません。" : "No saved consultations."}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
