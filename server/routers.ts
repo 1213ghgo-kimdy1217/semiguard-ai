@@ -504,10 +504,55 @@ Rules:
           const fallback = lang === "ko"
             ? "AI 상담 연결 중 일시적인 지연이 발생했습니다. 센서 편차와 권장 조치를 다시 확인해 주세요."
             : lang === "ja"
-            ? "AI相談の接続中に一時的な遅延が発生しました。センサーの偏りと推奨措置を再確認してください。"
+            ? "AI相談の接続中に一時적인遅延が発生しました。センサーの偏りと推奨措置を再確認してください。"
             : "Temporary delay connecting to AI consultation. Please recheck sensor deviations and recommendations.";
           return { reply: fallback };
         }
+      }),
+
+    // 상담 세션 목록 조회
+    getChatSessions: protectedProcedure.query(async ({ ctx }) => {
+      return db.getChatSessions(ctx.user.id);
+    }),
+
+    // 새 상담 세션 생성
+    createChatSession: protectedProcedure
+      .input(z.object({ title: z.string().optional() }).optional())
+      .mutation(async ({ ctx, input }) => {
+        const title = input?.title ?? "새로운 상담";
+        const sessionId = await db.createChatSession(ctx.user.id, title);
+        return { sessionId };
+      }),
+
+    // 특정 세션 메시지 조회
+    getChatMessages: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getChatMessagesForSession(input.sessionId);
+      }),
+
+    // 메시지 저장 및 세션 갱신
+    saveChatMessage: protectedProcedure
+      .input(z.object({ sessionId: z.number(), role: z.enum(["user", "assistant"]), content: z.string() }))
+      .mutation(async ({ input }) => {
+        await db.addChatMessage(input.sessionId, input.role, input.content);
+        return { success: true };
+      }),
+
+    // 세션 제목 변경
+    updateChatSessionTitle: protectedProcedure
+      .input(z.object({ sessionId: z.number(), title: z.string() }))
+      .mutation(async ({ input }) => {
+        await db.updateSessionTitle(input.sessionId, input.title);
+        return { success: true };
+      }),
+
+    // 세션 삭제
+    deleteChatSession: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteChatSession(input.sessionId, ctx.user.id);
+        return { success: true };
       }),
   }),
 });

@@ -136,3 +136,27 @@ export const userStats = mysqlTable("user_stats", {
 
 export type UserStat = typeof userStats.$inferSelect;
 export type InsertUserStat = typeof userStats.$inferInsert;
+
+// 챗봇 상담 세션 테이블
+export const chatSessions = mysqlTable("chat_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull().default("새로운 상담"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ChatSession = typeof chatSessions.$inferSelect;
+export type InsertChatSession = typeof chatSessions.$inferInsert;
+
+// 챗봇 대화 메시지 테이블
+export const chatMessagesTable = mysqlTable("chat_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("session_id").notNull(),
+  role: mysqlEnum("role", ["user", "assistant"]).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ChatMessageRecord = typeof chatMessagesTable.$inferSelect;
+export type InsertChatMessageRecord = typeof chatMessagesTable.$inferInsert;

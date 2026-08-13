@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, socialAccountLinks, users } from "../drizzle/schema";
+import { InsertUser, socialAccountLinks, users, chatSessions, chatMessagesTable } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { and, eq, desc } from "drizzle-orm";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -219,3 +219,51 @@ export async function createLocalUser(input: {
 }
 
 // TODO: add feature queries here as your schema grows.
+
+
+
+export async function getChatSessions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(chatSessions).where(eq(chatSessions.userId, userId)).orderBy(desc(chatSessions.updatedAt));
+}
+
+export async function createChatSession(userId: number, title: string = "새로운 상담") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const res = await db.insert(chatSessions).values({ userId, title });
+  const insertId = Number(res[0].insertId);
+  return insertId;
+}
+
+export async function getChatMessagesForSession(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(chatMessagesTable).where(eq(chatMessagesTable.sessionId, sessionId)).orderBy(chatMessagesTable.createdAt);
+}
+
+export async function addChatMessage(sessionId: number, role: "user" | "assistant", content: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(chatMessagesTable).values({ sessionId, role, content });
+  // Update session updatedAt
+  await db.update(chatSessions).set({ updatedAt: new Date() }).where(eq(chatSessions.id, sessionId));
+}
+
+export async function updateSessionTitle(sessionId: number, title: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(chatSessions).set({ title }).where(eq(chatSessions.id, sessionId));
+}
+
+export async function deleteChatSession(sessionId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // Verify ownership
+  const session = await db.select().from(chatSessions).where(eq(chatSessions.id, sessionId)).limit(1);
+  if (session.length === 0 || session[0].userId !== userId) {
+    throw new Error("Unauthorized or session not found");
+  }
+  await db.delete(chatMessagesTable).where(eq(chatMessagesTable.sessionId, sessionId));
+  await db.delete(chatSessions).where(eq(chatSessions.id, sessionId));
+}
