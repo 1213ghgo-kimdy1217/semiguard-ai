@@ -733,6 +733,8 @@ export default function Dashboard() {
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
+  const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     {
@@ -2012,13 +2014,60 @@ export default function Dashboard() {
                   <h4 className="text-xs font-bold flex items-center gap-1.5">
                     📂 {lang === "ko" ? "과거 상담 기록" : lang === "ja" ? "過去の相談履歴" : "Consultation History"}
                   </h4>
-                  <button
-                    type="button"
-                    onClick={() => setShowHistoryPanel(false)}
-                    className="text-xs text-muted-foreground hover:opacity-70">
-                    ✕
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {chatSessionsQuery.data && chatSessionsQuery.data.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteAllConfirm(true)}
+                        className="px-1.5 py-0.5 rounded text-[10px] font-bold text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-all">
+                        🗑️ {lang === "ko" ? "전체 초기화" : lang === "ja" ? "すべてリセット" : "Clear All"}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowHistoryPanel(false)}
+                      className="text-xs text-muted-foreground hover:opacity-70">
+                      ✕
+                    </button>
+                  </div>
                 </div>
+
+                {/* 전체 초기화 2단계 확인 모달 */}
+                {showDeleteAllConfirm && (
+                  <div className="absolute inset-0 z-[580] rounded-xl flex flex-col items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn text-center">
+                    <p className="text-xs font-bold text-red-300 mb-1">
+                      ⚠️ {lang === "ko" ? "모든 상담 기록을 삭제하시겠습니까?" : lang === "ja" ? "すべての相談履歴を削除しますか？" : "Delete all consultation history?"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mb-4">
+                      {lang === "ko" ? "이 작업은 되돌릴 수 없으며 모든 대화가 영구 삭제됩니다." : lang === "ja" ? "この操作は取り消せません。" : "This action cannot be undone."}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteAllConfirm(false)}
+                        className="px-3 py-1 rounded-lg text-xs font-bold border"
+                        style={{ borderColor: th.border2, color: th.textMuted }}>
+                        {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await deleteAllSessionsMutation.mutateAsync();
+                            chatUtils.semiguard.getChatSessions.invalidate();
+                            setShowDeleteAllConfirm(false);
+                            setShowHistoryPanel(false);
+                            handleResetChat();
+                          } catch (e) {
+                            console.error("Failed to delete all sessions:", e);
+                          }
+                        }}
+                        className="px-3 py-1 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition-all">
+                        {lang === "ko" ? "전체 삭제" : lang === "ja" ? "すべて削除" : "Delete All"}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                   {chatSessionsQuery.isLoading ? (
                     <div className="flex items-center justify-center py-8 text-xs text-muted-foreground gap-2">

@@ -267,3 +267,14 @@ export async function deleteChatSession(sessionId: number, userId: number) {
   await db.delete(chatMessagesTable).where(eq(chatMessagesTable.sessionId, sessionId));
   await db.delete(chatSessions).where(eq(chatSessions.id, sessionId));
 }
+
+export async function deleteAllChatSessions(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // 사용자의 모든 세션 조회
+  const sessions = await db.select().from(chatSessions).where(eq(chatSessions.userId, userId));
+  for (const session of sessions) {
+    await db.delete(chatMessagesTable).where(eq(chatMessagesTable.sessionId, session.id));
+  }
+  await db.delete(chatSessions).where(eq(chatSessions.userId, userId));
+}

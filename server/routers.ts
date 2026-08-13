@@ -554,6 +554,12 @@ Rules:
         await db.deleteChatSession(input.sessionId, ctx.user.id);
         return { success: true };
       }),
+
+    // 모든 상담 세션 및 메시지 일괄 삭제 (전체 초기화)
+    deleteAllChatSessions: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.deleteAllChatSessions(ctx.user.id);
+      return { success: true };
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;
