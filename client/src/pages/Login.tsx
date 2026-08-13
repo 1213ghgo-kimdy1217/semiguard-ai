@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { toast } from "sonner";
-
+import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 
 export function Login() {
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
 
   useEffect(() => {
     document.title = "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템";
@@ -91,7 +92,9 @@ export function Login() {
       }
 
       toast.success("로그인이 완료되었습니다!");
-      setLocation("/");
+      // 캐시를 무효화하고 대시보드로 이동
+      await utils.auth.me.invalidate();
+      window.location.href = "/";
     } catch (error) {
       console.error("Login error:", error);
       toast.error("로그인 실패: 명찰 번호 또는 비밀번호를 확인해주세요.");
