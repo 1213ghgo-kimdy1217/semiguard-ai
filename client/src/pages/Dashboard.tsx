@@ -2080,10 +2080,21 @@ export default function Dashboard() {
                         onClick={async () => {
                           try {
                             await deleteAllSessionsMutation.mutateAsync();
+                            // 새로 빈 세션 생성하여 대화창 완전 리셋
+                            const newTitle = lang === "ko" ? "새로운 상담" : lang === "ja" ? "新しい相談" : "New Consultation";
+                            const res = await createSessionMutation.mutateAsync({ title: newTitle });
+                            setActiveSessionId(res.sessionId);
+                            const initialMsg = lang === "ko"
+                              ? "모든 상담 기록이 초기화되었습니다. 새로운 상담을 시작합니다."
+                              : lang === "ja"
+                              ? "すべての相談履歴が初期化されました。新しい相談を開始します。"
+                              : "All consultation history has been cleared. Starting a new consultation.";
+                            setChatMessages([{ role: "assistant", content: initialMsg }]);
+                            await saveMessageMutation.mutateAsync({ sessionId: res.sessionId, role: "assistant", content: initialMsg });
+
                             chatUtils.semiguard.getChatSessions.invalidate();
                             setShowDeleteAllConfirm(false);
                             setShowHistoryPanel(false);
-                            handleResetChat();
                           } catch (e) {
                             console.error("Failed to delete all sessions:", e);
                           }
