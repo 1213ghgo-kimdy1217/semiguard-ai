@@ -737,7 +737,7 @@ export default function Dashboard() {
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number }>>([
     {
       role: "assistant",
       content: lang === "ko"
@@ -745,6 +745,7 @@ export default function Dashboard() {
         : lang === "ja"
         ? "こんにちは！半導体設備予知保全シニアエンジニアAIです。現在のセンサー状態や異常履歴について何でもご質問ください。"
         : "Hello! I am your senior predictive maintenance AI engineer. Ask me anything about current sensor states or troubleshooting steps.",
+      timestamp: Date.now(),
     },
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -776,6 +777,7 @@ export default function Dashboard() {
         {
           role: "assistant",
           content: initialMsg,
+          timestamp: Date.now(),
         },
       ]);
       await saveMessageMutation.mutateAsync({ sessionId: res.sessionId, role: "assistant", content: initialMsg });
@@ -790,7 +792,7 @@ export default function Dashboard() {
   const handleSendChatMessage = async (textToSend?: string) => {
     const text = textToSend ?? chatInput;
     if (!text.trim() || isChatLoading) return;
-    const userMsg = { role: "user" as const, content: text.trim() };
+    const userMsg = { role: "user" as const, content: text.trim(), timestamp: Date.now() };
     const nextMessages = [...chatMessages, userMsg];
     setChatMessages(nextMessages);
     if (!textToSend) setChatInput("");
@@ -815,7 +817,7 @@ export default function Dashboard() {
         lang,
       });
       const aiReply = res.reply;
-      setChatMessages(prev => [...prev, { role: "assistant", content: aiReply }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: aiReply, timestamp: Date.now() }]);
 
       if (activeSessionId !== null) {
         saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "assistant", content: aiReply }).catch(err => console.error("Failed to save AI message:", err));
@@ -827,6 +829,7 @@ export default function Dashboard() {
         {
           role: "assistant",
           content: lang === "ko" ? "응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." : "Error generating response. Please try again.",
+          timestamp: Date.now(),
         },
       ]);
     } finally {
@@ -2089,7 +2092,7 @@ export default function Dashboard() {
                               : lang === "ja"
                               ? "すべての相談履歴が初期化されました。新しい相談を開始します。"
                               : "All consultation history has been cleared. Starting a new consultation.";
-                            setChatMessages([{ role: "assistant", content: initialMsg }]);
+                            setChatMessages([{ role: "assistant", content: initialMsg, timestamp: Date.now() }]);
                             await saveMessageMutation.mutateAsync({ sessionId: res.sessionId, role: "assistant", content: initialMsg });
 
                             chatUtils.semiguard.getChatSessions.invalidate();
@@ -2133,12 +2136,17 @@ export default function Dashboard() {
                           try {
                             const res = await chatUtils.client.semiguard.getChatMessages.query({ sessionId: session.id });
                             if (res && res.length > 0) {
-                              setChatMessages(res.map(m => ({ role: m.role as "user" | "assistant", content: m.content })));
+                              setChatMessages(res.map(m => ({
+                                role: m.role as "user" | "assistant",
+                                content: m.content,
+                                timestamp: m.createdAt ? new Date(m.createdAt).getTime() : Date.now()
+                              })));
                             } else {
                               setChatMessages([
                                 {
                                   role: "assistant",
                                   content: lang === "ko" ? "저장된 대화가 없는 세션입니다." : lang === "ja" ? "保存された会話のないセッションです。" : "Empty session.",
+                                  timestamp: Date.now(),
                                 },
                               ]);
                             }
@@ -2194,9 +2202,14 @@ export default function Dashboard() {
             {/* 대화 메시지 영역 */}
             <div className="flex-1 p-4 overflow-y-auto space-y-3">
               {chatMessages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div key={idx} className={`flex items-end gap-1.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  {msg.role !== "user" && (
+                    <span className="text-[9px] text-muted-foreground pb-1 shrink-0">
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                       msg.role === "user" ? "rounded-tr-none" : "rounded-tl-none border"
                     }`}
                     style={
@@ -2210,6 +2223,11 @@ export default function Dashboard() {
                     }>
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   </div>
+                  {msg.role === "user" && (
+                    <span className="text-[9px] text-muted-foreground pb-1 shrink-0">
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
                 </div>
               ))}
               {isChatLoading && (
