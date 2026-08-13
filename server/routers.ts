@@ -397,6 +397,96 @@ export const appRouter = router({
         getLlmHistory: publicProcedure.query(async () => {
       return getLlmHistory(5);
     }),
+
+    chatWithAi: publicProcedure
+      .input(
+        z.object({
+          sensorContext: z.object({
+            current: z.number(),
+            temperature: z.number(),
+            vibration: z.number(),
+            noise: z.number(),
+            anomalyScore: z.number(),
+            riskLevel: z.string(),
+            logId: z.number().optional(),
+          }),
+          messages: z.array(
+            z.object({
+              role: z.enum(["user", "assistant"]),
+              content: z.string(),
+            })
+          ),
+          lang: z.enum(["ko", "en", "ja"]).default("ko"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { sensorContext, messages, lang } = input;
+        
+        const systemPromptKo = `당신은 반도체 설비 예지보전 및 이상 진단 수석 엔지니어 AI입니다.
+[현재 진단 대상 센서 데이터 및 로그 ID: #${sensorContext.logId ?? '실시간 수치'}]
+- 전류: ${sensorContext.current}A (정상 5.0A 편차 ±0.5)
+- 온도: ${sensorContext.temperature}°C (정상 45°C 편차 ±3)
+- 진동: ${sensorContext.vibration}mm/s (정상 2.0mm/s 편차 ±0.3)
+- 소음: ${sensorContext.noise}dB (정상 55dB 편차 ±4)
+- 이상 점수: ${sensorContext.anomalyScore}/100, 위험 단계: ${sensorContext.riskLevel}
+
+규칙:
+1. 고정 템플릿 답변을 금지하고, 실제 센서 수치와 기준값의 구체적인 편차(예: 온도 12°C 초과 등)를 계산하여 원인을 정밀 추론하세요.
+2. [확신도(Confidence)]와 [장비 즉시 중지 조건(Shutdown Criteria)]을 답변에 명시하세요.
+3. 확인해야 할 부품(베어링, 인버터, 쿨링팬, 가스 밸브 등)과 단계별 복구 절차를 상세히 안내하세요.
+4. 전문적이고 신뢰감 있는 수석 엔지니어 톤을 유지하세요.`;
+
+        const systemPromptEn = `You are an expert AI senior engineer for semiconductor equipment predictive maintenance.
+[Target Sensor Data & Log ID: #${sensorContext.logId ?? 'Live'}]
+- Current: ${sensorContext.current}A (Normal 5.0A ±0.5)
+- Temperature: ${sensorContext.temperature}°C (Normal 45°C ±3)
+- Vibration: ${sensorContext.vibration}mm/s (Normal 2.0mm/s ±0.3)
+- Noise: ${sensorContext.noise}dB (Normal 55dB ±4)
+- Anomaly Score: ${sensorContext.anomalyScore}/100, Risk Level: ${sensorContext.riskLevel}
+
+Rules:
+1. Avoid fixed templates; calculate exact deviations from normal baselines and provide dynamic custom root-cause analysis.
+2. Explicitly include [Confidence Level] and [Immediate Shutdown Criteria] in the response.
+3. Detail components to inspect (bearings, inverter, cooling fan, gas valves) and step-by-step recovery procedures.
+4. Maintain a professional senior engineer persona.`;
+
+        const systemPromptJa = `あなたは半導体設備の予知保全および異常診断のシニアエンジニアAIです。
+[対象センサーデータ・ログID: #${sensorContext.logId ?? 'リアルタイム'}]
+- 電流: ${sensorContext.current}A (正常5.0A ±0.5)
+- 温度: ${sensorContext.temperature}°C (正常45°C ±3)
+- 振動: ${sensorContext.vibration}mm/s (正常2.0mm/s ±0.3)
+- 騒音: ${sensorContext.noise}dB (正常55dB ±4)
+- 異常スコア: ${sensorContext.anomalyScore}/100, 危険度: ${sensorContext.riskLevel}
+
+ルール:
+1. 固定テンプレートを避け、正常基準値からの具体的なセンサー偏차を算出して精密な原因推論を行ってください。
+2. 回答に[信頼度 (Confidence)] および [設備即時停止条件 (Shutdown Criteria)] を必ず含めてください。
+3. 点検すべき部品（ベアリング、インバーター、冷却ファン、ガスバルブ等）と段階的な復旧手順を詳しく案内してください。
+4. 専門的で信頼性の高いシニアエンジニアのトーンを維持してください。`;
+
+        const systemPrompt = lang === "ko" ? systemPromptKo : lang === "ja" ? systemPromptJa : systemPromptEn;
+
+        const formattedMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+          { role: "system", content: systemPrompt },
+          ...messages.map(m => ({ role: m.role, content: m.content })),
+        ];
+
+        try {
+          const res = await invokeLLM({ messages: formattedMessages });
+          const reply = res.choices[0]?.message?.content;
+          if (typeof reply !== "string") {
+            throw new Error("No reply content from LLM");
+          }
+          return { reply };
+        } catch (err) {
+          const fallback = lang === "ko"
+            ? "AI 상담 연결 중 일시적인 지연이 발생했습니다. 센서 편차와 권장 조치를 다시 확인해 주세요."
+            : lang === "ja"
+            ? "AI相談の接続中に一時的な遅延が発生しました。センサーの偏りと推奨措置を再確認してください。"
+            : "Temporary delay connecting to AI consultation. Please recheck sensor deviations and recommendations.";
+          return { reply: fallback };
+        }
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

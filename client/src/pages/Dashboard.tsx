@@ -722,6 +722,59 @@ export default function Dashboard() {
   const [showAiHistory, setShowAiHistory] = useState(false);
   const llmHistoryQuery = trpc.semiguard.getLlmHistory.useQuery(undefined, { refetchInterval: 10000 });
 
+  // 대화형 AI 상담 챗봇 상태
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
+    {
+      role: "assistant",
+      content: lang === "ko"
+        ? "안녕하세요! 반도체 설비 예지안전 수석 엔지니어 AI입니다. 현재 센서 상태와 이상 이력에 대해 무엇이든 물어보세요. 점검 순서나 즉시 조치법을 안내해 드립니다."
+        : lang === "ja"
+        ? "こんにちは！半導体設備予知保全シニアエンジニアAIです。現在のセンサー状態や異常履歴について何でもご相談ください。"
+        : "Hello! I am your senior predictive maintenance AI engineer. Ask me anything about current sensor states or troubleshooting steps.",
+    },
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatMutation = trpc.semiguard.chatWithAi.useMutation();
+
+  const handleSendChatMessage = async (textToSend?: string) => {
+    const text = textToSend ?? chatInput;
+    if (!text.trim() || isChatLoading) return;
+    const userMsg = { role: "user" as const, content: text.trim() };
+    const nextMessages = [...chatMessages, userMsg];
+    setChatMessages(nextMessages);
+    if (!textToSend) setChatInput("");
+    setIsChatLoading(true);
+
+    try {
+      const sensorContext = {
+        current: current?.sensorData.current ?? 5.0,
+        temperature: current?.sensorData.temperature ?? 45.0,
+        vibration: current?.sensorData.vibration ?? 2.0,
+        noise: current?.sensorData.noise ?? 55.0,
+        anomalyScore: current?.anomalyScore ?? 10,
+        riskLevel: current?.riskLevel ?? "normal",
+      };
+      const res = await chatMutation.mutateAsync({
+        sensorContext,
+        messages: nextMessages.map(m => ({ role: m.role, content: m.content })),
+        lang,
+      });
+      setChatMessages(prev => [...prev, { role: "assistant", content: res.reply }]);
+    } catch {
+      setChatMessages(prev => [
+        ...prev,
+        {
+          role: "assistant",
+          content: lang === "ko" ? "응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." : "Error generating response. Please try again.",
+        },
+      ]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
   // 슬라이드 메뉴가 열린 동안 Escape로 닫고 배경 스크롤을 잠급니다.
   useEffect(() => {
     if (!menuOpen) return;
@@ -1769,6 +1822,129 @@ export default function Dashboard() {
               style={{ borderColor: th.border2, color: th.textMuted }}>
               ✕
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── 플로팅 챗봇 버튼 ── */}
+      <button
+        type="button"
+        onClick={() => setIsChatOpen(true)}
+        className="fixed bottom-6 right-6 z-[495] flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl font-bold text-xs transition-all duration-300 hover:scale-105 active:scale-95"
+        style={{
+          background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))",
+          color: "white",
+          border: "1px solid oklch(0.75 0.18 200 / 0.5)",
+          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)",
+        }}>
+        <span className="text-base">🤖</span>
+        <span>{lang === "ko" ? "AI 수석 엔지니어 상담" : lang === "ja" ? "AIシニアエンジニア相談" : "AI Expert Chatbot"}</span>
+      </button>
+
+      {/* ── AI 챗봇 대화창 모달 ── */}
+      {isChatOpen && (
+        <div className="fixed inset-0 z-[550] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div
+            className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[600px] border"
+            style={{
+              background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
+              borderColor: "oklch(0.75 0.18 200 / 0.4)",
+            }}>
+            {/* 챗봇 헤더 */}
+            <div className="px-5 py-4 flex items-center justify-between border-b" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold" style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))", color: "white" }}>
+                  🤖
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
+                    {lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Expert Engineer"}
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground">
+                    {lang === "ko" ? "실시간 센서 기반 맞춤형 진단 및 대응 가이드" : lang === "ja" ? "リアルタイムセンサーベースのカスタム診断" : "Real-time sensor-based custom diagnosis"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border"
+                style={{ borderColor: th.border2, color: th.textMuted }}>
+                ✕
+              </button>
+            </div>
+
+            {/* 대화 메시지 영역 */}
+            <div className="flex-1 p-4 overflow-y-auto space-y-3">
+              {chatMessages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                      msg.role === "user" ? "rounded-tr-none" : "rounded-tl-none border"
+                    }`}
+                    style={
+                      msg.role === "user"
+                        ? { background: "oklch(0.65 0.18 200)", color: "white" }
+                        : {
+                            background: isDark ? "oklch(0.17 0.015 240)" : "oklch(0.95 0.005 240)",
+                            borderColor: th.border2,
+                            color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)",
+                          }
+                    }>
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                </div>
+              ))}
+              {isChatLoading && (
+                <div className="flex justify-start">
+                  <div className="rounded-2xl rounded-tl-none px-4 py-3 border text-xs flex items-center gap-2" style={{ background: isDark ? "oklch(0.17 0.015 240)" : "oklch(0.95 0.005 240)", borderColor: th.border2 }}>
+                    <div className="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "oklch(0.75 0.18 200)", borderTopColor: "transparent" }} />
+                    <span className="text-muted-foreground">{lang === "ko" ? "수석 엔지니어 AI가 분석 중..." : "AI is analyzing..."}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 빠른 질문 칩 영역 */}
+            <div className="px-4 py-2 border-t flex gap-1.5 overflow-x-auto" style={{ borderColor: th.border, background: th.bgCard2 }}>
+              {[
+                lang === "ko" ? "가장 먼저 점검할 부품은?" : lang === "ja" ? "最初に点検すべき部品は？" : "What to inspect first?",
+                lang === "ko" ? "장비를 즉시 중지해야 하나요?" : lang === "ja" ? "直ちに設備を停止すべきですか？" : "Should I stop immediately?",
+                lang === "ko" ? "베어링 마모 가능성이 있나요?" : lang === "ja" ? "ベアリング摩耗の可能性はありますか？" : "Bearing wear issue?",
+              ].map((chip, cIdx) => (
+                <button
+                  key={cIdx}
+                  type="button"
+                  onClick={() => handleSendChatMessage(chip)}
+                  disabled={isChatLoading}
+                  className="whitespace-nowrap px-2.5 py-1 rounded-full border text-[11px] transition-all hover:opacity-80 disabled:opacity-50"
+                  style={{ borderColor: th.border2, color: th.accent, background: th.bgCard }}>
+                  💡 {chip}
+                </button>
+              ))}
+            </div>
+
+            {/* 입력 폼 영역 */}
+            <div className="p-4 border-t flex gap-2" style={{ borderColor: th.border, background: th.bgCard }}>
+              <input
+                type="text"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleSendChatMessage(); } }}
+                placeholder={lang === "ko" ? "설비 이상 상태에 대해 질문해 주세요..." : lang === "ja" ? "設備の状態について質問してください..." : "Ask about equipment anomaly state..."}
+                className="flex-1 rounded-xl border px-3.5 py-2.5 text-xs outline-none transition-all focus:ring-2 focus:ring-cyan-500/40"
+                style={{ borderColor: th.border2, background: th.bgCard2, color: th.text }}
+              />
+              <button
+                type="button"
+                onClick={() => void handleSendChatMessage()}
+                disabled={isChatLoading || !chatInput.trim()}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-95 disabled:opacity-40 active:scale-95 flex items-center gap-1.5"
+                style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))" }}>
+                <span>{lang === "ko" ? "전송" : lang === "ja" ? "送信" : "Send"}</span>
+                <span>📤</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
