@@ -176,3 +176,12 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: oklch(0.6 0.1 200 / 0.6);
 }
+
+/* Typing Indicator Bounce */
+@keyframes chatBounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-5px); }
+}
+.animate-chat-bounce-1 { animation: chatBounce 1.2s infinite ease-in-out both; animation-delay: -0.32s; }
+.animate-chat-bounce-2 { animation: chatBounce 1.2s infinite ease-in-out both; animation-delay: -0.16s; }
+.animate-chat-bounce-3 { animation: chatBounce 1.2s infinite ease-in-out both; }

@@ -2231,10 +2231,20 @@ export default function Dashboard() {
                 </div>
               ))}
               {isChatLoading && (
-                <div className="flex justify-start">
-                  <div className="rounded-2xl rounded-tl-none px-4 py-3 border text-xs flex items-center gap-2" style={{ background: isDark ? "oklch(0.17 0.015 240)" : "oklch(0.95 0.005 240)", borderColor: th.border2 }}>
-                    <div className="w-3 h-3 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "oklch(0.75 0.18 200)", borderTopColor: "transparent" }} />
-                    <span className="text-muted-foreground">{lang === "ko" ? "수석 엔지니어 AI가 분석 중..." : "AI is analyzing..."}</span>
+                <div className="flex justify-start items-end gap-1.5 animate-fadeIn">
+                  <div className="rounded-2xl rounded-tl-none px-4 py-3 border text-xs flex items-center gap-2.5 shadow-sm" style={{ background: isDark ? "oklch(0.17 0.015 240)" : "oklch(0.95 0.005 240)", borderColor: th.border2 }}>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-chat-bounce-1"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-chat-bounce-2"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-chat-bounce-3"></div>
+                    </div>
+                    <span className="text-muted-foreground font-medium">
+                      {lang === "ko"
+                        ? "수석 엔지니어 AI가 답변을 작성 중입니다..."
+                        : lang === "ja"
+                        ? "シニアエンジニアAIが回答を作成中です..."
+                        : "Expert AI engineer is typing..."}
+                    </span>
                   </div>
                 </div>
               )}
