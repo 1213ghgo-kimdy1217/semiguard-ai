@@ -736,6 +736,7 @@ export default function Dashboard() {
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number }>>([
     {
@@ -2208,20 +2209,40 @@ export default function Dashboard() {
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                      msg.role === "user" ? "rounded-tr-none" : "rounded-tl-none border"
-                    }`}
-                    style={
-                      msg.role === "user"
-                        ? { background: "oklch(0.65 0.18 200)", color: "white" }
-                        : {
-                            background: isDark ? "oklch(0.17 0.015 240)" : "oklch(0.95 0.005 240)",
-                            borderColor: th.border2,
-                            color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)",
+                  <div className="relative group max-w-[80%]">
+                    <div
+                      className={`rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                        msg.role === "user" ? "rounded-tr-none" : "rounded-tl-none border"
+                      }`}
+                      style={
+                        msg.role === "user"
+                          ? { background: "oklch(0.65 0.18 200)", color: "white" }
+                          : {
+                              background: isDark ? "oklch(0.17 0.015 240)" : "oklch(0.95 0.005 240)",
+                              borderColor: th.border2,
+                              color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)",
+                            }
+                      }>
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                    {msg.role === "assistant" && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(msg.content);
+                            setCopiedIndex(idx);
+                            setTimeout(() => setCopiedIndex(null), 2000);
+                          } catch (err) {
+                            console.error("Clipboard write failed:", err);
                           }
-                    }>
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                        }}
+                        title={lang === "ko" ? "답변 복사하기" : lang === "ja" ? "回答をコピー" : "Copy answer"}
+                        className="absolute -right-7 bottom-1 p-1 rounded-md text-[10px] opacity-60 hover:opacity-100 transition-all border shadow-sm"
+                        style={{ background: th.bgCard, borderColor: th.border2, color: th.textMuted }}>
+                        {copiedIndex === idx ? "✅" : "📋"}
+                      </button>
+                    )}
                   </div>
                   {msg.role === "user" && (
                     <span className="text-[9px] text-muted-foreground pb-1 shrink-0">
