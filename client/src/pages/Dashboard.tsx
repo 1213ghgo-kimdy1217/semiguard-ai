@@ -738,6 +738,19 @@ export default function Dashboard() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatMutation = trpc.semiguard.chatWithAi.useMutation();
 
+  const handleResetChat = () => {
+    setChatMessages([
+      {
+        role: "assistant",
+        content: lang === "ko"
+          ? "대화가 초기화되었습니다. 새로운 상담을 시작합니다. 현재 센서 상태와 이상 이력에 대해 무엇이든 물어보세요."
+          : lang === "ja"
+          ? "会話がリセットされました。新しい相談を開始します。センサー状態や異常履歴について何でもご質問ください。"
+          : "Conversation has been reset. Starting a new consultation. Ask me anything about sensor states or anomaly history.",
+      },
+    ]);
+  };
+
   const handleSendChatMessage = async (textToSend?: string) => {
     const text = textToSend ?? chatInput;
     if (!text.trim() || isChatLoading) return;
@@ -1857,21 +1870,38 @@ export default function Dashboard() {
                   🤖
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
-                    {lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Expert Engineer"}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
+                      {lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Expert Engineer"}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-mono border" style={{ borderColor: "oklch(0.75 0.18 200 / 0.3)", background: "oklch(0.75 0.18 200 / 0.1)", color: "oklch(0.75 0.18 200)" }}>
+                      {lang === "ko" ? `대화 ${chatMessages.length}개 (최근 12개 유지)` : lang === "ja" ? `会話 ${chatMessages.length}件 (直近12件維持)` : `Msgs ${chatMessages.length} (Windowed 12)`}
+                    </span>
+                  </div>
                   <p className="text-[10px] text-muted-foreground">
-                    {lang === "ko" ? "실시간 센서 기반 맞춤형 진단 및 대응 가이드" : lang === "ja" ? "リアルタイムセンサーベースのカスタム診断" : "Real-time sensor-based custom diagnosis"}
+                    {chatMessages.length > 12
+                      ? (lang === "ko" ? "⚡ 오래된 대화는 요약 압축되어 컨텍스트가 유지됩니다." : lang === "ja" ? "⚡ 古い会話は要約圧縮されコンテキストが維持されます。" : "⚡ Older turns are summarized to keep context optimized.")
+                      : (lang === "ko" ? "실시간 센서 기반 맞춤형 진단 및 대응 가이드" : lang === "ja" ? "リアルタイムセンサーベースのカスタム診断" : "Real-time sensor-based custom diagnosis")}
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsChatOpen(false)}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border"
-                style={{ borderColor: th.border2, color: th.textMuted }}>
-                ✕
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleResetChat}
+                  title={lang === "ko" ? "새 상담 시작 (대화 초기화)" : lang === "ja" ? "新しい相談 (会話リセット)" : "New Consultation"}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95"
+                  style={{ borderColor: "oklch(0.75 0.18 200 / 0.4)", background: "oklch(0.75 0.18 200 / 0.10)", color: "oklch(0.75 0.18 200)" }}>
+                  🔄 {lang === "ko" ? "새 상담" : lang === "ja" ? "新規相談" : "New Chat"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(false)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border"
+                  style={{ borderColor: th.border2, color: th.textMuted }}>
+                  ✕
+                </button>
+              </div>
             </div>
 
             {/* 대화 메시지 영역 */}

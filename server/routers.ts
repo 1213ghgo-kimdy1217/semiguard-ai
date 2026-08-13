@@ -421,6 +421,23 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const { sensorContext, messages, lang } = input;
+
+        // 대화가 무한히 쌓이는 것을 방지하기 위해 최근 12개 메시지만 유지하고,
+        // 그 이전 대화가 있다면 핵심 요약 컨텍스트로 압축하여 시스템 프롬프트에 주입합니다.
+        const MAX_RECENT_MESSAGES = 12;
+        let compressedSummary = "";
+        let activeMessages = messages;
+
+        if (messages.length > MAX_RECENT_MESSAGES) {
+          const olderMessages = messages.slice(0, messages.length - MAX_RECENT_MESSAGES);
+          activeMessages = messages.slice(messages.length - MAX_RECENT_MESSAGES);
+          
+          const summaryKo = `[이전 상담 요약: 총 ${olderMessages.length}개의 이전 대화가 진행되었으며, 장비 이상 원인과 점검 부품에 대한 논의가 있었습니다.]`;
+          const summaryEn = `[Previous Session Summary: ${olderMessages.length} earlier turns occurred regarding equipment anomalies and inspection targets.]`;
+          const summaryJa = `[以前の相談の要約: 合計 ${olderMessages.length} 件のやり取りが行われ、異常原因や点検対象について議論されました。]`;
+          
+          compressedSummary = lang === "ko" ? summaryKo : lang === "ja" ? summaryJa : summaryEn;
+        }
         
         const systemPromptKo = `당신은 반도체 설비 예지보전 및 이상 진단 수석 엔지니어 AI입니다.
 [현재 진단 대상 센서 데이터 및 로그 ID: #${sensorContext.logId ?? '실시간 수치'}]
@@ -466,9 +483,14 @@ Rules:
 
         const systemPrompt = lang === "ko" ? systemPromptKo : lang === "ja" ? systemPromptJa : systemPromptEn;
 
+        const combinedMessages = [
+          ...(compressedSummary ? [{ role: "system" as const, content: compressedSummary }] : []),
+          ...activeMessages.map((m) => ({ role: m.role, content: m.content })),
+        ];
+
         const formattedMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
           { role: "system", content: systemPrompt },
-          ...messages.map(m => ({ role: m.role, content: m.content })),
+          ...combinedMessages,
         ];
 
         try {
