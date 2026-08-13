@@ -724,6 +724,7 @@ export default function Dashboard() {
 
   // 대화형 AI 상담 챗봇 상태
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     {
       role: "assistant",
@@ -749,6 +750,7 @@ export default function Dashboard() {
           : "Conversation has been reset. Starting a new consultation. Ask me anything about sensor states or anomaly history.",
       },
     ]);
+    setShowResetConfirmModal(false);
   };
 
   const handleSendChatMessage = async (textToSend?: string) => {
@@ -1888,7 +1890,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={handleResetChat}
+                  onClick={() => setShowResetConfirmModal(true)}
                   title={lang === "ko" ? "새 상담 시작 (대화 초기화)" : lang === "ja" ? "新しい相談 (会話リセット)" : "New Consultation"}
                   className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
                   style={{ borderColor: "oklch(0.75 0.18 200 / 0.4)", background: "oklch(0.75 0.18 200 / 0.10)", color: "oklch(0.75 0.18 200)" }}>
@@ -1903,6 +1905,51 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+
+            {/* 새 상담 초기화 확인 모달 */}
+            {showResetConfirmModal && (
+              <div className="absolute inset-0 z-[560] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn">
+                <div
+                  className="w-full max-w-sm rounded-xl p-5 shadow-2xl border space-y-4"
+                  style={{
+                    background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)",
+                    borderColor: "oklch(0.75 0.18 200 / 0.5)",
+                    color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)"
+                  }}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">⚠️</span>
+                    <div>
+                      <h4 className="text-sm font-bold">
+                        {lang === "ko" ? "대화를 초기화하시겠습니까?" : lang === "ja" ? "会話をリセットしますか？" : "Reset Conversation?"}
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {lang === "ko"
+                          ? "새 상담을 시작하면 현재까지의 대화 내용이 모두 초기화됩니다. 계속하시겠습니까?"
+                          : lang === "ja"
+                          ? "新しい相談を開始すると、これまでの会話内容がすべてリセットされます。続行しますか？"
+                          : "Starting a new consultation will clear all current conversation turns. Do you want to continue?"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirmModal(false)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:opacity-80"
+                      style={{ borderColor: th.border2, color: th.textMuted }}>
+                      {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetChat}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90 shadow-md"
+                      style={{ background: "linear-gradient(135deg, oklch(0.65 0.22 25), oklch(0.55 0.22 25))" }}>
+                      {lang === "ko" ? "초기화 (새 상담)" : lang === "ja" ? "リセット (新規相談)" : "Reset & New Chat"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 대화 메시지 영역 */}
             <div className="flex-1 p-4 overflow-y-auto space-y-3">
