@@ -1899,41 +1899,41 @@ export default function Dashboard() {
 
       {/* ── AI 챗봇 대화창 모달 ── */}
       {isChatOpen && (
-        <div className="fixed inset-0 z-[550] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[550] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
           <div
-            className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[600px] border"
+            className="w-[95vw] max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh] sm:h-[600px] border relative"
             style={{
               background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
               borderColor: "oklch(0.75 0.18 200 / 0.4)",
             }}>
             {/* 챗봇 헤더 */}
-            <div className="px-5 py-4 flex items-center justify-between border-b" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold" style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))", color: "white" }}>
+            <div className="px-3 sm:px-5 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-2 border-b" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0" style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))", color: "white" }}>
                   🤖
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <h3 className="text-xs sm:text-sm font-bold truncate" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
                       {lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Expert Engineer"}
                     </h3>
-                    <span className="px-2 py-0.5 rounded text-[9px] font-mono border whitespace-nowrap shrink-0" style={{ borderColor: "oklch(0.75 0.18 200 / 0.3)", background: "oklch(0.75 0.18 200 / 0.1)", color: "oklch(0.75 0.18 200)" }}>
-                      {lang === "ko" ? `대화 ${chatMessages.length}개 (최근 12개)` : lang === "ja" ? `会話 ${chatMessages.length}件 (直近12件)` : `Msgs ${chatMessages.length} (Win 12)`}
+                    <span className="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono border whitespace-nowrap shrink-0" style={{ borderColor: "oklch(0.75 0.18 200 / 0.3)", background: "oklch(0.75 0.18 200 / 0.1)", color: "oklch(0.75 0.18 200)" }}>
+                      {lang === "ko" ? `대화 ${chatMessages.length}` : lang === "ja" ? `会話 ${chatMessages.length}` : `Msgs ${chatMessages.length}`}
                     </span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
                     {chatMessages.length > 12
-                      ? (lang === "ko" ? "⚡ 오래된 대화는 요약 압축되어 컨텍스트가 유지됩니다." : lang === "ja" ? "⚡ 古い会話は要約圧縮されコンテキストが維持されます。" : "⚡ Older turns are summarized to keep context optimized.")
-                      : (lang === "ko" ? "실시간 센서 기반 맞춤형 진단 및 대응 가이드" : lang === "ja" ? "リアルタイムセンサーベースのカスタム診断" : "Real-time sensor-based custom diagnosis")}
+                      ? (lang === "ko" ? "⚡ 오래된 대화 요약 압축 중" : lang === "ja" ? "⚡ 古い会話を要約圧縮中" : "⚡ Older turns summarized")
+                      : (lang === "ko" ? "실시간 센서 기반 맞춤형 진단" : lang === "ja" ? "リアルタイムセンサーカスタム診断" : "Real-time custom diagnosis")}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
                 <button
                   type="button"
                   onClick={() => setShowHistoryPanel(!showHistoryPanel)}
                   title={lang === "ko" ? "과거 상담 기록 보기" : lang === "ja" ? "過去の相談履歴を見る" : "View Consultation History"}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
+                  className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
                   style={{ borderColor: "oklch(0.65 0.22 145 / 0.4)", background: "oklch(0.65 0.22 145 / 0.10)", color: "oklch(0.75 0.18 145)" }}>
                   📂 {lang === "ko" ? "기록" : lang === "ja" ? "履歴" : "History"}
                 </button>
@@ -1941,14 +1941,14 @@ export default function Dashboard() {
                   type="button"
                   onClick={() => setShowResetConfirmModal(true)}
                   title={lang === "ko" ? "새 상담 시작 (이전 대화 보관)" : lang === "ja" ? "新しい相談 (会話保存)" : "New Consultation"}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
+                  className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
                   style={{ borderColor: "oklch(0.75 0.18 200 / 0.4)", background: "oklch(0.75 0.18 200 / 0.10)", color: "oklch(0.75 0.18 200)" }}>
                   🔄 {lang === "ko" ? "새 상담" : lang === "ja" ? "新規相談" : "New Chat"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsChatOpen(false)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border shrink-0"
+                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border shrink-0"
                   style={{ borderColor: th.border2, color: th.textMuted }}>
                   ✕
                 </button>
@@ -2002,7 +2002,7 @@ export default function Dashboard() {
 
             {/* 상담 기록 사이드 패널 */}
             {showHistoryPanel && (
-              <div className="absolute top-16 right-4 bottom-4 w-72 z-[570] rounded-xl shadow-2xl border p-3 flex flex-col backdrop-blur-md animate-fadeIn"
+              <div className="absolute inset-x-2 sm:inset-x-auto sm:right-4 top-14 bottom-2 sm:w-72 z-[570] rounded-xl shadow-2xl border p-3 flex flex-col backdrop-blur-md animate-fadeIn"
                 style={{
                   background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
                   borderColor: "oklch(0.75 0.18 200 / 0.4)",
