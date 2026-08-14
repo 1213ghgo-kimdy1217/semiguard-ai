@@ -2502,13 +2502,60 @@ export default function Dashboard() {
                                 {manualPreviewQuery.isLoading ? (
                                   <p className="py-1 text-[9px]" style={{ color: th.textMuted }}>{lang === "ko" ? "원문을 불러오는 중..." : lang === "ja" ? "原文を読み込み中..." : "Loading source..."}</p>
                                 ) : manualPreviewQuery.data ? (
-                                  <div className="max-h-36 space-y-1 overflow-y-auto pr-1 custom-scrollbar">
-                                    {manualPreviewQuery.data.chunks.map(chunk => (
-                                      <div key={chunk.id} className="rounded border px-1.5 py-1 text-[9px] leading-relaxed" style={{ borderColor: th.border2, background: th.bgCard2, color: th.text }}>
-                                        <span className="mr-1 font-bold" style={{ color: th.textMuted }}>[{chunk.chunkIndex + 1}]</span>{chunk.content}
-                                      </div>
-                                    ))}
-                                  </div>
+                                  <>
+                                    <div className="mb-1.5 flex justify-end gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          try {
+                                            await navigator.clipboard.writeText(manualPreviewQuery.data.chunks.map(chunk => `[${chunk.chunkIndex + 1}] ${chunk.content}`).join("\n\n"));
+                                            toast.success(lang === "ko" ? "매뉴얼 원문을 복사했습니다." : lang === "ja" ? "マニュアル原文をコピーしました。" : "Manual source copied.");
+                                          } catch (error) {
+                                            console.error("Manual preview copy failed:", error);
+                                            toast.error(lang === "ko" ? "원문을 복사하지 못했습니다." : lang === "ja" ? "原文をコピーできませんでした。" : "Could not copy the source.");
+                                          }
+                                        }}
+                                        className="rounded border px-1.5 py-1 text-[9px] font-bold transition-opacity hover:opacity-75"
+                                        style={{ borderColor: th.border2, color: th.textMuted }}>
+                                        📋 {lang === "ko" ? "복사" : lang === "ja" ? "コピー" : "Copy"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
+                                          const markdown = [
+                                            `# ${manualPreviewQuery.data.document.title}`,
+                                            "",
+                                            `- ${lang === "ko" ? "내보낸 시각" : lang === "ja" ? "エクスポート日時" : "Exported"}: ${new Date().toLocaleString(locale)}`,
+                                            `- ${lang === "ko" ? "갱신일" : lang === "ja" ? "更新日" : "Updated"}: ${new Date(manualPreviewQuery.data.document.updatedAt).toLocaleString(locale)}`,
+                                            "",
+                                            ...manualPreviewQuery.data.chunks.flatMap(chunk => [`## ${lang === "ko" ? "구간" : lang === "ja" ? "区間" : "Section"} ${chunk.chunkIndex + 1}`, "", chunk.content, ""]),
+                                          ].join("\n");
+                                          const blob = new Blob([`\ufeff${markdown}`], { type: "text/markdown;charset=utf-8" });
+                                          const url = URL.createObjectURL(blob);
+                                          const anchor = window.document.createElement("a");
+                                          const safeTitle = manualPreviewQuery.data.document.title.replace(/[\\/:*?\"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 40) || "manual";
+                                          anchor.href = url;
+                                          anchor.download = `semiguard-manual-${safeTitle}-${new Date().toISOString().slice(0, 10)}.md`;
+                                          window.document.body.appendChild(anchor);
+                                          anchor.click();
+                                          anchor.remove();
+                                          URL.revokeObjectURL(url);
+                                          toast.success(lang === "ko" ? "매뉴얼 원문을 Markdown 파일로 내보냈습니다." : lang === "ja" ? "マニュアル原文をMarkdownファイルとしてエクスポートしました。" : "Manual source exported as Markdown.");
+                                        }}
+                                        className="rounded border px-1.5 py-1 text-[9px] font-bold transition-opacity hover:opacity-75"
+                                        style={{ borderColor: "oklch(0.72 0.15 75 / 0.4)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                                        ⬇️ Markdown
+                                      </button>
+                                    </div>
+                                    <div className="max-h-36 space-y-1 overflow-y-auto pr-1 custom-scrollbar">
+                                      {manualPreviewQuery.data.chunks.map(chunk => (
+                                        <div key={chunk.id} className="rounded border px-1.5 py-1 text-[9px] leading-relaxed" style={{ borderColor: th.border2, background: th.bgCard2, color: th.text }}>
+                                          <span className="mr-1 font-bold" style={{ color: th.textMuted }}>[{chunk.chunkIndex + 1}]</span>{chunk.content}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </>
                                 ) : (
                                   <p className="py-1 text-[9px] text-red-400">{lang === "ko" ? "원문을 불러오지 못했습니다." : lang === "ja" ? "原文を読み込めませんでした。" : "Could not load the source."}</p>
                                 )}

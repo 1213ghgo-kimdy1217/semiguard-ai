@@ -19,4 +19,10 @@ describe("RAG manual source preview contract", () => {
     expect(dashboardSource).toContain("マニュアルの原文を見る");
     expect(dashboardSource).toContain("Stored source sections");
   });
+
+  it("keeps whole-source copy and Markdown export actions in the preview", () => {
+    expect(dashboardSource).toContain("Manual source copied.");
+    expect(dashboardSource).toContain("semiguard-manual-");
+    expect(dashboardSource).toContain("text/markdown;charset=utf-8");
+  });
 });
