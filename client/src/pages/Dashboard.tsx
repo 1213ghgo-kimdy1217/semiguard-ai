@@ -4289,11 +4289,13 @@ export default function Dashboard() {
                     style={{ background: th.bgCard }}>
                     <div className="flex items-center gap-2">
                       <span className="text-base">⚙️</span>
-                      <span className="text-xs font-semibold">{lang === "ko" ? "위험도 임계값 설정" : "Risk Threshold Settings"}</span>
+                      <span className="text-xs font-semibold">{lang === "ko" ? "위험도 임계값 설정" : lang === "ja" ? "リスクしきい値設定" : "Risk Threshold Settings"}</span>
                       <span className="text-[10px] text-muted-foreground ml-1">
                         {lang === "ko"
                           ? `정상 ≤${thresholds.normal} / 주의 ≤${thresholds.caution} / 경고 ≤${thresholds.warning} / 위험 >${thresholds.warning}`
-                          : `Normal ≤${thresholds.normal} / Caution ≤${thresholds.caution} / Warning ≤${thresholds.warning} / Danger >${thresholds.warning}`}
+                          : lang === "ja"
+                            ? `正常 ≤${thresholds.normal} / 注意 ≤${thresholds.caution} / 警告 ≤${thresholds.warning} / 危険 >${thresholds.warning}`
+                            : `Normal ≤${thresholds.normal} / Caution ≤${thresholds.caution} / Warning ≤${thresholds.warning} / Danger >${thresholds.warning}`}
                       </span>
                     </div>
                     <span className="text-xs text-muted-foreground">{showThresholdPanel ? "▲" : "▼"}</span>
@@ -4305,7 +4307,7 @@ export default function Dashboard() {
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                           <label className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#22c55e" }}>
-                            {lang === "ko" ? "정상 최대 점수" : "Normal Max"}
+                            {lang === "ko" ? "정상 최대 점수" : lang === "ja" ? "正常の最大スコア" : "Normal Max"}
                           </label>
                           <span className="text-xs font-mono font-bold" style={{ color: "#22c55e" }}>{thresholds.normal}</span>
                         </div>
@@ -4320,13 +4322,13 @@ export default function Dashboard() {
                               return n;
                             });
                           }} />
-                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? "이 점수 이하 → 정상" : "Score ≤ this → Normal"}</p>
+                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? "이 점수 이하 → 정상" : lang === "ja" ? "このスコア以下 → 正常" : "Score ≤ this → Normal"}</p>
                       </div>
                       {/* 주의 임계값 */}
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                           <label className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#eab308" }}>
-                            {lang === "ko" ? "주의 최대 점수" : "Caution Max"}
+                            {lang === "ko" ? "주의 최대 점수" : lang === "ja" ? "注意の最大スコア" : "Caution Max"}
                           </label>
                           <span className="text-xs font-mono font-bold" style={{ color: "#eab308" }}>{thresholds.caution}</span>
                         </div>
@@ -4341,13 +4343,13 @@ export default function Dashboard() {
                               return n;
                             });
                           }} />
-                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? "이 점수 이하 → 주의" : "Score ≤ this → Caution"}</p>
+                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? "이 점수 이하 → 주의" : lang === "ja" ? "このスコア以下 → 注意" : "Score ≤ this → Caution"}</p>
                       </div>
                       {/* 경고 임계값 */}
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                           <label className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#f97316" }}>
-                            {lang === "ko" ? "경고 최대 점수" : "Warning Max"}
+                            {lang === "ko" ? "경고 최대 점수" : lang === "ja" ? "警告の最大スコア" : "Warning Max"}
                           </label>
                           <span className="text-xs font-mono font-bold" style={{ color: "#f97316" }}>{thresholds.warning}</span>
                         </div>
@@ -4362,7 +4364,7 @@ export default function Dashboard() {
                               return n;
                             });
                           }} />
-                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? `이 점수 초과 → 위험 (현재 >${thresholds.warning})` : `Score > this → Danger (now >${thresholds.warning})`}</p>
+                        <p className="text-[9px] text-muted-foreground">{lang === "ko" ? `이 점수 초과 → 위험 (현재 >${thresholds.warning})` : lang === "ja" ? `このスコア超過 → 危険（現在 >${thresholds.warning}）` : `Score > this → Danger (now >${thresholds.warning})`}</p>
                       </div>
                       {/* 초기화 버튼 */}
                       <div className="col-span-1 md:col-span-3 flex justify-end">
@@ -4374,7 +4376,7 @@ export default function Dashboard() {
                           }}
                           className="text-[10px] px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 active:scale-95"
                           style={{ borderColor: th.border2, color: th.textMuted }}>
-                          {lang === "ko" ? "기본값으로 초기화" : "Reset to Default"}
+                          {lang === "ko" ? "기본값으로 초기화" : lang === "ja" ? "既定値にリセット" : "Reset to Default"}
                         </button>
                       </div>
                     </div>
@@ -4391,7 +4393,7 @@ export default function Dashboard() {
                     style={{ background: th.bgCard }}>
                     <div className="flex items-center gap-2">
                       <span className="text-base">🔬</span>
-                      <span className="text-xs font-semibold">{lang === "ko" ? "센서별 임계값 설정" : "Per-Sensor Threshold Settings"}</span>
+                      <span className="text-xs font-semibold">{lang === "ko" ? "센서별 임계값 설정" : lang === "ja" ? "センサー別しきい値設定" : "Per-Sensor Threshold Settings"}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">{showSensorPanel ? "▲" : "▼"}</span>
                   </button>
@@ -4400,25 +4402,25 @@ export default function Dashboard() {
                       style={{ background: th.bgCard2, borderColor: th.border }}>
                       {/* 전류 */}
                       {[
-                        { key: "current" as const, label: lang === "ko" ? "전류 (A)" : "Current (A)", color: "#38bdf8", step: 0.1,
+                        { key: "current" as const, label: lang === "ko" ? "전류 (A)" : lang === "ja" ? "電流 (A)" : "Current (A)", color: "#38bdf8", step: 0.1,
                           caution: sensorThresh.currentCaution, warning: sensorThresh.currentWarning, danger: sensorThresh.currentDanger,
                           setCaution: (v: number) => { const n = { ...sensorThresh, currentCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setWarning: (v: number) => { const n = { ...sensorThresh, currentWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setDanger:  (v: number) => { const n = { ...sensorThresh, currentDanger: v };  setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           min: 5, max: 20 },
-                        { key: "temp" as const, label: lang === "ko" ? "온도 (°C)" : "Temperature (°C)", color: "#fb923c", step: 1,
+                        { key: "temp" as const, label: lang === "ko" ? "온도 (°C)" : lang === "ja" ? "温度 (°C)" : "Temperature (°C)", color: "#fb923c", step: 1,
                           caution: sensorThresh.tempCaution, warning: sensorThresh.tempWarning, danger: sensorThresh.tempDanger,
                           setCaution: (v: number) => { const n = { ...sensorThresh, tempCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setWarning: (v: number) => { const n = { ...sensorThresh, tempWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setDanger:  (v: number) => { const n = { ...sensorThresh, tempDanger: v };  setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           min: 40, max: 120 },
-                        { key: "vib" as const, label: lang === "ko" ? "진동 (mm/s)" : "Vibration (mm/s)", color: "#a78bfa", step: 0.05,
+                        { key: "vib" as const, label: lang === "ko" ? "진동 (mm/s)" : lang === "ja" ? "振動 (mm/s)" : "Vibration (mm/s)", color: "#a78bfa", step: 0.05,
                           caution: sensorThresh.vibCaution, warning: sensorThresh.vibWarning, danger: sensorThresh.vibDanger,
                           setCaution: (v: number) => { const n = { ...sensorThresh, vibCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setWarning: (v: number) => { const n = { ...sensorThresh, vibWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setDanger:  (v: number) => { const n = { ...sensorThresh, vibDanger: v };  setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           min: 1.5, max: 5.0 },
-                        { key: "noise" as const, label: lang === "ko" ? "소음 (dB)" : "Noise (dB)", color: "#34d399", step: 1,
+                        { key: "noise" as const, label: lang === "ko" ? "소음 (dB)" : lang === "ja" ? "騒音 (dB)" : "Noise (dB)", color: "#34d399", step: 1,
                           caution: sensorThresh.noiseCaution, warning: sensorThresh.noiseWarning, danger: sensorThresh.noiseDanger,
                           setCaution: (v: number) => { const n = { ...sensorThresh, noiseCaution: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
                           setWarning: (v: number) => { const n = { ...sensorThresh, noiseWarning: v }; setSensorThresh(n); saveSensorThresholdsMutation.mutate(n); },
@@ -4428,9 +4430,9 @@ export default function Dashboard() {
                         <div key={s.key} className="flex flex-col gap-3 p-3 rounded-lg border" style={{ borderColor: `${s.color}30`, background: `${s.color}08` }}>
                           <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: s.color }}>{s.label}</p>
                           {[
-                            { label: lang === "ko" ? "주의" : "Caution", val: s.caution, set: s.setCaution, color: "#eab308" },
-                            { label: lang === "ko" ? "경고" : "Warning", val: s.warning, set: s.setWarning, color: "#f97316" },
-                            { label: lang === "ko" ? "위험" : "Danger",  val: s.danger,  set: s.setDanger,  color: "#ef4444" },
+                            { label: lang === "ko" ? "주의" : lang === "ja" ? "注意" : "Caution", val: s.caution, set: s.setCaution, color: "#eab308" },
+                            { label: lang === "ko" ? "경고" : lang === "ja" ? "警告" : "Warning", val: s.warning, set: s.setWarning, color: "#f97316" },
+                            { label: lang === "ko" ? "위험" : lang === "ja" ? "危険" : "Danger",  val: s.danger,  set: s.setDanger,  color: "#ef4444" },
                           ].map(row => (
                             <div key={row.label} className="flex flex-col gap-1">
                               <div className="flex items-center justify-between">
@@ -4459,7 +4461,7 @@ export default function Dashboard() {
                           }}
                           className="text-[10px] px-3 py-1.5 rounded-lg border transition-all hover:opacity-80 active:scale-95"
                           style={{ borderColor: th.border2, color: th.textMuted }}>
-                          {lang === "ko" ? "기본값으로 초기화" : "Reset to Default"}
+                          {lang === "ko" ? "기본값으로 초기화" : lang === "ja" ? "既定値にリセット" : "Reset to Default"}
                         </button>
                       </div>
                     </div>
@@ -4580,28 +4582,28 @@ export default function Dashboard() {
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(34,197,94,0.10)", borderColor: "#22c55e45", color: "#22c55e" }}>
                       {injectNormal.isPending
-                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#22c55e" /><span>처리 중...</span></span>
+                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#22c55e" /><span>{t.processing}</span></span>
                         : `▶ ${t.injectNormal}`}
                     </button>
                     <button onClick={handleInjectCaution} disabled={injectCaution.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(234,179,8,0.10)", borderColor: "#eab30845", color: "#eab308" }}>
                       {injectCaution.isPending
-                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#eab308" /><span>처리 중...</span></span>
+                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#eab308" /><span>{t.processing}</span></span>
                         : `⚡ ${t.injectCaution}`}
                     </button>
                     <button onClick={handleInjectWarning} disabled={injectWarning.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(249,115,22,0.10)", borderColor: "#f9731645", color: "#f97316" }}>
                       {injectWarning.isPending
-                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#f97316" /><span>처리 중...</span></span>
+                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#f97316" /><span>{t.processing}</span></span>
                         : `🔶 ${t.injectWarning}`}
                     </button>
                     <button onClick={handleInjectAnomaly} disabled={injectAnomaly.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(239,68,68,0.10)", borderColor: "#ef444445", color: "#ef4444" }}>
                       {injectAnomaly.isPending
-                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#ef4444" /><span>처리 중...</span></span>
+                        ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#ef4444" /><span>{t.processing}</span></span>
                         : `⚠ ${t.injectAnomaly}`}
                     </button>
                   </div>
