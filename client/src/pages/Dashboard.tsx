@@ -734,8 +734,12 @@ export default function Dashboard() {
   const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
   const [feedbackHistoryFilter, setFeedbackHistoryFilter] = useState<"all" | "like" | "dislike">("all");
   const [feedbackHistorySearch, setFeedbackHistorySearch] = useState("");
+  const [feedbackHistoryStartDate, setFeedbackHistoryStartDate] = useState("");
+  const [feedbackHistoryEndDate, setFeedbackHistoryEndDate] = useState("");
+  const [feedbackHistorySort, setFeedbackHistorySort] = useState<"newest" | "oldest">("newest");
   const [feedbackHistoryPage, setFeedbackHistoryPage] = useState(1);
   const [animatedPositiveRatio, setAnimatedPositiveRatio] = useState(0);
+  const [feedbackKeywordSummary, setFeedbackKeywordSummary] = useState<{ keywords: string[]; summary: string; improvement: string } | null>(null);
   const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
   const [showDeleteAllFeedbackConfirm, setShowDeleteAllFeedbackConfirm] = useState(false);
   const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
@@ -748,8 +752,9 @@ export default function Dashboard() {
   const attachRegeneratedAnswerMutation = trpc.semiguard.attachRegeneratedAnswer.useMutation();
   const deleteChatFeedbackMutation = trpc.semiguard.deleteChatFeedback.useMutation();
   const deleteAllChatFeedbacksMutation = trpc.semiguard.deleteAllChatFeedbacks.useMutation();
+  const analyzeFeedbackKeywordsMutation = trpc.semiguard.analyzeFeedbackKeywords.useMutation();
   const feedbackHistoryQuery = trpc.semiguard.getFeedbackHistory.useQuery(
-    { limit: 20 },
+    { limit: 30 },
     { enabled: isChatOpen && showFeedbackHistoryPanel },
   );
   const addManualTextMutation = trpc.semiguard.addManualText.useMutation();
@@ -786,21 +791,30 @@ export default function Dashboard() {
   const FEEDBACK_PAGE_SIZE = 5;
   const allFeedbackHistory = feedbackHistoryQuery.data ?? [];
   const normalizedFeedbackSearch = feedbackHistorySearch.trim().toLocaleLowerCase();
+  const feedbackStartAt = feedbackHistoryStartDate ? new Date(`${feedbackHistoryStartDate}T00:00:00`).getTime() : null;
+  const feedbackEndAt = feedbackHistoryEndDate ? new Date(`${feedbackHistoryEndDate}T23:59:59.999`).getTime() : null;
   const filteredFeedbackHistory = allFeedbackHistory.filter(item => {
     const matchesType = feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter;
     const searchable = [item.reasonCode, item.reasonText, item.messageContent, item.regeneratedContent].filter(Boolean).join(" ").toLocaleLowerCase();
-    return matchesType && (!normalizedFeedbackSearch || searchable.includes(normalizedFeedbackSearch));
+    const createdAt = new Date(item.createdAt).getTime();
+    const matchesDate = (feedbackStartAt === null || createdAt >= feedbackStartAt) && (feedbackEndAt === null || createdAt <= feedbackEndAt);
+    return matchesType && matchesDate && (!normalizedFeedbackSearch || searchable.includes(normalizedFeedbackSearch));
+  });
+  const sortedFeedbackHistory = [...filteredFeedbackHistory].sort((a, b) => {
+    const delta = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    return feedbackHistorySort === "newest" ? delta : -delta;
   });
   const positiveFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "like").length;
   const negativeFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "dislike").length;
   const positiveFeedbackRatio = allFeedbackHistory.length ? Math.round((positiveFeedbackCount / allFeedbackHistory.length) * 100) : 0;
   const negativeFeedbackRatio = allFeedbackHistory.length ? 100 - positiveFeedbackRatio : 0;
-  const feedbackHistoryTotalPages = Math.max(1, Math.ceil(filteredFeedbackHistory.length / FEEDBACK_PAGE_SIZE));
-  const paginatedFeedbackHistory = filteredFeedbackHistory.slice((feedbackHistoryPage - 1) * FEEDBACK_PAGE_SIZE, feedbackHistoryPage * FEEDBACK_PAGE_SIZE);
+  const feedbackHistoryTotalPages = Math.max(1, Math.ceil(sortedFeedbackHistory.length / FEEDBACK_PAGE_SIZE));
+  const paginatedFeedbackHistory = sortedFeedbackHistory.slice((feedbackHistoryPage - 1) * FEEDBACK_PAGE_SIZE, feedbackHistoryPage * FEEDBACK_PAGE_SIZE);
 
   useEffect(() => {
     setFeedbackHistoryPage(1);
-  }, [feedbackHistoryFilter, feedbackHistorySearch]);
+    setFeedbackKeywordSummary(null);
+  }, [feedbackHistoryFilter, feedbackHistorySearch, feedbackHistoryStartDate, feedbackHistoryEndDate, feedbackHistorySort]);
 
   useEffect(() => {
     setFeedbackHistoryPage(currentPage => Math.min(currentPage, feedbackHistoryTotalPages));
@@ -823,7 +837,7 @@ export default function Dashboard() {
       : lang === "ja"
         ? ["評価", "理由コード", "直接理由", "評価した回答", "再生成回答", "評価時刻", "再生成時刻"]
         : ["Feedback", "Reason code", "Reason text", "Rated answer", "Regenerated answer", "Feedback time", "Regenerated time"];
-    const rows = filteredFeedbackHistory.map(item => [
+    const rows = sortedFeedbackHistory.map(item => [
       item.feedbackType === "like" ? (lang === "ko" ? "긍정" : lang === "ja" ? "肯定" : "Positive") : (lang === "ko" ? "부정" : lang === "ja" ? "否定" : "Negative"),
       item.reasonCode,
       item.reasonText,
@@ -843,7 +857,31 @@ export default function Dashboard() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    toast.success(lang === "ko" ? `${filteredFeedbackHistory.length}개 피드백 기록을 CSV로 내보냈습니다.` : lang === "ja" ? `${filteredFeedbackHistory.length}件のフィードバック履歴をCSVでエクスポートしました。` : `Exported ${filteredFeedbackHistory.length} feedback records as CSV.`);
+    toast.success(lang === "ko" ? `${sortedFeedbackHistory.length}개 피드백 기록을 CSV로 내보냈습니다.` : lang === "ja" ? `${sortedFeedbackHistory.length}件のフィードバック履歴をCSVでエクスポートしました。` : `Exported ${sortedFeedbackHistory.length} feedback records as CSV.`);
+  };
+
+  const analyzeCurrentFeedbackKeywords = async () => {
+    if (sortedFeedbackHistory.length === 0) {
+      toast.info(lang === "ko" ? "AI가 분석할 현재 필터 결과가 없습니다." : lang === "ja" ? "AIが分析する現在のフィルター結果がありません。" : "There are no currently filtered records for AI analysis.");
+      return;
+    }
+    try {
+      setFeedbackKeywordSummary(null);
+      const result = await analyzeFeedbackKeywordsMutation.mutateAsync({
+        lang,
+        entries: sortedFeedbackHistory.slice(0, 30).map(item => ({
+          feedbackType: item.feedbackType,
+          reasonCode: item.reasonCode,
+          reasonText: item.reasonText,
+          messageContent: item.messageContent.slice(0, 1200),
+          regeneratedContent: item.regeneratedContent?.slice(0, 1200) ?? null,
+        })),
+      });
+      setFeedbackKeywordSummary(result);
+    } catch (error) {
+      console.error("Feedback keyword analysis request failed:", error);
+      toast.error(lang === "ko" ? "AI 키워드 요약을 생성하지 못했습니다." : lang === "ja" ? "AIキーワード要約を生成できませんでした。" : "Could not generate the AI keyword summary.");
+    }
   };
 
   // 최초 챗봇 오픈 시 세션이 없으면 기본 세션 생성
@@ -2562,6 +2600,58 @@ export default function Dashboard() {
                     </button>
                   )}
                 </div>
+                <div className="mb-2 grid grid-cols-2 gap-1.5">
+                  <label className="min-w-0">
+                    <span className="mb-0.5 block text-[9px] font-bold" style={{ color: th.textMuted }}>{lang === "ko" ? "시작일" : lang === "ja" ? "開始日" : "From"}</span>
+                    <input
+                      type="date"
+                      value={feedbackHistoryStartDate}
+                      max={feedbackHistoryEndDate || undefined}
+                      onChange={event => setFeedbackHistoryStartDate(event.target.value)}
+                      className="w-full rounded-lg border px-1.5 py-1 text-[10px] outline-none focus:ring-1 focus:ring-fuchsia-500"
+                      style={{ background: th.bgCard, borderColor: th.border2, color: th.text }}
+                    />
+                  </label>
+                  <label className="min-w-0">
+                    <span className="mb-0.5 block text-[9px] font-bold" style={{ color: th.textMuted }}>{lang === "ko" ? "종료일" : lang === "ja" ? "終了日" : "To"}</span>
+                    <input
+                      type="date"
+                      value={feedbackHistoryEndDate}
+                      min={feedbackHistoryStartDate || undefined}
+                      onChange={event => setFeedbackHistoryEndDate(event.target.value)}
+                      className="w-full rounded-lg border px-1.5 py-1 text-[10px] outline-none focus:ring-1 focus:ring-fuchsia-500"
+                      style={{ background: th.bgCard, borderColor: th.border2, color: th.text }}
+                    />
+                  </label>
+                </div>
+                <div className="mb-2 flex items-center gap-1.5">
+                  <select
+                    value={feedbackHistorySort}
+                    onChange={event => setFeedbackHistorySort(event.target.value as "newest" | "oldest")}
+                    className="min-w-0 flex-1 rounded-lg border px-2 py-1.5 text-[10px] font-bold outline-none focus:ring-1 focus:ring-fuchsia-500"
+                    style={{ background: th.bgCard, borderColor: th.border2, color: th.text }}>
+                    <option value="newest">{lang === "ko" ? "정렬: 최신순" : lang === "ja" ? "並び順: 新しい順" : "Sort: Newest first"}</option>
+                    <option value="oldest">{lang === "ko" ? "정렬: 과거순" : lang === "ja" ? "並び順: 古い順" : "Sort: Oldest first"}</option>
+                  </select>
+                  {(feedbackHistoryStartDate || feedbackHistoryEndDate) && (
+                    <button
+                      type="button"
+                      onClick={() => { setFeedbackHistoryStartDate(""); setFeedbackHistoryEndDate(""); }}
+                      title={lang === "ko" ? "날짜 필터 초기화" : lang === "ja" ? "日付フィルターをリセット" : "Reset date filter"}
+                      className="rounded-lg border px-2 py-1.5 text-[10px] font-bold transition-all hover:opacity-80"
+                      style={{ borderColor: th.border2, color: th.textMuted }}>
+                      ↺
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void analyzeCurrentFeedbackKeywords()}
+                    disabled={sortedFeedbackHistory.length === 0 || analyzeFeedbackKeywordsMutation.isPending}
+                    className="rounded-lg border px-2 py-1.5 text-[10px] font-bold transition-all hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                    {analyzeFeedbackKeywordsMutation.isPending ? "✨…" : `✨ ${lang === "ko" ? "AI 키워드" : lang === "ja" ? "AIキーワード" : "AI keywords"}`}
+                  </button>
+                </div>
                 {!feedbackHistoryQuery.isLoading && allFeedbackHistory.length > 0 && (
                   <div className="mb-2 rounded-xl border p-2" style={{ borderColor: th.border2, background: isDark ? "oklch(0.16 0.02 240)" : "oklch(0.97 0.006 240)" }}>
                     <div className="mb-1.5 flex items-center justify-between text-[9px] font-bold" style={{ color: th.textMuted }}>
@@ -2576,6 +2666,31 @@ export default function Dashboard() {
                       <span className="font-bold" style={{ color: "oklch(0.70 0.18 145)" }}>👍 {lang === "ko" ? "긍정" : lang === "ja" ? "肯定" : "Positive"} {positiveFeedbackCount} ({animatedPositiveRatio}%)</span>
                       <span className="font-bold" style={{ color: "oklch(0.65 0.20 20)" }}>👎 {lang === "ko" ? "부정" : lang === "ja" ? "否定" : "Negative"} {negativeFeedbackCount} ({allFeedbackHistory.length ? 100 - animatedPositiveRatio : 0}%)</span>
                     </div>
+                  </div>
+                )}
+                {feedbackKeywordSummary && (
+                  <div className="mb-2 rounded-xl border p-2.5 animate-fadeIn" style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.09)" }}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-bold" style={{ color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                        ✨ {lang === "ko" ? "AI 핵심 키워드 요약" : lang === "ja" ? "AI主要キーワード要約" : "AI key-term summary"}
+                      </p>
+                      <button type="button" onClick={() => setFeedbackKeywordSummary(null)} className="text-[10px] hover:opacity-70" style={{ color: th.textMuted }} aria-label="Close">✕</button>
+                    </div>
+                    {feedbackKeywordSummary.keywords.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {feedbackKeywordSummary.keywords.map((keyword, index) => (
+                          <span key={`${keyword}-${index}`} className="rounded-full border px-1.5 py-0.5 text-[9px] font-bold" style={{ borderColor: "oklch(0.72 0.15 75 / 0.38)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                            #{keyword}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-2 text-[10px] leading-relaxed" style={{ color: th.text }}>{feedbackKeywordSummary.summary}</p>
+                    {feedbackKeywordSummary.improvement && (
+                      <p className="mt-1.5 border-t pt-1.5 text-[10px] leading-relaxed" style={{ borderColor: th.border2, color: th.textMuted }}>
+                        <strong style={{ color: th.text }}>{lang === "ko" ? "개선 방향" : lang === "ja" ? "改善方向" : "Improvement"}:</strong> {feedbackKeywordSummary.improvement}
+                      </p>
+                    )}
                   </div>
                 )}
                 {feedbackToDelete !== null && (

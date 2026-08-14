@@ -703,6 +703,79 @@ Guidelines:
         return { deletedCount };
       }),
 
+    analyzeFeedbackKeywords: protectedProcedure
+      .input(z.object({
+        lang: z.enum(["ko", "en", "ja"]).default("ko"),
+        entries: z.array(z.object({
+          feedbackType: z.enum(["like", "dislike"]),
+          reasonCode: z.string().max(32).nullable().optional(),
+          reasonText: z.string().max(500).nullable().optional(),
+          messageContent: z.string().max(1200),
+          regeneratedContent: z.string().max(1200).nullable().optional(),
+        })).min(1).max(30),
+      }))
+      .mutation(async ({ input }) => {
+        const corpus = input.entries.map((entry, index) => [
+          `#${index + 1}`,
+          `feedback=${entry.feedbackType}`,
+          entry.reasonCode ? `reasonCode=${entry.reasonCode}` : "",
+          entry.reasonText ? `reason=${entry.reasonText}` : "",
+          `answer=${entry.messageContent}`,
+          entry.regeneratedContent ? `regenerated=${entry.regeneratedContent}` : "",
+        ].filter(Boolean).join(" | ")).join("\n");
+        const systemPrompt = input.lang === "ko"
+          ? "당신은 반도체 예지안전 AI 상담 품질 분석가입니다. 제공된 피드백 기록에서 반복되는 핵심 키워드와 개선 방향만 추출하세요. 비밀정보를 추론하지 말고, 기록에 없는 내용을 만들지 마세요."
+          : input.lang === "ja"
+            ? "あなたは半導体予知安全AI相談の品質分析者です。提供されたフィードバック記録から繰り返し現れる主要キーワードと改善方向のみを抽出してください。記録にない内容や秘密情報を推測してはいけません。"
+            : "You are a quality analyst for a semiconductor predictive-safety AI consultation. Extract only recurring key terms and improvement directions from the provided feedback. Do not infer secrets or invent details absent from the records.";
+        const userPrompt = input.lang === "ko"
+          ? `다음 ${input.entries.length}건의 현재 필터 결과를 분석하세요. keywords에는 3~6개의 짧은 핵심어만 넣고, summary와 improvement는 각 1~2문장으로 간결하게 작성하세요.\n\n${corpus}`
+          : input.lang === "ja"
+            ? `以下の現在フィルター結果${input.entries.length}件を分析してください。keywordsには3〜6個の短い重要語だけを入れ、summaryとimprovementはそれぞれ1〜2文で簡潔にしてください。\n\n${corpus}`
+            : `Analyze these ${input.entries.length} currently filtered feedback records. Provide 3–6 concise key terms in keywords, and keep summary and improvement to 1–2 sentences each.\n\n${corpus}`;
+        try {
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "feedback_keyword_summary",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    keywords: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 6 },
+                    summary: { type: "string" },
+                    improvement: { type: "string" },
+                  },
+                  required: ["keywords", "summary", "improvement"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+          const content = response.choices[0]?.message?.content;
+          if (typeof content !== "string") throw new Error("No structured keyword summary");
+          const parsed = JSON.parse(content) as { keywords: string[]; summary: string; improvement: string };
+          return {
+            keywords: parsed.keywords.slice(0, 6).map(keyword => String(keyword).slice(0, 40)),
+            summary: String(parsed.summary).slice(0, 600),
+            improvement: String(parsed.improvement).slice(0, 600),
+          };
+        } catch (error) {
+          console.error("Feedback keyword analysis failed:", error);
+          const fallback = input.lang === "ko"
+            ? "AI 키워드 요약을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요."
+            : input.lang === "ja"
+              ? "AIキーワード要約を生成できませんでした。しばらくしてからもう一度お試しください。"
+              : "Could not generate the AI keyword summary. Please try again shortly.";
+          return { keywords: [], summary: fallback, improvement: "" };
+        }
+      }),
+
     addManualText: protectedProcedure
       .input(z.object({ title: z.string().trim().min(1).max(255), content: z.string().trim().min(50).max(60000) }))
       .mutation(async ({ ctx, input }) => {

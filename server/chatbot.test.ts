@@ -44,4 +44,9 @@ describe("SemiGuard AI Chatbot Procedure", () => {
     // @ts-ignore
     expect(appRouter.semiguard.deleteAllChatFeedbacks).toBeDefined();
   });
+
+  it("defines filtered feedback keyword analysis procedure", () => {
+    // @ts-ignore
+    expect(appRouter.semiguard.analyzeFeedbackKeywords).toBeDefined();
+  });
 });
