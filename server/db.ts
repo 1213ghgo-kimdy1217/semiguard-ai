@@ -225,7 +225,7 @@ export async function createLocalUser(input: {
 export async function getChatSessions(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(chatSessions).where(eq(chatSessions.userId, userId)).orderBy(desc(chatSessions.updatedAt));
+  return db.select().from(chatSessions).where(eq(chatSessions.userId, userId)).orderBy(desc(chatSessions.isPinned), desc(chatSessions.updatedAt));
 }
 
 export async function createChatSession(userId: number, title: string = "새로운 상담") {
@@ -267,6 +267,15 @@ export async function updateSessionTitle(sessionId: number, userId: number, titl
   if (!db) return false;
   const result = await db.update(chatSessions)
     .set({ title: title.trim().slice(0, 120), updatedAt: new Date() })
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)));
+  return result[0].affectedRows > 0;
+}
+
+export async function setChatSessionPinned(sessionId: number, userId: number, isPinned: boolean) {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.update(chatSessions)
+    .set({ isPinned: isPinned ? 1 : 0, updatedAt: new Date() })
     .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)));
   return result[0].affectedRows > 0;
 }

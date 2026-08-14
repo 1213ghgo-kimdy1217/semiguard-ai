@@ -838,6 +838,13 @@ Guidelines:
         return { success: updated };
       }),
 
+    setChatSessionPinned: protectedProcedure
+      .input(z.object({ sessionId: z.number().int().positive(), isPinned: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        const updated = await db.setChatSessionPinned(input.sessionId, ctx.user.id, input.isPinned);
+        return { success: updated };
+      }),
+
     // 세션 삭제
     deleteChatSession: protectedProcedure
       .input(z.object({ sessionId: z.number() }))

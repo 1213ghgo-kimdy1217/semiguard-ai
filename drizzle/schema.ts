@@ -142,6 +142,7 @@ export const chatSessions = mysqlTable("chat_sessions", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("user_id").notNull(),
   title: varchar("title", { length: 255 }).notNull().default("새로운 상담"),
+  isPinned: int("is_pinned").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

@@ -800,6 +800,7 @@ export default function Dashboard() {
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
   const updateSessionTitleMutation = trpc.semiguard.updateChatSessionTitle.useMutation();
+  const setChatSessionPinnedMutation = trpc.semiguard.setChatSessionPinned.useMutation();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
@@ -2837,6 +2838,28 @@ export default function Dashboard() {
                             </>
                           )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={async (event) => {
+                            event.stopPropagation();
+                            try {
+                              const result = await setChatSessionPinnedMutation.mutateAsync({ sessionId: session.id, isPinned: session.isPinned !== 1 });
+                              if (!result.success) throw new Error("Session was not found");
+                              chatUtils.semiguard.getChatSessions.invalidate();
+                              toast.success(session.isPinned === 1
+                                ? (lang === "ko" ? "상담 기록 고정을 해제했습니다." : lang === "ja" ? "相談履歴の固定を解除しました。" : "Consultation unpinned.")
+                                : (lang === "ko" ? "상담 기록을 상단에 고정했습니다." : lang === "ja" ? "相談履歴を上部に固定しました。" : "Consultation pinned to the top."));
+                            } catch (error) {
+                              console.error("Failed to update consultation pin:", error);
+                              toast.error(lang === "ko" ? "상담 기록 고정을 변경하지 못했습니다." : lang === "ja" ? "相談履歴の固定を変更できませんでした。" : "Could not update consultation pin.");
+                            }
+                          }}
+                          disabled={setChatSessionPinnedMutation.isPending}
+                          className={`p-1 text-xs transition-opacity hover:opacity-75 disabled:opacity-45 ${session.isPinned === 1 ? "text-amber-400" : "opacity-60"}`}
+                          title={session.isPinned === 1 ? (lang === "ko" ? "상단 고정 해제" : lang === "ja" ? "上部固定を解除" : "Unpin") : (lang === "ko" ? "상단에 고정" : lang === "ja" ? "上部に固定" : "Pin to top")}
+                          aria-label={session.isPinned === 1 ? (lang === "ko" ? "상담 기록 상단 고정 해제" : lang === "ja" ? "相談履歴の上部固定を解除" : "Unpin consultation") : (lang === "ko" ? "상담 기록 상단에 고정" : lang === "ja" ? "相談履歴を上部に固定" : "Pin consultation to top")}>
+                          📌
+                        </button>
                         <button
                           type="button"
                           onClick={(event) => {
