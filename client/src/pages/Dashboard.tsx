@@ -777,6 +777,7 @@ export default function Dashboard() {
   const [historySessionPage, setHistorySessionPage] = useState(1);
   const [historySessionStartDate, setHistorySessionStartDate] = useState("");
   const [historySessionEndDate, setHistorySessionEndDate] = useState("");
+  const [historySessionDatePreset, setHistorySessionDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">("all");
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
@@ -815,6 +816,27 @@ export default function Dashboard() {
   useEffect(() => {
     setHistorySessionPage(1);
   }, [normalizedHistorySearch, historySessionFilter, historySessionSort, historySessionStartDate, historySessionEndDate]);
+  const applyHistoryDatePreset = (preset: "all" | "today" | "week" | "month") => {
+    setHistorySessionDatePreset(preset);
+    if (preset === "all") {
+      setHistorySessionStartDate("");
+      setHistorySessionEndDate("");
+      return;
+    }
+    const formatDateInput = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+    const end = new Date();
+    const start = new Date(end);
+    start.setHours(0, 0, 0, 0);
+    if (preset === "week") start.setDate(start.getDate() - 6);
+    if (preset === "month") start.setDate(start.getDate() - 29);
+    setHistorySessionStartDate(formatDateInput(start));
+    setHistorySessionEndDate(formatDateInput(end));
+  };
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
@@ -2758,6 +2780,26 @@ export default function Dashboard() {
                     <span className="text-[9px] font-medium" style={{ color: th.textMuted }}>
                       {lang === "ko" ? "기간" : lang === "ja" ? "期間" : "Period"}
                     </span>
+                    {([
+                      { id: "all", ko: "전체", ja: "すべて", en: "All" },
+                      { id: "today", ko: "오늘", ja: "今日", en: "Today" },
+                      { id: "week", ko: "7일", ja: "7日", en: "7d" },
+                      { id: "month", ko: "30일", ja: "30日", en: "30d" },
+                    ] as const).map(preset => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyHistoryDatePreset(preset.id)}
+                        className="rounded border px-1.5 py-1 text-[9px] font-bold transition-all"
+                        style={{
+                          borderColor: historySessionDatePreset === preset.id ? "oklch(0.67 0.17 210 / 0.65)" : th.border2,
+                          background: historySessionDatePreset === preset.id ? "oklch(0.67 0.17 210 / 0.16)" : "transparent",
+                          color: historySessionDatePreset === preset.id ? (isDark ? "oklch(0.84 0.12 210)" : "oklch(0.42 0.15 210)") : th.textMuted,
+                        }}>
+                        {lang === "ko" ? preset.ko : lang === "ja" ? preset.ja : preset.en}
+                      </button>
+                    ))}
+                    <span className="h-3 w-px" style={{ background: th.border2 }} />
                     <label className="sr-only" htmlFor="consultation-history-start-date">
                       {lang === "ko" ? "상담 기록 시작일" : lang === "ja" ? "相談履歴の開始日" : "Consultation history start date"}
                     </label>
@@ -2766,7 +2808,7 @@ export default function Dashboard() {
                       type="date"
                       value={historySessionStartDate}
                       max={historySessionEndDate || undefined}
-                      onChange={(event) => setHistorySessionStartDate(event.target.value)}
+                      onChange={(event) => { setHistorySessionStartDate(event.target.value); setHistorySessionDatePreset("custom"); }}
                       className="min-w-0 rounded border px-1.5 py-1 text-[9px] outline-none focus:ring-1 focus:ring-sky-500"
                       style={{ borderColor: th.border2, background: th.bgCard2, color: th.textMuted }}
                     />
@@ -2779,14 +2821,14 @@ export default function Dashboard() {
                       type="date"
                       value={historySessionEndDate}
                       min={historySessionStartDate || undefined}
-                      onChange={(event) => setHistorySessionEndDate(event.target.value)}
+                      onChange={(event) => { setHistorySessionEndDate(event.target.value); setHistorySessionDatePreset("custom"); }}
                       className="min-w-0 rounded border px-1.5 py-1 text-[9px] outline-none focus:ring-1 focus:ring-sky-500"
                       style={{ borderColor: th.border2, background: th.bgCard2, color: th.textMuted }}
                     />
                     {(historySessionStartDate || historySessionEndDate) && (
                       <button
                         type="button"
-                        onClick={() => { setHistorySessionStartDate(""); setHistorySessionEndDate(""); }}
+                        onClick={() => applyHistoryDatePreset("all")}
                         className="rounded border px-1.5 py-1 text-[9px] font-bold hover:opacity-75"
                         style={{ borderColor: th.border2, color: th.textMuted }}>
                         {lang === "ko" ? "초기화" : lang === "ja" ? "リセット" : "Reset"}
