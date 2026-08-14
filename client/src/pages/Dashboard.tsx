@@ -1497,6 +1497,15 @@ export default function Dashboard() {
   const utils = trpc.useUtils();
   const getRecentScoresQuery = trpc.semiguard.getRecentScores.useQuery({ limit: 50 }, { refetchInterval: 5000 });
   const { data: logsData, isLoading: logsLoading } = getLogs;
+  const safetyMonitoringHasError = getStats.isError || getLogs.isError || getDailyMaxRisk.isError || getRecentScoresQuery.isError;
+  const safetyMonitoringInitializing = getStats.isLoading || getLogs.isLoading || getDailyMaxRisk.isLoading || getRecentScoresQuery.isLoading;
+  const safetyMonitoringRetrying = getStats.isFetching || getLogs.isFetching || getDailyMaxRisk.isFetching || getRecentScoresQuery.isFetching;
+  const retrySafetyMonitoring = () => {
+    void getStats.refetch();
+    void getLogs.refetch();
+    void getDailyMaxRisk.refetch();
+    void getRecentScoresQuery.refetch();
+  };
 
   const [lastInjectedMode, setLastInjectedMode] = useState<RiskLevel | null>(null);
 
@@ -2281,6 +2290,15 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 sm:gap-4">
           {!isMobile && <HeartbeatIndicator alive={heartbeatAlive} t={t} />}
           {!isMobile && <div className="w-px h-5 bg-border" />}
+          <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold" title={safetyMonitoringHasError ? (lang === "ko" ? "일부 안전 데이터 조회를 복구해야 합니다." : lang === "ja" ? "一部の安全データの復旧が必要です。" : "Some safety data needs recovery.") : safetyMonitoringInitializing ? (lang === "ko" ? "안전 데이터를 동기화하는 중입니다." : lang === "ja" ? "安全データを同期中です。" : "Synchronizing safety data.") : (lang === "ko" ? "핵심 안전 데이터가 연결되었습니다." : lang === "ja" ? "主要な安全データに接続されています。" : "Core safety data is connected.") } style={{ color: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }}>
+            <span className={`h-2 w-2 rounded-full ${safetyMonitoringInitializing && !safetyMonitoringHasError ? "animate-pulse" : ""}`} style={{ background: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }} />
+            {safetyMonitoringHasError ? (lang === "ko" ? "복구 필요" : lang === "ja" ? "復旧が必要" : "Recovery needed") : safetyMonitoringInitializing ? (lang === "ko" ? "동기화 중" : lang === "ja" ? "同期中" : "Syncing") : (lang === "ko" ? "데이터 연결" : lang === "ja" ? "データ接続" : "Data connected")}
+          </div>
+          {safetyMonitoringHasError && (
+            <button type="button" onClick={retrySafetyMonitoring} disabled={safetyMonitoringRetrying} className="flex h-8 items-center justify-center rounded-lg border px-2 text-[10px] font-bold transition-opacity hover:opacity-80 disabled:opacity-45" style={{ borderColor: "oklch(0.72 0.18 30 / 0.55)", color: "oklch(0.78 0.18 30)", background: "oklch(0.72 0.18 30 / 0.10)" }} aria-label={lang === "ko" ? "안전 모니터링 데이터 다시 연결" : lang === "ja" ? "安全モニタリングデータに再接続" : "Reconnect safety monitoring data"} title={lang === "ko" ? "안전 데이터 다시 연결" : lang === "ja" ? "安全データを再接続" : "Reconnect safety data"}>
+              ↻ <span className="hidden sm:inline ml-1">{safetyMonitoringRetrying ? (lang === "ko" ? "연결 중" : lang === "ja" ? "接続中" : "Connecting") : (lang === "ko" ? "재연결" : lang === "ja" ? "再接続" : "Reconnect")}</span>
+            </button>
+          )}
           <AlertPanel riskLevel={riskLevel} relayTripped={relayTripped} t={t} />
           <button
             type="button"
