@@ -773,6 +773,7 @@ export default function Dashboard() {
   const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
+  const [historySessionSort, setHistorySessionSort] = useState<"newest" | "oldest" | "title">("newest");
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
@@ -784,6 +785,16 @@ export default function Dashboard() {
   const visibleChatSessions = normalizedHistorySearch.length > 0
     ? (searchChatSessionsQuery.data ?? [])
     : (chatSessionsQuery.data ?? []);
+  const filteredAndSortedChatSessions = visibleChatSessions
+    .filter(session => historySessionFilter === "all" || session.isPinned === 1)
+    .slice()
+    .sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return (b.isPinned ?? 0) - (a.isPinned ?? 0);
+      if (historySessionSort === "title") return a.title.localeCompare(b.title, lang === "ja" ? "ja" : lang === "ko" ? "ko" : "en");
+      const timeA = new Date(a.updatedAt).getTime();
+      const timeB = new Date(b.updatedAt).getTime();
+      return historySessionSort === "oldest" ? timeA - timeB : timeB - timeA;
+    });
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
@@ -2688,7 +2699,7 @@ export default function Dashboard() {
                       </button>
                     )}
                   </div>
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-1 rounded-lg border p-0.5" style={{ borderColor: th.border2, background: th.bgCard2 }}>
                       {(["all", "pinned"] as const).map(filter => (
                         <button
@@ -2704,9 +2715,24 @@ export default function Dashboard() {
                         </button>
                       ))}
                     </div>
-                    <span className="text-[9px]" style={{ color: th.textMuted }}>
-                      {visibleChatSessions.filter(session => historySessionFilter === "all" || session.isPinned === 1).length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " results"}
-                    </span>
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <label className="sr-only" htmlFor="consultation-history-sort">
+                        {lang === "ko" ? "상담 기록 정렬" : lang === "ja" ? "相談履歴の並び替え" : "Sort consultation history"}
+                      </label>
+                      <select
+                        id="consultation-history-sort"
+                        value={historySessionSort}
+                        onChange={(event) => setHistorySessionSort(event.target.value as "newest" | "oldest" | "title")}
+                        className="max-w-[86px] rounded border px-1.5 py-1 text-[9px] outline-none focus:ring-1 focus:ring-sky-500"
+                        style={{ borderColor: th.border2, background: th.bgCard2, color: th.textMuted }}>
+                        <option value="newest">{lang === "ko" ? "최신순" : lang === "ja" ? "新しい順" : "Newest"}</option>
+                        <option value="oldest">{lang === "ko" ? "오래된순" : lang === "ja" ? "古い順" : "Oldest"}</option>
+                        <option value="title">{lang === "ko" ? "제목순" : lang === "ja" ? "タイトル順" : "Title"}</option>
+                      </select>
+                      <span className="text-[9px] whitespace-nowrap" style={{ color: th.textMuted }}>
+                        {filteredAndSortedChatSessions.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " results"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -2765,7 +2791,7 @@ export default function Dashboard() {
                     </div>
                   ) : chatSessionsQuery.data && chatSessionsQuery.data.length > 0 ? (
                     (() => {
-                      const filtered = visibleChatSessions.filter(session => historySessionFilter === "all" || session.isPinned === 1);
+                      const filtered = filteredAndSortedChatSessions;
                       if (filtered.length === 0) {
                         return (
                           <p className="text-[11px] text-muted-foreground text-center py-6">
