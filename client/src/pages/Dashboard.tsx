@@ -791,7 +791,10 @@ export default function Dashboard() {
   const [manualTitle, setManualTitle] = useState("");
   const [manualContent, setManualContent] = useState("");
   const [manualSearchQuery, setManualSearchQuery] = useState("");
-  const [manualDocumentSort, setManualDocumentSort] = useState<"newest" | "oldest" | "title">("newest");
+  const [manualDocumentSort, setManualDocumentSort] = useState<"newest" | "oldest" | "title">(() => {
+    const stored = window.localStorage.getItem("semiguard_manual_sort");
+    return stored === "oldest" || stored === "title" ? stored : "newest";
+  });
   const [debouncedManualSearch, setDebouncedManualSearch] = useState("");
   const [manualDocumentToDelete, setManualDocumentToDelete] = useState<number | null>(null);
   const [previewManualDocumentId, setPreviewManualDocumentId] = useState<number | null>(null);
@@ -948,6 +951,9 @@ export default function Dashboard() {
     return direction * (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
   }), [filteredManualDocuments, manualDocumentSort]);
   const hasActiveManualFilters = normalizedManualSearch.length > 0 || manualDocumentSort !== "newest";
+  useEffect(() => {
+    window.localStorage.setItem("semiguard_manual_sort", manualDocumentSort);
+  }, [manualDocumentSort]);
   const resetManualFilters = () => {
     setManualSearchQuery("");
     setDebouncedManualSearch("");

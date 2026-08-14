@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("RAG manual sort contract", () => {
   it("sorts searched and unsearched manual results by update time or title", () => {
-    expect(dashboardSource).toContain('const [manualDocumentSort, setManualDocumentSort] = useState<"newest" | "oldest" | "title">("newest")');
+    expect(dashboardSource).toContain('const [manualDocumentSort, setManualDocumentSort] = useState<"newest" | "oldest" | "title">(() => {');
     expect(dashboardSource).toContain("const sortedManualDocuments = useMemo(() => [...filteredManualDocuments].sort((a, b) => {");
     expect(dashboardSource).toContain('if (manualDocumentSort === "title") return a.title.localeCompare(b.title);');
     expect(dashboardSource).toContain("{sortedManualDocuments.map(document => (");
