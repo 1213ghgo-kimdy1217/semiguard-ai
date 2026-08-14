@@ -551,14 +551,26 @@ export async function searchManualChunksForUser(userId: number, query: string, l
     like(manualChunks.content, `%${term}%`),
     like(manualChunks.keywords, `%${term}%`),
   ]);
-  return db.select({
+  const matchedChunks = await db.select({
     documentId: manualDocuments.id,
     documentTitle: manualDocuments.title,
     chunkIndex: manualChunks.chunkIndex,
     content: manualChunks.content,
+    keywords: manualChunks.keywords,
   })
     .from(manualChunks)
     .innerJoin(manualDocuments, eq(manualChunks.documentId, manualDocuments.id))
     .where(and(eq(manualDocuments.userId, userId), or(...termConditions)))
     .limit(Math.min(Math.max(limit, 1), 5));
+  return matchedChunks
+    .map(({ keywords, ...chunk }) => {
+      const searchableText = `${chunk.documentTitle} ${chunk.content} ${keywords ?? ""}`.toLowerCase();
+      const matchedTerms = terms.filter(term => searchableText.includes(term));
+      return {
+        ...chunk,
+        matchedTerms,
+        relevanceScore: Math.max(1, Math.round((matchedTerms.length / terms.length) * 100)),
+      };
+    })
+    .sort((a, b) => b.relevanceScore - a.relevanceScore || a.chunkIndex - b.chunkIndex);
 }

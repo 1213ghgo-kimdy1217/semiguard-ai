@@ -486,7 +486,7 @@ export const appRouter = router({
 
         // 마지막 사용자 질문을 기준으로 등록된 설비 매뉴얼에서 관련 구간을 검색합니다.
         const lastUserMessage = [...messages].reverse().find(message => message.role === "user")?.content ?? "";
-        let manualSources: Array<{ documentId: number; documentTitle: string; chunkIndex: number; content: string }> = [];
+        let manualSources: Array<{ documentId: number; documentTitle: string; chunkIndex: number; content: string; relevanceScore: number; matchedTerms: string[] }> = [];
         if (ctx.user && lastUserMessage.trim().length > 0) {
           try {
             manualSources = await db.searchManualChunksForUser(ctx.user.id, lastUserMessage, 3);
@@ -614,6 +614,8 @@ Guidelines:
               documentTitle: source.documentTitle,
               chunkIndex: source.chunkIndex,
               content: source.content,
+              relevanceScore: source.relevanceScore,
+              matchedTerms: source.matchedTerms,
             })),
           };
         } catch (err) {

@@ -877,7 +877,7 @@ export default function Dashboard() {
   const [otherReasonIdx, setOtherReasonIdx] = useState<number | null>(null);
   const [otherFeedbackText, setOtherFeedbackText] = useState("");
   const [isFeedbackRegenerating, setIsFeedbackRegenerating] = useState(false);
-  type ManualSource = { label: number; documentId: number; documentTitle: string; chunkIndex: number; content: string };
+  type ManualSource = { label: number; documentId: number; documentTitle: string; chunkIndex: number; content: string; relevanceScore?: number; matchedTerms?: string[] };
   const [activeManualSource, setActiveManualSource] = useState<ManualSource | null>(null);
 
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string }>>([
@@ -3620,7 +3620,7 @@ export default function Dashboard() {
                                 title={source.content.slice(0, 120)}
                                 className="max-w-[200px] truncate rounded-full border px-2 py-0.5 text-[9px] font-bold transition-all hover:opacity-80 active:scale-95"
                                 style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.42 0.16 75)" }}>
-                                [{source.label}] {source.documentTitle} · {lang === "ko" ? `구간 ${source.chunkIndex + 1}` : lang === "ja" ? `区間 ${source.chunkIndex + 1}` : `Chunk ${source.chunkIndex + 1}`}
+                                [{source.label}] {source.documentTitle} · {lang === "ko" ? `구간 ${source.chunkIndex + 1}` : lang === "ja" ? `区間 ${source.chunkIndex + 1}` : `Chunk ${source.chunkIndex + 1}`}{typeof source.relevanceScore === "number" ? ` · ${source.relevanceScore}%` : ""}
                               </button>
                             ))}
                           </div>
@@ -3893,6 +3893,12 @@ export default function Dashboard() {
                       <p className="text-[10px]" style={{ color: th.textMuted }}>
                         {lang === "ko" ? `구간 ${activeManualSource.chunkIndex + 1}` : lang === "ja" ? `区間 ${activeManualSource.chunkIndex + 1}` : `Chunk ${activeManualSource.chunkIndex + 1}`}
                       </p>
+                      {typeof activeManualSource.relevanceScore === "number" && (
+                        <p className="mt-1 text-[9px] font-medium" style={{ color: isDark ? "oklch(0.84 0.12 210)" : "oklch(0.42 0.15 210)" }}>
+                          {lang === "ko" ? `질문 관련도 ${activeManualSource.relevanceScore}%` : lang === "ja" ? `質問関連度 ${activeManualSource.relevanceScore}%` : `Question relevance ${activeManualSource.relevanceScore}%`}
+                          {activeManualSource.matchedTerms && activeManualSource.matchedTerms.length > 0 ? ` · ${lang === "ko" ? "일치" : lang === "ja" ? "一致" : "Matched"}: ${activeManualSource.matchedTerms.join(", ")}` : ""}
+                        </p>
+                      )}
                     </div>
                     <button type="button" onClick={() => setActiveManualSource(null)} className="shrink-0 text-sm hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "매뉴얼 원문 닫기" : lang === "ja" ? "マニュアル原文を閉じる" : "Close manual source"}>✕</button>
                   </div>
