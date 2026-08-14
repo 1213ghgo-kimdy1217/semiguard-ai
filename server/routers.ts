@@ -407,6 +407,29 @@ export const appRouter = router({
         const riskLabelKo = riskLevel === "danger" ? "위험" : riskLevel === "warning" ? "경고" : riskLevel === "caution" ? "주의" : "정상";
         const riskLabelJa = riskLevel === "danger" ? "危険" : riskLevel === "warning" ? "警告" : riskLevel === "caution" ? "注意" : "正常";
         const riskLabelEn = riskLevel;
+        const buildFallbackAnalysis = (fallbackLang: ChatLanguage) => {
+          const gate = buildEvidenceGate({ current, temperature, vibration, noise, anomalyScore, riskLevel }, fallbackLang);
+          const urgent = anomalyScore >= 70;
+          if (fallbackLang === "ko") {
+            return {
+              primaryCause: "규칙 기반 센서 이상 감지 (AI 분석 대체)",
+              details: `AI 분석 서비스를 일시적으로 사용할 수 없어 실시간 수치로 판단했습니다. 위험도는 ${riskLabelKo}(${anomalyScore.toFixed(0)}/100)이며, 주요 편차는 ${gate.evidence.join(" · ")}입니다. 현재 수치만으로 특정 고장 원인을 단정할 수는 없습니다.`,
+              recommendation: `${gate.followUp} ${urgent ? "현장 담당자 보고와 규정된 안전 절차를 우선하세요." : "관련 설비 매뉴얼과 최근 점검 이력을 함께 확인하세요."}`,
+            };
+          }
+          if (fallbackLang === "ja") {
+            return {
+              primaryCause: "ルールベースのセンサー異常検知（AI分析の代替）",
+              details: `AI分析サービスを一時的に利用できないため、現在の実測値で判断しました。危険度は${riskLabelJa}(${anomalyScore.toFixed(0)}/100)で、主な偏差は${gate.evidence.join(" · ")}です。現在の数値だけで特定の故障原因を断定することはできません。`,
+              recommendation: `${gate.followUp} ${urgent ? "現場担当者への報告と定められた安全手順を優先してください。" : "関連設備マニュアルと最近の点検履歴を併せて確認してください。"}`,
+            };
+          }
+          return {
+            primaryCause: "Rule-based sensor anomaly detected (AI analysis fallback)",
+            details: `The AI analysis service is temporarily unavailable, so this result uses live measurements. Risk is ${riskLabelEn} (${anomalyScore.toFixed(0)}/100), with primary deviations in ${gate.evidence.join(" · ")}. Do not conclude a specific failure cause from current values alone.`,
+            recommendation: `${gate.followUp} ${urgent ? "Prioritize reporting to the responsible operator and the approved safety procedure." : "Review the relevant equipment manual and recent inspection history together."}`,
+          };
+        };
 
         const makeMessages = (systemPrompt: string, userPrompt: string) => [
           { role: "system" as const, content: systemPrompt },
@@ -454,9 +477,9 @@ export const appRouter = router({
           ),
         ]);
 
-        const koData = koResult.status === "fulfilled" ? koResult.value : { primaryCause: "복합 센서 이상 감지", details: `이상 점수 ${anomalyScore.toFixed(0)}점으로 ${riskLabelKo} 단계가 감지되었습니다.`, recommendation: "즉시 설비 점검 및 운전 중단을 고려하십시오." };
-        const enData = enResult.status === "fulfilled" ? enResult.value : { primaryCause: "Multiple sensor anomaly detected", details: `Anomaly score ${anomalyScore.toFixed(0)} triggered ${riskLabelEn} alert.`, recommendation: "Consider immediate equipment inspection and shutdown." };
-        const jaData = jaResult.status === "fulfilled" ? jaResult.value : { primaryCause: "複合センサー異常検知", details: `異常スコア${anomalyScore.toFixed(0)}点で${riskLabelJa}レベルが検知されました。`, recommendation: "直ちに設備点検および運転停止を検討してください。" };
+        const koData = koResult.status === "fulfilled" ? koResult.value : buildFallbackAnalysis("ko");
+        const enData = enResult.status === "fulfilled" ? enResult.value : buildFallbackAnalysis("en");
+        const jaData = jaResult.status === "fulfilled" ? jaResult.value : buildFallbackAnalysis("ja");
 
         // DB에 3개 언어 저장
         const targetId = logId ?? await getLastInsertedLogId();
