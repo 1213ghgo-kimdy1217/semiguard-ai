@@ -809,7 +809,9 @@ export default function Dashboard() {
   const [feedbackHistoryStartDate, setFeedbackHistoryStartDate] = useState("");
   const [feedbackHistoryEndDate, setFeedbackHistoryEndDate] = useState("");
   const [feedbackHistoryDatePreset, setFeedbackHistoryDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">("all");
-  const [feedbackHistorySort, setFeedbackHistorySort] = useState<"newest" | "oldest">("newest");
+  const [feedbackHistorySort, setFeedbackHistorySort] = useState<"newest" | "oldest">(() => {
+    return window.localStorage.getItem("semiguard_feedback_sort") === "oldest" ? "oldest" : "newest";
+  });
   const [feedbackHistoryPage, setFeedbackHistoryPage] = useState(1);
   const [animatedPositiveRatio, setAnimatedPositiveRatio] = useState(0);
   const [feedbackKeywordSummary, setFeedbackKeywordSummary] = useState<{ mode: "ai" | "fallback"; keywords: string[]; summary: string; improvement: string } | null>(null);
@@ -1042,6 +1044,9 @@ export default function Dashboard() {
     setFeedbackHistoryPage(1);
     setFeedbackKeywordSummary(null);
   }, [feedbackHistoryFilter, feedbackReasonFilter, feedbackHistorySearch, feedbackHistoryStartDate, feedbackHistoryEndDate, feedbackHistorySort]);
+  useEffect(() => {
+    window.localStorage.setItem("semiguard_feedback_sort", feedbackHistorySort);
+  }, [feedbackHistorySort]);
 
   const hasActiveFeedbackFilters = feedbackHistoryFilter !== "all"
     || feedbackReasonFilter !== "all"
