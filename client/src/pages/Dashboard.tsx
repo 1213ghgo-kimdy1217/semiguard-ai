@@ -711,6 +711,7 @@ export default function Dashboard() {
   );
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const menuCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const menuPanelRef = useRef<HTMLElement>(null);
   const wasMenuOpenRef = useRef(menuOpen);
 
   useEffect(() => {
@@ -1860,9 +1861,25 @@ export default function Dashboard() {
       const focusTimer = window.setTimeout(() => menuCloseButtonRef.current?.focus(), 0);
       const previousOverflow = document.body.style.overflow;
       const closeOnEscape = (event: KeyboardEvent) => {
-        if (event.key !== "Escape") return;
-        event.preventDefault();
-        setMenuOpen(false);
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setMenuOpen(false);
+          return;
+        }
+        if (event.key !== "Tab") return;
+        const focusable = menuPanelRef.current?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        );
+        if (!focusable?.length) return;
+        const firstFocusable = focusable[0];
+        const lastFocusable = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === firstFocusable) {
+          event.preventDefault();
+          lastFocusable.focus();
+        } else if (!event.shiftKey && document.activeElement === lastFocusable) {
+          event.preventDefault();
+          firstFocusable.focus();
+        }
       };
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", closeOnEscape);
@@ -2640,6 +2657,7 @@ export default function Dashboard() {
             className="fixed inset-0 z-[600] bg-black/45 cursor-default"
           />
           <aside
+            ref={menuPanelRef}
             id="dashboard-settings-menu"
             role="dialog"
             aria-modal="true"

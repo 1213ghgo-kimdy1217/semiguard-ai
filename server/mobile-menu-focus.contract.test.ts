@@ -13,7 +13,7 @@ describe("mobile slide menu focus contract", () => {
   });
 
   it("closes the menu with Escape without leaking the key event", () => {
-    expect(dashboardSource).toContain('if (event.key !== "Escape") return;');
-    expect(dashboardSource).toContain("event.preventDefault();\n        setMenuOpen(false);");
+    expect(dashboardSource).toContain('if (event.key === "Escape") {');
+    expect(dashboardSource).toContain("event.preventDefault();\n          setMenuOpen(false);\n          return;");
   });
 });
