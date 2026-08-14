@@ -1020,12 +1020,26 @@ export default function Dashboard() {
     if (!text.trim() || isChatLoading) return;
     const userMsg = { role: "user" as const, content: text.trim(), timestamp: Date.now() };
     const nextMessages = [...chatMessages, userMsg];
+    const activeSession = activeSessionId === null
+      ? undefined
+      : chatSessionsQuery.data?.find(session => session.id === activeSessionId);
+    const defaultSessionTitles = ["새로운 상담", "新しい相談", "New Consultation"];
+    const shouldAutoTitleSession = activeSessionId !== null &&
+      nextMessages.filter(message => message.role === "user").length === 1 &&
+      (!activeSession || defaultSessionTitles.includes(activeSession.title));
     setChatMessages(nextMessages);
     if (!textToSend) setChatInput("");
     setIsChatLoading(true);
 
     if (activeSessionId !== null) {
       saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "user", content: text.trim() }).catch(err => console.error("Failed to save user message:", err));
+      if (shouldAutoTitleSession) {
+        const normalizedTitle = text.trim().replace(/\s+/g, " ");
+        const autoTitle = normalizedTitle.length > 48 ? `${normalizedTitle.slice(0, 48)}…` : normalizedTitle;
+        updateSessionTitleMutation.mutateAsync({ sessionId: activeSessionId, title: autoTitle })
+          .then(() => chatUtils.semiguard.getChatSessions.invalidate())
+          .catch(err => console.error("Failed to auto-title consultation session:", err));
+      }
     }
 
     try {

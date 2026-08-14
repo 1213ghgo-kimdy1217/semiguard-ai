@@ -34,4 +34,11 @@ describe("consultation session title management contract", () => {
     expect(dashboardSource).toContain("상담 기록 Markdown 내보내기");
     expect(dashboardSource).toContain("Export consultation history as Markdown");
   });
+
+  it("uses the first question as a title only while the session still has a default title", () => {
+    expect(dashboardSource).toContain("shouldAutoTitleSession");
+    expect(dashboardSource).toContain('const defaultSessionTitles = ["새로운 상담", "新しい相談", "New Consultation"]');
+    expect(dashboardSource).toContain("nextMessages.filter(message => message.role === \"user\").length === 1");
+    expect(dashboardSource).toContain("Failed to auto-title consultation session");
+  });
 });
