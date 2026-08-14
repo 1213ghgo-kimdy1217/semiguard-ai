@@ -726,12 +726,18 @@ export default function Dashboard() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [showManualRagModal, setShowManualRagModal] = useState(false);
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualContent, setManualContent] = useState("");
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
+  const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
+  const addManualTextMutation = trpc.semiguard.addManualText.useMutation();
+  const manualDocumentsQuery = trpc.semiguard.getManualDocuments.useQuery(undefined, { enabled: isChatOpen });
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
@@ -740,6 +746,7 @@ export default function Dashboard() {
   const [messageFeedbacks, setMessageFeedbacks] = useState<Record<number, "like" | "dislike">>({});
   const [activeDislikeIdx, setActiveDislikeIdx] = useState<number | null>(null);
   const [messageReasons, setMessageReasons] = useState<Record<number, string>>({});
+  const [messageReasonCodes, setMessageReasonCodes] = useState<Record<number, "inaccurate" | "insufficient" | "irrelevant" | "other">>({});
   const [otherReasonIdx, setOtherReasonIdx] = useState<number | null>(null);
   const [otherFeedbackText, setOtherFeedbackText] = useState("");
   const [isFeedbackRegenerating, setIsFeedbackRegenerating] = useState(false);
@@ -824,6 +831,7 @@ export default function Dashboard() {
         return {
           type,
           reason: messageReasons[idx],
+          reasonCode: messageReasonCodes[idx],
         };
       });
 
@@ -873,6 +881,7 @@ export default function Dashboard() {
       const feedbackHistory = Object.entries(messageFeedbacks).map(([idxStr, type]) => ({
         type,
         reason: messageReasons[Number(idxStr)],
+        reasonCode: messageReasonCodes[Number(idxStr)],
       }));
       const result = await chatMutation.mutateAsync({
         sensorContext,
@@ -893,6 +902,27 @@ export default function Dashboard() {
     } finally {
       setIsFeedbackRegenerating(false);
       setIsChatLoading(false);
+    }
+  };
+
+  const persistChatFeedback = async (messageIndex: number, feedbackType: "like" | "dislike", reasonCode?: "inaccurate" | "insufficient" | "irrelevant" | "other", reasonText?: string) => {
+    const message = chatMessages[messageIndex];
+    if (!message || message.role !== "assistant") return;
+    setMessageFeedbacks(previous => ({ ...previous, [messageIndex]: feedbackType }));
+    if (reasonCode) setMessageReasonCodes(previous => ({ ...previous, [messageIndex]: reasonCode }));
+    if (reasonText) setMessageReasons(previous => ({ ...previous, [messageIndex]: reasonText }));
+    if (activeSessionId === null) return;
+    try {
+      await saveFeedbackMutation.mutateAsync({
+        sessionId: activeSessionId,
+        messageContent: message.content,
+        feedbackType,
+        reasonCode,
+        reasonText,
+      });
+    } catch (error) {
+      console.error("Failed to persist chat feedback:", error);
+      toast.error(lang === "ko" ? "피드백을 저장하지 못했습니다. 다시 시도해 주세요." : lang === "ja" ? "フィードバックを保存できませんでした。" : "Could not save feedback. Please try again.");
     }
   };
 
@@ -1642,6 +1672,7 @@ export default function Dashboard() {
           <button
             type="button"
             aria-label={lang === "ko" ? "메뉴 닫기" : lang === "ja" ? "メニューを閉じる" : "Close menu"}
+            onPointerDown={() => setMenuOpen(false)}
             onClick={() => setMenuOpen(false)}
             className="fixed inset-0 z-[600] bg-black/45 cursor-default"
           />
@@ -1660,6 +1691,7 @@ export default function Dashboard() {
               </div>
               <button
                 type="button"
+                onPointerDown={() => setMenuOpen(false)}
                 onClick={() => setMenuOpen(false)}
                 aria-label={lang === "ko" ? "메뉴 닫기" : lang === "ja" ? "メニューを閉じる" : "Close menu"}
                 className="w-9 h-9 rounded-lg border flex items-center justify-center text-lg transition-all hover:opacity-80 active:scale-95"
@@ -2004,6 +2036,14 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setShowManualRagModal(true)}
+                  title={lang === "ko" ? "설비 매뉴얼을 RAG 지식으로 등록" : lang === "ja" ? "設備マニュアルをRAG知識として登録" : "Add equipment manual as RAG knowledge"}
+                  className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
+                  style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                  📘 {lang === "ko" ? "매뉴얼" : lang === "ja" ? "マニュアル" : "Manual"}{manualDocumentsQuery.data?.length ? ` ${manualDocumentsQuery.data.length}` : ""}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowResetConfirmModal(true)}
                   title={lang === "ko" ? "새 상담 시작 (이전 대화 보관)" : lang === "ja" ? "新しい相談 (会話保存)" : "New Consultation"}
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
@@ -2060,6 +2100,65 @@ export default function Dashboard() {
                       style={{ background: "linear-gradient(135deg, oklch(0.65 0.22 25), oklch(0.55 0.22 25))" }}>
                       {lang === "ko" ? "초기화 (새 상담)" : lang === "ja" ? "リセット (新規相談)" : "Reset & New Chat"}
                     </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 설비 매뉴얼 RAG 지식 등록 모달 */}
+            {showManualRagModal && (
+              <div className="absolute inset-0 z-[565] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md animate-fadeIn">
+                <div className="w-full max-w-md rounded-2xl border p-4 sm:p-5 shadow-2xl space-y-3" style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-bold" style={{ color: th.text }}>📘 {lang === "ko" ? "설비 매뉴얼 RAG 등록" : lang === "ja" ? "設備マニュアルRAG登録" : "Add Manual to RAG"}</h4>
+                      <p className="mt-1 text-[10px] leading-relaxed" style={{ color: th.textMuted }}>
+                        {lang === "ko" ? "매뉴얼·점검표의 텍스트를 등록하면, AI가 질문과 관련된 부분을 찾아 근거로 제시합니다. 민감정보는 제외해 주세요." : lang === "ja" ? "マニュアル・点検表のテキストを登録すると、AIが質問に関連する箇所を根拠として提示します。機密情報は除外してください。" : "Add manual or checklist text. The AI retrieves relevant sections as evidence. Exclude confidential information."}
+                      </p>
+                    </div>
+                    <button type="button" onClick={() => setShowManualRagModal(false)} className="text-sm shrink-0 hover:opacity-70" style={{ color: th.textMuted }} aria-label="Close">✕</button>
+                  </div>
+                  <input
+                    value={manualTitle}
+                    onChange={event => setManualTitle(event.target.value)}
+                    maxLength={255}
+                    placeholder={lang === "ko" ? "예: 식각 장비 일일 점검 매뉴얼" : lang === "ja" ? "例: エッチング装置の日常点検マニュアル" : "e.g. Etcher daily inspection manual"}
+                    className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2"
+                    style={{ background: isDark ? "oklch(0.18 0.02 240)" : "white", borderColor: th.border, color: th.text }}
+                  />
+                  <textarea
+                    value={manualContent}
+                    onChange={event => setManualContent(event.target.value)}
+                    minLength={50}
+                    maxLength={60000}
+                    placeholder={lang === "ko" ? "매뉴얼 또는 점검표 본문을 붙여넣어 주세요. 문단으로 나누면 더 정확하게 검색됩니다." : lang === "ja" ? "マニュアルまたは点検表の本文を貼り付けてください。段落で区切ると検索精度が向上します。" : "Paste manual or checklist text. Separate paragraphs for more accurate retrieval."}
+                    className="custom-scrollbar min-h-40 w-full resize-y rounded-lg border px-3 py-2 text-xs leading-relaxed outline-none focus:ring-2"
+                    style={{ background: isDark ? "oklch(0.18 0.02 240)" : "white", borderColor: th.border, color: th.text }}
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px]" style={{ color: th.textMuted }}>{manualContent.length.toLocaleString()} / 60,000</span>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setShowManualRagModal(false)} className="rounded-lg border px-3 py-1.5 text-xs font-semibold" style={{ borderColor: th.border, color: th.textMuted }}>{lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}</button>
+                      <button
+                        type="button"
+                        disabled={manualTitle.trim().length === 0 || manualContent.trim().length < 50 || addManualTextMutation.isPending}
+                        onClick={async () => {
+                          try {
+                            const result = await addManualTextMutation.mutateAsync({ title: manualTitle.trim(), content: manualContent.trim() });
+                            toast.success(lang === "ko" ? `매뉴얼 ${result.chunkCount}개 구간을 RAG 지식으로 등록했습니다.` : lang === "ja" ? `マニュアルを${result.chunkCount}件のRAG知識として登録しました。` : `Added ${result.chunkCount} manual chunks to RAG knowledge.`);
+                            setManualTitle("");
+                            setManualContent("");
+                            setShowManualRagModal(false);
+                            chatUtils.semiguard.getManualDocuments.invalidate();
+                          } catch {
+                            toast.error(lang === "ko" ? "매뉴얼을 등록하지 못했습니다." : lang === "ja" ? "マニュアルを登録できませんでした。" : "Could not add the manual.");
+                          }
+                        }}
+                        className="rounded-lg px-3 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ background: "linear-gradient(135deg, oklch(0.58 0.16 75), oklch(0.48 0.18 55))" }}>
+                        {addManualTextMutation.isPending ? (lang === "ko" ? "등록 중..." : lang === "ja" ? "登録中..." : "Adding...") : (lang === "ko" ? "RAG 지식 등록" : lang === "ja" ? "RAG知識に登録" : "Add to RAG")}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2311,10 +2410,15 @@ export default function Dashboard() {
                           <button
                             type="button"
                             onClick={() => {
-                              setMessageFeedbacks(prev => ({
-                                ...prev,
-                                [idx]: prev[idx] === "like" ? (undefined as any) : "like",
-                              }));
+                              if (messageFeedbacks[idx] === "like") {
+                                setMessageFeedbacks(previous => {
+                                  const next = { ...previous };
+                                  delete next[idx];
+                                  return next;
+                                });
+                                return;
+                              }
+                              void persistChatFeedback(idx, "like");
                             }}
                             title={lang === "ko" ? "좋아요" : lang === "ja" ? "いいね" : "Helpful"}
                             className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
@@ -2383,7 +2487,7 @@ export default function Dashboard() {
                                           setOtherFeedbackText("");
                                           return;
                                         }
-                                        setMessageReasons(prev => ({ ...prev, [idx]: label }));
+                                        void persistChatFeedback(idx, "dislike", reasonItem.id as "inaccurate" | "insufficient" | "irrelevant", label);
                                         setOtherReasonIdx(null);
                                         setActiveDislikeIdx(null);
                                         toast.success(lang === "ko" ? "피드백이 반영되었습니다. 아래 버튼으로 답변을 다시 생성할 수 있습니다." : "Feedback saved. You can regenerate the answer below.");
@@ -2416,7 +2520,8 @@ export default function Dashboard() {
                                           type="button"
                                           disabled={!otherFeedbackText.trim()}
                                           onClick={() => {
-                                            setMessageReasons(prev => ({ ...prev, [idx]: `${lang === "ko" ? "기타" : lang === "ja" ? "その他" : "Other"}: ${otherFeedbackText.trim()}` }));
+                                            const reasonText = `${lang === "ko" ? "기타" : lang === "ja" ? "その他" : "Other"}: ${otherFeedbackText.trim()}`;
+                                            void persistChatFeedback(idx, "dislike", "other", reasonText);
                                             setOtherReasonIdx(null);
                                             setActiveDislikeIdx(null);
                                             toast.success(lang === "ko" ? "구체적인 피드백이 반영되었습니다." : "Detailed feedback saved.");

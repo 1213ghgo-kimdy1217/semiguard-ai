@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, socialAccountLinks, users, chatSessions, chatMessagesTable } from "../drizzle/schema";
+import { InsertUser, socialAccountLinks, users, chatSessions, chatMessagesTable, chatFeedback, manualChunks, manualDocuments } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, like, or } from "drizzle-orm";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -245,9 +245,10 @@ export async function getChatMessagesForSession(sessionId: number) {
 export async function addChatMessage(sessionId: number, role: "user" | "assistant", content: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(chatMessagesTable).values({ sessionId, role, content });
+  const result = await db.insert(chatMessagesTable).values({ sessionId, role, content });
   // Update session updatedAt
   await db.update(chatSessions).set({ updatedAt: new Date() }).where(eq(chatSessions.id, sessionId));
+  return Number(result[0].insertId);
 }
 
 export async function updateSessionTitle(sessionId: number, title: string) {
@@ -277,4 +278,109 @@ export async function deleteAllChatSessions(userId: number) {
     await db.delete(chatMessagesTable).where(eq(chatMessagesTable.sessionId, session.id));
   }
   await db.delete(chatSessions).where(eq(chatSessions.userId, userId));
+}
+
+export type FeedbackReasonCode = "inaccurate" | "insufficient" | "irrelevant" | "other";
+
+export async function createChatFeedback(input: {
+  userId: number;
+  sessionId: number;
+  messageId?: number;
+  messageContent: string;
+  feedbackType: "like" | "dislike";
+  reasonCode?: FeedbackReasonCode;
+  reasonText?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const ownedSession = await db.select({ id: chatSessions.id }).from(chatSessions)
+    .where(and(eq(chatSessions.id, input.sessionId), eq(chatSessions.userId, input.userId))).limit(1);
+  if (ownedSession.length === 0) throw new Error("Unauthorized session");
+
+  const result = await db.insert(chatFeedback).values({
+    userId: input.userId,
+    sessionId: input.sessionId,
+    messageId: input.messageId ?? null,
+    messageContent: input.messageContent.slice(0, 12000),
+    feedbackType: input.feedbackType,
+    reasonCode: input.reasonCode ?? null,
+    reasonText: input.reasonText?.slice(0, 500) ?? null,
+  });
+  return Number(result[0].insertId);
+}
+
+export async function getRecentChatFeedbackForUser(userId: number, limit = 12) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(chatFeedback)
+    .where(eq(chatFeedback.userId, userId))
+    .orderBy(desc(chatFeedback.createdAt))
+    .limit(Math.min(Math.max(limit, 1), 30));
+}
+
+export async function getChatFeedbackForSession(userId: number, sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(chatFeedback)
+    .where(and(eq(chatFeedback.userId, userId), eq(chatFeedback.sessionId, sessionId)))
+    .orderBy(desc(chatFeedback.createdAt));
+}
+
+export async function createManualDocumentWithChunks(input: {
+  userId: number;
+  title: string;
+  sourceType?: "text" | "upload";
+  fileKey?: string;
+  chunks: Array<{ content: string; keywords?: string }>;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const documentResult = await db.insert(manualDocuments).values({
+    userId: input.userId,
+    title: input.title.slice(0, 255),
+    sourceType: input.sourceType ?? "text",
+    fileKey: input.fileKey ?? null,
+  });
+  const documentId = Number(documentResult[0].insertId);
+  const safeChunks = input.chunks
+    .map((chunk, chunkIndex) => ({
+      documentId,
+      chunkIndex,
+      content: chunk.content.trim().slice(0, 12000),
+      keywords: chunk.keywords?.slice(0, 512) ?? null,
+    }))
+    .filter(chunk => chunk.content.length > 0);
+  if (safeChunks.length > 0) await db.insert(manualChunks).values(safeChunks);
+  return documentId;
+}
+
+export async function getManualDocumentsForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(manualDocuments)
+    .where(eq(manualDocuments.userId, userId))
+    .orderBy(desc(manualDocuments.updatedAt));
+}
+
+export async function searchManualChunksForUser(userId: number, query: string, limit = 3) {
+  const db = await getDb();
+  if (!db) return [];
+  const terms = Array.from(new Set(
+    query.toLowerCase().split(/[\s,./!?()[\]{}:;"'`~|\\]+/).map(term => term.trim()).filter(term => term.length >= 2),
+  )).slice(0, 5);
+  if (terms.length === 0) return [];
+  const termConditions = terms.flatMap(term => [
+    like(manualChunks.content, `%${term}%`),
+    like(manualChunks.keywords, `%${term}%`),
+  ]);
+  return db.select({
+    documentId: manualDocuments.id,
+    documentTitle: manualDocuments.title,
+    chunkIndex: manualChunks.chunkIndex,
+    content: manualChunks.content,
+  })
+    .from(manualChunks)
+    .innerJoin(manualDocuments, eq(manualChunks.documentId, manualDocuments.id))
+    .where(and(eq(manualDocuments.userId, userId), or(...termConditions)))
+    .limit(Math.min(Math.max(limit, 1), 5));
 }

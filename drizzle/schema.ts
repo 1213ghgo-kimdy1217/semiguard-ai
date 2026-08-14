@@ -1,4 +1,4 @@
-import { date, float, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { date, float, index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -160,3 +160,52 @@ export const chatMessagesTable = mysqlTable("chat_messages", {
 
 export type ChatMessageRecord = typeof chatMessagesTable.$inferSelect;
 export type InsertChatMessageRecord = typeof chatMessagesTable.$inferInsert;
+
+// 챗봇 메시지별 사용자 평가 이력. 원문 스냅샷을 보관해 답변 수정 후에도 피드백 근거를 유지한다.
+export const chatFeedback = mysqlTable("chat_feedback", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  sessionId: int("session_id").notNull(),
+  messageId: int("message_id"),
+  messageContent: text("message_content").notNull(),
+  feedbackType: mysqlEnum("feedback_type", ["like", "dislike"]).notNull(),
+  reasonCode: varchar("reason_code", { length: 32 }),
+  reasonText: text("reason_text"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  feedbackUserIndex: index("chat_feedback_user_idx").on(table.userId, table.createdAt),
+  feedbackSessionIndex: index("chat_feedback_session_idx").on(table.sessionId, table.createdAt),
+  feedbackMessageIndex: index("chat_feedback_message_idx").on(table.messageId),
+}));
+
+export type ChatFeedback = typeof chatFeedback.$inferSelect;
+export type InsertChatFeedback = typeof chatFeedback.$inferInsert;
+
+// 설비 매뉴얼 RAG: 문서의 저장 위치와 관리 정보를 보관한다. 실제 바이트는 S3에 저장한다.
+export const manualDocuments = mysqlTable("manual_documents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  fileKey: varchar("file_key", { length: 512 }),
+  sourceType: mysqlEnum("source_type", ["text", "upload"]).notNull().default("text"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  manualUserIndex: index("manual_documents_user_idx").on(table.userId, table.createdAt),
+}));
+
+export type ManualDocument = typeof manualDocuments.$inferSelect;
+
+// 매뉴얼 본문을 작은 검색 단위로 나눈 청크. 초기 버전은 키워드 검색으로 관련 근거를 찾아 LLM에 전달한다.
+export const manualChunks = mysqlTable("manual_chunks", {
+  id: int("id").autoincrement().primaryKey(),
+  documentId: int("document_id").notNull(),
+  chunkIndex: int("chunk_index").notNull(),
+  content: text("content").notNull(),
+  keywords: varchar("keywords", { length: 512 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  manualChunkDocumentIndex: index("manual_chunks_document_idx").on(table.documentId, table.chunkIndex),
+}));
+
+export type ManualChunk = typeof manualChunks.$inferSelect;

@@ -6,6 +6,17 @@ describe("SemiGuard AI Chatbot Procedure", () => {
     // @ts-ignore
     expect(appRouter._def.procedures["semiguard.chatWithAi"] || appRouter.semiguard.chatWithAi).toBeDefined();
   });
+
+  it("defines durable feedback and manual RAG procedures", () => {
+    // @ts-ignore
+    expect(appRouter.semiguard.saveChatFeedback).toBeDefined();
+    // @ts-ignore
+    expect(appRouter.semiguard.getChatFeedbacks).toBeDefined();
+    // @ts-ignore
+    expect(appRouter.semiguard.addManualText).toBeDefined();
+    // @ts-ignore
+    expect(appRouter.semiguard.getManualDocuments).toBeDefined();
+  });
 });
 
   it("defines chat session procedures in appRouter", () => {

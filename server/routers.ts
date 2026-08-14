@@ -31,6 +31,64 @@ function verifyPassword(password: string, encodedHash: string): boolean {
   return storedKey.length === derivedKey.length && timingSafeEqual(storedKey, derivedKey);
 }
 
+type ChatLanguage = "ko" | "en" | "ja";
+
+function getFeedbackStrategy(reasons: string[], lang: ChatLanguage) {
+  const combined = reasons.join(" ").toLowerCase();
+  const inaccurate = /inaccurate|정확|正確|incorrect|오류/.test(combined);
+  const insufficient = /insufficient|설명|근거|詳細|説明/.test(combined);
+  const irrelevant = /irrelevant|관련 없|関係ない|질문/.test(combined);
+  if (lang === "ko") {
+    if (inaccurate) return "수치와 정상 기준의 편차를 다시 계산하고, 확인되지 않은 사실은 단정하지 마세요.";
+    if (insufficient) return "센서별 근거, 원인 후보별 판단 이유, 점검 순서를 더 구체적으로 보완하세요.";
+    if (irrelevant) return "사용자의 가장 최근 질문 의도를 먼저 한 문장으로 재확인한 뒤, 그 질문에만 직접 답하세요.";
+    return "사용자가 남긴 구체적 의견을 우선 반영하고, 이전 답변의 부족한 점을 반복하지 마세요.";
+  }
+  if (lang === "ja") {
+    if (inaccurate) return "数値と正常基準からの偏差を再計算し、確認できない事実を断定しないでください。";
+    if (insufficient) return "センサー根拠、原因候補ごとの判断理由、点検手順をより具体的に補ってください。";
+    if (irrelevant) return "ユーザーの最新の質問意図を一文で確認してから、その質問に直接回答してください。";
+    return "ユーザーの具体的な意見を優先して反映し、以前の不足を繰り返さないでください。";
+  }
+  if (inaccurate) return "Recalculate deviations from the stated normal baselines and never present an unverified claim as fact.";
+  if (insufficient) return "Add sensor-by-sensor evidence, rationale for each cause candidate, and a concrete inspection sequence.";
+  if (irrelevant) return "Restate the user's latest intent in one sentence and answer that question directly.";
+  return "Prioritize the user's detailed feedback and avoid repeating the previous shortcoming.";
+}
+
+function buildEvidenceGate(sensorContext: {
+  current: number; temperature: number; vibration: number; noise: number; anomalyScore: number; riskLevel: string;
+}, lang: ChatLanguage) {
+  const sensors = [
+    { ko: "전류", en: "Current", ja: "電流", value: sensorContext.current, normal: 5, tolerance: 0.5, unit: "A" },
+    { ko: "온도", en: "Temperature", ja: "温度", value: sensorContext.temperature, normal: 45, tolerance: 3, unit: "°C" },
+    { ko: "진동", en: "Vibration", ja: "振動", value: sensorContext.vibration, normal: 2, tolerance: 0.3, unit: "mm/s" },
+    { ko: "소음", en: "Noise", ja: "騒音", value: sensorContext.noise, normal: 55, tolerance: 4, unit: "dB" },
+  ].map(sensor => ({ ...sensor, delta: sensor.value - sensor.normal, zScore: Math.abs(sensor.value - sensor.normal) / sensor.tolerance }))
+    .sort((a, b) => b.zScore - a.zScore);
+  const keySensors = sensors.slice(0, 2);
+  const evidence = keySensors.map(sensor => {
+    const name = lang === "ko" ? sensor.ko : lang === "ja" ? sensor.ja : sensor.en;
+    const signedDelta = `${sensor.delta >= 0 ? "+" : ""}${sensor.delta.toFixed(sensor.unit === "°C" || sensor.unit === "dB" ? 1 : 2)}`;
+    return `${name} ${sensor.value}${sensor.unit} (${signedDelta}${sensor.unit}, ${sensor.zScore.toFixed(1)}σ)`;
+  });
+  const confidence = sensorContext.anomalyScore >= 70 || keySensors[0].zScore >= 2.5
+    ? (lang === "ko" ? "높음" : lang === "ja" ? "高" : "High")
+    : sensorContext.anomalyScore >= 30 || keySensors[0].zScore >= 1.5
+      ? (lang === "ko" ? "보통" : lang === "ja" ? "中" : "Medium")
+      : (lang === "ko" ? "낮음" : lang === "ja" ? "低" : "Low");
+  const followUp = sensorContext.anomalyScore >= 70
+    ? (lang === "ko" ? "현장 점검 전까지 장비 상태를 지속 감시하고, 규정된 안전 절차에 따라 담당자에게 즉시 보고하세요." : lang === "ja" ? "現場点検まで設備状態を継続監視し、定められた安全手順に従って担当者へ直ちに報告してください。" : "Continue monitoring until inspection and report to the responsible operator under the approved safety procedure.")
+    : (lang === "ko" ? "최근 추이와 부품 점검 이력을 추가로 확인하세요." : lang === "ja" ? "直近の推移と部品点検履歴を追加で確認してください。" : "Verify the recent trend and the component inspection history.");
+  return { evidence, confidence, followUp };
+}
+
+function formatEvidenceGate(gate: ReturnType<typeof buildEvidenceGate>, lang: ChatLanguage) {
+  if (lang === "ko") return `\n\n---\n**[서버 검증 게이트]**\n- **근거 센서:** ${gate.evidence.join(" · ")}\n- **신뢰도:** ${gate.confidence} — 현재 실시간 수치와 규칙 기반 위험 점수에 근거함\n- **추가 확인 필요:** ${gate.followUp}`;
+  if (lang === "ja") return `\n\n---\n**[サーバー検証ゲート]**\n- **根拠センサー:** ${gate.evidence.join(" · ")}\n- **信頼度:** ${gate.confidence} — 現在の実測値とルールベースのリスクスコアに基づく\n- **追加確認事項:** ${gate.followUp}`;
+  return `\n\n---\n**[Server Validation Gate]**\n- **Evidence sensors:** ${gate.evidence.join(" · ")}\n- **Confidence:** ${gate.confidence} — based on live measurements and the rule-based risk score\n- **Further verification:** ${gate.followUp}`;
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -565,9 +623,46 @@ Guidelines:
     saveChatMessage: protectedProcedure
       .input(z.object({ sessionId: z.number(), role: z.enum(["user", "assistant"]), content: z.string() }))
       .mutation(async ({ input }) => {
-        await db.addChatMessage(input.sessionId, input.role, input.content);
-        return { success: true };
+        const messageId = await db.addChatMessage(input.sessionId, input.role, input.content);
+        return { success: true, messageId };
       }),
+
+    saveChatFeedback: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        messageId: z.number().optional(),
+        messageContent: z.string().min(1).max(12000),
+        feedbackType: z.enum(["like", "dislike"]),
+        reasonCode: z.enum(["inaccurate", "insufficient", "irrelevant", "other"]).optional(),
+        reasonText: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const feedbackId = await db.createChatFeedback({ ...input, userId: ctx.user.id });
+        return { feedbackId };
+      }),
+
+    getChatFeedbacks: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ ctx, input }) => db.getChatFeedbackForSession(ctx.user.id, input.sessionId)),
+
+    addManualText: protectedProcedure
+      .input(z.object({ title: z.string().trim().min(1).max(255), content: z.string().trim().min(50).max(60000) }))
+      .mutation(async ({ ctx, input }) => {
+        const paragraphs = input.content.split(/\n{2,}/).flatMap(paragraph => {
+          const trimmed = paragraph.trim();
+          if (trimmed.length <= 1200) return trimmed ? [trimmed] : [];
+          return Array.from({ length: Math.ceil(trimmed.length / 1200) }, (_, index) => trimmed.slice(index * 1200, (index + 1) * 1200));
+        });
+        const documentId = await db.createManualDocumentWithChunks({
+          userId: ctx.user.id,
+          title: input.title,
+          sourceType: "text",
+          chunks: paragraphs.map(content => ({ content, keywords: input.title })),
+        });
+        return { documentId, chunkCount: paragraphs.length };
+      }),
+
+    getManualDocuments: protectedProcedure.query(async ({ ctx }) => db.getManualDocumentsForUser(ctx.user.id)),
 
     // 세션 제목 변경
     updateChatSessionTitle: protectedProcedure
