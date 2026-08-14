@@ -2946,6 +2946,7 @@ export default function Dashboard() {
         aria-label={lang === "ko" ? "AI 수석 엔지니어 상담 열기" : lang === "ja" ? "AIシニアエンジニア相談を開く" : "Open AI expert chatbot"}
         className="fixed bottom-5 right-4 sm:bottom-8 sm:right-8 z-[495] flex items-center gap-2.5 sm:gap-3 px-5 py-4 sm:px-7 sm:py-5 rounded-full shadow-2xl font-extrabold text-sm sm:text-base transition-transform duration-200 hover:scale-[1.04] active:scale-[0.97]"
         style={{
+          bottom: isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined,
           background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))",
           color: "white",
           border: "2px solid oklch(0.85 0.14 200 / 0.7)",
