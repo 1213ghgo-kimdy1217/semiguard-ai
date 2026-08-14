@@ -791,6 +791,7 @@ export default function Dashboard() {
   const [manualTitle, setManualTitle] = useState("");
   const [manualContent, setManualContent] = useState("");
   const [manualSearchQuery, setManualSearchQuery] = useState("");
+  const [manualDocumentSort, setManualDocumentSort] = useState<"newest" | "oldest" | "title">("newest");
   const [debouncedManualSearch, setDebouncedManualSearch] = useState("");
   const [manualDocumentToDelete, setManualDocumentToDelete] = useState<number | null>(null);
   const [previewManualDocumentId, setPreviewManualDocumentId] = useState<number | null>(null);
@@ -941,6 +942,11 @@ export default function Dashboard() {
   const filteredManualDocuments = normalizedManualSearch
     ? (isManualSearchPending ? [] : (manualDocumentSearchQuery.data ?? []))
     : allManualDocuments;
+  const sortedManualDocuments = useMemo(() => [...filteredManualDocuments].sort((a, b) => {
+    if (manualDocumentSort === "title") return a.title.localeCompare(b.title);
+    const direction = manualDocumentSort === "newest" ? -1 : 1;
+    return direction * (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
+  }), [filteredManualDocuments, manualDocumentSort]);
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedManualSearch(normalizedManualSearch), 250);
     return () => window.clearTimeout(timer);
@@ -2865,6 +2871,21 @@ export default function Dashboard() {
                             </button>
                           )}
                         </div>
+                        <div className="mb-2 flex items-center justify-end gap-1.5">
+                          <label className="text-[9px] font-bold" htmlFor="rag-manual-sort" style={{ color: th.textMuted }}>
+                            {lang === "ko" ? "정렬" : lang === "ja" ? "並び替え" : "Sort"}
+                          </label>
+                          <select
+                            id="rag-manual-sort"
+                            value={manualDocumentSort}
+                            onChange={event => setManualDocumentSort(event.target.value as "newest" | "oldest" | "title")}
+                            className="rounded border px-1.5 py-1 text-[9px] outline-none focus:ring-1 focus:ring-amber-500"
+                            style={{ borderColor: th.border2, background: th.bgCard, color: th.textMuted }}>
+                            <option value="newest">{lang === "ko" ? "최신순" : lang === "ja" ? "新しい順" : "Newest"}</option>
+                            <option value="oldest">{lang === "ko" ? "오래된순" : lang === "ja" ? "古い順" : "Oldest"}</option>
+                            <option value="title">{lang === "ko" ? "제목순" : lang === "ja" ? "タイトル順" : "Title"}</option>
+                          </select>
+                        </div>
                         {isManualSearching ? (
                           <p className="py-3 text-center text-[10px]" style={{ color: th.textMuted }}>
                             {isManualSearchPending
@@ -2878,9 +2899,9 @@ export default function Dashboard() {
                               ↻ {manualDocumentSearchQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                             </button>
                           </div>
-                        ) : filteredManualDocuments.length > 0 ? (
+                        ) : sortedManualDocuments.length > 0 ? (
                         <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
-                        {filteredManualDocuments.map(document => (
+                        {sortedManualDocuments.map(document => (
                           <div key={document.id} className="rounded-lg border p-2" style={{ borderColor: th.border2, background: th.bgCard }}>
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
