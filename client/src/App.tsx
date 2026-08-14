@@ -4,11 +4,22 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Dashboard from "./pages/Dashboard";
 import { Login } from "./pages/Login";
 import Signup from "./pages/Signup";
 import { useAuth } from "./_core/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+
+function DashboardModuleLoading() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 to-slate-800 px-6 text-center" role="status" aria-live="polite">
+      <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" />
+      <p className="text-sm font-semibold text-slate-100">SemiGuard AI 대시보드를 준비하고 있습니다.</p>
+      <p className="text-xs text-slate-400">Preparing the SemiGuard AI dashboard…</p>
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -53,7 +64,9 @@ function Router() {
       <Route path={"/login"} component={Login} />
       <Route path={"/"}>
         <ProtectedRoute>
-          <Dashboard />
+          <Suspense fallback={<DashboardModuleLoading />}>
+            <Dashboard />
+          </Suspense>
         </ProtectedRoute>
       </Route>
       <Route path={"/404"} component={NotFound} />
