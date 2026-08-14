@@ -8,7 +8,8 @@ describe("consultation history CSV export contract", () => {
   it("exports the full current filtered and sorted session result, not only the current page", () => {
     expect(dashboardSource).toContain("const exportFilteredChatSessionsCsv = () =>");
     expect(dashboardSource).toContain("filteredAndSortedChatSessions.map(session");
-    expect(dashboardSource).toContain("semiguard-consultations-");
+    expect(dashboardSource).toContain('"semiguard-consultations"');
+    expect(dashboardSource).toContain("const filenamePrefix");
     expect(dashboardSource).toContain("text/csv;charset=utf-8;");
   });
 

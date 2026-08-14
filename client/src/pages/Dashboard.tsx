@@ -1057,8 +1057,9 @@ export default function Dashboard() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
+    const filenamePrefix = lang === "ko" ? "세미가드_상담기록" : lang === "ja" ? "セミガード_相談履歴" : "semiguard-consultations";
     anchor.href = url;
-    anchor.download = `semiguard-consultations-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
