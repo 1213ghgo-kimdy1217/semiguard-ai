@@ -7,7 +7,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 describe("operational statistics reliability contract", () => {
   it("does not present failed KPI data as current zero-valued statistics", () => {
     expect(dashboardSource).toContain('value={getStats.isError ? "—"');
-    expect(dashboardSource).toContain('{getStats.isError ? "—" : `₩${displayedSavedCost.toLocaleString()}`}');
+    expect(dashboardSource).toContain('{getStats.isError || statsInitialLoading ? "—" : `₩${displayedSavedCost.toLocaleString()}`}');
     expect(dashboardSource).toContain("KPI와 예상 절감 비용은 최신 값이 아닐 수 있습니다.");
   });
 

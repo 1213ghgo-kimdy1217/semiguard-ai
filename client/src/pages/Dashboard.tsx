@@ -380,11 +380,11 @@ function CustomTooltip(props: any) {
 }
 
 // ─── 임팩트 통계 카드 ────────────────────────────────────────────────────────
-function ImpactCard({ label, value, unit, icon, color }: {
-  label: string; value: string | number; unit?: string; icon: string; color: string;
+function ImpactCard({ label, value, unit, icon, color, isLoading = false, loadingLabel }: {
+  label: string; value: string | number; unit?: string; icon: string; color: string; isLoading?: boolean; loadingLabel?: string;
 }) {
   return (
-    <div className="rounded-xl p-4 border flex flex-col gap-2"
+    <div className="rounded-xl p-4 border flex flex-col gap-2" aria-busy={isLoading || undefined}
       style={{ background: "rgba(255,255,255,0.025)", borderColor: `${color}35` }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{label}</span>
@@ -392,10 +392,11 @@ function ImpactCard({ label, value, unit, icon, color }: {
       </div>
       <div className="flex items-end gap-1.5">
         <span className="text-2xl font-bold font-mono leading-none" style={{ color }}>
-          {typeof value === "number" ? value.toLocaleString() : value}
+          {isLoading ? "—" : (typeof value === "number" ? value.toLocaleString() : value)}
         </span>
         {unit && <span className="text-xs text-muted-foreground mb-0.5">{unit}</span>}
       </div>
+      {isLoading && loadingLabel && <span className="text-[10px] text-muted-foreground">{loadingLabel}</span>}
     </div>
   );
 }
@@ -1919,6 +1920,8 @@ export default function Dashboard() {
   const safetyMonitoringHasError = getStats.isError || getLogs.isError || getDailyMaxRisk.isError || getRecentScoresQuery.isError;
   const safetyMonitoringInitializing = getStats.isLoading || getLogs.isLoading || getDailyMaxRisk.isLoading || getRecentScoresQuery.isLoading;
   const safetyMonitoringRetrying = getStats.isFetching || getLogs.isFetching || getDailyMaxRisk.isFetching || getRecentScoresQuery.isFetching;
+  const statsInitialLoading = getStats.isLoading && !getStats.data;
+  const statsLoadingLabel = lang === "ko" ? "통계를 불러오는 중..." : lang === "ja" ? "統計を読み込み中..." : "Loading statistics...";
   const retrySafetyMonitoring = () => {
     void getStats.refetch();
     void getLogs.refetch();
@@ -4859,10 +4862,10 @@ export default function Dashboard() {
           <>
             {/* 임팩트 통계 섹션 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <ImpactCard label={t.totalVisitors} value={getStats.isError ? "—" : (getStats.data?.totalVisitors ?? 0)} icon="👥" color="#38bdf8" />
-              <ImpactCard label={t.totalDetections} value={getStats.isError ? "—" : (getStats.data?.totalDetections ?? 0)} icon="📊" color="#a78bfa" />
-              <ImpactCard label={t.dangerCount} value={getStats.isError ? "—" : (getStats.data?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" />
-              <ImpactCard label={t.uptimePct} value={getStats.isError ? "—" : `${getStats.data?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" />
+              <ImpactCard label={t.totalVisitors} value={getStats.isError ? "—" : (getStats.data?.totalVisitors ?? 0)} icon="👥" color="#38bdf8" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} />
+              <ImpactCard label={t.totalDetections} value={getStats.isError ? "—" : (getStats.data?.totalDetections ?? 0)} icon="📊" color="#a78bfa" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} />
+              <ImpactCard label={t.dangerCount} value={getStats.isError ? "—" : (getStats.data?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} />
+              <ImpactCard label={t.uptimePct} value={getStats.isError ? "—" : `${getStats.data?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} />
             </div>
 
             {getStats.isError && (
@@ -4880,10 +4883,10 @@ export default function Dashboard() {
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t.savedCost}</p>
               <div className="flex items-end gap-2">
                 <span className="text-3xl font-bold font-mono" style={{ color: "#22c55e" }}>
-                  {getStats.isError ? "—" : `₩${displayedSavedCost.toLocaleString()}`}
+                  {getStats.isError || statsInitialLoading ? "—" : `₩${displayedSavedCost.toLocaleString()}`}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">{t.impactDesc}</p>
+              <p className="text-xs text-muted-foreground mt-2">{statsInitialLoading ? statsLoadingLabel : t.impactDesc}</p>
             </div>
 
             {/* 메인 대시보드 그리드 */}
