@@ -225,7 +225,21 @@ export async function createLocalUser(input: {
 export async function getChatSessions(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(chatSessions).where(eq(chatSessions.userId, userId)).orderBy(desc(chatSessions.isPinned), desc(chatSessions.updatedAt));
+  return db
+    .select({
+      id: chatSessions.id,
+      userId: chatSessions.userId,
+      title: chatSessions.title,
+      isPinned: chatSessions.isPinned,
+      createdAt: chatSessions.createdAt,
+      updatedAt: chatSessions.updatedAt,
+      messageCount: count(chatMessagesTable.id),
+    })
+    .from(chatSessions)
+    .leftJoin(chatMessagesTable, eq(chatMessagesTable.sessionId, chatSessions.id))
+    .where(eq(chatSessions.userId, userId))
+    .groupBy(chatSessions.id)
+    .orderBy(desc(chatSessions.isPinned), desc(chatSessions.updatedAt));
 }
 
 export async function createChatSession(userId: number, title: string = "새로운 상담") {

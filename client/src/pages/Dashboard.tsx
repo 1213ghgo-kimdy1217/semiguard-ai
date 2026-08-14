@@ -2876,6 +2876,8 @@ export default function Dashboard() {
                               <p className="font-bold truncate">{session.title}</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">
                                 {new Date(session.updatedAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US")}
+                                <span className="mx-1 opacity-50">·</span>
+                                {session.messageCount}{lang === "ko" ? "개 메시지" : lang === "ja" ? "件のメッセージ" : " messages"}
                               </p>
                             </>
                           )}
