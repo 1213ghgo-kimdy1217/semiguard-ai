@@ -11,12 +11,30 @@ import { lazy, Suspense, useEffect, useState } from "react";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 
+type LoadingLanguage = "ko" | "en" | "ja";
+
+const dashboardLoadingCopy: Record<LoadingLanguage, { title: string; description: string }> = {
+  ko: { title: "SemiGuard AI 대시보드를 준비하고 있습니다.", description: "대시보드 데이터를 불러오는 중입니다…" },
+  en: { title: "Preparing the SemiGuard AI dashboard…", description: "Loading dashboard data…" },
+  ja: { title: "SemiGuard AIダッシュボードを準備しています。", description: "ダッシュボードのデータを読み込み中です…" },
+};
+
+function getDashboardLoadingLanguage(): LoadingLanguage {
+  try {
+    const value = localStorage.getItem("semiguard_lang");
+    return value === "en" || value === "ja" || value === "ko" ? value : "ko";
+  } catch {
+    return "ko";
+  }
+}
+
 function DashboardModuleLoading() {
+  const copy = dashboardLoadingCopy[getDashboardLoadingLanguage()];
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 to-slate-800 px-6 text-center" role="status" aria-live="polite">
       <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" />
-      <p className="text-sm font-semibold text-slate-100">SemiGuard AI 대시보드를 준비하고 있습니다.</p>
-      <p className="text-xs text-slate-400">Preparing the SemiGuard AI dashboard…</p>
+      <p className="text-sm font-semibold text-slate-100">{copy.title}</p>
+      <p className="text-xs text-slate-400">{copy.description}</p>
     </div>
   );
 }
