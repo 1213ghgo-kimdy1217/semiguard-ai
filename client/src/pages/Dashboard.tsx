@@ -990,6 +990,23 @@ export default function Dashboard() {
     setFeedbackKeywordSummary(null);
   }, [feedbackHistoryFilter, feedbackReasonFilter, feedbackHistorySearch, feedbackHistoryStartDate, feedbackHistoryEndDate, feedbackHistorySort]);
 
+  const hasActiveFeedbackFilters = feedbackHistoryFilter !== "all"
+    || feedbackReasonFilter !== "all"
+    || feedbackHistorySearch.trim().length > 0
+    || feedbackHistoryStartDate.length > 0
+    || feedbackHistoryEndDate.length > 0
+    || feedbackHistorySort !== "newest";
+  const resetFeedbackHistoryFilters = () => {
+    setFeedbackHistoryFilter("all");
+    setFeedbackReasonFilter("all");
+    setFeedbackHistorySearch("");
+    setFeedbackHistoryStartDate("");
+    setFeedbackHistoryEndDate("");
+    setFeedbackHistorySort("newest");
+    setFeedbackHistoryPage(1);
+    setFeedbackKeywordSummary(null);
+  };
+
   useEffect(() => {
     setFeedbackHistoryPage(currentPage => Math.min(currentPage, feedbackHistoryTotalPages));
   }, [feedbackHistoryTotalPages]);
@@ -3504,6 +3521,16 @@ export default function Dashboard() {
                       </>
                     )}
                   </div>
+                  {hasActiveFeedbackFilters && (
+                    <button
+                      type="button"
+                      onClick={resetFeedbackHistoryFilters}
+                      title={lang === "ko" ? "피드백 필터를 모두 초기화" : lang === "ja" ? "フィードバックフィルターをすべてリセット" : "Reset all feedback filters"}
+                      className="rounded-lg border px-2 py-1 text-[9px] font-bold transition-all hover:opacity-80 active:scale-95"
+                      style={{ borderColor: th.border2, color: th.textMuted, background: th.bgCard }}>
+                      ↺ {lang === "ko" ? "필터 초기화" : lang === "ja" ? "フィルターをリセット" : "Reset filters"}
+                    </button>
+                  )}
                   {!!allFeedbackHistory.length && (
                     <div className="flex items-center gap-1">
                       <button
