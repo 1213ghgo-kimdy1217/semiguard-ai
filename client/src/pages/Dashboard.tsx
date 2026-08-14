@@ -161,6 +161,39 @@ function ButtonSpinner({ color }: { color: string }) {
   );
 }
 
+function SensorFreshnessIndicator({ timestamp, lang }: { timestamp?: number; lang: Lang }) {
+  const [clock, setClock] = useState(() => Date.now());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const ageSeconds = timestamp ? Math.max(0, Math.floor((clock - timestamp) / 1000)) : null;
+  const freshness = ageSeconds === null ? "waiting" : ageSeconds <= 5 ? "fresh" : ageSeconds <= 12 ? "delayed" : "stale";
+  const label = freshness === "fresh"
+    ? (lang === "ko" ? `갱신 ${ageSeconds}초 전` : lang === "ja" ? `${ageSeconds}秒前に更新` : `Updated ${ageSeconds}s ago`)
+    : freshness === "delayed"
+      ? (lang === "ko" ? `갱신 지연 ${ageSeconds}초` : lang === "ja" ? `更新遅延 ${ageSeconds}秒` : `Update delayed ${ageSeconds}s`)
+      : freshness === "stale"
+        ? (lang === "ko" ? `데이터 지연 ${ageSeconds}초` : lang === "ja" ? `データ遅延 ${ageSeconds}秒` : `Data stale ${ageSeconds}s`)
+        : (lang === "ko" ? "센서 데이터 대기 중" : lang === "ja" ? "センサーデータ待機中" : "Waiting for sensor data");
+  const color = freshness === "fresh" ? "oklch(0.70 0.18 145)" : freshness === "delayed" ? "oklch(0.78 0.17 85)" : freshness === "stale" ? "oklch(0.72 0.18 30)" : "oklch(0.75 0.18 200)";
+
+  return (
+    <>
+      <div className="hidden xl:flex items-center gap-1.5 text-[10px] font-semibold" role="img" aria-label={label} title={label} style={{ color }}>
+        <span aria-hidden="true" className={`h-2 w-2 rounded-full ${freshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: color }} />
+        {label}
+      </div>
+      <div className="flex h-7 w-7 items-center justify-center rounded-full border sm:w-auto sm:gap-1.5 sm:px-2 xl:hidden" role="img" aria-label={label} title={label} style={{ borderColor: `${color}80`, color, background: `${color}1A` }}>
+        <span aria-hidden="true" className={`h-2 w-2 rounded-full ${freshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: color }} />
+        <span className="hidden text-[10px] font-bold sm:inline">{ageSeconds === null ? "…" : `${ageSeconds}s`}</span>
+      </div>
+    </>
+  );
+}
+
 const RISK_COLORS: Record<RiskLevel, string> = {
   normal: "#22c55e",
   caution: "#eab308",
@@ -1894,7 +1927,6 @@ export default function Dashboard() {
   };
 
   const [lastInjectedMode, setLastInjectedMode] = useState<RiskLevel | null>(null);
-  const [sensorFreshnessClock, setSensorFreshnessClock] = useState(() => Date.now());
 
   // ─── 센서별 임계값 state ─────────────────────────────────────────────────────
   const [sensorThresh, setSensorThresh] = useState({
@@ -1919,24 +1951,8 @@ export default function Dashboard() {
   const sensorData = current?.sensorData;
   const anomalyScore = current?.anomalyScore ?? 0;
   const riskLevel = current?.riskLevel ?? "normal";
-  const sensorDataAgeSeconds = sensorData?.timestamp
-    ? Math.max(0, Math.floor((sensorFreshnessClock - Number(sensorData.timestamp)) / 1000))
-    : null;
-  const sensorFreshness = sensorDataAgeSeconds === null ? "waiting" : sensorDataAgeSeconds <= 5 ? "fresh" : sensorDataAgeSeconds <= 12 ? "delayed" : "stale";
-  const sensorFreshnessCopy = sensorFreshness === "fresh"
-    ? (lang === "ko" ? `갱신 ${sensorDataAgeSeconds}초 전` : lang === "ja" ? `${sensorDataAgeSeconds}秒前に更新` : `Updated ${sensorDataAgeSeconds}s ago`)
-    : sensorFreshness === "delayed"
-      ? (lang === "ko" ? `갱신 지연 ${sensorDataAgeSeconds}초` : lang === "ja" ? `更新遅延 ${sensorDataAgeSeconds}秒` : `Update delayed ${sensorDataAgeSeconds}s`)
-      : sensorFreshness === "stale"
-        ? (lang === "ko" ? `데이터 지연 ${sensorDataAgeSeconds}초` : lang === "ja" ? `データ遅延 ${sensorDataAgeSeconds}秒` : `Data stale ${sensorDataAgeSeconds}s`)
-        : (lang === "ko" ? "센서 데이터 대기 중" : lang === "ja" ? "センサーデータ待機中" : "Waiting for sensor data");
-  const sensorFreshnessColor = sensorFreshness === "fresh" ? "oklch(0.70 0.18 145)" : sensorFreshness === "delayed" ? "oklch(0.78 0.17 85)" : sensorFreshness === "stale" ? "oklch(0.72 0.18 30)" : "oklch(0.75 0.18 200)";
   const quickChatPrompts = getQuickChatPrompts(riskLevel, lang);
   const logs = logsData ?? [];
-  useEffect(() => {
-    const intervalId = window.setInterval(() => setSensorFreshnessClock(Date.now()), 1000);
-    return () => window.clearInterval(intervalId);
-  }, []);
   // 새 기록 배너: logs 개수 증가 감지
   useEffect(() => {
     const prev = prevLogCountRef.current;
@@ -2693,14 +2709,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 sm:gap-4">
           {!isMobile && <HeartbeatIndicator alive={heartbeatAlive} t={t} />}
           {!isMobile && <div className="w-px h-5 bg-border" />}
-          <div className="hidden xl:flex items-center gap-1.5 text-[10px] font-semibold" role="img" aria-label={sensorFreshnessCopy} title={sensorFreshnessCopy} style={{ color: sensorFreshnessColor }}>
-            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${sensorFreshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: sensorFreshnessColor }} />
-            {sensorFreshnessCopy}
-          </div>
-          <div className="flex h-7 w-7 items-center justify-center rounded-full border sm:w-auto sm:gap-1.5 sm:px-2 xl:hidden" role="img" aria-label={sensorFreshnessCopy} title={sensorFreshnessCopy} style={{ borderColor: `${sensorFreshnessColor}80`, color: sensorFreshnessColor, background: `${sensorFreshnessColor}1A` }}>
-            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${sensorFreshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: sensorFreshnessColor }} />
-            <span className="hidden text-[10px] font-bold sm:inline">{sensorDataAgeSeconds === null ? "…" : `${sensorDataAgeSeconds}s`}</span>
-          </div>
+          <SensorFreshnessIndicator timestamp={sensorData?.timestamp} lang={lang} />
           <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold" title={safetyMonitoringHasError ? (lang === "ko" ? "일부 안전 데이터 조회를 복구해야 합니다." : lang === "ja" ? "一部の安全データの復旧が必要です。" : "Some safety data needs recovery.") : safetyMonitoringInitializing ? (lang === "ko" ? "안전 데이터를 동기화하는 중입니다." : lang === "ja" ? "安全データを同期中です。" : "Synchronizing safety data.") : (lang === "ko" ? "핵심 안전 데이터가 연결되었습니다." : lang === "ja" ? "主要な安全データに接続されています。" : "Core safety data is connected.") } style={{ color: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }}>
             <span className={`h-2 w-2 rounded-full ${safetyMonitoringInitializing && !safetyMonitoringHasError ? "animate-pulse" : ""}`} style={{ background: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }} />
             {safetyMonitoringHasError ? (lang === "ko" ? "복구 필요" : lang === "ja" ? "復旧が必要" : "Recovery needed") : safetyMonitoringInitializing ? (lang === "ko" ? "동기화 중" : lang === "ja" ? "同期中" : "Syncing") : (lang === "ko" ? "데이터 연결" : lang === "ja" ? "データ接続" : "Data connected")}

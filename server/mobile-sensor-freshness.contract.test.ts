@@ -11,7 +11,7 @@ describe("mobile sensor freshness contract", () => {
   });
 
   it("exposes the full localized freshness status without repeatedly announcing its timer", () => {
-    expect(dashboardSource).toContain('role="img" aria-label={sensorFreshnessCopy} title={sensorFreshnessCopy}');
+    expect(dashboardSource).toContain('role="img" aria-label={label} title={label}');
     expect(dashboardSource).toContain('aria-hidden="true" className={`h-2 w-2 rounded-full');
   });
 });
