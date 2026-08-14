@@ -318,6 +318,22 @@ export async function getRecentChatFeedbackForUser(userId: number, limit = 12) {
     .limit(Math.min(Math.max(limit, 1), 30));
 }
 
+export async function deleteChatFeedbackForUser(userId: number, feedbackId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  // userId 조건을 함께 사용하여 다른 사용자의 피드백은 삭제할 수 없도록 보장합니다.
+  const result = await db.delete(chatFeedback)
+    .where(and(eq(chatFeedback.id, feedbackId), eq(chatFeedback.userId, userId)));
+  return Number(result[0].affectedRows ?? 0) > 0;
+}
+
+export async function deleteAllChatFeedbackForUser(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.delete(chatFeedback).where(eq(chatFeedback.userId, userId));
+  return Number(result[0].affectedRows ?? 0);
+}
+
 export async function getChatFeedbackForSession(userId: number, sessionId: number) {
   const db = await getDb();
   if (!db) return [];

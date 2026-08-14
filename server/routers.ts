@@ -690,6 +690,19 @@ Guidelines:
         return { updated };
       }),
 
+    deleteChatFeedback: protectedProcedure
+      .input(z.object({ feedbackId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const deleted = await db.deleteChatFeedbackForUser(ctx.user.id, input.feedbackId);
+        return { deleted };
+      }),
+
+    deleteAllChatFeedbacks: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const deletedCount = await db.deleteAllChatFeedbackForUser(ctx.user.id);
+        return { deletedCount };
+      }),
+
     addManualText: protectedProcedure
       .input(z.object({ title: z.string().trim().min(1).max(255), content: z.string().trim().min(50).max(60000) }))
       .mutation(async ({ ctx, input }) => {

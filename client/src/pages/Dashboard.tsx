@@ -732,6 +732,9 @@ export default function Dashboard() {
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [showFeedbackHistoryPanel, setShowFeedbackHistoryPanel] = useState(false);
   const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
+  const [feedbackHistoryFilter, setFeedbackHistoryFilter] = useState<"all" | "like" | "dislike">("all");
+  const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
+  const [showDeleteAllFeedbackConfirm, setShowDeleteAllFeedbackConfirm] = useState(false);
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
@@ -739,6 +742,8 @@ export default function Dashboard() {
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
   const attachRegeneratedAnswerMutation = trpc.semiguard.attachRegeneratedAnswer.useMutation();
+  const deleteChatFeedbackMutation = trpc.semiguard.deleteChatFeedback.useMutation();
+  const deleteAllChatFeedbacksMutation = trpc.semiguard.deleteAllChatFeedbacks.useMutation();
   const feedbackHistoryQuery = trpc.semiguard.getFeedbackHistory.useQuery(
     { limit: 20 },
     { enabled: isChatOpen && showFeedbackHistoryPanel },
@@ -2430,14 +2435,112 @@ export default function Dashboard() {
                     ✕
                   </button>
                 </div>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1 rounded-lg border p-1" style={{ borderColor: th.border2, background: th.bgCard }}>
+                    {([
+                      { id: "all", ko: "전체", ja: "すべて", en: "All", icon: "☷" },
+                      { id: "like", ko: "긍정", ja: "肯定", en: "Positive", icon: "👍" },
+                      { id: "dislike", ko: "부정", ja: "否定", en: "Negative", icon: "👎" },
+                    ] as const).map(filter => (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => setFeedbackHistoryFilter(filter.id)}
+                        className="rounded-md px-2 py-1 text-[9px] font-bold transition-all active:scale-95"
+                        style={{
+                          background: feedbackHistoryFilter === filter.id ? "oklch(0.62 0.20 300 / 0.20)" : "transparent",
+                          color: feedbackHistoryFilter === filter.id ? (isDark ? "oklch(0.86 0.14 300)" : "oklch(0.42 0.20 300)") : th.textMuted,
+                        }}>
+                        {filter.icon} {lang === "ko" ? filter.ko : lang === "ja" ? filter.ja : filter.en}
+                      </button>
+                    ))}
+                  </div>
+                  {!!feedbackHistoryQuery.data?.length && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteAllFeedbackConfirm(true)}
+                      className="rounded-lg border border-red-500/35 bg-red-500/10 px-2 py-1 text-[9px] font-bold text-red-400 transition-all hover:bg-red-500/20 active:scale-95">
+                      🗑️ {lang === "ko" ? "전체 삭제" : lang === "ja" ? "すべて削除" : "Clear all"}
+                    </button>
+                  )}
+                </div>
+                {feedbackToDelete !== null && (
+                  <div className="absolute inset-0 z-[590] flex flex-col items-center justify-center rounded-xl bg-black/80 p-4 text-center backdrop-blur-md animate-fadeIn">
+                    <p className="text-xs font-bold text-red-300">
+                      ⚠️ {lang === "ko" ? "이 피드백 기록을 삭제할까요?" : lang === "ja" ? "このフィードバック履歴を削除しますか？" : "Delete this feedback record?"}
+                    </p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                      {lang === "ko" ? "연결된 재생성 답변도 함께 삭제되며 되돌릴 수 없습니다." : lang === "ja" ? "関連する再生成回答も一緒に削除され、元に戻せません。" : "Its linked regenerated answer will also be removed permanently."}
+                    </p>
+                    <div className="mt-4 flex items-center gap-2">
+                      <button type="button" onClick={() => setFeedbackToDelete(null)} className="rounded-lg border px-3 py-1.5 text-xs font-bold" style={{ borderColor: th.border2, color: th.textMuted }}>
+                        {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deleteChatFeedbackMutation.isPending}
+                        onClick={async () => {
+                          try {
+                            const result = await deleteChatFeedbackMutation.mutateAsync({ feedbackId: feedbackToDelete });
+                            if (result.deleted) {
+                              toast.success(lang === "ko" ? "피드백 기록을 삭제했습니다." : lang === "ja" ? "フィードバック履歴を削除しました。" : "Feedback record deleted.");
+                              chatUtils.semiguard.getFeedbackHistory.invalidate();
+                            }
+                          } catch (error) {
+                            console.error("Failed to delete feedback:", error);
+                            toast.error(lang === "ko" ? "피드백 기록을 삭제하지 못했습니다." : lang === "ja" ? "フィードバック履歴を削除できませんでした。" : "Could not delete feedback record.");
+                          } finally {
+                            setFeedbackToDelete(null);
+                          }
+                        }}
+                        className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+                        {deleteChatFeedbackMutation.isPending ? (lang === "ko" ? "삭제 중" : lang === "ja" ? "削除中" : "Deleting") : (lang === "ko" ? "삭제" : lang === "ja" ? "削除" : "Delete")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {showDeleteAllFeedbackConfirm && (
+                  <div className="absolute inset-0 z-[590] flex flex-col items-center justify-center rounded-xl bg-black/80 p-4 text-center backdrop-blur-md animate-fadeIn">
+                    <p className="text-xs font-bold text-red-300">
+                      ⚠️ {lang === "ko" ? "모든 피드백 기록을 삭제할까요?" : lang === "ja" ? "すべてのフィードバック履歴を削除しますか？" : "Delete all feedback records?"}
+                    </p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                      {lang === "ko" ? "좋아요·아쉬워요·사유와 재생성 답변을 포함한 모든 피드백 기록이 영구 삭제됩니다." : lang === "ja" ? "いいね・イマイチ・理由・再生成回答を含むすべての履歴が完全に削除されます。" : "All ratings, reasons, and regenerated answers will be permanently deleted."}
+                    </p>
+                    <div className="mt-4 flex items-center gap-2">
+                      <button type="button" onClick={() => setShowDeleteAllFeedbackConfirm(false)} className="rounded-lg border px-3 py-1.5 text-xs font-bold" style={{ borderColor: th.border2, color: th.textMuted }}>
+                        {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deleteAllChatFeedbacksMutation.isPending}
+                        onClick={async () => {
+                          try {
+                            const result = await deleteAllChatFeedbacksMutation.mutateAsync();
+                            toast.success(lang === "ko" ? `${result.deletedCount}개 피드백 기록을 삭제했습니다.` : lang === "ja" ? `${result.deletedCount}件のフィードバック履歴を削除しました。` : `Deleted ${result.deletedCount} feedback records.`);
+                            chatUtils.semiguard.getFeedbackHistory.invalidate();
+                            setFeedbackHistoryFilter("all");
+                          } catch (error) {
+                            console.error("Failed to delete all feedback:", error);
+                            toast.error(lang === "ko" ? "전체 피드백 기록을 삭제하지 못했습니다." : lang === "ja" ? "すべてのフィードバック履歴を削除できませんでした。" : "Could not delete all feedback records.");
+                          } finally {
+                            setShowDeleteAllFeedbackConfirm(false);
+                          }
+                        }}
+                        className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+                        {deleteAllChatFeedbacksMutation.isPending ? (lang === "ko" ? "삭제 중" : lang === "ja" ? "削除中" : "Deleting") : (lang === "ko" ? "전체 삭제" : lang === "ja" ? "すべて削除" : "Delete all")}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                   {feedbackHistoryQuery.isLoading ? (
                     <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
                       <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>{lang === "ko" ? "피드백 이력 불러오는 중..." : lang === "ja" ? "フィードバック履歴を読み込み中..." : "Loading feedback history..."}</span>
                     </div>
-                  ) : feedbackHistoryQuery.data && feedbackHistoryQuery.data.length > 0 ? (
-                    feedbackHistoryQuery.data.map(item => {
+                  ) : feedbackHistoryQuery.data && feedbackHistoryQuery.data.filter(item => feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter).length > 0 ? (
+                    feedbackHistoryQuery.data.filter(item => feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter).map(item => {
                       const reasonLabelMap: Record<string, { ko: string; ja: string; en: string }> = {
                         inaccurate: { ko: "정확하지 않음", ja: "正確ではない", en: "Inaccurate" },
                         insufficient: { ko: "설명 및 근거 부족", ja: "説明・根拠が不足", en: "Insufficient details" },
@@ -2460,9 +2563,18 @@ export default function Dashboard() {
                                 ? `👍 ${lang === "ko" ? "좋아요" : lang === "ja" ? "いいね" : "Helpful"}`
                                 : `👎 ${lang === "ko" ? "아쉬워요" : lang === "ja" ? "イマイチ" : "Not helpful"}`}
                             </span>
-                            <span className="text-[9px]" style={{ color: th.textMuted }}>
-                              {new Date(item.createdAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-[9px]" style={{ color: th.textMuted }}>
+                                {new Date(item.createdAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setFeedbackToDelete(item.id)}
+                                title={lang === "ko" ? "이 피드백 삭제" : lang === "ja" ? "このフィードバックを削除" : "Delete feedback"}
+                                className="rounded p-0.5 text-[10px] text-red-400 transition-all hover:bg-red-500/15 hover:text-red-300 active:scale-95">
+                                🗑️
+                              </button>
+                            </div>
                           </div>
                           {reasonLabel && (
                             <p className="mt-1.5 text-[10px] font-bold" style={{ color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
@@ -2501,11 +2613,13 @@ export default function Dashboard() {
                     })
                   ) : (
                     <p className="py-8 text-center text-[11px] text-muted-foreground leading-relaxed">
-                      {lang === "ko"
-                        ? "저장된 피드백 이력이 없습니다. AI 답변에 좋아요·아쉬워요를 남기면 여기에 모입니다."
-                        : lang === "ja"
-                          ? "保存されたフィードバック履歴がありません。AIの回答に評価を残すとここに表示されます。"
-                          : "No feedback yet. Rate an AI answer and it will appear here."}
+                      {feedbackHistoryQuery.data && feedbackHistoryQuery.data.length > 0
+                        ? (lang === "ko" ? "선택한 평가 유형의 피드백 기록이 없습니다." : lang === "ja" ? "選択した評価タイプのフィードバック履歴はありません。" : "No feedback records match this filter.")
+                        : (lang === "ko"
+                          ? "저장된 피드백 이력이 없습니다. AI 답변에 좋아요·아쉬워요를 남기면 여기에 모입니다."
+                          : lang === "ja"
+                            ? "保存されたフィードバック履歴がありません。AIの回答に評価を残すとここに表示されます。"
+                            : "No feedback yet. Rate an AI answer and it will appear here.")}
                     </p>
                   )}
                 </div>

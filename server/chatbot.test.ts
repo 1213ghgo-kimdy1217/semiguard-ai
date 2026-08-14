@@ -37,4 +37,11 @@ describe("SemiGuard AI Chatbot Procedure", () => {
     // @ts-ignore
     expect(appRouter.semiguard.attachRegeneratedAnswer).toBeDefined();
   });
+
+  it("defines feedback item and bulk deletion procedures", () => {
+    // @ts-ignore
+    expect(appRouter.semiguard.deleteChatFeedback).toBeDefined();
+    // @ts-ignore
+    expect(appRouter.semiguard.deleteAllChatFeedbacks).toBeDefined();
+  });
 });

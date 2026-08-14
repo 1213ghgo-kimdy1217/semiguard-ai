@@ -306,3 +306,10 @@
 - [x] 피드백·재생성 답변 내역을 모아보는 히스토리 사이드바 메뉴 추가 (chat_feedback에 regenerated_content·regenerated_at 컬럼 추가, getFeedbackHistory·attachRegeneratedAnswer 프로시저 구현)
 - [x] 히스토리 사이드바 다국어(KO/EN/JA) 및 빈 상태 안내 처리
 - [x] TypeScript 컴파일 및 Vitest 전체 회귀 테스트 통과 검증 (32개 테스트 전체 통과)
+
+## 피드백 히스토리 필터 및 삭제 관리 (2026-08-14)
+- [x] 긍정 평가·부정 평가·전체 보기 필터를 피드백 히스토리 사이드바에 추가
+- [x] 사용자 소유 피드백 항목만 개별 삭제할 수 있는 서버 API 및 UI 구현
+- [x] 사용자 피드백 전체 삭제 서버 API와 2단계 확인 UI 구현
+- [x] 필터·삭제 기능 다국어(KO/EN/JA), 빈 상태, 모바일 반응형 구현 및 데스크톱 렌더링 검증
+- [x] TypeScript 컴파일 및 Vitest 전체 회귀 테스트 통과 검증 (33개 테스트 전체 통과)
