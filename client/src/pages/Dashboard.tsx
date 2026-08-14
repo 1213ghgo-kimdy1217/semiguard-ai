@@ -803,7 +803,10 @@ export default function Dashboard() {
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("feedback") === "open",
   );
   const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
-  const [feedbackHistoryFilter, setFeedbackHistoryFilter] = useState<"all" | "like" | "dislike">("all");
+  const [feedbackHistoryFilter, setFeedbackHistoryFilter] = useState<"all" | "like" | "dislike">(() => {
+    const stored = window.localStorage.getItem("semiguard_feedback_type");
+    return stored === "like" || stored === "dislike" ? stored : "all";
+  });
   const [feedbackReasonFilter, setFeedbackReasonFilter] = useState<"all" | "inaccurate" | "insufficient" | "irrelevant" | "other">(() => {
     const stored = window.localStorage.getItem("semiguard_feedback_reason");
     return stored === "inaccurate" || stored === "insufficient" || stored === "irrelevant" || stored === "other" ? stored : "all";
@@ -1057,6 +1060,9 @@ export default function Dashboard() {
   useEffect(() => {
     window.localStorage.setItem("semiguard_feedback_reason", feedbackReasonFilter);
   }, [feedbackReasonFilter]);
+  useEffect(() => {
+    window.localStorage.setItem("semiguard_feedback_type", feedbackHistoryFilter);
+  }, [feedbackHistoryFilter]);
   useEffect(() => {
     window.localStorage.setItem("semiguard_feedback_date_preset", feedbackHistoryDatePreset);
   }, [feedbackHistoryDatePreset]);
