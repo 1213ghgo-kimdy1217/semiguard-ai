@@ -16,4 +16,10 @@ describe("chat draft recovery contract", () => {
     expect(dashboardSource).toContain("sessionStorage.removeItem(chatDraftStorageKey)");
     expect(dashboardSource).toContain("if (!textToSend) {");
   });
+
+  it("keeps the chat input usable when the browser blocks session storage", () => {
+    expect(dashboardSource).toContain("try {\n      setChatInput(sessionStorage.getItem(chatDraftStorageKey) ?? \"\");\n    } catch {\n      setChatInput(\"\");\n    }");
+    expect(dashboardSource).toContain("// 저장소를 사용할 수 없는 환경에서는 입력 UX만 유지합니다.");
+    expect(dashboardSource).toContain("// 저장소 정리가 실패해도 메시지 전송은 계속합니다.");
+  });
 });
