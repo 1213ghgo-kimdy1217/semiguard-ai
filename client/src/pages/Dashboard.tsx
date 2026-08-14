@@ -4602,20 +4602,40 @@ export default function Dashboard() {
                     ))}
                   </div>
                 </div>
-                <ScoreLineChart data={getRecentScoresQuery.data ?? []} lang={lang} isDark={isDark} />
+                {getRecentScoresQuery.isError ? (
+                  <div className="flex h-[150px] flex-col items-center justify-center gap-2 text-center text-[10px]" style={{ color: th.textMuted }}>
+                    <p>⚠️ {lang === "ko" ? "위험도 점수 추이를 불러오지 못했습니다." : lang === "ja" ? "リスクスコア推移を読み込めませんでした。" : "Could not load risk score trends."}</p>
+                    <button type="button" onClick={() => void getRecentScoresQuery.refetch()} disabled={getRecentScoresQuery.isFetching} className="rounded border px-2.5 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                      ↻ {getRecentScoresQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                    </button>
+                  </div>
+                ) : (
+                  <ScoreLineChart data={getRecentScoresQuery.data ?? []} lang={lang} isDark={isDark} />
+                )}
               </div>
-              <MonthlyHeatmap
-                dailyData={getDailyMaxRisk.data ?? []}
-                lang={lang}
-                t={t}
-                isDark={isDark}
-                onDateClick={(date) => {
-                  setSelectedDate(date);
-                  setLogFilter("all");
-                  setLogPage(1);
-                  setActiveTab("log");
-                }}
-              />
+              {getDailyMaxRisk.isError ? (
+                <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
+                  <div className="flex min-h-40 flex-col items-center justify-center gap-2 text-center text-[10px]" style={{ color: th.textMuted }}>
+                    <p>⚠️ {lang === "ko" ? "월간 위험도 히트맵을 불러오지 못했습니다." : lang === "ja" ? "月間リスクヒートマップを読み込めませんでした。" : "Could not load the monthly risk heatmap."}</p>
+                    <button type="button" onClick={() => void getDailyMaxRisk.refetch()} disabled={getDailyMaxRisk.isFetching} className="rounded border px-2.5 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                      ↻ {getDailyMaxRisk.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <MonthlyHeatmap
+                  dailyData={getDailyMaxRisk.data ?? []}
+                  lang={lang}
+                  t={t}
+                  isDark={isDark}
+                  onDateClick={(date) => {
+                    setSelectedDate(date);
+                    setLogFilter("all");
+                    setLogPage(1);
+                    setActiveTab("log");
+                  }}
+                />
+              )}
               </div>
           </>
         ) : (
@@ -4778,6 +4798,17 @@ export default function Dashboard() {
                 <tbody>
                   {logsLoading ? (
                     <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Loading...</td></tr>
+                  ) : getLogs.isError ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-10 text-center">
+                        <div className="flex flex-col items-center gap-2 text-[11px]" style={{ color: th.textMuted }}>
+                          <p>⚠️ {lang === "ko" ? "이상 이력을 불러오지 못했습니다." : lang === "ja" ? "異常履歴を読み込めませんでした。" : "Could not load anomaly history."}</p>
+                          <button type="button" onClick={() => void getLogs.refetch()} disabled={getLogs.isFetching} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                            ↻ {getLogs.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ) : !logs || logs.length === 0 ? (
                     <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">{t.noLogs}</td></tr>
                   ) : pagedLogs.map(log => {
