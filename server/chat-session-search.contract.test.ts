@@ -11,12 +11,15 @@ describe("consultation session content search contract", () => {
     expect(dbSource).toContain("searchChatSessionsForUser(userId: number, searchText: string)");
     expect(dbSource).toContain("like(chatMessagesTable.content, term)");
     expect(dbSource).toContain("eq(chatSessions.userId, userId)");
+    expect(dbSource).toContain("excerptBySessionId");
+    expect(dbSource).toContain("matchedMessageExcerpt");
     expect(routerSource).toContain("searchChatSessions: protectedProcedure");
   });
 
   it("uses server search results in the consultation history panel", () => {
     expect(dashboardSource).toContain("searchChatSessionsQuery");
     expect(dashboardSource).toContain("visibleChatSessions");
+    expect(dashboardSource).toContain("Conversation match:");
     expect(dashboardSource).toContain('placeholder={lang === "ko" ? "과거 대화 내용 검색..."');
   });
 });

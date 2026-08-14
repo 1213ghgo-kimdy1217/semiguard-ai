@@ -247,16 +247,22 @@ export async function searchChatSessionsForUser(userId: number, searchText: stri
   if (!db) return [];
   const term = `%${searchText.trim()}%`;
   const messageMatches = await db
-    .selectDistinct({ sessionId: chatMessagesTable.sessionId })
+    .select({ sessionId: chatMessagesTable.sessionId, content: chatMessagesTable.content })
     .from(chatMessagesTable)
     .innerJoin(chatSessions, eq(chatMessagesTable.sessionId, chatSessions.id))
     .where(and(eq(chatSessions.userId, userId), like(chatMessagesTable.content, term)));
   const matchingSessionIds = messageMatches.map(match => match.sessionId);
+  const excerptBySessionId = new Map<number, string>();
+  for (const match of messageMatches) {
+    if (!excerptBySessionId.has(match.sessionId)) {
+      excerptBySessionId.set(match.sessionId, match.content.replace(/\s+/g, " ").trim().slice(0, 120));
+    }
+  }
   const ownershipAndSearch = matchingSessionIds.length > 0
     ? and(eq(chatSessions.userId, userId), or(like(chatSessions.title, term), inArray(chatSessions.id, matchingSessionIds)))
     : and(eq(chatSessions.userId, userId), like(chatSessions.title, term));
 
-  return db
+  const sessions = await db
     .select({
       id: chatSessions.id,
       userId: chatSessions.userId,
@@ -271,6 +277,10 @@ export async function searchChatSessionsForUser(userId: number, searchText: stri
     .where(ownershipAndSearch)
     .groupBy(chatSessions.id)
     .orderBy(desc(chatSessions.isPinned), desc(chatSessions.updatedAt));
+  return sessions.map(session => ({
+    ...session,
+    matchedMessageExcerpt: excerptBySessionId.get(session.id) ?? null,
+  }));
 }
 
 export async function createChatSession(userId: number, title: string = "새로운 상담") {

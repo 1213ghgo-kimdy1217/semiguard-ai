@@ -2906,6 +2906,11 @@ export default function Dashboard() {
                                 <span className="mx-1 opacity-50">·</span>
                                 {session.messageCount}{lang === "ko" ? "개 메시지" : lang === "ja" ? "件のメッセージ" : " messages"}
                               </p>
+                              {normalizedHistorySearch && (session as { matchedMessageExcerpt?: string | null }).matchedMessageExcerpt && (
+                                <p className="mt-1 truncate text-[9px]" style={{ color: isDark ? "oklch(0.76 0.12 205)" : "oklch(0.44 0.13 205)" }} title={(session as { matchedMessageExcerpt?: string | null }).matchedMessageExcerpt ?? undefined}>
+                                  🔎 {lang === "ko" ? "대화 일치:" : lang === "ja" ? "会話の一致:" : "Conversation match:"} {(session as { matchedMessageExcerpt?: string | null }).matchedMessageExcerpt}
+                                </p>
+                              )}
                             </>
                           )}
                         </div>
