@@ -177,6 +177,32 @@ const RISK_BORDER: Record<RiskLevel, string> = {
   danger: "rgba(239,68,68,0.30)",
 };
 
+function getQuickChatPrompts(riskLevel: RiskLevel, lang: Lang): string[] {
+  const prompts: Record<RiskLevel, Record<Lang, string[]>> = {
+    normal: {
+      ko: ["현재 센서 상태는 정상 범위인가요?", "예방 점검 우선순위를 알려주세요.", "주의해야 할 변화 추이는 무엇인가요?"],
+      ja: ["現在のセンサー状態は正常範囲ですか？", "予防点検の優先順位を教えてください。", "注意すべき変化傾向は何ですか？"],
+      en: ["Are the current sensors within normal range?", "What should be prioritized for preventive inspection?", "Which trends should we watch closely?"],
+    },
+    caution: {
+      ko: ["어떤 센서가 주의 단계에 영향을 주나요?", "다음 점검 순서를 알려주세요.", "위험 단계로 악화될 가능성이 있나요?"],
+      ja: ["どのセンサーが注意段階に影響していますか？", "次の点検手順を教えてください。", "危険段階に悪化する可能性はありますか？"],
+      en: ["Which sensor is driving the caution level?", "What inspection steps should come next?", "Could this worsen into a higher risk level?"],
+    },
+    warning: {
+      ko: ["경고의 주요 원인은 무엇인가요?", "위험을 즉시 줄일 방법은 무엇인가요?", "정지 전에 확인할 항목은 무엇인가요?"],
+      ja: ["警告の主な原因は何ですか？", "リスクを直ちに下げる方法は？", "停止前に確認すべき項目は何ですか？"],
+      en: ["What is the main cause of this warning?", "How can we reduce the risk immediately?", "What must be checked before stopping equipment?"],
+    },
+    danger: {
+      ko: ["장비를 즉시 중지해야 하나요?", "가장 먼저 점검할 부품은 무엇인가요?", "현장 안전 절차를 알려주세요."],
+      ja: ["直ちに設備を停止すべきですか？", "最初に点検すべき部品は何ですか？", "現場の安全手順を教えてください。"],
+      en: ["Should the equipment be stopped immediately?", "Which component should be inspected first?", "What is the on-site safety procedure?"],
+    },
+  };
+  return prompts[riskLevel][lang];
+}
+
 interface ChartPoint extends SensorData { label: string; }
 const MAX_CHART_POINTS = 30;
 
@@ -1458,6 +1484,7 @@ export default function Dashboard() {
   const sensorData = current?.sensorData;
   const anomalyScore = current?.anomalyScore ?? 0;
   const riskLevel = current?.riskLevel ?? "normal";
+  const quickChatPrompts = getQuickChatPrompts(riskLevel, lang);
   const logs = logsData ?? [];
   // 새 기록 배너: logs 개수 증가 감지
   useEffect(() => {
@@ -3945,18 +3972,18 @@ export default function Dashboard() {
 
             {/* 빠른 질문 칩 영역 */}
             <div className="flex gap-1.5 overflow-x-auto border-t px-3 py-2 sm:px-4" style={{ borderColor: th.border, background: th.bgCard2 }}>
-              {[
-                lang === "ko" ? "가장 먼저 점검할 부품은?" : lang === "ja" ? "最初に点検すべき部品は？" : "What to inspect first?",
-                lang === "ko" ? "장비를 즉시 중지해야 하나요?" : lang === "ja" ? "直ちに設備を停止すべきですか？" : "Should I stop immediately?",
-                lang === "ko" ? "베어링 마모 가능성이 있나요?" : lang === "ja" ? "ベアリング摩耗の可能性はありますか？" : "Bearing wear issue?",
-              ].map((chip, cIdx) => (
+              <span className="flex shrink-0 items-center px-1 text-[9px] font-bold whitespace-nowrap" style={{ color: RISK_COLORS[riskLevel] }}>
+                {lang === "ko" ? `${t[riskLevel]} 상태 추천` : lang === "ja" ? `${t[riskLevel]}状態の推奨` : `${t[riskLevel]} recommendations`}
+              </span>
+              {quickChatPrompts.map((chip, cIdx) => (
                 <button
                   key={cIdx}
                   type="button"
                   onClick={() => handleSendChatMessage(chip)}
                   disabled={isChatLoading}
+                  aria-label={lang === "ko" ? `${t[riskLevel]} 상태 추천 질문: ${chip}` : lang === "ja" ? `${t[riskLevel]}状態の推奨質問: ${chip}` : `${t[riskLevel]} recommendation: ${chip}`}
                   className="whitespace-nowrap px-2.5 py-1 rounded-full border text-[11px] transition-all hover:opacity-80 disabled:opacity-50"
-                  style={{ borderColor: th.border2, color: th.accent, background: th.bgCard }}>
+                  style={{ borderColor: RISK_BORDER[riskLevel], color: RISK_COLORS[riskLevel], background: RISK_BG[riskLevel] }}>
                   💡 {chip}
                 </button>
               ))}
