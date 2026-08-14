@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, socialAccountLinks, users, chatSessions, chatMessagesTable, chatFeedback, manualChunks, manualDocuments } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { and, eq, desc, like, or } from "drizzle-orm";
+import { and, count, desc, eq, like, or } from "drizzle-orm";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -401,9 +401,40 @@ export async function createManualDocumentWithChunks(input: {
 export async function getManualDocumentsForUser(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(manualDocuments)
+  return db.select({
+    id: manualDocuments.id,
+    title: manualDocuments.title,
+    sourceType: manualDocuments.sourceType,
+    createdAt: manualDocuments.createdAt,
+    updatedAt: manualDocuments.updatedAt,
+    chunkCount: count(manualChunks.id),
+  })
+    .from(manualDocuments)
+    .leftJoin(manualChunks, eq(manualChunks.documentId, manualDocuments.id))
     .where(eq(manualDocuments.userId, userId))
+    .groupBy(
+      manualDocuments.id,
+      manualDocuments.title,
+      manualDocuments.sourceType,
+      manualDocuments.createdAt,
+      manualDocuments.updatedAt,
+    )
     .orderBy(desc(manualDocuments.updatedAt));
+}
+
+export async function deleteManualDocumentForUser(input: { userId: number; documentId: number }) {
+  const db = await getDb();
+  if (!db) return false;
+  const ownedDocument = await db.select({ id: manualDocuments.id })
+    .from(manualDocuments)
+    .where(and(eq(manualDocuments.id, input.documentId), eq(manualDocuments.userId, input.userId)))
+    .limit(1);
+  if (!ownedDocument[0]) return false;
+
+  await db.delete(manualChunks).where(eq(manualChunks.documentId, input.documentId));
+  await db.delete(manualDocuments)
+    .where(and(eq(manualDocuments.id, input.documentId), eq(manualDocuments.userId, input.userId)));
+  return true;
 }
 
 export async function searchManualChunksForUser(userId: number, query: string, limit = 3) {

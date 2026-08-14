@@ -816,6 +816,12 @@ Guidelines:
 
     getManualDocuments: protectedProcedure.query(async ({ ctx }) => db.getManualDocumentsForUser(ctx.user.id)),
 
+    deleteManualDocument: protectedProcedure
+      .input(z.object({ documentId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => ({
+        deleted: await db.deleteManualDocumentForUser({ userId: ctx.user.id, documentId: input.documentId }),
+      })),
+
     // 세션 제목 변경
     updateChatSessionTitle: protectedProcedure
       .input(z.object({ sessionId: z.number(), title: z.string() }))

@@ -16,6 +16,8 @@ describe("SemiGuard AI Chatbot Procedure", () => {
     expect(appRouter.semiguard.addManualText).toBeDefined();
     // @ts-ignore
     expect(appRouter.semiguard.getManualDocuments).toBeDefined();
+    // @ts-ignore
+    expect(appRouter.semiguard.deleteManualDocument).toBeDefined();
   });
 
   it("defines chat session procedures in appRouter", () => {

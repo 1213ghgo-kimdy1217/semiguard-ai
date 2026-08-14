@@ -733,9 +733,12 @@ export default function Dashboard() {
   );
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
-  const [showManualRagModal, setShowManualRagModal] = useState(false);
+  const [showManualRagModal, setShowManualRagModal] = useState(() =>
+    import.meta.env.DEV && new URLSearchParams(window.location.search).get("manual") === "open",
+  );
   const [manualTitle, setManualTitle] = useState("");
   const [manualContent, setManualContent] = useState("");
+  const [manualDocumentToDelete, setManualDocumentToDelete] = useState<number | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [showFeedbackHistoryPanel, setShowFeedbackHistoryPanel] = useState(false);
   const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
@@ -765,6 +768,7 @@ export default function Dashboard() {
     { enabled: isChatOpen && showFeedbackHistoryPanel },
   );
   const addManualTextMutation = trpc.semiguard.addManualText.useMutation();
+  const deleteManualDocumentMutation = trpc.semiguard.deleteManualDocument.useMutation();
   const manualDocumentsQuery = trpc.semiguard.getManualDocuments.useQuery(undefined, { enabled: isChatOpen });
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
@@ -2330,6 +2334,77 @@ export default function Dashboard() {
                         {addManualTextMutation.isPending ? (lang === "ko" ? "등록 중..." : lang === "ja" ? "登録中..." : "Adding...") : (lang === "ko" ? "RAG 지식 등록" : lang === "ja" ? "RAG知識に登録" : "Add to RAG")}
                       </button>
                     </div>
+                  </div>
+                  <div className="border-t pt-3" style={{ borderColor: th.border }}>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <h5 className="text-[11px] font-bold" style={{ color: th.text }}>
+                        📚 {lang === "ko" ? "등록된 RAG 매뉴얼" : lang === "ja" ? "登録済みRAGマニュアル" : "Registered RAG manuals"}
+                      </h5>
+                      <span className="text-[10px]" style={{ color: th.textMuted }}>
+                        {manualDocumentsQuery.data?.length ?? 0}{lang === "ko" ? "개" : lang === "ja" ? "件" : " items"}
+                      </span>
+                    </div>
+                    {manualDocumentsQuery.isLoading ? (
+                      <p className="py-2 text-center text-[10px]" style={{ color: th.textMuted }}>
+                        {lang === "ko" ? "매뉴얼 목록을 불러오는 중..." : lang === "ja" ? "マニュアル一覧を読み込み中..." : "Loading manuals..."}
+                      </p>
+                    ) : manualDocumentsQuery.data && manualDocumentsQuery.data.length > 0 ? (
+                      <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
+                        {manualDocumentsQuery.data.map(document => (
+                          <div key={document.id} className="rounded-lg border p-2" style={{ borderColor: th.border2, background: th.bgCard }}>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-[10px] font-bold" style={{ color: th.text }} title={document.title}>{document.title}</p>
+                                <p className="mt-0.5 text-[9px]" style={{ color: th.textMuted }}>
+                                  {document.chunkCount}{lang === "ko" ? "개 구간" : lang === "ja" ? "区間" : " chunks"} · {new Date(document.updatedAt).toLocaleDateString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US")}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setManualDocumentToDelete(document.id)}
+                                className="shrink-0 rounded border border-red-500/35 bg-red-500/10 px-1.5 py-1 text-[9px] font-bold text-red-400 transition-all hover:bg-red-500/20"
+                                aria-label={lang === "ko" ? "매뉴얼 삭제" : lang === "ja" ? "マニュアルを削除" : "Delete manual"}>
+                                🗑️
+                              </button>
+                            </div>
+                            {manualDocumentToDelete === document.id && (
+                              <div className="mt-2 border-t pt-2" style={{ borderColor: th.border2 }}>
+                                <p className="text-[9px] leading-relaxed text-red-400">
+                                  {lang === "ko" ? "이 매뉴얼과 연결된 모든 RAG 구간을 삭제할까요? 되돌릴 수 없습니다." : lang === "ja" ? "このマニュアルと関連するすべてのRAG区間を削除しますか？元に戻せません。" : "Delete this manual and all related RAG chunks? This cannot be undone."}
+                                </p>
+                                <div className="mt-1.5 flex justify-end gap-1.5">
+                                  <button type="button" onClick={() => setManualDocumentToDelete(null)} className="rounded px-2 py-1 text-[9px]" style={{ color: th.textMuted }}>
+                                    {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={deleteManualDocumentMutation.isPending}
+                                    onClick={async () => {
+                                      try {
+                                        const result = await deleteManualDocumentMutation.mutateAsync({ documentId: document.id });
+                                        if (!result.deleted) throw new Error("Manual document was not found");
+                                        toast.success(lang === "ko" ? "RAG 매뉴얼을 삭제했습니다." : lang === "ja" ? "RAGマニュアルを削除しました。" : "RAG manual deleted.");
+                                        setManualDocumentToDelete(null);
+                                        chatUtils.semiguard.getManualDocuments.invalidate();
+                                      } catch (error) {
+                                        console.error("Manual deletion failed:", error);
+                                        toast.error(lang === "ko" ? "매뉴얼을 삭제하지 못했습니다." : lang === "ja" ? "マニュアルを削除できませんでした。" : "Could not delete the manual.");
+                                      }
+                                    }}
+                                    className="rounded bg-red-600 px-2 py-1 text-[9px] font-bold text-white disabled:opacity-50">
+                                    {deleteManualDocumentMutation.isPending ? (lang === "ko" ? "삭제 중..." : lang === "ja" ? "削除中..." : "Deleting...") : (lang === "ko" ? "삭제" : lang === "ja" ? "削除" : "Delete")}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="rounded-lg border border-dashed p-2 text-center text-[10px] leading-relaxed" style={{ borderColor: th.border2, color: th.textMuted }}>
+                        {lang === "ko" ? "등록된 매뉴얼이 없습니다. 위에서 첫 매뉴얼을 등록해 보세요." : lang === "ja" ? "登録済みのマニュアルはありません。上から最初のマニュアルを登録してください。" : "No manuals registered yet. Add your first manual above."}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
