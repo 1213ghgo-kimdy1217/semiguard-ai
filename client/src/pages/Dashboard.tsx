@@ -2693,9 +2693,13 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 sm:gap-4">
           {!isMobile && <HeartbeatIndicator alive={heartbeatAlive} t={t} />}
           {!isMobile && <div className="w-px h-5 bg-border" />}
-          <div className="hidden xl:flex items-center gap-1.5 text-[10px] font-semibold" role="status" aria-live="polite" title={sensorFreshnessCopy} style={{ color: sensorFreshnessColor }}>
-            <span className={`h-2 w-2 rounded-full ${sensorFreshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: sensorFreshnessColor }} />
+          <div className="hidden xl:flex items-center gap-1.5 text-[10px] font-semibold" role="img" aria-label={sensorFreshnessCopy} title={sensorFreshnessCopy} style={{ color: sensorFreshnessColor }}>
+            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${sensorFreshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: sensorFreshnessColor }} />
             {sensorFreshnessCopy}
+          </div>
+          <div className="flex h-7 w-7 items-center justify-center rounded-full border sm:w-auto sm:gap-1.5 sm:px-2 xl:hidden" role="img" aria-label={sensorFreshnessCopy} title={sensorFreshnessCopy} style={{ borderColor: `${sensorFreshnessColor}80`, color: sensorFreshnessColor, background: `${sensorFreshnessColor}1A` }}>
+            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${sensorFreshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: sensorFreshnessColor }} />
+            <span className="hidden text-[10px] font-bold sm:inline">{sensorDataAgeSeconds === null ? "…" : `${sensorDataAgeSeconds}s`}</span>
           </div>
           <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold" title={safetyMonitoringHasError ? (lang === "ko" ? "일부 안전 데이터 조회를 복구해야 합니다." : lang === "ja" ? "一部の安全データの復旧が必要です。" : "Some safety data needs recovery.") : safetyMonitoringInitializing ? (lang === "ko" ? "안전 데이터를 동기화하는 중입니다." : lang === "ja" ? "安全データを同期中です。" : "Synchronizing safety data.") : (lang === "ko" ? "핵심 안전 데이터가 연결되었습니다." : lang === "ja" ? "主要な安全データに接続されています。" : "Core safety data is connected.") } style={{ color: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }}>
             <span className={`h-2 w-2 rounded-full ${safetyMonitoringInitializing && !safetyMonitoringHasError ? "animate-pulse" : ""}`} style={{ background: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }} />
