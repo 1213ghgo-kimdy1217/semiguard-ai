@@ -4,6 +4,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
 import type { RiskLevel, SensorData, AnomalyResult, AnomalyLogEntry } from "../../../shared/semiguard";
+import { MANUAL_CHUNK_LIMIT, MANUAL_CHUNK_WARNING_THRESHOLD, splitManualTextIntoChunks } from "../../../shared/ragManual";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { toast } from "sonner";
 import { startGoogleLink, startNaverLink, startKakaoLink } from "@/const";
@@ -873,6 +874,8 @@ export default function Dashboard() {
     { enabled: isChatOpen && showManualRagModal && previewManualDocumentId !== null },
   );
   const allManualDocuments = manualDocumentsQuery.data ?? [];
+  const manualChunkEstimate = useMemo(() => splitManualTextIntoChunks(manualContent).length, [manualContent]);
+  const isManualChunkWarning = manualChunkEstimate >= MANUAL_CHUNK_WARNING_THRESHOLD;
   const isManualSearchPending = normalizedManualSearch.length > 0 && normalizedManualSearch !== normalizedDebouncedManualSearch;
   const isManualSearching = normalizedManualSearch.length > 0 && (isManualSearchPending || manualDocumentSearchQuery.isFetching);
   const filteredManualDocuments = normalizedManualSearch
@@ -2604,6 +2607,13 @@ export default function Dashboard() {
                     className="custom-scrollbar min-h-40 w-full resize-y rounded-lg border px-3 py-2 text-xs leading-relaxed outline-none focus:ring-2"
                     style={{ background: isDark ? "oklch(0.18 0.02 240)" : "white", borderColor: th.border, color: th.text }}
                   />
+                  <div className="rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" role="status" aria-live="polite" style={{ borderColor: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.55)" : th.border, background: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.10)" : "transparent", color: isManualChunkWarning ? (isDark ? "oklch(0.86 0.14 80)" : "oklch(0.45 0.16 75)") : th.textMuted }}>
+                    {manualChunkEstimate === 0
+                      ? (lang === "ko" ? "본문을 입력하면 등록될 RAG 구간 수를 미리 계산합니다." : lang === "ja" ? "本文を入力すると、登録されるRAG区間数を事前に計算します。" : "Enter manual text to preview the number of RAG chunks to be registered.")
+                      : isManualChunkWarning
+                        ? (lang === "ko" ? `예상 ${manualChunkEstimate}개 구간입니다. ${MANUAL_CHUNK_WARNING_THRESHOLD}개 이상은 검색 범위가 넓어질 수 있으니 장·설비별로 나누어 등록해 주세요. 최대 ${MANUAL_CHUNK_LIMIT}개까지 등록할 수 있습니다.` : lang === "ja" ? `推定${manualChunkEstimate}区間です。${MANUAL_CHUNK_WARNING_THRESHOLD}区間以上では検索範囲が広くなる可能性があるため、章・設備ごとに分けて登録してください。最大${MANUAL_CHUNK_LIMIT}区間まで登録できます。` : `Estimated ${manualChunkEstimate} chunks. At ${MANUAL_CHUNK_WARNING_THRESHOLD}+ chunks, retrieval may become broader; split the manual by chapter or equipment. Up to ${MANUAL_CHUNK_LIMIT} chunks can be registered.`)
+                        : (lang === "ko" ? `예상 ${manualChunkEstimate}개 RAG 구간으로 등록됩니다. 문단 구분을 유지하면 근거 검색 정확도에 도움이 됩니다.` : lang === "ja" ? `推定${manualChunkEstimate}件のRAG区間として登録されます。段落区切りを保つと根拠検索の精度向上に役立ちます。` : `Estimated ${manualChunkEstimate} RAG chunks. Keeping paragraph breaks helps retrieval accuracy.`)}
+                  </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px]" style={{ color: th.textMuted }}>{manualContent.length.toLocaleString()} / 60,000</span>
                     <div className="flex gap-2">

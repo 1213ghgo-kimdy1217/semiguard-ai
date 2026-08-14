@@ -11,6 +11,7 @@ import { getRiskLevel } from "../shared/semiguard";
 import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
 import type { RiskLevel } from "../shared/semiguard";
+import { MANUAL_CHUNK_LIMIT, splitManualTextIntoChunks } from "../shared/ragManual";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
 
@@ -851,11 +852,13 @@ Guidelines:
     addManualText: protectedProcedure
       .input(z.object({ title: z.string().trim().min(1).max(255), content: z.string().trim().min(50).max(60000) }))
       .mutation(async ({ ctx, input }) => {
-        const paragraphs = input.content.split(/\n{2,}/).flatMap(paragraph => {
-          const trimmed = paragraph.trim();
-          if (trimmed.length <= 1200) return trimmed ? [trimmed] : [];
-          return Array.from({ length: Math.ceil(trimmed.length / 1200) }, (_, index) => trimmed.slice(index * 1200, (index + 1) * 1200));
-        });
+        const paragraphs = splitManualTextIntoChunks(input.content);
+        if (paragraphs.length > MANUAL_CHUNK_LIMIT) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Manual content exceeds the ${MANUAL_CHUNK_LIMIT}-chunk registration limit. Please split it into smaller manuals.`,
+          });
+        }
         const documentId = await db.createManualDocumentWithChunks({
           userId: ctx.user.id,
           title: input.title,
