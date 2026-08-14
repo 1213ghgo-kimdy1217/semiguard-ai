@@ -2210,7 +2210,7 @@ export default function Dashboard() {
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
-                  <div className="relative group max-w-[80%]">
+                  <div className="max-w-[80%] flex flex-col gap-1.5">
                     <div
                       className={`rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                         msg.role === "user" ? "rounded-tr-none" : "rounded-tl-none border"
@@ -2227,7 +2227,7 @@ export default function Dashboard() {
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     </div>
                     {msg.role === "assistant" && (
-                      <>
+                      <div className="flex items-center gap-2 pl-1">
                         <button
                           type="button"
                           onClick={async () => {
@@ -2239,48 +2239,46 @@ export default function Dashboard() {
                               console.error("Clipboard write failed:", err);
                             }
                           }}
-                          title={lang === "ko" ? "답변 복사하기" : lang === "ja" ? "回答をコピー" : "Copy answer"}
-                          className="absolute -right-7 bottom-1 p-1 rounded-md text-[10px] opacity-60 hover:opacity-100 transition-all border shadow-sm"
+                          className="px-2 py-0.5 rounded text-[10px] border transition-all flex items-center gap-1 opacity-70 hover:opacity-100 shadow-sm"
                           style={{ background: th.bgCard, borderColor: th.border2, color: th.textMuted }}>
-                          {copiedIndex === idx ? "✅" : "📋"}
+                          <span>{copiedIndex === idx ? "✅" : "📋"}</span>
+                          <span>{copiedIndex === idx ? (lang === "ko" ? "복사됨" : lang === "ja" ? "コピー済" : "Copied") : (lang === "ko" ? "복사" : lang === "ja" ? "コピー" : "Copy")}</span>
                         </button>
-                      </>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMessageFeedbacks(prev => ({
+                                ...prev,
+                                [idx]: prev[idx] === "like" ? (undefined as any) : "like",
+                              }));
+                            }}
+                            title={lang === "ko" ? "좋아요" : lang === "ja" ? "いいね" : "Helpful"}
+                            className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
+                              messageFeedbacks[idx] === "like" ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 font-bold" : "opacity-60 hover:opacity-100"
+                            }`}
+                            style={{ borderColor: messageFeedbacks[idx] === "like" ? undefined : th.border2, background: messageFeedbacks[idx] === "like" ? undefined : th.bgCard, color: messageFeedbacks[idx] === "like" ? undefined : th.textMuted }}>
+                            👍 {messageFeedbacks[idx] === "like" && "1"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMessageFeedbacks(prev => ({
+                                ...prev,
+                                [idx]: prev[idx] === "dislike" ? (undefined as any) : "dislike",
+                              }));
+                            }}
+                            title={lang === "ko" ? "아쉬워요" : lang === "ja" ? "イマイチ" : "Not helpful"}
+                            className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
+                              messageFeedbacks[idx] === "dislike" ? "bg-rose-500/20 border-rose-500 text-rose-500 font-bold" : "opacity-60 hover:opacity-100"
+                            }`}
+                            style={{ borderColor: messageFeedbacks[idx] === "dislike" ? undefined : th.border2, background: messageFeedbacks[idx] === "dislike" ? undefined : th.bgCard, color: messageFeedbacks[idx] === "dislike" ? undefined : th.textMuted }}>
+                            👎 {messageFeedbacks[idx] === "dislike" && "1"}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  {msg.role === "assistant" && (
-                    <div className="flex items-center gap-1 pt-1 ml-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMessageFeedbacks(prev => ({
-                            ...prev,
-                            [idx]: prev[idx] === "like" ? (undefined as any) : "like",
-                          }));
-                        }}
-                        title={lang === "ko" ? "좋아요" : lang === "ja" ? "いいね" : "Helpful"}
-                        className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
-                          messageFeedbacks[idx] === "like" ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 font-bold" : "opacity-50 hover:opacity-100"
-                        }`}
-                        style={{ borderColor: messageFeedbacks[idx] === "like" ? undefined : th.border2, background: messageFeedbacks[idx] === "like" ? undefined : th.bgCard, color: messageFeedbacks[idx] === "like" ? undefined : th.textMuted }}>
-                        👍 {messageFeedbacks[idx] === "like" && "1"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMessageFeedbacks(prev => ({
-                            ...prev,
-                            [idx]: prev[idx] === "dislike" ? (undefined as any) : "dislike",
-                          }));
-                        }}
-                        title={lang === "ko" ? "아쉬워요" : lang === "ja" ? "イマイチ" : "Not helpful"}
-                        className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
-                          messageFeedbacks[idx] === "dislike" ? "bg-rose-500/20 border-rose-500 text-rose-500 font-bold" : "opacity-50 hover:opacity-100"
-                        }`}
-                        style={{ borderColor: messageFeedbacks[idx] === "dislike" ? undefined : th.border2, background: messageFeedbacks[idx] === "dislike" ? undefined : th.bgCard, color: messageFeedbacks[idx] === "dislike" ? undefined : th.textMuted }}>
-                        👎 {messageFeedbacks[idx] === "dislike" && "1"}
-                      </button>
-                    </div>
-                  )}
                   {msg.role === "user" && (
                     <span className="text-[9px] text-muted-foreground pb-1 shrink-0">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
