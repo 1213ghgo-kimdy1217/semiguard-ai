@@ -19,7 +19,8 @@ describe("risk-aware chatbot quick prompts contract", () => {
     expect(dashboardSource).toContain("状態の推奨");
     expect(dashboardSource).toContain("recommendations");
     expect(dashboardSource).toContain("quickChatPrompts.map((chip, cIdx)");
-    expect(dashboardSource).toContain("onClick={() => handleSendChatMessage(chip)}");
-    expect(dashboardSource).toContain("추천 질문:");
+    expect(dashboardSource).toContain("setQuickPromptStatus(lang === \"ko\"");
+    expect(dashboardSource).toContain("추천 질문을 전송합니다:");
+    expect(dashboardSource).toContain("void handleSendChatMessage(chip);");
   });
 });

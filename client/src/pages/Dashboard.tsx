@@ -1017,6 +1017,7 @@ export default function Dashboard() {
   const [isFeedbackRegenerating, setIsFeedbackRegenerating] = useState(false);
   type ManualSource = { label: number; documentId: number; documentTitle: string; chunkIndex: number; content: string; relevanceScore?: number; matchedTerms?: string[] };
   const [activeManualSource, setActiveManualSource] = useState<ManualSource | null>(null);
+  const [quickPromptStatus, setQuickPromptStatus] = useState("");
 
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string }>>([
     {
@@ -1397,6 +1398,45 @@ export default function Dashboard() {
       }).catch(err => console.error("Failed to create chat session:", err));
     }
   }, [isChatOpen]);
+
+  useEffect(() => {
+    if (!isChatOpen) return;
+
+    const handleChatEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+
+      if (activeManualSource) return setActiveManualSource(null);
+      if (showDeleteAllFeedbackFinalConfirm) return setShowDeleteAllFeedbackFinalConfirm(false);
+      if (showDeleteAllFeedbackConfirm) return setShowDeleteAllFeedbackConfirm(false);
+      if (feedbackToDelete !== null) return setFeedbackToDelete(null);
+      if (feedbackContextItem) return setFeedbackContextItem(null);
+      if (showFeedbackHistoryPanel) return setShowFeedbackHistoryPanel(false);
+      if (manualDocumentToDelete !== null) return setManualDocumentToDelete(null);
+      if (showManualRagModal) return setShowManualRagModal(false);
+      if (showDeleteAllConfirm) return setShowDeleteAllConfirm(false);
+      if (showHistoryPanel) return setShowHistoryPanel(false);
+      if (showResetConfirmModal) return setShowResetConfirmModal(false);
+
+      setIsChatOpen(false);
+    };
+
+    window.addEventListener("keydown", handleChatEscape);
+    return () => window.removeEventListener("keydown", handleChatEscape);
+  }, [
+    activeManualSource,
+    feedbackContextItem,
+    feedbackToDelete,
+    isChatOpen,
+    manualDocumentToDelete,
+    showDeleteAllConfirm,
+    showDeleteAllFeedbackConfirm,
+    showDeleteAllFeedbackFinalConfirm,
+    showFeedbackHistoryPanel,
+    showHistoryPanel,
+    showManualRagModal,
+    showResetConfirmModal,
+  ]);
 
   const handleResetChat = async () => {
     try {
@@ -4387,7 +4427,23 @@ export default function Dashboard() {
             </div>
 
             {/* 빠른 질문 칩 영역 */}
-            <div className="flex gap-1.5 overflow-x-auto border-t px-3 py-2 sm:px-4" style={{ borderColor: th.border, background: th.bgCard2 }}>
+            <div
+              className="flex gap-1.5 overflow-x-auto scroll-smooth border-t px-3 py-2 sm:px-4 custom-scrollbar"
+              style={{ borderColor: th.border, background: th.bgCard2 }}
+              role="region"
+              tabIndex={0}
+              aria-label={lang === "ko" ? "위험 상태 맞춤 빠른 질문" : lang === "ja" ? "リスク状態に合わせた推奨質問" : "Risk-aware quick questions"}
+              aria-describedby="chat-quick-prompt-help"
+              onKeyDown={(event) => {
+                if (event.target !== event.currentTarget) return;
+                if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  event.currentTarget.scrollBy({ left: event.key === "ArrowRight" ? 180 : -180, behavior: "smooth" });
+                }
+              }}>
+              <span id="chat-quick-prompt-help" className="sr-only">
+                {lang === "ko" ? "모바일에서는 좌우로 밀어 더 많은 추천 질문을 확인할 수 있습니다. 이 영역에 포커스한 뒤 좌우 화살표 키로도 이동할 수 있습니다." : lang === "ja" ? "モバイルでは左右にスワイプして、より多くの推奨質問を確認できます。この領域にフォーカスして左右の矢印キーでも移動できます。" : "On mobile, swipe left or right to view more suggested questions. When this region is focused, use the left and right arrow keys to scroll."}
+              </span>
               <span className="flex shrink-0 items-center px-1 text-[9px] font-bold whitespace-nowrap" style={{ color: RISK_COLORS[riskLevel] }}>
                 {lang === "ko" ? `${t[riskLevel]} 상태 추천` : lang === "ja" ? `${t[riskLevel]}状態の推奨` : `${t[riskLevel]} recommendations`}
               </span>
@@ -4395,7 +4451,10 @@ export default function Dashboard() {
                 <button
                   key={cIdx}
                   type="button"
-                  onClick={() => handleSendChatMessage(chip)}
+                  onClick={() => {
+                    setQuickPromptStatus(lang === "ko" ? `추천 질문을 전송합니다: ${chip}` : lang === "ja" ? `推奨質問を送信します: ${chip}` : `Sending recommended question: ${chip}`);
+                    void handleSendChatMessage(chip);
+                  }}
                   disabled={isChatLoading}
                   aria-label={lang === "ko" ? `${t[riskLevel]} 상태 추천 질문: ${chip}` : lang === "ja" ? `${t[riskLevel]}状態の推奨質問: ${chip}` : `${t[riskLevel]} recommendation: ${chip}`}
                   className="whitespace-nowrap px-2.5 py-1 rounded-full border text-[11px] transition-all hover:opacity-80 disabled:opacity-50"
@@ -4403,6 +4462,7 @@ export default function Dashboard() {
                   💡 {chip}
                 </button>
               ))}
+              <span className="sr-only" aria-live="polite">{quickPromptStatus}</span>
             </div>
 
             {/* 입력 폼 영역 */}
