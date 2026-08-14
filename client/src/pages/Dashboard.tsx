@@ -625,7 +625,13 @@ export default function Dashboard() {
     const requestedLang = import.meta.env.DEV
       ? new URLSearchParams(window.location.search).get("lang")
       : null;
-    return requestedLang === "en" || requestedLang === "ja" ? requestedLang : "ko";
+    if (requestedLang === "en" || requestedLang === "ja" || requestedLang === "ko") return requestedLang;
+    try {
+      const savedLang = localStorage.getItem("semiguard_lang");
+      return savedLang === "en" || savedLang === "ja" || savedLang === "ko" ? savedLang : "ko";
+    } catch {
+      return "ko";
+    }
   });
   const t = translations[lang] as Translation;
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -635,6 +641,14 @@ export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("menu") === "open",
   );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("semiguard_lang", lang);
+    } catch {
+      // 저장 공간 제한 또는 개인정보 보호 모드에서는 기본 언어로 계속 동작한다.
+    }
+  }, [lang]);
   // ─── 테마 색상 팔레트 ─────────────────────────────────────────────────────
   const th = {
     bg:        isDark ? "oklch(0.10 0.01 240)"   : "oklch(0.97 0.005 240)",

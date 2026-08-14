@@ -20,6 +20,12 @@ describe("mobile chatbot and localization contract", () => {
     expect(dashboardSource).toContain('requestedLang === "en" || requestedLang === "ja"');
   });
 
+  it("persists the user's language choice while keeping the development review path deterministic", () => {
+    expect(dashboardSource).toContain('localStorage.getItem("semiguard_lang")');
+    expect(dashboardSource).toContain('localStorage.setItem("semiguard_lang", lang)');
+    expect(dashboardSource).toContain('if (requestedLang === "en" || requestedLang === "ja" || requestedLang === "ko")');
+  });
+
   it("keeps Japanese fallback wording for chat errors and regeneration", () => {
     expect(dashboardSource).toContain("回答の生成中にエラーが発生しました");
     expect(dashboardSource).toContain("回答を再生成できませんでした");
