@@ -888,6 +888,22 @@ export default function Dashboard() {
     setHistorySessionStartDate(formatDateInput(start));
     setHistorySessionEndDate(formatDateInput(end));
   };
+  const hasActiveHistoryFilters = normalizedHistorySearch.length > 0
+    || historySessionFilter !== "all"
+    || historySessionSort !== "newest"
+    || historySessionDatePreset !== "all"
+    || historySessionStartDate.length > 0
+    || historySessionEndDate.length > 0;
+  const resetHistoryFilters = () => {
+    setSearchKeyword("");
+    setDebouncedHistorySearch("");
+    setHistorySessionFilter("all");
+    setHistorySessionSort("newest");
+    setHistorySessionStartDate("");
+    setHistorySessionEndDate("");
+    setHistorySessionDatePreset("all");
+    setHistorySessionPage(1);
+  };
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
@@ -3095,6 +3111,16 @@ export default function Dashboard() {
                         style={{ borderColor: "oklch(0.65 0.18 200 / 0.40)", background: "oklch(0.65 0.18 200 / 0.10)", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.17 200)" }}>
                         ⬇ CSV
                       </button>
+                      {hasActiveHistoryFilters && (
+                        <button
+                          type="button"
+                          onClick={resetHistoryFilters}
+                          title={lang === "ko" ? "상담 기록 필터를 모두 초기화" : lang === "ja" ? "相談履歴フィルターをすべてリセット" : "Reset all consultation history filters"}
+                          className="rounded border px-1.5 py-1 text-[9px] font-bold transition-all hover:opacity-80 active:scale-95"
+                          style={{ borderColor: th.border2, background: th.bgCard2, color: th.textMuted }}>
+                          ↺ {lang === "ko" ? "필터 초기화" : lang === "ja" ? "フィルターをリセット" : "Reset filters"}
+                        </button>
+                      )}
                       <span className="text-[9px] whitespace-nowrap" style={{ color: th.textMuted }}>
                         {filteredAndSortedChatSessions.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " results"}
                       </span>
