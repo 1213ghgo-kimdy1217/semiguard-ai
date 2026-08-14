@@ -3561,6 +3561,14 @@ export default function Dashboard() {
                           <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-fuchsia-400 border-t-transparent" />
                           {lang === "ko" ? "상담 맥락을 불러오는 중..." : lang === "ja" ? "会話文脈を読み込み中..." : "Loading conversation context..."}
                         </div>
+                      ) : feedbackContextMessagesQuery.isError ? (
+                        <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[10px]" style={{ color: th.textMuted }}>
+                          <span className="text-base">⚠️</span>
+                          <p>{lang === "ko" ? "상담 맥락을 불러오지 못했습니다." : lang === "ja" ? "会話文脈を読み込めませんでした。" : "Could not load the conversation context."}</p>
+                          <button type="button" onClick={() => void feedbackContextMessagesQuery.refetch()} disabled={feedbackContextMessagesQuery.isFetching} className="rounded-lg border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
+                            ↻ {feedbackContextMessagesQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                          </button>
+                        </div>
                       ) : feedbackContextMessagesQuery.data && feedbackContextMessagesQuery.data.length > 0 ? (
                         feedbackContextMessagesQuery.data.map(message => {
                           const isRatedAnswer = (feedbackContextItem.messageId !== null && message.id === feedbackContextItem.messageId)
@@ -3647,6 +3655,14 @@ export default function Dashboard() {
                     <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
                       <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>{lang === "ko" ? "피드백 이력 불러오는 중..." : lang === "ja" ? "フィードバック履歴を読み込み中..." : "Loading feedback history..."}</span>
+                    </div>
+                  ) : feedbackHistoryQuery.isError ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" style={{ color: th.textMuted }}>
+                      <span className="text-base">⚠️</span>
+                      <p>{lang === "ko" ? "피드백 이력을 불러오지 못했습니다." : lang === "ja" ? "フィードバック履歴を読み込めませんでした。" : "Could not load feedback history."}</p>
+                      <button type="button" onClick={() => void feedbackHistoryQuery.refetch()} disabled={feedbackHistoryQuery.isFetching} className="rounded-lg border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
+                        ↻ {feedbackHistoryQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                      </button>
                     </div>
                   ) : paginatedFeedbackHistory.length > 0 ? (
                     paginatedFeedbackHistory.map(item => {
