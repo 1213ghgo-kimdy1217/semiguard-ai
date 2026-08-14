@@ -621,7 +621,12 @@ function MonthlyHeatmap({
 // ─── 메인 대시보드 ───────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [, setLocation] = useLocation();
-  const [lang, setLang] = useState<Lang>("ko");
+  const [lang, setLang] = useState<Lang>(() => {
+    const requestedLang = import.meta.env.DEV
+      ? new URLSearchParams(window.location.search).get("lang")
+      : null;
+    return requestedLang === "en" || requestedLang === "ja" ? requestedLang : "ko";
+  });
   const t = translations[lang] as Translation;
   const [isDark, setIsDark] = useState<boolean>(() => {
     try { return localStorage.getItem("semiguard_theme") !== "light"; } catch { return true; }
@@ -723,7 +728,9 @@ export default function Dashboard() {
   const llmHistoryQuery = trpc.semiguard.getLlmHistory.useQuery(undefined, { refetchInterval: 10000 });
 
   // 대화형 AI 상담 챗봇 상태 및 세션 보관 관리
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(() =>
+    import.meta.env.DEV && new URLSearchParams(window.location.search).get("chat") === "open",
+  );
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [showManualRagModal, setShowManualRagModal] = useState(false);
@@ -896,7 +903,9 @@ export default function Dashboard() {
 
   const handleResetChat = async () => {
     try {
-      const newTitle = chatMessages.length > 1 ? chatMessages[1].content.slice(0, 25) + "..." : (lang === "ko" ? "새로운 상담" : "New Consultation");
+      const newTitle = chatMessages.length > 1
+        ? chatMessages[1].content.slice(0, 25) + "..."
+        : (lang === "ko" ? "새로운 상담" : lang === "ja" ? "新しい相談" : "New Consultation");
       const res = await createSessionMutation.mutateAsync({ title: newTitle });
       setActiveSessionId(res.sessionId);
       const initialMsg = lang === "ko"
@@ -971,7 +980,11 @@ export default function Dashboard() {
         ...prev,
         {
           role: "assistant",
-          content: lang === "ko" ? "응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." : "Error generating response. Please try again.",
+          content: lang === "ko"
+            ? "응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+            : lang === "ja"
+              ? "回答の生成中にエラーが発生しました。しばらくしてからもう一度お試しください。"
+              : "Error generating response. Please try again.",
           timestamp: Date.now(),
         },
       ]);
@@ -1026,7 +1039,11 @@ export default function Dashboard() {
       toast.success(lang === "ko" ? "피드백을 반영한 답변을 생성했습니다." : lang === "ja" ? "フィードバックを反映した回答を生成しました。" : "Generated an answer using your feedback.");
     } catch (error) {
       console.error("Feedback regeneration failed:", error);
-      toast.error(lang === "ko" ? "답변을 다시 생성하지 못했습니다. 잠시 후 재시도해 주세요." : "Could not regenerate the answer. Please try again.");
+      toast.error(lang === "ko"
+        ? "답변을 다시 생성하지 못했습니다. 잠시 후 재시도해 주세요."
+        : lang === "ja"
+          ? "回答を再生成できませんでした。しばらくしてからもう一度お試しください。"
+          : "Could not regenerate the answer. Please try again.");
     } finally {
       setIsFeedbackRegenerating(false);
       setIsChatLoading(false);
@@ -2138,15 +2155,15 @@ export default function Dashboard() {
 
       {/* ── AI 챗봇 대화창 모달 ── */}
       {isChatOpen && (
-        <div className="fixed inset-0 z-[550] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[550] flex items-stretch justify-center bg-black/60 backdrop-blur-sm animate-fadeIn sm:items-center sm:p-4">
           <div
-            className="w-[95vw] max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh] sm:h-[600px] border relative"
+            className="relative flex h-[100dvh] min-h-0 w-full flex-col overflow-hidden border shadow-2xl sm:h-[min(600px,90vh)] sm:w-[95vw] sm:max-w-lg sm:rounded-2xl"
             style={{
               background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
               borderColor: "oklch(0.75 0.18 200 / 0.4)",
             }}>
             {/* 챗봇 헤더 */}
-            <div className="px-3 sm:px-5 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-2 border-b" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
+            <div className="flex flex-col gap-2 border-b px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0" style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))", color: "white" }}>
                   🤖
@@ -2167,7 +2184,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
+              <div className="-mb-1 flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-1 sm:mb-0 sm:w-auto sm:justify-end sm:overflow-visible sm:pb-0">
                 <button
                   type="button"
                   onClick={() => setShowHistoryPanel(!showHistoryPanel)}
@@ -2206,6 +2223,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setIsChatOpen(false)}
+                  aria-label={lang === "ko" ? "상담 닫기" : lang === "ja" ? "相談を閉じる" : "Close consultation"}
                   className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border shrink-0"
                   style={{ borderColor: th.border2, color: th.textMuted }}>
                   ✕
@@ -2261,7 +2279,7 @@ export default function Dashboard() {
             {/* 설비 매뉴얼 RAG 지식 등록 모달 */}
             {showManualRagModal && (
               <div className="absolute inset-0 z-[565] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md animate-fadeIn">
-                <div className="w-full max-w-md rounded-2xl border p-4 sm:p-5 shadow-2xl space-y-3" style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}>
+                <div className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border p-4 sm:p-5 shadow-2xl space-y-3 custom-scrollbar" style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h4 className="text-sm font-bold" style={{ color: th.text }}>📘 {lang === "ko" ? "설비 매뉴얼 RAG 등록" : lang === "ja" ? "設備マニュアルRAG登録" : "Add Manual to RAG"}</h4>
@@ -2269,7 +2287,7 @@ export default function Dashboard() {
                         {lang === "ko" ? "매뉴얼·점검표의 텍스트를 등록하면, AI가 질문과 관련된 부분을 찾아 근거로 제시합니다. 민감정보는 제외해 주세요." : lang === "ja" ? "マニュアル・点検表のテキストを登録すると、AIが質問に関連する箇所を根拠として提示します。機密情報は除外してください。" : "Add manual or checklist text. The AI retrieves relevant sections as evidence. Exclude confidential information."}
                       </p>
                     </div>
-                    <button type="button" onClick={() => setShowManualRagModal(false)} className="text-sm shrink-0 hover:opacity-70" style={{ color: th.textMuted }} aria-label="Close">✕</button>
+                    <button type="button" onClick={() => setShowManualRagModal(false)} className="text-sm shrink-0 hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "매뉴얼 등록 닫기" : lang === "ja" ? "マニュアル登録を閉じる" : "Close manual registration"}>✕</button>
                   </div>
                   <input
                     value={manualTitle}
@@ -2319,7 +2337,7 @@ export default function Dashboard() {
 
             {/* 상담 기록 사이드 패널 */}
             {showHistoryPanel && (
-              <div className="absolute inset-x-2 sm:inset-x-auto sm:right-4 top-14 bottom-2 sm:w-72 z-[570] rounded-xl shadow-2xl border p-3 flex flex-col backdrop-blur-md animate-fadeIn"
+              <div className="absolute inset-0 z-[570] flex flex-col border p-3 shadow-2xl backdrop-blur-md animate-fadeIn sm:inset-x-auto sm:right-4 sm:top-14 sm:bottom-2 sm:w-72 sm:rounded-xl"
                 style={{
                   background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
                   borderColor: "oklch(0.75 0.18 200 / 0.4)",
@@ -2342,7 +2360,8 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => setShowHistoryPanel(false)}
-                        className="text-xs text-muted-foreground hover:opacity-70">
+                        className="text-xs text-muted-foreground hover:opacity-70"
+                        aria-label={lang === "ko" ? "상담 기록 닫기" : lang === "ja" ? "相談履歴を閉じる" : "Close consultation history"}>
                         ✕
                       </button>
                     </div>
@@ -2495,7 +2514,8 @@ export default function Dashboard() {
                             }
                           }}
                           className="text-red-400 hover:text-red-500 p-1 text-xs"
-                          title="삭제">
+                          title={lang === "ko" ? "삭제" : lang === "ja" ? "削除" : "Delete"}
+                          aria-label={lang === "ko" ? "상담 기록 삭제" : lang === "ja" ? "相談履歴を削除" : "Delete consultation history"}>
                           🗑️
                         </button>
                       </div>
@@ -2512,7 +2532,7 @@ export default function Dashboard() {
 
             {/* 피드백·재생성 답변 히스토리 사이드 패널 */}
             {showFeedbackHistoryPanel && (
-              <div className="absolute inset-x-2 sm:inset-x-auto sm:right-4 top-14 bottom-2 sm:w-80 z-[570] rounded-xl shadow-2xl border p-3 flex flex-col backdrop-blur-md animate-fadeIn"
+              <div className="absolute inset-0 z-[570] flex flex-col border p-3 shadow-2xl backdrop-blur-md animate-fadeIn sm:inset-x-auto sm:right-4 sm:top-14 sm:bottom-2 sm:w-80 sm:rounded-xl"
                 style={{
                   background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
                   borderColor: "oklch(0.62 0.20 300 / 0.45)",
@@ -2535,7 +2555,7 @@ export default function Dashboard() {
                     type="button"
                     onClick={() => setShowFeedbackHistoryPanel(false)}
                     className="shrink-0 text-xs text-muted-foreground hover:opacity-70"
-                    aria-label="Close">
+                    aria-label={lang === "ko" ? "피드백 이력 닫기" : lang === "ja" ? "フィードバック履歴を閉じる" : "Close feedback history"}>
                     ✕
                   </button>
                 </div>
@@ -2906,7 +2926,7 @@ export default function Dashboard() {
             )}
 
             {/* 대화 메시지 영역 */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3">
+            <div className="min-h-0 flex-1 overflow-y-auto space-y-3 p-3 sm:p-4 custom-scrollbar">
               {/* 여기서부터 메시지 목록 */}
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className={`flex items-end gap-1.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -2915,7 +2935,7 @@ export default function Dashboard() {
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
-                  <div className="max-w-[80%] flex flex-col gap-1.5">
+                  <div className="min-w-0 max-w-[88%] flex flex-col gap-1.5 sm:max-w-[80%]">
                     <div
                       className={`rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                         msg.role === "user" ? "rounded-tr-none" : "rounded-tl-none border"
@@ -2935,7 +2955,7 @@ export default function Dashboard() {
                           ✨ {lang === "ko" ? "피드백이 반영된 답변입니다" : lang === "ja" ? "フィードバックを反映した回答です" : "Feedback-informed response"}
                         </div>
                       )}
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                       {msg.role === "assistant" && msg.manualSources && msg.manualSources.length > 0 && (
                         <div className="mt-3 border-t pt-2" style={{ borderColor: th.border2 }}>
                           <p className="mb-1.5 text-[9px] font-bold" style={{ color: th.textMuted }}>
@@ -3059,7 +3079,11 @@ export default function Dashboard() {
                                         void persistChatFeedback(idx, "dislike", reasonItem.id as "inaccurate" | "insufficient" | "irrelevant", label);
                                         setOtherReasonIdx(null);
                                         setActiveDislikeIdx(null);
-                                        toast.success(lang === "ko" ? "피드백이 반영되었습니다. 아래 버튼으로 답변을 다시 생성할 수 있습니다." : "Feedback saved. You can regenerate the answer below.");
+                                        toast.success(lang === "ko"
+                                          ? "피드백이 반영되었습니다. 아래 버튼으로 답변을 다시 생성할 수 있습니다."
+                                          : lang === "ja"
+                                            ? "フィードバックを反映しました。下のボタンから回答を再生成できます。"
+                                            : "Feedback saved. You can regenerate the answer below.");
                                       }}
                                       className={`text-left px-2 py-1 rounded text-[10px] border transition-all ${
                                         messageReasons[idx] === (lang === "ko" ? reasonItem.ko : lang === "ja" ? reasonItem.ja : reasonItem.en)
@@ -3093,7 +3117,11 @@ export default function Dashboard() {
                                             void persistChatFeedback(idx, "dislike", "other", reasonText);
                                             setOtherReasonIdx(null);
                                             setActiveDislikeIdx(null);
-                                            toast.success(lang === "ko" ? "구체적인 피드백이 반영되었습니다." : "Detailed feedback saved.");
+                                            toast.success(lang === "ko"
+                                              ? "구체적인 피드백이 반영되었습니다."
+                                              : lang === "ja"
+                                                ? "具体的なフィードバックを反映しました。"
+                                                : "Detailed feedback saved.");
                                           }}
                                           className="rounded-md px-2 py-1 text-[10px] font-bold text-white disabled:opacity-40"
                                           style={{ background: "oklch(0.58 0.20 20)" }}>
@@ -3148,7 +3176,7 @@ export default function Dashboard() {
             </div>
 
             {/* 빠른 질문 칩 영역 */}
-            <div className="px-4 py-2 border-t flex gap-1.5 overflow-x-auto" style={{ borderColor: th.border, background: th.bgCard2 }}>
+            <div className="flex gap-1.5 overflow-x-auto border-t px-3 py-2 sm:px-4" style={{ borderColor: th.border, background: th.bgCard2 }}>
               {[
                 lang === "ko" ? "가장 먼저 점검할 부품은?" : lang === "ja" ? "最初に点検すべき部品は？" : "What to inspect first?",
                 lang === "ko" ? "장비를 즉시 중지해야 하나요?" : lang === "ja" ? "直ちに設備を停止すべきですか？" : "Should I stop immediately?",
@@ -3167,7 +3195,7 @@ export default function Dashboard() {
             </div>
 
             {/* 입력 폼 영역 */}
-            <div className="p-4 border-t flex items-end gap-2" style={{ borderColor: th.border, background: th.bgCard }}>
+            <div className="flex flex-col gap-2 border-t p-2.5 sm:flex-row sm:items-end sm:p-4" style={{ borderColor: th.border, background: th.bgCard }}>
               <textarea
                 rows={1}
                 value={chatInput}
@@ -3185,14 +3213,14 @@ export default function Dashboard() {
                     ? "設備の状態について質問してください... (Enter: 送信, Shift + Enter: 改行)"
                     : "Ask about equipment anomaly... (Enter: Send, Shift + Enter: Newline)"
                 }
-                className="flex-1 rounded-xl border px-3.5 py-2 text-xs outline-none transition-all focus:ring-2 focus:ring-cyan-500/40 resize-none max-h-24 custom-scrollbar"
+                className="min-h-11 w-full flex-1 resize-none rounded-xl border px-3.5 py-2 text-xs outline-none transition-all focus:ring-2 focus:ring-cyan-500/40 max-h-24 custom-scrollbar"
                 style={{ borderColor: th.border2, background: th.bgCard2, color: th.text }}
               />
               <button
                 type="button"
                 onClick={() => void handleSendChatMessage()}
                 disabled={isChatLoading || !chatInput.trim()}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-95 disabled:opacity-40 active:scale-95 flex items-center gap-1.5 shrink-0"
+                className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-xs font-bold text-white transition-all hover:opacity-95 active:scale-95 disabled:opacity-40 sm:w-auto sm:py-2"
                 style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))" }}>
                 <span>{lang === "ko" ? "전송" : lang === "ja" ? "送信" : "Send"}</span>
                 <span>📤</span>
@@ -3216,7 +3244,7 @@ export default function Dashboard() {
                         {lang === "ko" ? `구간 ${activeManualSource.chunkIndex + 1}` : lang === "ja" ? `区間 ${activeManualSource.chunkIndex + 1}` : `Chunk ${activeManualSource.chunkIndex + 1}`}
                       </p>
                     </div>
-                    <button type="button" onClick={() => setActiveManualSource(null)} className="shrink-0 text-sm hover:opacity-70" style={{ color: th.textMuted }} aria-label="Close">✕</button>
+                    <button type="button" onClick={() => setActiveManualSource(null)} className="shrink-0 text-sm hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "매뉴얼 원문 닫기" : lang === "ja" ? "マニュアル原文を閉じる" : "Close manual source"}>✕</button>
                   </div>
                   <div className="flex-1 overflow-y-auto px-4 py-3 custom-scrollbar">
                     <p className="whitespace-pre-wrap text-[11px] leading-relaxed" style={{ color: th.text }}>{activeManualSource.content}</p>

@@ -620,7 +620,7 @@ Guidelines:
           const fallback = lang === "ko"
             ? "AI 상담 연결 중 일시적인 지연이 발생했습니다. 센서 편차와 권장 조치를 다시 확인해 주세요."
             : lang === "ja"
-            ? "AI相談の接続中に一時적인遅延が発生しました。センサーの偏りと推奨措置を再確認してください。"
+            ? "AI相談への接続中に一時的な遅延が発生しました。センサーの偏差と推奨措置を再確認してください。"
             : "Temporary delay connecting to AI consultation. Please recheck sensor deviations and recommendations.";
           return { reply: fallback, manualSources: [] };
         }
