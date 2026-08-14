@@ -831,7 +831,7 @@ export default function Dashboard() {
   const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState(() => window.localStorage.getItem("semiguard_history_search") ?? "");
   const [debouncedHistorySearch, setDebouncedHistorySearch] = useState("");
-  const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
+  const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">(() => window.localStorage.getItem("semiguard_history_filter") === "pinned" ? "pinned" : "all");
   const [historySessionSort, setHistorySessionSort] = useState<"newest" | "oldest" | "title">(() => {
     const stored = window.localStorage.getItem("semiguard_history_sort");
     return stored === "oldest" || stored === "title" ? stored : "newest";
@@ -851,6 +851,9 @@ export default function Dashboard() {
   useEffect(() => {
     window.localStorage.setItem("semiguard_history_search", searchKeyword);
   }, [searchKeyword]);
+  useEffect(() => {
+    window.localStorage.setItem("semiguard_history_filter", historySessionFilter);
+  }, [historySessionFilter]);
   const isHistorySearchPending = normalizedHistorySearch !== debouncedHistorySearch;
   const searchChatSessionsQuery = trpc.semiguard.searchChatSessions.useQuery(
     { query: debouncedHistorySearch || "pending" },
