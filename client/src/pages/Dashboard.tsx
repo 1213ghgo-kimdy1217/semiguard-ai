@@ -980,7 +980,13 @@ export default function Dashboard() {
   });
   const positiveFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "like").length;
   const negativeFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "dislike").length;
-  const feedbackReasonCounts = allFeedbackHistory.reduce<Record<"inaccurate" | "insufficient" | "irrelevant" | "other", number>>((counts, item) => {
+  const feedbackReasonCountScope = allFeedbackHistory.filter(item => {
+    const searchable = [item.reasonCode, item.reasonText, item.messageContent, item.regeneratedContent].filter(Boolean).join(" ").toLocaleLowerCase();
+    const createdAt = new Date(item.createdAt).getTime();
+    const matchesDate = (feedbackStartAt === null || createdAt >= feedbackStartAt) && (feedbackEndAt === null || createdAt <= feedbackEndAt);
+    return item.feedbackType === "dislike" && matchesDate && (!normalizedFeedbackSearch || searchable.includes(normalizedFeedbackSearch));
+  });
+  const feedbackReasonCounts = feedbackReasonCountScope.reduce<Record<"inaccurate" | "insufficient" | "irrelevant" | "other", number>>((counts, item) => {
     if (item.feedbackType === "dislike" && item.reasonCode && item.reasonCode in counts) {
       counts[item.reasonCode as keyof typeof counts] += 1;
     }
@@ -3505,7 +3511,7 @@ export default function Dashboard() {
                       <>
                         <span className="mx-0.5 h-3 w-px" style={{ background: th.border2 }} aria-hidden="true" />
                         {([
-                          { id: "all", ko: "사유 전체", ja: "理由すべて", en: "All reasons", icon: "☷", count: negativeFeedbackCount },
+                          { id: "all", ko: "사유 전체", ja: "理由すべて", en: "All reasons", icon: "☷", count: feedbackReasonCountScope.length },
                           { id: "inaccurate", ko: "정확성", ja: "正確性", en: "Accuracy", icon: "◎", count: feedbackReasonCounts.inaccurate },
                           { id: "insufficient", ko: "설명 부족", ja: "説明不足", en: "Detail", icon: "≡", count: feedbackReasonCounts.insufficient },
                           { id: "irrelevant", ko: "관련 없음", ja: "関連なし", en: "Relevance", icon: "↗", count: feedbackReasonCounts.irrelevant },
