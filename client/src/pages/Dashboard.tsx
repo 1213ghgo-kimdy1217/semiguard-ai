@@ -966,6 +966,36 @@ export default function Dashboard() {
     toast.success(lang === "ko" ? `${sortedFeedbackHistory.length}개 피드백 기록을 CSV로 내보냈습니다.` : lang === "ja" ? `${sortedFeedbackHistory.length}件のフィードバック履歴をCSVでエクスポートしました。` : `Exported ${sortedFeedbackHistory.length} feedback records as CSV.`);
   };
 
+  const exportFilteredChatSessionsCsv = () => {
+    if (filteredAndSortedChatSessions.length === 0) {
+      toast.info(lang === "ko" ? "내보낼 상담 기록이 없습니다." : lang === "ja" ? "エクスポートする相談履歴がありません。" : "There are no consultation records to export.");
+      return;
+    }
+    const escapeCsv = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+    const headers = lang === "ko"
+      ? ["상담 제목", "고정 여부", "메시지 수", "마지막 갱신 시각"]
+      : lang === "ja"
+        ? ["相談タイトル", "固定", "メッセージ数", "最終更新日時"]
+        : ["Consultation title", "Pinned", "Message count", "Last updated"];
+    const rows = filteredAndSortedChatSessions.map(session => [
+      session.title,
+      session.isPinned === 1 ? (lang === "ko" ? "고정" : lang === "ja" ? "固定" : "Pinned") : (lang === "ko" ? "일반" : lang === "ja" ? "通常" : "Normal"),
+      Number(session.messageCount ?? 0),
+      new Date(session.updatedAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"),
+    ]);
+    const csv = `\ufeff${[headers, ...rows].map(row => row.map(escapeCsv).join(",")).join("\r\n")}`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `semiguard-consultations-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    toast.success(lang === "ko" ? `${filteredAndSortedChatSessions.length}개 상담 기록을 CSV로 내보냈습니다.` : lang === "ja" ? `${filteredAndSortedChatSessions.length}件の相談履歴をCSVでエクスポートしました。` : `Exported ${filteredAndSortedChatSessions.length} consultation records as CSV.`);
+  };
+
   const analyzeCurrentFeedbackKeywords = async () => {
     if (sortedFeedbackHistory.length === 0) {
       toast.info(lang === "ko" ? "AI가 분석할 현재 필터 결과가 없습니다." : lang === "ja" ? "AIが分析する現在のフィルター結果がありません。" : "There are no currently filtered records for AI analysis.");
@@ -2773,6 +2803,15 @@ export default function Dashboard() {
                         <option value="oldest">{lang === "ko" ? "오래된순" : lang === "ja" ? "古い順" : "Oldest"}</option>
                         <option value="title">{lang === "ko" ? "제목순" : lang === "ja" ? "タイトル順" : "Title"}</option>
                       </select>
+                      <button
+                        type="button"
+                        onClick={exportFilteredChatSessionsCsv}
+                        disabled={filteredAndSortedChatSessions.length === 0}
+                        title={lang === "ko" ? "현재 필터 결과를 CSV로 내보내기" : lang === "ja" ? "現在のフィルター結果をCSVでエクスポート" : "Export current filtered results as CSV"}
+                        className="rounded border px-1.5 py-1 text-[9px] font-bold transition-all hover:opacity-80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                        style={{ borderColor: "oklch(0.65 0.18 200 / 0.40)", background: "oklch(0.65 0.18 200 / 0.10)", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.17 200)" }}>
+                        ⬇ CSV
+                      </button>
                       <span className="text-[9px] whitespace-nowrap" style={{ color: th.textMuted }}>
                         {filteredAndSortedChatSessions.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " results"}
                       </span>
