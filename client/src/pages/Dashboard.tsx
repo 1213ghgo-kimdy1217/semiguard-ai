@@ -2884,9 +2884,10 @@ export default function Dashboard() {
                                           const blob = new Blob([`\ufeff${markdown}`], { type: "text/markdown;charset=utf-8" });
                                           const url = URL.createObjectURL(blob);
                                           const anchor = window.document.createElement("a");
-                                          const safeTitle = manualPreviewQuery.data.document.title.replace(/[\\/:*?\"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 40) || "manual";
+                                          const safeTitle = manualPreviewQuery.data.document.title.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 40) || "manual";
+                                          const filenamePrefix = lang === "ko" ? "세미가드_매뉴얼" : lang === "ja" ? "セミガード_マニュアル" : "semiguard-manual";
                                           anchor.href = url;
-                                          anchor.download = `semiguard-manual-${safeTitle}-${new Date().toISOString().slice(0, 10)}.md`;
+                                          anchor.download = `${filenamePrefix}_${safeTitle}_${new Date().toISOString().slice(0, 10)}.md`;
                                           window.document.body.appendChild(anchor);
                                           anchor.click();
                                           anchor.remove();
