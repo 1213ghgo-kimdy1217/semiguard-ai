@@ -947,6 +947,12 @@ export default function Dashboard() {
     const direction = manualDocumentSort === "newest" ? -1 : 1;
     return direction * (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
   }), [filteredManualDocuments, manualDocumentSort]);
+  const hasActiveManualFilters = normalizedManualSearch.length > 0 || manualDocumentSort !== "newest";
+  const resetManualFilters = () => {
+    setManualSearchQuery("");
+    setDebouncedManualSearch("");
+    setManualDocumentSort("newest");
+  };
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedManualSearch(normalizedManualSearch), 250);
     return () => window.clearTimeout(timer);
@@ -2885,6 +2891,16 @@ export default function Dashboard() {
                             <option value="oldest">{lang === "ko" ? "오래된순" : lang === "ja" ? "古い順" : "Oldest"}</option>
                             <option value="title">{lang === "ko" ? "제목순" : lang === "ja" ? "タイトル順" : "Title"}</option>
                           </select>
+                          {hasActiveManualFilters && (
+                            <button
+                              type="button"
+                              onClick={resetManualFilters}
+                              title={lang === "ko" ? "매뉴얼 검색·정렬 필터 초기화" : lang === "ja" ? "マニュアル検索・並び替えフィルターをリセット" : "Reset manual search and sort filters"}
+                              className="rounded border px-1.5 py-1 text-[9px] font-bold transition-all hover:opacity-80 active:scale-95"
+                              style={{ borderColor: th.border2, background: th.bgCard2, color: th.textMuted }}>
+                              ↺ {lang === "ko" ? "초기화" : lang === "ja" ? "リセット" : "Reset"}
+                            </button>
+                          )}
                         </div>
                         {isManualSearching ? (
                           <p className="py-3 text-center text-[10px]" style={{ color: th.textMuted }}>
