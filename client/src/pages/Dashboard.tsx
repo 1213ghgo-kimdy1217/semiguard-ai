@@ -38,7 +38,9 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 function exportLogsToCSV(logs: AnomalyLogEntry[], lang: Lang) {
   const headers = lang === "ko"
     ? ["발생 시각", "전류(A)", "온도(°C)", "진동(mm/s)", "소음(dB)", "이상 점수", "위험도", "이상 여부"]
-    : ["Time", "Current(A)", "Temp(°C)", "Vib(mm/s)", "Noise(dB)", "Score", "Level", "Anomaly"];
+    : lang === "ja"
+      ? ["発生時刻", "電流(A)", "温度(°C)", "振動(mm/s)", "騒音(dB)", "異常スコア", "リスクレベル", "異常判定"]
+      : ["Time", "Current(A)", "Temp(°C)", "Vib(mm/s)", "Noise(dB)", "Score", "Level", "Anomaly"];
   // 쉼표·따옴표·줄바꿈이 포함된 셀을 RFC 4180 방식으로 이스케이프
   const escape = (v: string | number) => {
     const s = String(v);
@@ -52,7 +54,7 @@ function exportLogsToCSV(logs: AnomalyLogEntry[], lang: Lang) {
     escape(log.noise.toFixed(1)),
     escape(log.anomalyScore),
     escape(log.riskLevel),
-    escape(log.isAnomaly ? (lang === "ko" ? "이상" : "Anomaly") : (lang === "ko" ? "정상" : "Normal")),
+    escape(log.isAnomaly ? (lang === "ko" ? "이상" : lang === "ja" ? "異常" : "Anomaly") : (lang === "ko" ? "정상" : lang === "ja" ? "正常" : "Normal")),
   ]);
   const csv = [headers.map(h => escape(h)), ...rows].map(r => r.join(",")).join("\n");
   const bom = "\uFEFF";
@@ -60,7 +62,8 @@ function exportLogsToCSV(logs: AnomalyLogEntry[], lang: Lang) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `semiguard_logs_${new Date().toISOString().slice(0, 10)}.csv`;
+  const filenamePrefix = lang === "ko" ? "세미가드_이상기록" : lang === "ja" ? "セミガード_異常履歴" : "semiguard_logs";
+  a.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
