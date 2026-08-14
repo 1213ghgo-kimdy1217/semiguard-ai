@@ -755,6 +755,7 @@ export default function Dashboard() {
   const [manualTitle, setManualTitle] = useState("");
   const [manualContent, setManualContent] = useState("");
   const [manualSearchQuery, setManualSearchQuery] = useState("");
+  const [debouncedManualSearch, setDebouncedManualSearch] = useState("");
   const [manualDocumentToDelete, setManualDocumentToDelete] = useState<number | null>(null);
   const [previewManualDocumentId, setPreviewManualDocumentId] = useState<number | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
@@ -862,16 +863,25 @@ export default function Dashboard() {
   const deleteManualDocumentMutation = trpc.semiguard.deleteManualDocument.useMutation();
   const manualDocumentsQuery = trpc.semiguard.getManualDocuments.useQuery(undefined, { enabled: isChatOpen });
   const normalizedManualSearch = manualSearchQuery.trim();
+  const normalizedDebouncedManualSearch = debouncedManualSearch.trim();
   const manualDocumentSearchQuery = trpc.semiguard.searchManualDocuments.useQuery(
-    { search: normalizedManualSearch || "_" },
-    { enabled: isChatOpen && showManualRagModal && normalizedManualSearch.length > 0 },
+    { search: normalizedDebouncedManualSearch || "_" },
+    { enabled: isChatOpen && showManualRagModal && normalizedDebouncedManualSearch.length > 0 },
   );
   const manualPreviewQuery = trpc.semiguard.getManualDocumentPreview.useQuery(
     { documentId: previewManualDocumentId ?? 1 },
     { enabled: isChatOpen && showManualRagModal && previewManualDocumentId !== null },
   );
   const allManualDocuments = manualDocumentsQuery.data ?? [];
-  const filteredManualDocuments = normalizedManualSearch ? (manualDocumentSearchQuery.data ?? []) : allManualDocuments;
+  const isManualSearchPending = normalizedManualSearch.length > 0 && normalizedManualSearch !== normalizedDebouncedManualSearch;
+  const isManualSearching = normalizedManualSearch.length > 0 && (isManualSearchPending || manualDocumentSearchQuery.isFetching);
+  const filteredManualDocuments = normalizedManualSearch
+    ? (isManualSearchPending ? [] : (manualDocumentSearchQuery.data ?? []))
+    : allManualDocuments;
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedManualSearch(normalizedManualSearch), 250);
+    return () => window.clearTimeout(timer);
+  }, [normalizedManualSearch]);
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
   const updateSessionTitleMutation = trpc.semiguard.updateChatSessionTitle.useMutation();
@@ -2555,10 +2565,12 @@ export default function Dashboard() {
                         📚 {lang === "ko" ? "등록된 RAG 매뉴얼" : lang === "ja" ? "登録済みRAGマニュアル" : "Registered RAG manuals"}
                       </h5>
                       <span className="text-[10px]" style={{ color: th.textMuted }}>
-                        {normalizedManualSearch ? `${filteredManualDocuments.length}/` : ""}{allManualDocuments.length}{lang === "ko" ? "개" : lang === "ja" ? "件" : " items"}
+                        {isManualSearching
+                          ? (lang === "ko" ? "검색 중..." : lang === "ja" ? "検索中..." : "Searching...")
+                          : <>{normalizedManualSearch ? `${filteredManualDocuments.length}/` : ""}{allManualDocuments.length}{lang === "ko" ? "개" : lang === "ja" ? "件" : " items"}</>}
                       </span>
                     </div>
-                    {manualDocumentsQuery.isLoading || manualDocumentSearchQuery.isLoading ? (
+                    {manualDocumentsQuery.isLoading ? (
                       <p className="py-2 text-center text-[10px]" style={{ color: th.textMuted }}>
                         {lang === "ko" ? "매뉴얼 목록을 불러오는 중..." : lang === "ja" ? "マニュアル一覧を読み込み中..." : "Loading manuals..."}
                       </p>
@@ -2584,7 +2596,13 @@ export default function Dashboard() {
                             </button>
                           )}
                         </div>
-                        {filteredManualDocuments.length > 0 ? (
+                        {isManualSearching ? (
+                          <p className="py-3 text-center text-[10px]" style={{ color: th.textMuted }}>
+                            {isManualSearchPending
+                              ? (lang === "ko" ? "입력을 확인하는 중..." : lang === "ja" ? "入力を確認中..." : "Waiting for input...")
+                              : (lang === "ko" ? "매뉴얼 제목과 원문을 검색하는 중..." : lang === "ja" ? "マニュアルのタイトル・原文を検索中..." : "Searching manual titles and content...")}
+                          </p>
+                        ) : filteredManualDocuments.length > 0 ? (
                         <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
                         {filteredManualDocuments.map(document => (
                           <div key={document.id} className="rounded-lg border p-2" style={{ borderColor: th.border2, background: th.bgCard }}>
