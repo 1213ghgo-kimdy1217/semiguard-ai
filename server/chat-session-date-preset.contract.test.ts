@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("consultation history date preset contract", () => {
   it("provides all, today, seven-day, and thirty-day date presets", () => {
-    expect(dashboardSource).toContain('useState<"all" | "today" | "week" | "month" | "custom">("all")');
+    expect(dashboardSource).toContain('useState<"all" | "today" | "week" | "month" | "custom">(() =>');
     expect(dashboardSource).toContain("const applyHistoryDatePreset");
     expect(dashboardSource).toContain('id: "today"');
     expect(dashboardSource).toContain('id: "week"');

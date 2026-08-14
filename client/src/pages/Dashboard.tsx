@@ -839,7 +839,10 @@ export default function Dashboard() {
   const [historySessionPage, setHistorySessionPage] = useState(1);
   const [historySessionStartDate, setHistorySessionStartDate] = useState("");
   const [historySessionEndDate, setHistorySessionEndDate] = useState("");
-  const [historySessionDatePreset, setHistorySessionDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">("all");
+  const [historySessionDatePreset, setHistorySessionDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">(() => {
+    const stored = window.localStorage.getItem("semiguard_history_date_preset");
+    return stored === "today" || stored === "week" || stored === "month" ? stored : "all";
+  });
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
@@ -917,6 +920,16 @@ export default function Dashboard() {
     setHistorySessionStartDate(formatDateInput(start));
     setHistorySessionEndDate(formatDateInput(end));
   };
+  useEffect(() => {
+    window.localStorage.setItem("semiguard_history_date_preset", historySessionDatePreset);
+  }, [historySessionDatePreset]);
+  useEffect(() => {
+    if (historySessionDatePreset !== "all" && historySessionDatePreset !== "custom") {
+      applyHistoryDatePreset(historySessionDatePreset);
+    }
+  // Restore a stored relative date range only once on first mount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const hasActiveHistoryFilters = normalizedHistorySearch.length > 0
     || historySessionFilter !== "all"
     || historySessionSort !== "newest"
@@ -2699,7 +2712,7 @@ export default function Dashboard() {
               borderColor: "oklch(0.75 0.18 200 / 0.4)",
             }}>
             {/* 챗봇 헤더 */}
-            <div className="flex flex-col gap-2 border-b px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
+            <div className="flex flex-col gap-2 border-b px-3 py-3 sm:px-5 sm:py-4" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0" style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))", color: "white" }}>
                   🤖
@@ -2719,8 +2732,16 @@ export default function Dashboard() {
                       : (lang === "ko" ? "실시간 센서 기반 맞춤형 진단" : lang === "ja" ? "リアルタイムセンサーカスタム診断" : "Real-time custom diagnosis")}
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsChatOpen(false)}
+                  aria-label={lang === "ko" ? "상담 닫기" : lang === "ja" ? "相談を閉じる" : "Close consultation"}
+                  className="ml-auto w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border shrink-0"
+                  style={{ borderColor: th.border2, color: th.textMuted }}>
+                  ✕
+                </button>
               </div>
-              <div className="-mb-1 flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-1 sm:mb-0 sm:w-auto sm:justify-end sm:overflow-visible sm:pb-0">
+              <div className="-mb-1 flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
                 <button
                   type="button"
                   onClick={() => setShowHistoryPanel(!showHistoryPanel)}
@@ -2766,14 +2787,6 @@ export default function Dashboard() {
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
                   style={{ borderColor: "oklch(0.75 0.18 200 / 0.4)", background: "oklch(0.75 0.18 200 / 0.10)", color: "oklch(0.75 0.18 200)" }}>
                   🔄 {lang === "ko" ? "새 상담" : lang === "ja" ? "新規相談" : "New Chat"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsChatOpen(false)}
-                  aria-label={lang === "ko" ? "상담 닫기" : lang === "ja" ? "相談を閉じる" : "Close consultation"}
-                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border shrink-0"
-                  style={{ borderColor: th.border2, color: th.textMuted }}>
-                  ✕
                 </button>
               </div>
             </div>
