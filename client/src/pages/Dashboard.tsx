@@ -772,6 +772,7 @@ export default function Dashboard() {
   const [showDeleteAllFeedbackConfirm, setShowDeleteAllFeedbackConfirm] = useState(false);
   const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [debouncedHistorySearch, setDebouncedHistorySearch] = useState("");
   const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
   const [historySessionSort, setHistorySessionSort] = useState<"newest" | "oldest" | "title">("newest");
   const [historySessionPage, setHistorySessionPage] = useState(1);
@@ -782,11 +783,18 @@ export default function Dashboard() {
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
   const normalizedHistorySearch = searchKeyword.trim();
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedHistorySearch(normalizedHistorySearch), 250);
+    return () => window.clearTimeout(timer);
+  }, [normalizedHistorySearch]);
+  const isHistorySearchPending = normalizedHistorySearch !== debouncedHistorySearch;
   const searchChatSessionsQuery = trpc.semiguard.searchChatSessions.useQuery(
-    { query: normalizedHistorySearch || "pending" },
-    { enabled: isChatOpen && normalizedHistorySearch.length > 0 },
+    { query: debouncedHistorySearch || "pending" },
+    { enabled: isChatOpen && debouncedHistorySearch.length > 0 },
   );
-  const visibleChatSessions = normalizedHistorySearch.length > 0
+  const visibleChatSessions = isHistorySearchPending
+    ? []
+    : debouncedHistorySearch.length > 0
     ? (searchChatSessionsQuery.data ?? [])
     : (chatSessionsQuery.data ?? []);
   const historySessionStartTime = historySessionStartDate ? new Date(`${historySessionStartDate}T00:00:00`).getTime() : null;
@@ -817,7 +825,7 @@ export default function Dashboard() {
   const filteredHistoryPinnedCount = filteredAndSortedChatSessions.filter(session => session.isPinned === 1).length;
   useEffect(() => {
     setHistorySessionPage(1);
-  }, [normalizedHistorySearch, historySessionFilter, historySessionSort, historySessionStartDate, historySessionEndDate]);
+  }, [debouncedHistorySearch, historySessionFilter, historySessionSort, historySessionStartDate, historySessionEndDate]);
   const applyHistoryDatePreset = (preset: "all" | "today" | "week" | "month") => {
     setHistorySessionDatePreset(preset);
     if (preset === "all") {
@@ -2940,10 +2948,10 @@ export default function Dashboard() {
                   </div>
                 )}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                  {chatSessionsQuery.isLoading || (normalizedHistorySearch.length > 0 && searchChatSessionsQuery.isLoading) ? (
+                  {chatSessionsQuery.isLoading || isHistorySearchPending || (debouncedHistorySearch.length > 0 && searchChatSessionsQuery.isLoading) ? (
                     <div className="flex items-center justify-center py-8 text-xs text-muted-foreground gap-2">
                       <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
-                      <span>{lang === "ko" ? "기록 불러오는 중..." : lang === "ja" ? "履歴を読み込んでいます..." : "Loading history..."}</span>
+                      <span>{isHistorySearchPending || debouncedHistorySearch.length > 0 ? (lang === "ko" ? "기록 검색 중..." : lang === "ja" ? "履歴を検索中..." : "Searching history...") : (lang === "ko" ? "기록 불러오는 중..." : lang === "ja" ? "履歴を読み込んでいます..." : "Loading history...")}</span>
                     </div>
                   ) : chatSessionsQuery.data && chatSessionsQuery.data.length > 0 ? (
                     (() => {
