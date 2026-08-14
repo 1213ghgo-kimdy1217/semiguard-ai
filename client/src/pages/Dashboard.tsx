@@ -804,6 +804,7 @@ export default function Dashboard() {
   const [feedbackHistorySearch, setFeedbackHistorySearch] = useState("");
   const [feedbackHistoryStartDate, setFeedbackHistoryStartDate] = useState("");
   const [feedbackHistoryEndDate, setFeedbackHistoryEndDate] = useState("");
+  const [feedbackHistoryDatePreset, setFeedbackHistoryDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">("all");
   const [feedbackHistorySort, setFeedbackHistorySort] = useState<"newest" | "oldest">("newest");
   const [feedbackHistoryPage, setFeedbackHistoryPage] = useState(1);
   const [animatedPositiveRatio, setAnimatedPositiveRatio] = useState(0);
@@ -1030,9 +1031,31 @@ export default function Dashboard() {
     setFeedbackHistorySearch("");
     setFeedbackHistoryStartDate("");
     setFeedbackHistoryEndDate("");
+    setFeedbackHistoryDatePreset("all");
     setFeedbackHistorySort("newest");
     setFeedbackHistoryPage(1);
     setFeedbackKeywordSummary(null);
+  };
+  const applyFeedbackDatePreset = (preset: "all" | "today" | "week" | "month") => {
+    setFeedbackHistoryDatePreset(preset);
+    if (preset === "all") {
+      setFeedbackHistoryStartDate("");
+      setFeedbackHistoryEndDate("");
+      return;
+    }
+    const formatDateInput = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+    const end = new Date();
+    const start = new Date(end);
+    start.setHours(0, 0, 0, 0);
+    if (preset === "week") start.setDate(start.getDate() - 6);
+    if (preset === "month") start.setDate(start.getDate() - 29);
+    setFeedbackHistoryStartDate(formatDateInput(start));
+    setFeedbackHistoryEndDate(formatDateInput(end));
   };
 
   useEffect(() => {
@@ -3617,7 +3640,7 @@ export default function Dashboard() {
                       type="date"
                       value={feedbackHistoryStartDate}
                       max={feedbackHistoryEndDate || undefined}
-                      onChange={event => setFeedbackHistoryStartDate(event.target.value)}
+                      onChange={event => { setFeedbackHistoryStartDate(event.target.value); setFeedbackHistoryDatePreset("custom"); }}
                       className="w-full rounded-lg border px-1.5 py-1 text-[10px] outline-none focus:ring-1 focus:ring-fuchsia-500"
                       style={{ background: th.bgCard, borderColor: th.border2, color: th.text }}
                     />
@@ -3628,11 +3651,33 @@ export default function Dashboard() {
                       type="date"
                       value={feedbackHistoryEndDate}
                       min={feedbackHistoryStartDate || undefined}
-                      onChange={event => setFeedbackHistoryEndDate(event.target.value)}
+                      onChange={event => { setFeedbackHistoryEndDate(event.target.value); setFeedbackHistoryDatePreset("custom"); }}
                       className="w-full rounded-lg border px-1.5 py-1 text-[10px] outline-none focus:ring-1 focus:ring-fuchsia-500"
                       style={{ background: th.bgCard, borderColor: th.border2, color: th.text }}
                     />
                   </label>
+                </div>
+                <div className="mb-2 flex flex-wrap items-center gap-1">
+                  <span className="mr-0.5 text-[9px] font-bold" style={{ color: th.textMuted }}>{lang === "ko" ? "빠른 기간" : lang === "ja" ? "クイック期間" : "Quick period"}</span>
+                  {([
+                    { id: "all", ko: "전체", ja: "すべて", en: "All" },
+                    { id: "today", ko: "오늘", ja: "今日", en: "Today" },
+                    { id: "week", ko: "7일", ja: "7日", en: "7d" },
+                    { id: "month", ko: "30일", ja: "30日", en: "30d" },
+                  ] as const).map(preset => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => applyFeedbackDatePreset(preset.id)}
+                      className="rounded border px-1.5 py-1 text-[9px] font-bold transition-all"
+                      style={{
+                        borderColor: feedbackHistoryDatePreset === preset.id ? "oklch(0.62 0.20 300 / 0.65)" : th.border2,
+                        background: feedbackHistoryDatePreset === preset.id ? "oklch(0.62 0.20 300 / 0.16)" : "transparent",
+                        color: feedbackHistoryDatePreset === preset.id ? (isDark ? "oklch(0.86 0.14 300)" : "oklch(0.42 0.20 300)") : th.textMuted,
+                      }}>
+                      {lang === "ko" ? preset.ko : lang === "ja" ? preset.ja : preset.en}
+                    </button>
+                  ))}
                 </div>
                 <div className="mb-2 flex items-center gap-1.5">
                   <select
@@ -3646,7 +3691,7 @@ export default function Dashboard() {
                   {(feedbackHistoryStartDate || feedbackHistoryEndDate) && (
                     <button
                       type="button"
-                      onClick={() => { setFeedbackHistoryStartDate(""); setFeedbackHistoryEndDate(""); }}
+                      onClick={() => applyFeedbackDatePreset("all")}
                       title={lang === "ko" ? "날짜 필터 초기화" : lang === "ja" ? "日付フィルターをリセット" : "Reset date filter"}
                       className="rounded-lg border px-2 py-1.5 text-[10px] font-bold transition-all hover:opacity-80"
                       style={{ borderColor: th.border2, color: th.textMuted }}>
