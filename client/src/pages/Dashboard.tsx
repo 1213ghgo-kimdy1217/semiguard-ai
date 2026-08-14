@@ -786,7 +786,9 @@ export default function Dashboard() {
   const [manualDocumentToDelete, setManualDocumentToDelete] = useState<number | null>(null);
   const [previewManualDocumentId, setPreviewManualDocumentId] = useState<number | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
-  const [showFeedbackHistoryPanel, setShowFeedbackHistoryPanel] = useState(false);
+  const [showFeedbackHistoryPanel, setShowFeedbackHistoryPanel] = useState(() =>
+    import.meta.env.DEV && new URLSearchParams(window.location.search).get("feedback") === "open",
+  );
   const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
   const [feedbackHistoryFilter, setFeedbackHistoryFilter] = useState<"all" | "like" | "dislike">("all");
   const [feedbackHistorySearch, setFeedbackHistorySearch] = useState("");
@@ -796,6 +798,7 @@ export default function Dashboard() {
   const [feedbackHistoryPage, setFeedbackHistoryPage] = useState(1);
   const [animatedPositiveRatio, setAnimatedPositiveRatio] = useState(0);
   const [feedbackKeywordSummary, setFeedbackKeywordSummary] = useState<{ mode: "ai" | "fallback"; keywords: string[]; summary: string; improvement: string } | null>(null);
+  const [feedbackContextItem, setFeedbackContextItem] = useState<{ id: number; sessionId: number; messageId: number | null; messageContent: string } | null>(null);
   const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
   const [showDeleteAllFeedbackConfirm, setShowDeleteAllFeedbackConfirm] = useState(false);
   const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
@@ -885,6 +888,10 @@ export default function Dashboard() {
   const feedbackHistoryQuery = trpc.semiguard.getFeedbackHistory.useQuery(
     { limit: 30 },
     { enabled: isChatOpen && showFeedbackHistoryPanel },
+  );
+  const feedbackContextMessagesQuery = trpc.semiguard.getChatMessages.useQuery(
+    { sessionId: feedbackContextItem?.sessionId ?? 0 },
+    { enabled: feedbackContextItem !== null },
   );
   const addManualTextMutation = trpc.semiguard.addManualText.useMutation();
   const deleteManualDocumentMutation = trpc.semiguard.deleteManualDocument.useMutation();
@@ -3535,6 +3542,47 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
+                {feedbackContextItem && (
+                  <div className="absolute inset-0 z-[600] flex flex-col rounded-xl bg-black/80 p-3 backdrop-blur-md animate-fadeIn" role="dialog" aria-modal="true" aria-label={lang === "ko" ? "피드백 상담 맥락" : lang === "ja" ? "フィードバックの会話文脈" : "Feedback conversation context"}>
+                    <div className="flex items-start justify-between gap-3 border-b pb-2" style={{ borderColor: th.border2 }}>
+                      <div>
+                        <h5 className="text-xs font-bold" style={{ color: th.text }}>
+                          💬 {lang === "ko" ? "피드백 상담 맥락" : lang === "ja" ? "フィードバックの会話文脈" : "Feedback conversation context"}
+                        </h5>
+                        <p className="mt-0.5 text-[9px] leading-relaxed" style={{ color: th.textMuted }}>
+                          {lang === "ko" ? "평가한 답변은 강조 표시됩니다. 현재 사용자 소유 세션의 메시지만 표시합니다." : lang === "ja" ? "評価した回答は強調表示されます。現在のユーザー所有セッションのメッセージのみ表示します。" : "The rated response is highlighted. Only messages from your current-user-owned session are shown."}
+                        </p>
+                      </div>
+                      <button type="button" onClick={() => setFeedbackContextItem(null)} className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-bold transition-opacity hover:opacity-70" style={{ borderColor: th.border2, color: th.textMuted }} aria-label={lang === "ko" ? "상담 맥락 닫기" : lang === "ja" ? "会話文脈を閉じる" : "Close conversation context"}>✕</button>
+                    </div>
+                    <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+                      {feedbackContextMessagesQuery.isLoading ? (
+                        <div className="flex items-center justify-center gap-2 py-8 text-[10px]" style={{ color: th.textMuted }}>
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-fuchsia-400 border-t-transparent" />
+                          {lang === "ko" ? "상담 맥락을 불러오는 중..." : lang === "ja" ? "会話文脈を読み込み中..." : "Loading conversation context..."}
+                        </div>
+                      ) : feedbackContextMessagesQuery.data && feedbackContextMessagesQuery.data.length > 0 ? (
+                        feedbackContextMessagesQuery.data.map(message => {
+                          const isRatedAnswer = (feedbackContextItem.messageId !== null && message.id === feedbackContextItem.messageId)
+                            || (message.role === "assistant" && message.content === feedbackContextItem.messageContent);
+                          return (
+                            <div key={message.id} className="rounded-lg border p-2 text-[10px] leading-relaxed" style={{ borderColor: isRatedAnswer ? "oklch(0.72 0.18 300 / 0.72)" : th.border2, background: isRatedAnswer ? "oklch(0.62 0.20 300 / 0.12)" : message.role === "user" ? "oklch(0.65 0.18 200 / 0.10)" : th.bgCard }}>
+                              <div className="mb-1 flex items-center justify-between gap-2 text-[9px] font-bold" style={{ color: isRatedAnswer ? (isDark ? "oklch(0.84 0.16 300)" : "oklch(0.45 0.20 300)") : th.textMuted }}>
+                                <span>{message.role === "user" ? (lang === "ko" ? "사용자" : lang === "ja" ? "ユーザー" : "User") : "SemiGuard AI"}{isRatedAnswer ? ` · ${lang === "ko" ? "평가한 답변" : lang === "ja" ? "評価した回答" : "Rated response"}` : ""}</span>
+                                <span>{new Date(message.createdAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour: "2-digit", minute: "2-digit" })}</span>
+                              </div>
+                              <p className="whitespace-pre-wrap" style={{ color: th.text }}>{message.content}</p>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="py-8 text-center text-[10px] leading-relaxed" style={{ color: th.textMuted }}>
+                          {lang === "ko" ? "보거나 접근할 수 있는 저장된 상담 메시지가 없습니다." : lang === "ja" ? "表示またはアクセスできる保存済み会話メッセージがありません。" : "There are no saved consultation messages available to view."}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {showDeleteAllFeedbackConfirm && (
                   <div className="absolute inset-0 z-[590] flex flex-col items-center justify-center rounded-xl bg-black/80 p-4 text-center backdrop-blur-md animate-fadeIn">
                     <p className="text-xs font-bold text-red-300">
@@ -3651,6 +3699,13 @@ export default function Dashboard() {
                             {lang === "ko" ? "평가한 답변" : lang === "ja" ? "評価した回答" : "Rated answer"}: {item.messageContent.slice(0, 160)}
                             {item.messageContent.length > 160 ? "..." : ""}
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => setFeedbackContextItem({ id: item.id, sessionId: item.sessionId, messageId: item.messageId ?? null, messageContent: item.messageContent })}
+                            className="mt-2 inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[9px] font-bold transition-all hover:opacity-85 active:scale-95"
+                            style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", background: "oklch(0.62 0.20 300 / 0.10)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
+                            💬 {lang === "ko" ? "상담 맥락 보기" : lang === "ja" ? "会話文脈を見る" : "View context"}
+                          </button>
                           {item.regeneratedContent ? (
                             <div className="mt-2 rounded-lg border p-2"
                               style={{ borderColor: "oklch(0.65 0.18 200 / 0.35)", background: "oklch(0.65 0.18 200 / 0.10)" }}>
