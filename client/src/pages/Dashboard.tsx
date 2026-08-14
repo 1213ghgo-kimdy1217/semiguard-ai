@@ -1049,6 +1049,7 @@ export default function Dashboard() {
     },
   ]);
   const [chatInput, setChatInput] = useState("");
+  const chatTimeLocale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
   const chatDraftStorageKey = `semiguard_chat_draft_${activeSessionId ?? "pending"}`;
   const activeChatDraftKeyRef = useRef<string | null>(null);
   const isRestoringChatDraftRef = useRef(false);
@@ -4380,7 +4381,7 @@ export default function Dashboard() {
                 <div key={idx} className={`flex items-end gap-1.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.role !== "user" && (
                     <span className="text-[9px] text-muted-foreground pb-1 shrink-0">
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.timestamp).toLocaleTimeString(chatTimeLocale, { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
                   <div className="min-w-0 max-w-[88%] flex flex-col gap-1.5 sm:max-w-[80%]">
@@ -4608,7 +4609,7 @@ export default function Dashboard() {
                   </div>
                   {msg.role === "user" && (
                     <span className="text-[9px] text-muted-foreground pb-1 shrink-0">
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.timestamp).toLocaleTimeString(chatTimeLocale, { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
                 </div>
