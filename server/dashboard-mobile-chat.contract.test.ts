@@ -10,7 +10,8 @@ const dashboardSource = readFileSync(
 describe("mobile chatbot and localization contract", () => {
   it("uses a full dynamic viewport chat layout on mobile", () => {
     expect(dashboardSource).toContain("h-[100dvh]");
-    expect(dashboardSource).toContain("min-h-0 flex-1 overflow-y-auto");
+    expect(dashboardSource).toContain("relative min-h-0 flex-1");
+    expect(dashboardSource).toContain("h-full overflow-y-auto");
     expect(dashboardSource).toContain("flex flex-col gap-2 border-t");
   });
 

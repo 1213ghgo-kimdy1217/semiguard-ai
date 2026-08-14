@@ -782,6 +782,9 @@ export default function Dashboard() {
   const chatLaunchButtonRef = useRef<HTMLButtonElement>(null);
   const chatCloseButtonRef = useRef<HTMLButtonElement>(null);
   const chatDialogRef = useRef<HTMLDivElement>(null);
+  const chatMessageListRef = useRef<HTMLDivElement>(null);
+  const isChatNearBottomRef = useRef(true);
+  const [isChatAwayFromLatest, setIsChatAwayFromLatest] = useState(false);
   const wasChatOpenRef = useRef(isChatOpen);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(() =>
@@ -1485,6 +1488,15 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", trapChatFocus);
   }, [isChatOpen]);
 
+  useEffect(() => {
+    if (!isChatOpen || !isChatNearBottomRef.current) return;
+    const frame = window.requestAnimationFrame(() => {
+      const messageList = chatMessageListRef.current;
+      if (messageList) messageList.scrollTo({ top: messageList.scrollHeight, behavior: "auto" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [chatMessages.length, isChatLoading, isChatOpen]);
+
   const handleResetChat = async () => {
     try {
       const newTitle = chatMessages.length > 1
@@ -1527,6 +1539,8 @@ export default function Dashboard() {
       nextMessages.filter(message => message.role === "user").length === 1 &&
       (!activeSession || defaultSessionTitles.includes(activeSession.title));
     setChatMessages(nextMessages);
+    isChatNearBottomRef.current = true;
+    setIsChatAwayFromLatest(false);
     if (!textToSend) setChatInput("");
     setIsChatLoading(true);
 
@@ -4226,7 +4240,16 @@ export default function Dashboard() {
             )}
 
             {/* 대화 메시지 영역 */}
-            <div className="min-h-0 flex-1 overflow-y-auto space-y-3 p-3 sm:p-4 custom-scrollbar">
+            <div className="relative min-h-0 flex-1">
+            <div
+              ref={chatMessageListRef}
+              onScroll={(event) => {
+                const element = event.currentTarget;
+                const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 56;
+                isChatNearBottomRef.current = isNearBottom;
+                setIsChatAwayFromLatest(!isNearBottom);
+              }}
+              className="h-full overflow-y-auto space-y-3 p-3 sm:p-4 custom-scrollbar">
               {/* 여기서부터 메시지 목록 */}
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className={`flex items-end gap-1.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -4483,6 +4506,22 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
+            </div>
+            {isChatAwayFromLatest && (
+              <button
+                type="button"
+                onClick={() => {
+                  const messageList = chatMessageListRef.current;
+                  if (messageList) messageList.scrollTo({ top: messageList.scrollHeight, behavior: "smooth" });
+                  isChatNearBottomRef.current = true;
+                  setIsChatAwayFromLatest(false);
+                }}
+                className="absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-full border px-3 py-1.5 text-[10px] font-bold shadow-lg transition-all hover:opacity-85 active:scale-95"
+                style={{ borderColor: "oklch(0.65 0.18 200 / 0.55)", background: isDark ? "oklch(0.20 0.03 230 / 0.96)" : "oklch(0.98 0.005 240 / 0.96)", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.40 0.16 220)" }}
+                aria-label={lang === "ko" ? "최신 메시지로 이동" : lang === "ja" ? "最新メッセージへ移動" : "Jump to latest message"}>
+                ↓ {lang === "ko" ? "최신" : lang === "ja" ? "最新" : "Latest"}
+              </button>
+            )}
             </div>
 
             {/* 빠른 질문 칩 영역 */}
