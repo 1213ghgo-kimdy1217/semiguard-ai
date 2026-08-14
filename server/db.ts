@@ -326,6 +326,34 @@ export async function getChatFeedbackForSession(userId: number, sessionId: numbe
     .orderBy(desc(chatFeedback.createdAt));
 }
 
+export async function attachRegeneratedAnswerToFeedback(input: {
+  userId: number;
+  feedbackId?: number;
+  sessionId: number;
+  regeneratedContent: string;
+}) {
+  const db = await getDb();
+  if (!db) return false;
+  let targetId = input.feedbackId;
+  if (!targetId) {
+    // 피드백 ID가 없으면 해당 세션에서 가장 최근의 '아쉬워요' 피드백에 연결합니다.
+    const latest = await db.select({ id: chatFeedback.id }).from(chatFeedback)
+      .where(and(
+        eq(chatFeedback.userId, input.userId),
+        eq(chatFeedback.sessionId, input.sessionId),
+        eq(chatFeedback.feedbackType, "dislike"),
+      ))
+      .orderBy(desc(chatFeedback.createdAt))
+      .limit(1);
+    targetId = latest[0]?.id;
+  }
+  if (!targetId) return false;
+  await db.update(chatFeedback)
+    .set({ regeneratedContent: input.regeneratedContent.slice(0, 12000), regeneratedAt: new Date() })
+    .where(and(eq(chatFeedback.id, targetId), eq(chatFeedback.userId, input.userId)));
+  return true;
+}
+
 export async function createManualDocumentWithChunks(input: {
   userId: number;
   title: string;

@@ -85,6 +85,13 @@
       "when": 1786713747432,
       "tag": "0011_mysterious_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1786717835383,
+      "tag": "0012_brave_jack_murdock",
+      "breakpoints": true
     }
   ]
 }

@@ -296,3 +296,13 @@
 - [x] 설비 매뉴얼 RAG를 위한 manual_documents·manual_chunks 데이터 모델과 키워드 검색 기반 마련
 - [x] 챗봇에서 피드백 상태를 DB와 동기화하고, 근거·신뢰도·매뉴얼 출처를 표시하는 UI 준비
 - [x] TypeScript 컴파일 및 Vitest 전체 회귀 테스트 통과 검증 (31개 테스트 전체 통과)
+
+## LLM 상담 버튼 확대·로그인 UI 개선·RAG 출처 확인·피드백 히스토리 (2026-08-14)
+- [x] 우측 하단 AI 수석 엔지니어 상담(LLM 활성화) 버튼을 더 크고 눈에 띄는 FAB 스타일로 확대 (아이콘 배지·부제목·큰 터치 영역 적용)
+- [x] 로그인 페이지 레이아웃 정돈 및 Google·Naver·Kakao 버튼을 브랜드 색상·아이콘과 함께 직관적으로 배치
+- [x] 로그인 페이지 모바일 반응형(터치 타깃 48px) 검증 (390x844 캡처 확인)
+- [x] chatWithAi 응답에 참고한 매뉴얼 청크(문서 제목·본문·순번) 정보를 구조화해 반환
+- [x] AI 답변 하단에 매뉴얼 출처 배지 표시 및 클릭 시 원문 확인 모달 노출 (원문 복사 포함)
+- [x] 피드백·재생성 답변 내역을 모아보는 히스토리 사이드바 메뉴 추가 (chat_feedback에 regenerated_content·regenerated_at 컬럼 추가, getFeedbackHistory·attachRegeneratedAnswer 프로시저 구현)
+- [x] 히스토리 사이드바 다국어(KO/EN/JA) 및 빈 상태 안내 처리
+- [x] TypeScript 컴파일 및 Vitest 전체 회귀 테스트 통과 검증 (32개 테스트 전체 통과)

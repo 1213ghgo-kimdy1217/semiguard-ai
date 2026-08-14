@@ -481,8 +481,27 @@ export const appRouter = router({
           })).optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { sensorContext, messages, lang, feedbackHistory } = input;
+
+        // 마지막 사용자 질문을 기준으로 등록된 설비 매뉴얼에서 관련 구간을 검색합니다.
+        const lastUserMessage = [...messages].reverse().find(message => message.role === "user")?.content ?? "";
+        let manualSources: Array<{ documentId: number; documentTitle: string; chunkIndex: number; content: string }> = [];
+        if (ctx.user && lastUserMessage.trim().length > 0) {
+          try {
+            manualSources = await db.searchManualChunksForUser(ctx.user.id, lastUserMessage, 3);
+          } catch (error) {
+            console.error("Manual RAG search failed:", error);
+          }
+        }
+
+        const manualContext = manualSources.length > 0
+          ? (lang === "ko"
+            ? `\n[등록된 설비 매뉴얼 발췌 - 아래 근거만 인용하고, 인용 시 반드시 "매뉴얼 출처 N" 형식으로 번호를 표기하세요]\n${manualSources.map((source, index) => `매뉴얼 출처 ${index + 1} (문서: ${source.documentTitle}, 구간 ${source.chunkIndex + 1}): ${source.content.slice(0, 1200)}`).join("\n")}`
+            : lang === "ja"
+              ? `\n[登録された設備マニュアル抜粋 - 以下の根拠のみ引用し、引用時は必ず「マニュアル出典 N」の形式で番号を明記してください]\n${manualSources.map((source, index) => `マニュアル出典 ${index + 1} (文書: ${source.documentTitle}, 区間 ${source.chunkIndex + 1}): ${source.content.slice(0, 1200)}`).join("\n")}`
+              : `\n[Registered equipment manual excerpts - cite only these and always label citations as "Manual Source N"]\n${manualSources.map((source, index) => `Manual Source ${index + 1} (Document: ${source.documentTitle}, Chunk ${source.chunkIndex + 1}): ${source.content.slice(0, 1200)}`).join("\n")}`)
+          : "";
 
         // 대화가 무한히 쌓이는 것을 방지하기 위해 최근 12개 메시지만 유지하고,
         // 그 이전 대화가 있다면 핵심 요약 컨텍스트로 압축하여 시스템 프롬프트에 주입합니다.
@@ -569,7 +588,7 @@ Guidelines:
           }
         }
 
-        const finalSystemPrompt = systemPrompt + feedbackContext;
+        const finalSystemPrompt = systemPrompt + feedbackContext + manualContext;
 
         const combinedMessages = [
           ...(compressedSummary ? [{ role: "system" as const, content: compressedSummary }] : []),
@@ -587,14 +606,23 @@ Guidelines:
           if (typeof reply !== "string") {
             throw new Error("No reply content from LLM");
           }
-          return { reply };
+          return {
+            reply,
+            manualSources: manualSources.map((source, index) => ({
+              label: index + 1,
+              documentId: source.documentId,
+              documentTitle: source.documentTitle,
+              chunkIndex: source.chunkIndex,
+              content: source.content,
+            })),
+          };
         } catch (err) {
           const fallback = lang === "ko"
             ? "AI 상담 연결 중 일시적인 지연이 발생했습니다. 센서 편차와 권장 조치를 다시 확인해 주세요."
             : lang === "ja"
             ? "AI相談の接続中に一時적인遅延が発生しました。センサーの偏りと推奨措置を再確認してください。"
             : "Temporary delay connecting to AI consultation. Please recheck sensor deviations and recommendations.";
-          return { reply: fallback };
+          return { reply: fallback, manualSources: [] };
         }
       }),
 
@@ -644,6 +672,23 @@ Guidelines:
     getChatFeedbacks: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .query(async ({ ctx, input }) => db.getChatFeedbackForSession(ctx.user.id, input.sessionId)),
+
+    // 사용자별 최근 피드백·재생성 이력 (히스토리 사이드바)
+    getFeedbackHistory: protectedProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(30).default(20) }).optional())
+      .query(async ({ ctx, input }) => db.getRecentChatFeedbackForUser(ctx.user.id, input?.limit ?? 20)),
+
+    // 피드백을 반영해 재생성한 답변을 해당 피드백 이력에 연결 저장
+    attachRegeneratedAnswer: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        feedbackId: z.number().optional(),
+        regeneratedContent: z.string().min(1).max(12000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const updated = await db.attachRegeneratedAnswerToFeedback({ ...input, userId: ctx.user.id });
+        return { updated };
+      }),
 
     addManualText: protectedProcedure
       .input(z.object({ title: z.string().trim().min(1).max(255), content: z.string().trim().min(50).max(60000) }))

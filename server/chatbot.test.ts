@@ -17,7 +17,6 @@ describe("SemiGuard AI Chatbot Procedure", () => {
     // @ts-ignore
     expect(appRouter.semiguard.getManualDocuments).toBeDefined();
   });
-});
 
   it("defines chat session procedures in appRouter", () => {
     // @ts-ignore
@@ -31,3 +30,11 @@ describe("SemiGuard AI Chatbot Procedure", () => {
     // @ts-ignore
     expect(appRouter.semiguard.deleteChatSession).toBeDefined();
   });
+
+  it("defines feedback history and regenerated answer linking procedures", () => {
+    // @ts-ignore
+    expect(appRouter.semiguard.getFeedbackHistory).toBeDefined();
+    // @ts-ignore
+    expect(appRouter.semiguard.attachRegeneratedAnswer).toBeDefined();
+  });
+});

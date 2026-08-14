@@ -730,12 +730,19 @@ export default function Dashboard() {
   const [manualTitle, setManualTitle] = useState("");
   const [manualContent, setManualContent] = useState("");
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [showFeedbackHistoryPanel, setShowFeedbackHistoryPanel] = useState(false);
+  const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
+  const attachRegeneratedAnswerMutation = trpc.semiguard.attachRegeneratedAnswer.useMutation();
+  const feedbackHistoryQuery = trpc.semiguard.getFeedbackHistory.useQuery(
+    { limit: 20 },
+    { enabled: isChatOpen && showFeedbackHistoryPanel },
+  );
   const addManualTextMutation = trpc.semiguard.addManualText.useMutation();
   const manualDocumentsQuery = trpc.semiguard.getManualDocuments.useQuery(undefined, { enabled: isChatOpen });
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
@@ -750,8 +757,10 @@ export default function Dashboard() {
   const [otherReasonIdx, setOtherReasonIdx] = useState<number | null>(null);
   const [otherFeedbackText, setOtherFeedbackText] = useState("");
   const [isFeedbackRegenerating, setIsFeedbackRegenerating] = useState(false);
+  type ManualSource = { label: number; documentId: number; documentTitle: string; chunkIndex: number; content: string };
+  const [activeManualSource, setActiveManualSource] = useState<ManualSource | null>(null);
 
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean }>>([
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[] }>>([
     {
       role: "assistant",
       content: lang === "ko"
@@ -842,7 +851,7 @@ export default function Dashboard() {
         feedbackHistory,
       });
       const aiReply = res.reply;
-      setChatMessages(prev => [...prev, { role: "assistant", content: aiReply, timestamp: Date.now() }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: aiReply, timestamp: Date.now(), manualSources: res.manualSources ?? [] }]);
 
       if (activeSessionId !== null) {
         saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "assistant", content: aiReply }).catch(err => console.error("Failed to save AI message:", err));
@@ -889,10 +898,20 @@ export default function Dashboard() {
         lang,
         feedbackHistory,
       });
-      const improvedReply = { role: "assistant" as const, content: result.reply, timestamp: Date.now(), feedbackApplied: true };
+      const improvedReply = { role: "assistant" as const, content: result.reply, timestamp: Date.now(), feedbackApplied: true, manualSources: result.manualSources ?? [] };
       setChatMessages(previous => [...previous, improvedReply]);
       if (activeSessionId !== null) {
         await saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "assistant", content: result.reply });
+        try {
+          await attachRegeneratedAnswerMutation.mutateAsync({
+            sessionId: activeSessionId,
+            feedbackId: messageFeedbackIds[assistantIndex],
+            regeneratedContent: result.reply,
+          });
+          chatUtils.semiguard.getFeedbackHistory.invalidate();
+        } catch (error) {
+          console.error("Failed to attach regenerated answer:", error);
+        }
         chatUtils.semiguard.getChatSessions.invalidate();
       }
       toast.success(lang === "ko" ? "피드백을 반영한 답변을 생성했습니다." : lang === "ja" ? "フィードバックを反映した回答を生成しました。" : "Generated an answer using your feedback.");
@@ -913,13 +932,17 @@ export default function Dashboard() {
     if (reasonText) setMessageReasons(previous => ({ ...previous, [messageIndex]: reasonText }));
     if (activeSessionId === null) return;
     try {
-      await saveFeedbackMutation.mutateAsync({
+      const saved = await saveFeedbackMutation.mutateAsync({
         sessionId: activeSessionId,
         messageContent: message.content,
         feedbackType,
         reasonCode,
         reasonText,
       });
+      if (saved?.feedbackId) {
+        setMessageFeedbackIds(previous => ({ ...previous, [messageIndex]: saved.feedbackId }));
+      }
+      chatUtils.semiguard.getFeedbackHistory.invalidate();
     } catch (error) {
       console.error("Failed to persist chat feedback:", error);
       toast.error(lang === "ko" ? "피드백을 저장하지 못했습니다. 다시 시도해 주세요." : lang === "ja" ? "フィードバックを保存できませんでした。" : "Could not save feedback. Please try again.");
@@ -1983,15 +2006,25 @@ export default function Dashboard() {
       <button
         type="button"
         onClick={() => setIsChatOpen(true)}
-        className="fixed bottom-6 right-6 z-[495] flex items-center gap-2 px-4 py-3 rounded-full shadow-2xl font-bold text-xs transition-all duration-300 hover:scale-105 active:scale-95"
+        aria-label={lang === "ko" ? "AI 수석 엔지니어 상담 열기" : lang === "ja" ? "AIシニアエンジニア相談を開く" : "Open AI expert chatbot"}
+        className="fixed bottom-5 right-4 sm:bottom-8 sm:right-8 z-[495] flex items-center gap-2.5 sm:gap-3 px-5 py-4 sm:px-7 sm:py-5 rounded-full shadow-2xl font-extrabold text-sm sm:text-base transition-transform duration-200 hover:scale-[1.04] active:scale-[0.97]"
         style={{
           background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))",
           color: "white",
-          border: "1px solid oklch(0.75 0.18 200 / 0.5)",
-          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.3)",
+          border: "2px solid oklch(0.85 0.14 200 / 0.7)",
+          boxShadow: "0 18px 45px -10px rgba(0,0,0,0.45), 0 0 0 8px oklch(0.65 0.18 200 / 0.12)",
+          transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
         }}>
-        <span className="text-base">🤖</span>
-        <span>{lang === "ko" ? "AI 수석 엔지니어 상담" : lang === "ja" ? "AIシニアエンジニア相談" : "AI Expert Chatbot"}</span>
+        <span className="relative flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-full text-xl sm:text-2xl shrink-0" style={{ background: "rgba(255,255,255,0.18)" }}>
+          🤖
+          <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full" style={{ background: "oklch(0.8 0.19 145)", border: "2px solid white" }} />
+        </span>
+        <span className="flex flex-col items-start leading-tight text-left">
+          <span className="whitespace-nowrap">{lang === "ko" ? "AI 수석 엔지니어 상담" : lang === "ja" ? "AIシニアエンジニア相談" : "AI Expert Chatbot"}</span>
+          <span className="text-[10px] sm:text-xs font-semibold opacity-90 whitespace-nowrap">
+            {lang === "ko" ? "LLM 진단 활성화" : lang === "ja" ? "LLM診断を起動" : "Activate LLM diagnosis"}
+          </span>
+        </span>
       </button>
 
       {/* ── AI 챗봇 대화창 모달 ── */}
@@ -2033,6 +2066,17 @@ export default function Dashboard() {
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
                   style={{ borderColor: "oklch(0.65 0.22 145 / 0.4)", background: "oklch(0.65 0.22 145 / 0.10)", color: "oklch(0.75 0.18 145)" }}>
                   📂 {lang === "ko" ? "기록" : lang === "ja" ? "履歴" : "History"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFeedbackHistoryPanel(previous => !previous);
+                    setShowHistoryPanel(false);
+                  }}
+                  title={lang === "ko" ? "피드백·재생성 답변 히스토리 보기" : lang === "ja" ? "フィードバック・再生成回答の履歴を見る" : "View feedback and regenerated answer history"}
+                  className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
+                  style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", background: "oklch(0.62 0.20 300 / 0.12)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
+                  ✨ {lang === "ko" ? "피드백" : lang === "ja" ? "フィードバック" : "Feedback"}
                 </button>
                 <button
                   type="button"
@@ -2357,8 +2401,120 @@ export default function Dashboard() {
               </div>
             )}
 
+            {/* 피드백·재생성 답변 히스토리 사이드 패널 */}
+            {showFeedbackHistoryPanel && (
+              <div className="absolute inset-x-2 sm:inset-x-auto sm:right-4 top-14 bottom-2 sm:w-80 z-[570] rounded-xl shadow-2xl border p-3 flex flex-col backdrop-blur-md animate-fadeIn"
+                style={{
+                  background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
+                  borderColor: "oklch(0.62 0.20 300 / 0.45)",
+                  color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)",
+                }}>
+                <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b" style={{ borderColor: th.border }}>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold flex items-center gap-1.5">
+                      ✨ {lang === "ko" ? "피드백·재생성 히스토리" : lang === "ja" ? "フィードバック・再生成履歴" : "Feedback & Regeneration History"}
+                    </h4>
+                    <p className="mt-0.5 text-[10px] leading-relaxed" style={{ color: th.textMuted }}>
+                      {lang === "ko"
+                        ? "남긴 평가와 사유, 그에 따라 다시 생성된 답변을 최신순으로 모아 봅니다."
+                        : lang === "ja"
+                          ? "残した評価と理由、それに応じて再生成された回答を新しい順に表示します。"
+                          : "Your ratings, reasons, and the answers regenerated from them, newest first."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFeedbackHistoryPanel(false)}
+                    className="shrink-0 text-xs text-muted-foreground hover:opacity-70"
+                    aria-label="Close">
+                    ✕
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {feedbackHistoryQuery.isLoading ? (
+                    <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
+                      <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span>{lang === "ko" ? "피드백 이력 불러오는 중..." : lang === "ja" ? "フィードバック履歴を読み込み中..." : "Loading feedback history..."}</span>
+                    </div>
+                  ) : feedbackHistoryQuery.data && feedbackHistoryQuery.data.length > 0 ? (
+                    feedbackHistoryQuery.data.map(item => {
+                      const reasonLabelMap: Record<string, { ko: string; ja: string; en: string }> = {
+                        inaccurate: { ko: "정확하지 않음", ja: "正確ではない", en: "Inaccurate" },
+                        insufficient: { ko: "설명 및 근거 부족", ja: "説明・根拠が不足", en: "Insufficient details" },
+                        irrelevant: { ko: "질문과 관련 없음", ja: "質問と関係ない", en: "Irrelevant" },
+                        other: { ko: "기타 사유", ja: "その他", en: "Other" },
+                      };
+                      const reasonLabel = item.reasonCode ? reasonLabelMap[item.reasonCode] : undefined;
+                      const isLike = item.feedbackType === "like";
+                      return (
+                        <div key={item.id} className="rounded-xl border p-2.5 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                          style={{ borderColor: th.border2, background: isDark ? "oklch(0.17 0.015 240)" : "oklch(0.99 0.003 240)" }}>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="rounded-full px-2 py-0.5 text-[9px] font-bold"
+                              style={{
+                                background: isLike ? "oklch(0.65 0.20 145 / 0.15)" : "oklch(0.60 0.20 20 / 0.15)",
+                                color: isLike ? "oklch(0.70 0.18 145)" : "oklch(0.65 0.20 20)",
+                                border: `1px solid ${isLike ? "oklch(0.65 0.20 145 / 0.35)" : "oklch(0.60 0.20 20 / 0.35)"}`,
+                              }}>
+                              {isLike
+                                ? `👍 ${lang === "ko" ? "좋아요" : lang === "ja" ? "いいね" : "Helpful"}`
+                                : `👎 ${lang === "ko" ? "아쉬워요" : lang === "ja" ? "イマイチ" : "Not helpful"}`}
+                            </span>
+                            <span className="text-[9px]" style={{ color: th.textMuted }}>
+                              {new Date(item.createdAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+                          {reasonLabel && (
+                            <p className="mt-1.5 text-[10px] font-bold" style={{ color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
+                              {lang === "ko" ? "사유" : lang === "ja" ? "理由" : "Reason"}: {lang === "ko" ? reasonLabel.ko : lang === "ja" ? reasonLabel.ja : reasonLabel.en}
+                            </p>
+                          )}
+                          {item.reasonText && (
+                            <p className="mt-1 text-[10px] leading-relaxed line-clamp-3" style={{ color: th.textMuted }}>
+                              “{item.reasonText}”
+                            </p>
+                          )}
+                          <p className="mt-1.5 text-[10px] leading-relaxed line-clamp-3" style={{ color: th.text }}>
+                            {lang === "ko" ? "평가한 답변" : lang === "ja" ? "評価した回答" : "Rated answer"}: {item.messageContent.slice(0, 160)}
+                            {item.messageContent.length > 160 ? "..." : ""}
+                          </p>
+                          {item.regeneratedContent ? (
+                            <div className="mt-2 rounded-lg border p-2"
+                              style={{ borderColor: "oklch(0.65 0.18 200 / 0.35)", background: "oklch(0.65 0.18 200 / 0.10)" }}>
+                              <p className="text-[9px] font-bold" style={{ color: "oklch(0.70 0.18 200)" }}>
+                                ✨ {lang === "ko" ? "피드백 반영 재생성 답변" : lang === "ja" ? "フィードバック反映の再生成回答" : "Regenerated with feedback"}
+                              </p>
+                              <p className="mt-1 text-[10px] leading-relaxed line-clamp-4" style={{ color: th.text }}>
+                                {item.regeneratedContent.slice(0, 220)}
+                                {item.regeneratedContent.length > 220 ? "..." : ""}
+                              </p>
+                            </div>
+                          ) : (
+                            !isLike && (
+                              <p className="mt-2 text-[9px]" style={{ color: th.textMuted }}>
+                                {lang === "ko" ? "아직 재생성된 답변이 없습니다." : lang === "ja" ? "まだ再生成された回答はありません。" : "No regenerated answer yet."}
+                              </p>
+                            )
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="py-8 text-center text-[11px] text-muted-foreground leading-relaxed">
+                      {lang === "ko"
+                        ? "저장된 피드백 이력이 없습니다. AI 답변에 좋아요·아쉬워요를 남기면 여기에 모입니다."
+                        : lang === "ja"
+                          ? "保存されたフィードバック履歴がありません。AIの回答に評価を残すとここに表示されます。"
+                          : "No feedback yet. Rate an AI answer and it will appear here."}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* 대화 메시지 영역 */}
             <div className="flex-1 p-4 overflow-y-auto space-y-3">
+              {/* 여기서부터 메시지 목록 */}
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className={`flex items-end gap-1.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.role !== "user" && (
@@ -2387,6 +2543,26 @@ export default function Dashboard() {
                         </div>
                       )}
                       <p className="whitespace-pre-wrap">{msg.content}</p>
+                      {msg.role === "assistant" && msg.manualSources && msg.manualSources.length > 0 && (
+                        <div className="mt-3 border-t pt-2" style={{ borderColor: th.border2 }}>
+                          <p className="mb-1.5 text-[9px] font-bold" style={{ color: th.textMuted }}>
+                            📘 {lang === "ko" ? "참고한 설비 매뉴얼 출처 (클릭하면 원문 확인)" : lang === "ja" ? "参照した設備マニュアル出典（クリックで原文確認）" : "Referenced manual sources (click to view original)"}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {msg.manualSources.map(source => (
+                              <button
+                                key={`${source.documentId}-${source.chunkIndex}`}
+                                type="button"
+                                onClick={() => setActiveManualSource(source)}
+                                title={source.content.slice(0, 120)}
+                                className="max-w-[200px] truncate rounded-full border px-2 py-0.5 text-[9px] font-bold transition-all hover:opacity-80 active:scale-95"
+                                style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.42 0.16 75)" }}>
+                                [{source.label}] {source.documentTitle} · {lang === "ko" ? `구간 ${source.chunkIndex + 1}` : lang === "ja" ? `区間 ${source.chunkIndex + 1}` : `Chunk ${source.chunkIndex + 1}`}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     {msg.role === "assistant" && (
                       <div className="flex items-center gap-2 pl-1">
@@ -2629,6 +2805,55 @@ export default function Dashboard() {
                 <span>📤</span>
               </button>
             </div>
+
+            {/* 매뉴얼 출처 원문 확인 모달 */}
+            {activeManualSource && (
+              <div className="absolute inset-0 z-[575] flex items-center justify-center p-3 bg-black/55 backdrop-blur-sm animate-fadeIn"
+                onClick={() => setActiveManualSource(null)}>
+                <div className="w-full max-w-md max-h-[85%] overflow-hidden rounded-2xl border shadow-2xl flex flex-col"
+                  style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.003 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}
+                  onClick={event => event.stopPropagation()}>
+                  <div className="flex items-start justify-between gap-2 border-b px-4 py-3" style={{ borderColor: th.border2 }}>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold" style={{ color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                        📘 {lang === "ko" ? "설비 매뉴얼 원문" : lang === "ja" ? "設備マニュアル原文" : "Manual Source"} [{activeManualSource.label}]
+                      </p>
+                      <h4 className="mt-1 truncate text-sm font-bold" style={{ color: th.text }}>{activeManualSource.documentTitle}</h4>
+                      <p className="text-[10px]" style={{ color: th.textMuted }}>
+                        {lang === "ko" ? `구간 ${activeManualSource.chunkIndex + 1}` : lang === "ja" ? `区間 ${activeManualSource.chunkIndex + 1}` : `Chunk ${activeManualSource.chunkIndex + 1}`}
+                      </p>
+                    </div>
+                    <button type="button" onClick={() => setActiveManualSource(null)} className="shrink-0 text-sm hover:opacity-70" style={{ color: th.textMuted }} aria-label="Close">✕</button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-4 py-3 custom-scrollbar">
+                    <p className="whitespace-pre-wrap text-[11px] leading-relaxed" style={{ color: th.text }}>{activeManualSource.content}</p>
+                  </div>
+                  <div className="flex justify-end gap-2 border-t px-4 py-2.5" style={{ borderColor: th.border2 }}>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(activeManualSource.content);
+                          toast.success(lang === "ko" ? "매뉴얼 원문을 복사했습니다." : lang === "ja" ? "マニュアル原文をコピーしました。" : "Manual text copied.");
+                        } catch (error) {
+                          console.error("Manual copy failed:", error);
+                        }
+                      }}
+                      className="rounded-lg border px-3 py-1 text-[11px] font-bold transition-all hover:opacity-80"
+                      style={{ borderColor: th.border2, background: th.bgCard, color: th.textMuted }}>
+                      📋 {lang === "ko" ? "원문 복사" : lang === "ja" ? "原文コピー" : "Copy text"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveManualSource(null)}
+                      className="rounded-lg px-3 py-1 text-[11px] font-bold text-white transition-all hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))" }}>
+                      {lang === "ko" ? "닫기" : lang === "ja" ? "閉じる" : "Close"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

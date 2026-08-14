@@ -171,6 +171,8 @@ export const chatFeedback = mysqlTable("chat_feedback", {
   feedbackType: mysqlEnum("feedback_type", ["like", "dislike"]).notNull(),
   reasonCode: varchar("reason_code", { length: 32 }),
   reasonText: text("reason_text"),
+  regeneratedContent: text("regenerated_content"),
+  regeneratedAt: timestamp("regenerated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   feedbackUserIndex: index("chat_feedback_user_idx").on(table.userId, table.createdAt),

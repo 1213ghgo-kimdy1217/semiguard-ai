@@ -104,13 +104,18 @@ export function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-      <Card className="w-full max-w-md p-8 bg-slate-800 border-slate-700">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-4 py-8 sm:py-12">
+      <Card className="w-full max-w-md p-6 sm:p-8 bg-slate-800/90 border-slate-700 shadow-2xl">
         <div className="space-y-6">
           {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-white">SemiGuard AI</h1>
-            <h2 className="text-slate-300 text-sm font-normal m-0">반도체 장비 예지안전 시스템</h2>
+          <div className="text-center space-y-3">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-2xl shadow-lg">
+              🛡️
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">SemiGuard AI</h1>
+              <h2 className="text-slate-400 text-xs sm:text-sm font-normal m-0">반도체 장비 예지안전 시스템</h2>
+            </div>
           </div>
 
           {oauthError && (
@@ -119,18 +124,9 @@ export function Login() {
             </div>
           )}
 
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-600"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-slate-800 text-slate-400">로그인</span>
-            </div>
-          </div>
-
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">사번 로그인</p>
             {/* Badge Number */}
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-slate-300 text-sm font-medium">
@@ -142,7 +138,9 @@ export function Login() {
                 placeholder="예: EMP-2024-001"
                 value={badgeNumber}
                 onChange={(e) => setBadgeNumber(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white placeholder-slate-500"
+                autoComplete="username"
+                inputMode="text"
+                className="h-12 bg-slate-700/70 border-slate-600 text-white placeholder-slate-500 text-base"
                 disabled={isLoading}
               />
             </div>
@@ -158,7 +156,8 @@ export function Login() {
                 placeholder="비밀번호 입력"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white placeholder-slate-500"
+                autoComplete="current-password"
+                className="h-12 bg-slate-700/70 border-slate-600 text-white placeholder-slate-500 text-base"
                 disabled={isLoading}
               />
             </div>
@@ -167,7 +166,7 @@ export function Login() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 h-auto"
+              className="w-full h-12 bg-cyan-500 hover:bg-cyan-600 text-white font-bold text-base transition-transform duration-150 active:scale-[0.98]"
             >
               {isLoading ? "로그인 중..." : "로그인"}
             </Button>
@@ -178,6 +177,7 @@ export function Login() {
             <p className="text-slate-400 text-sm">
               계정이 없으신가요?{" "}
               <button
+                type="button"
                 onClick={() => setLocation("/signup")}
                 className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
               >
@@ -192,7 +192,7 @@ export function Login() {
               <div className="w-full border-t border-slate-600"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-slate-800 text-slate-400">소셜 로그인</span>
+              <span className="px-3 bg-slate-800 text-slate-400 text-xs">연결된 소셜 계정으로 로그인</span>
             </div>
           </div>
 
@@ -203,65 +203,59 @@ export function Login() {
           )}
 
           {/* Social Login Buttons */}
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {/* Google Login */}
             <Button
+              type="button"
               onClick={() => handleSocialLogin(startGoogleLogin)}
               disabled={!isOauthEnabled}
               title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
-              className={`w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-2 h-auto disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
+              className={`w-full h-12 justify-start gap-3 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
+              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              Google로 로그인
+              <span className="flex-1 text-left">Google로 로그인</span>
             </Button>
 
             {/* Naver Login */}
             <Button
+              type="button"
               onClick={() => handleSocialLogin(startNaverLogin)}
               disabled={!isOauthEnabled}
               title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
-              className={`w-full bg-[#00C73C] hover:bg-[#00B833] text-white font-semibold py-2 h-auto disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
+              className={`w-full h-12 justify-start gap-3 px-4 bg-[#03C75A] hover:bg-[#02B350] text-white font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm0 22c-5.52 0-10-4.48-10-10S6.48 2 12 2s10 4.48 10 10-4.48 10-10 10z" />
-                <path d="M12 4c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" />
-              </svg>
-              Naver로 로그인
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white text-[13px] font-black leading-none text-[#03C75A]" aria-hidden="true">
+                N
+              </span>
+              <span className="flex-1 text-left">네이버로 로그인</span>
             </Button>
 
             {/* Kakao Login */}
             <Button
+              type="button"
               onClick={() => handleSocialLogin(startKakaoLogin)}
               disabled={!isOauthEnabled}
               title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
-              className={`w-full bg-[#FFE812] hover:bg-[#F0D800] text-slate-900 font-semibold py-2 h-auto disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
+              className={`w-full h-12 justify-start gap-3 px-4 bg-[#FEE500] hover:bg-[#F2DA00] text-[#191600] font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 5.58 2 10c0 2.54 1.19 4.85 3.1 6.4.38.34.6.84.5 1.32-.08.37-.31.68-.62.85-.31.17-.68.17-.99 0-.76-.42-1.44-.95-2.03-1.56C2.46 14.76 1 12.54 1 10c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10c-.55 0-1 .45-1 1s.45 1 1 1c5.52 0 10-4.48 10-10S17.52 2 12 2z" />
+              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 3C6.9 3 2.8 6.2 2.8 10.2c0 2.5 1.7 4.7 4.2 6L6.1 20c-.1.4.3.7.6.5l4.2-2.8c.4 0 .7.1 1.1.1 5.1 0 9.2-3.2 9.2-7.6C21.2 6.2 17.1 3 12 3z" />
               </svg>
-              Kakao로 로그인
+              <span className="flex-1 text-left">카카오로 로그인</span>
             </Button>
           </div>
 
+          <p className="text-center text-[11px] leading-relaxed text-slate-500">
+            소셜 로그인은 회원가입 후 대시보드 메뉴에서 계정을 연결한 뒤 사용할 수 있습니다.
+          </p>
+
           {/* Footer */}
-          <p className="text-center text-sm text-slate-400">
+          <p className="text-center text-xs text-slate-500">
             로그인하면 서비스 이용약관에 동의하는 것입니다.
           </p>
         </div>
