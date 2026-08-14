@@ -4858,7 +4858,7 @@ export default function Dashboard() {
         {(["dashboard", "log"] as const).map(tab => (
           <button key={tab} id={`dashboard-tab-${tab}`} role="tab" aria-selected={activeTab === tab} aria-controls={`dashboard-panel-${tab}`} tabIndex={activeTab === tab ? 0 : -1} onClick={() => setActiveTab(tab)}
             onKeyDown={(event) => {
-              const nextTab = event.key === "ArrowRight" ? (tab === "dashboard" ? "log" : "dashboard") : event.key === "ArrowLeft" ? (tab === "dashboard" ? "log" : "dashboard") : null;
+              const nextTab = event.key === "Home" ? "dashboard" : event.key === "End" ? "log" : event.key === "ArrowRight" ? (tab === "dashboard" ? "log" : "dashboard") : event.key === "ArrowLeft" ? (tab === "dashboard" ? "log" : "dashboard") : null;
               if (!nextTab) return;
               event.preventDefault();
               setActiveTab(nextTab);

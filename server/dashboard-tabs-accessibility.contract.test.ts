@@ -19,4 +19,9 @@ describe("dashboard tabs accessibility contract", () => {
     expect(dashboardSource).toContain('event.key === "ArrowLeft"');
     expect(dashboardSource).toContain('document.getElementById(`dashboard-tab-${nextTab}`)?.focus()');
   });
+
+  it("allows Home and End keys to select the first and last dashboard tabs", () => {
+    expect(dashboardSource).toContain('event.key === "Home" ? "dashboard"');
+    expect(dashboardSource).toContain('event.key === "End" ? "log"');
+  });
 });
