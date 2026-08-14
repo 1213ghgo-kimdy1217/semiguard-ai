@@ -739,7 +739,7 @@ export default function Dashboard() {
   const [feedbackHistorySort, setFeedbackHistorySort] = useState<"newest" | "oldest">("newest");
   const [feedbackHistoryPage, setFeedbackHistoryPage] = useState(1);
   const [animatedPositiveRatio, setAnimatedPositiveRatio] = useState(0);
-  const [feedbackKeywordSummary, setFeedbackKeywordSummary] = useState<{ keywords: string[]; summary: string; improvement: string } | null>(null);
+  const [feedbackKeywordSummary, setFeedbackKeywordSummary] = useState<{ mode: "ai" | "fallback"; keywords: string[]; summary: string; improvement: string } | null>(null);
   const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
   const [showDeleteAllFeedbackConfirm, setShowDeleteAllFeedbackConfirm] = useState(false);
   const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
@@ -2672,7 +2672,9 @@ export default function Dashboard() {
                   <div className="mb-2 rounded-xl border p-2.5 animate-fadeIn" style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.09)" }}>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[10px] font-bold" style={{ color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
-                        ✨ {lang === "ko" ? "AI 핵심 키워드 요약" : lang === "ja" ? "AI主要キーワード要約" : "AI key-term summary"}
+                        {feedbackKeywordSummary.mode === "ai" ? "✨" : "🔎"} {feedbackKeywordSummary.mode === "ai"
+                          ? (lang === "ko" ? "AI 핵심 키워드 요약" : lang === "ja" ? "AI主要キーワード要約" : "AI key-term summary")
+                          : (lang === "ko" ? "기본 핵심 키워드 분석" : lang === "ja" ? "基本キーワード分析" : "Basic key-term analysis")}
                       </p>
                       <button type="button" onClick={() => setFeedbackKeywordSummary(null)} className="text-[10px] hover:opacity-70" style={{ color: th.textMuted }} aria-label="Close">✕</button>
                     </div>

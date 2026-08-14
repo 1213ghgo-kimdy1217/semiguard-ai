@@ -417,7 +417,7 @@ export const appRouter = router({
         };
 
         const callLlm = async (sys: string, usr: string) => {
-          const res = await invokeLLM({ messages: makeMessages(sys, usr), response_format: jsonSchema });
+          const res = await invokeLLM({ model: "gpt-5-mini", messages: makeMessages(sys, usr), response_format: jsonSchema });
           const c = res.choices[0]?.message?.content;
           if (typeof c !== "string") throw new Error("no content");
           return JSON.parse(c) as { primaryCause: string; details: string; recommendation: string };
@@ -601,7 +601,7 @@ Guidelines:
         ];
 
         try {
-          const res = await invokeLLM({ messages: formattedMessages });
+          const res = await invokeLLM({ model: "gpt-5-mini", messages: formattedMessages });
           const reply = res.choices[0]?.message?.content;
           if (typeof reply !== "string") {
             throw new Error("No reply content from LLM");
@@ -735,6 +735,7 @@ Guidelines:
             : `Analyze these ${input.entries.length} currently filtered feedback records. Provide 3–6 concise key terms in keywords, and keep summary and improvement to 1–2 sentences each.\n\n${corpus}`;
         try {
           const response = await invokeLLM({
+            model: "gpt-5-mini",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
@@ -761,18 +762,38 @@ Guidelines:
           if (typeof content !== "string") throw new Error("No structured keyword summary");
           const parsed = JSON.parse(content) as { keywords: string[]; summary: string; improvement: string };
           return {
+            mode: "ai" as const,
             keywords: parsed.keywords.slice(0, 6).map(keyword => String(keyword).slice(0, 40)),
             summary: String(parsed.summary).slice(0, 600),
             improvement: String(parsed.improvement).slice(0, 600),
           };
         } catch (error) {
           console.error("Feedback keyword analysis failed:", error);
-          const fallback = input.lang === "ko"
-            ? "AI 키워드 요약을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요."
+          const stopWords = new Set([
+            "그리고", "하지만", "대한", "현재", "답변", "피드백", "내용", "설명", "이것", "그것", "저것", "에서", "으로", "에게", "합니다", "해주세요",
+            "the", "and", "with", "that", "this", "from", "have", "were", "your", "about", "response", "feedback", "answer",
+            "です", "ます", "する", "から", "まで", "について", "回答", "フィードバック",
+          ]);
+          const frequency = new Map<string, number>();
+          corpus.toLocaleLowerCase().match(/[가-힣]{2,}|[a-z]{3,}|[ぁ-んァ-ン一-龯]{2,}/g)?.forEach(word => {
+            if (!stopWords.has(word)) frequency.set(word, (frequency.get(word) ?? 0) + 1);
+          });
+          const keywords = Array.from(frequency.entries())
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+            .slice(0, 6)
+            .map(([keyword]) => keyword);
+          const negativeCount = input.entries.filter(entry => entry.feedbackType === "dislike").length;
+          const summary = input.lang === "ko"
+            ? `현재 ${input.entries.length}건의 피드백에서 반복 표현을 기준으로 핵심어를 정리했습니다. 부정 평가는 ${negativeCount}건입니다.`
             : input.lang === "ja"
-              ? "AIキーワード要約を生成できませんでした。しばらくしてからもう一度お試しください。"
-              : "Could not generate the AI keyword summary. Please try again shortly.";
-          return { keywords: [], summary: fallback, improvement: "" };
+              ? `現在の${input.entries.length}件のフィードバックから、繰り返し表現を基準に主要語を整理しました。否定評価は${negativeCount}件です。`
+              : `Key terms were organized from repeated phrases in the current ${input.entries.length} feedback records. There are ${negativeCount} negative ratings.`;
+          const improvement = input.lang === "ko"
+            ? "AI 요약 서비스를 사용할 수 없는 경우의 기본 분석 결과입니다. 반복 키워드와 부정 평가 사유를 우선 검토하세요."
+            : input.lang === "ja"
+              ? "AI要約サービスを利用できない場合の基本分析結果です。繰り返しキーワードと否定評価の理由を優先して確認してください。"
+              : "This is a basic fallback analysis used when the AI summary service is unavailable. Prioritize recurring terms and negative-rating reasons.";
+          return { mode: "fallback" as const, keywords, summary, improvement };
         }
       }),
 

@@ -297,6 +297,9 @@ const computeBackoffDelay = (
   return Math.min(Math.max(jittered, retryAfterMs ?? 0), RETRY_MAX_DELAY_MS);
 };
 
+export const isRetriableStatus = (status: number) =>
+  status === 408 || status === 429 || status >= 500;
+
 // Retries non-2xx responses and network errors with exponential backoff, then
 // returns the final Response so callers keep their existing error handling.
 const fetchWithBackoff = async (
@@ -308,7 +311,7 @@ const fetchWithBackoff = async (
   for (let attempt = 0; attempt <= RETRY_MAX_RETRIES; attempt++) {
     try {
       const response = await fetch(url, init);
-      if (response.ok || attempt === RETRY_MAX_RETRIES) {
+      if (response.ok || !isRetriableStatus(response.status) || attempt === RETRY_MAX_RETRIES) {
         return response;
       }
 
