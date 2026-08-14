@@ -236,18 +236,29 @@ export async function createChatSession(userId: number, title: string = "새로�
   return insertId;
 }
 
-export async function getChatMessagesForSession(sessionId: number) {
+export async function getChatMessagesForUser(sessionId: number, userId: number) {
   const db = await getDb();
   if (!db) return [];
+  const ownedSession = await db.select({ id: chatSessions.id })
+    .from(chatSessions)
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
+    .limit(1);
+  if (!ownedSession[0]) return [];
   return db.select().from(chatMessagesTable).where(eq(chatMessagesTable.sessionId, sessionId)).orderBy(chatMessagesTable.createdAt);
 }
 
-export async function addChatMessage(sessionId: number, role: "user" | "assistant", content: string) {
+export async function addChatMessage(sessionId: number, userId: number, role: "user" | "assistant", content: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  const ownedSession = await db.select({ id: chatSessions.id })
+    .from(chatSessions)
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)))
+    .limit(1);
+  if (!ownedSession[0]) throw new Error("Unauthorized or session not found");
   const result = await db.insert(chatMessagesTable).values({ sessionId, role, content });
   // Update session updatedAt
-  await db.update(chatSessions).set({ updatedAt: new Date() }).where(eq(chatSessions.id, sessionId));
+  await db.update(chatSessions).set({ updatedAt: new Date() })
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)));
   return Number(result[0].insertId);
 }
 

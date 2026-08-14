@@ -900,6 +900,55 @@ export default function Dashboard() {
     }
   };
 
+  const exportChatSessionMarkdown = async (session: { id: number; title: string; updatedAt: Date | string }) => {
+    try {
+      const messages = await chatUtils.client.semiguard.getChatMessages.query({ sessionId: session.id });
+      if (messages.length === 0) {
+        toast.info(lang === "ko" ? "내보낼 대화가 없습니다." : lang === "ja" ? "エクスポートする会話がありません。" : "There are no messages to export.");
+        return;
+      }
+      const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
+      const title = session.title.trim() || (lang === "ko" ? "상담 기록" : lang === "ja" ? "相談履歴" : "Consultation history");
+      const exportedAtLabel = lang === "ko" ? "내보낸 시각" : lang === "ja" ? "エクスポート時刻" : "Exported at";
+      const updatedAtLabel = lang === "ko" ? "최근 갱신" : lang === "ja" ? "最終更新" : "Last updated";
+      const userLabel = lang === "ko" ? "사용자" : lang === "ja" ? "ユーザー" : "User";
+      const assistantLabel = lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Senior Engineer";
+      const markdown = [
+        `# ${title}`,
+        "",
+        `- ${updatedAtLabel}: ${new Date(session.updatedAt).toLocaleString(locale)}`,
+        `- ${exportedAtLabel}: ${new Date().toLocaleString(locale)}`,
+        "",
+        "---",
+        "",
+        ...messages.flatMap(message => [
+          `## ${message.role === "user" ? userLabel : assistantLabel}`,
+          "",
+          message.content,
+          "",
+          `> ${new Date(message.createdAt).toLocaleString(locale)}`,
+          "",
+          "---",
+          "",
+        ]),
+      ].join("\n");
+      const blob = new Blob([`\ufeff${markdown}`], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      const safeTitle = title.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 40) || "consultation";
+      anchor.href = url;
+      anchor.download = `semiguard-${safeTitle}-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      toast.success(lang === "ko" ? "상담 기록을 Markdown 파일로 내보냈습니다." : lang === "ja" ? "相談履歴をMarkdownファイルとしてエクスポートしました。" : "Consultation history exported as Markdown.");
+    } catch (error) {
+      console.error("Consultation export failed:", error);
+      toast.error(lang === "ko" ? "상담 기록을 내보내지 못했습니다." : lang === "ja" ? "相談履歴をエクスポートできませんでした。" : "Could not export the consultation history.");
+    }
+  };
+
   // 최초 챗봇 오픈 시 세션이 없으면 기본 세션 생성
   useEffect(() => {
     if (isChatOpen && activeSessionId === null) {
@@ -2665,6 +2714,17 @@ export default function Dashboard() {
                           title={lang === "ko" ? "제목 수정" : lang === "ja" ? "タイトルを編集" : "Edit title"}
                           aria-label={lang === "ko" ? "상담 기록 제목 수정" : lang === "ja" ? "相談履歴のタイトルを編集" : "Edit consultation title"}>
                           ✏️
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void exportChatSessionMarkdown(session);
+                          }}
+                          className="p-1 text-xs hover:opacity-75"
+                          title={lang === "ko" ? "Markdown으로 내보내기" : lang === "ja" ? "Markdownでエクスポート" : "Export as Markdown"}
+                          aria-label={lang === "ko" ? "상담 기록 Markdown 내보내기" : lang === "ja" ? "相談履歴をMarkdownでエクスポート" : "Export consultation history as Markdown"}>
+                          ⬇️
                         </button>
                         <button
                           type="button"

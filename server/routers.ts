@@ -643,15 +643,15 @@ Guidelines:
     // 특정 세션 메시지 조회
     getChatMessages: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getChatMessagesForSession(input.sessionId);
+      .query(async ({ ctx, input }) => {
+        return db.getChatMessagesForUser(input.sessionId, ctx.user.id);
       }),
 
     // 메시지 저장 및 세션 갱신
     saveChatMessage: protectedProcedure
       .input(z.object({ sessionId: z.number(), role: z.enum(["user", "assistant"]), content: z.string() }))
-      .mutation(async ({ input }) => {
-        const messageId = await db.addChatMessage(input.sessionId, input.role, input.content);
+      .mutation(async ({ ctx, input }) => {
+        const messageId = await db.addChatMessage(input.sessionId, ctx.user.id, input.role, input.content);
         return { success: true, messageId };
       }),
 
