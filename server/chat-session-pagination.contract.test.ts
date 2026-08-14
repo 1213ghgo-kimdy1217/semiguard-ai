@@ -13,7 +13,7 @@ describe("consultation history pagination contract", () => {
   });
 
   it("resets page on search, pin filter, or sort changes and exposes localized controls", () => {
-    expect(dashboardSource).toContain("[normalizedHistorySearch, historySessionFilter, historySessionSort]");
+    expect(dashboardSource).toContain("[normalizedHistorySearch, historySessionFilter, historySessionSort, historySessionStartDate, historySessionEndDate]");
     expect(dashboardSource).toContain('lang === "ko" ? "이전"');
     expect(dashboardSource).toContain('lang === "ja" ? "次へ"');
     expect(dashboardSource).toContain('"Next"');

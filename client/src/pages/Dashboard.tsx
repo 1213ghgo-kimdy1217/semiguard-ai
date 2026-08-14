@@ -775,6 +775,8 @@ export default function Dashboard() {
   const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
   const [historySessionSort, setHistorySessionSort] = useState<"newest" | "oldest" | "title">("newest");
   const [historySessionPage, setHistorySessionPage] = useState(1);
+  const [historySessionStartDate, setHistorySessionStartDate] = useState("");
+  const [historySessionEndDate, setHistorySessionEndDate] = useState("");
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
@@ -786,8 +788,15 @@ export default function Dashboard() {
   const visibleChatSessions = normalizedHistorySearch.length > 0
     ? (searchChatSessionsQuery.data ?? [])
     : (chatSessionsQuery.data ?? []);
+  const historySessionStartTime = historySessionStartDate ? new Date(`${historySessionStartDate}T00:00:00`).getTime() : null;
+  const historySessionEndTime = historySessionEndDate ? new Date(`${historySessionEndDate}T23:59:59.999`).getTime() : null;
   const filteredAndSortedChatSessions = visibleChatSessions
-    .filter(session => historySessionFilter === "all" || session.isPinned === 1)
+    .filter(session => {
+      const updatedTime = new Date(session.updatedAt).getTime();
+      return (historySessionFilter === "all" || session.isPinned === 1)
+        && (historySessionStartTime === null || updatedTime >= historySessionStartTime)
+        && (historySessionEndTime === null || updatedTime <= historySessionEndTime);
+    })
     .slice()
     .sort((a, b) => {
       if (a.isPinned !== b.isPinned) return (b.isPinned ?? 0) - (a.isPinned ?? 0);
@@ -805,7 +814,7 @@ export default function Dashboard() {
   );
   useEffect(() => {
     setHistorySessionPage(1);
-  }, [normalizedHistorySearch, historySessionFilter, historySessionSort]);
+  }, [normalizedHistorySearch, historySessionFilter, historySessionSort, historySessionStartDate, historySessionEndDate]);
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
@@ -2744,6 +2753,45 @@ export default function Dashboard() {
                         {filteredAndSortedChatSessions.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " results"}
                       </span>
                     </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[9px] font-medium" style={{ color: th.textMuted }}>
+                      {lang === "ko" ? "기간" : lang === "ja" ? "期間" : "Period"}
+                    </span>
+                    <label className="sr-only" htmlFor="consultation-history-start-date">
+                      {lang === "ko" ? "상담 기록 시작일" : lang === "ja" ? "相談履歴の開始日" : "Consultation history start date"}
+                    </label>
+                    <input
+                      id="consultation-history-start-date"
+                      type="date"
+                      value={historySessionStartDate}
+                      max={historySessionEndDate || undefined}
+                      onChange={(event) => setHistorySessionStartDate(event.target.value)}
+                      className="min-w-0 rounded border px-1.5 py-1 text-[9px] outline-none focus:ring-1 focus:ring-sky-500"
+                      style={{ borderColor: th.border2, background: th.bgCard2, color: th.textMuted }}
+                    />
+                    <span className="text-[9px]" style={{ color: th.textMuted }}>~</span>
+                    <label className="sr-only" htmlFor="consultation-history-end-date">
+                      {lang === "ko" ? "상담 기록 종료일" : lang === "ja" ? "相談履歴の終了日" : "Consultation history end date"}
+                    </label>
+                    <input
+                      id="consultation-history-end-date"
+                      type="date"
+                      value={historySessionEndDate}
+                      min={historySessionStartDate || undefined}
+                      onChange={(event) => setHistorySessionEndDate(event.target.value)}
+                      className="min-w-0 rounded border px-1.5 py-1 text-[9px] outline-none focus:ring-1 focus:ring-sky-500"
+                      style={{ borderColor: th.border2, background: th.bgCard2, color: th.textMuted }}
+                    />
+                    {(historySessionStartDate || historySessionEndDate) && (
+                      <button
+                        type="button"
+                        onClick={() => { setHistorySessionStartDate(""); setHistorySessionEndDate(""); }}
+                        className="rounded border px-1.5 py-1 text-[9px] font-bold hover:opacity-75"
+                        style={{ borderColor: th.border2, color: th.textMuted }}>
+                        {lang === "ko" ? "초기화" : lang === "ja" ? "リセット" : "Reset"}
+                      </button>
+                    )}
                   </div>
                 </div>
 
