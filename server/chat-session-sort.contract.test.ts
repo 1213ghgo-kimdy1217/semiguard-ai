@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("consultation session sort contract", () => {
   it("keeps pinned sessions first while allowing newest, oldest, and title sorting", () => {
-    expect(dashboardSource).toContain('useState<"newest" | "oldest" | "title">("newest")');
+    expect(dashboardSource).toContain('useState<"newest" | "oldest" | "title">(() => {');
     expect(dashboardSource).toContain("filteredAndSortedChatSessions");
     expect(dashboardSource).toContain("if (a.isPinned !== b.isPinned)");
     expect(dashboardSource).toContain('historySessionSort === "oldest"');

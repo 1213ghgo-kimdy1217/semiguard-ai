@@ -820,7 +820,10 @@ export default function Dashboard() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [debouncedHistorySearch, setDebouncedHistorySearch] = useState("");
   const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
-  const [historySessionSort, setHistorySessionSort] = useState<"newest" | "oldest" | "title">("newest");
+  const [historySessionSort, setHistorySessionSort] = useState<"newest" | "oldest" | "title">(() => {
+    const stored = window.localStorage.getItem("semiguard_history_sort");
+    return stored === "oldest" || stored === "title" ? stored : "newest";
+  });
   const [historySessionPage, setHistorySessionPage] = useState(1);
   const [historySessionStartDate, setHistorySessionStartDate] = useState("");
   const [historySessionEndDate, setHistorySessionEndDate] = useState("");
@@ -869,6 +872,9 @@ export default function Dashboard() {
   );
   const filteredHistoryMessageCount = filteredAndSortedChatSessions.reduce((total, session) => total + Number(session.messageCount ?? 0), 0);
   const filteredHistoryPinnedCount = filteredAndSortedChatSessions.filter(session => session.isPinned === 1).length;
+  useEffect(() => {
+    window.localStorage.setItem("semiguard_history_sort", historySessionSort);
+  }, [historySessionSort]);
   useEffect(() => {
     setHistorySessionPage(1);
   }, [debouncedHistorySearch, historySessionFilter, historySessionSort, historySessionStartDate, historySessionEndDate]);
