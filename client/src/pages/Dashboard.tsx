@@ -717,6 +717,10 @@ export default function Dashboard() {
       // 저장 공간 제한 또는 개인정보 보호 모드에서는 기본 언어로 계속 동작한다.
     }
   }, [lang]);
+
+  useEffect(() => {
+    document.documentElement.lang = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
+  }, [lang]);
   // ─── 테마 색상 팔레트 ─────────────────────────────────────────────────────
   const th = {
     bg:        isDark ? "oklch(0.10 0.01 240)"   : "oklch(0.97 0.005 240)",
