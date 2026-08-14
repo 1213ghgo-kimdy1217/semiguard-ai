@@ -811,7 +811,7 @@ export default function Dashboard() {
     const stored = window.localStorage.getItem("semiguard_feedback_reason");
     return stored === "inaccurate" || stored === "insufficient" || stored === "irrelevant" || stored === "other" ? stored : "all";
   });
-  const [feedbackHistorySearch, setFeedbackHistorySearch] = useState("");
+  const [feedbackHistorySearch, setFeedbackHistorySearch] = useState(() => window.localStorage.getItem("semiguard_feedback_search") ?? "");
   const [feedbackHistoryStartDate, setFeedbackHistoryStartDate] = useState("");
   const [feedbackHistoryEndDate, setFeedbackHistoryEndDate] = useState("");
   const [feedbackHistoryDatePreset, setFeedbackHistoryDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">(() => {
@@ -1063,6 +1063,9 @@ export default function Dashboard() {
   useEffect(() => {
     window.localStorage.setItem("semiguard_feedback_type", feedbackHistoryFilter);
   }, [feedbackHistoryFilter]);
+  useEffect(() => {
+    window.localStorage.setItem("semiguard_feedback_search", feedbackHistorySearch);
+  }, [feedbackHistorySearch]);
   useEffect(() => {
     window.localStorage.setItem("semiguard_feedback_date_preset", feedbackHistoryDatePreset);
   }, [feedbackHistoryDatePreset]);
