@@ -89,6 +89,21 @@ function formatEvidenceGate(gate: ReturnType<typeof buildEvidenceGate>, lang: Ch
   return `\n\n---\n**[Server Validation Gate]**\n- **Evidence sensors:** ${gate.evidence.join(" · ")}\n- **Confidence:** ${gate.confidence} — based on live measurements and the rule-based risk score\n- **Further verification:** ${gate.followUp}`;
 }
 
+function buildSafeFallbackDiagnostic(sensorContext: {
+  current: number; temperature: number; vibration: number; noise: number; anomalyScore: number; riskLevel: string;
+}, lang: ChatLanguage) {
+  const gate = buildEvidenceGate(sensorContext, lang);
+  const requiresUrgentReview = sensorContext.anomalyScore >= 70;
+
+  if (lang === "ko") {
+    return `**[기본 안전 진단]**\nAI 상담 서비스를 일시적으로 사용할 수 없어, 현재 실시간 센서와 규칙 기반 위험 판정으로 안전 진단을 제공합니다.\n\n**[현재 상태]**\n- 규칙 기반 위험 단계: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- 주요 편차: ${gate.evidence.join(" · ")}\n\n**[권장 조치]**\n1. ${requiresUrgentReview ? "현장 담당자에게 즉시 보고하고, 규정된 안전 절차에 따라 점검 준비를 진행하세요." : "최근 추이와 설비 점검 이력을 확인한 뒤, 다음 정기 점검에서 주요 편차 센서를 우선 확인하세요."}\n2. 현재 수치만으로 고장 원인을 단정하지 말고, 관련 매뉴얼과 현장 점검 결과를 함께 확인하세요.${formatEvidenceGate(gate, lang)}`;
+  }
+  if (lang === "ja") {
+    return `**[基本安全診断]**\nAI相談サービスを一時的に利用できないため、現在の実測センサー値とルールベースの危険判定に基づく安全診断を提供します。\n\n**[現在の状態]**\n- ルールベースの危険度: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- 主な偏差: ${gate.evidence.join(" · ")}\n\n**[推奨対応]**\n1. ${requiresUrgentReview ? "現場担当者へ直ちに報告し、定められた安全手順に従って点検の準備を進めてください。" : "最近の推移と設備点検履歴を確認し、次回点検では主要な偏差センサーを優先して確認してください。"}\n2. 現在の数値だけで故障原因を断定せず、関連マニュアルと現地点検の結果を併せて確認してください。${formatEvidenceGate(gate, lang)}`;
+  }
+  return `**[Baseline Safety Diagnosis]**\nThe AI consultation service is temporarily unavailable, so this safety diagnosis uses the current live sensor values and the rule-based risk assessment.\n\n**[Current Status]**\n- Rule-based risk level: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- Primary deviations: ${gate.evidence.join(" · ")}\n\n**[Recommended Actions]**\n1. ${requiresUrgentReview ? "Report to the responsible operator immediately and prepare inspection under the approved safety procedure." : "Review recent trends and inspection history, then prioritize the sensors with the largest deviations at the next inspection."}\n2. Do not conclude a failure cause from current values alone; verify the relevant manual and on-site inspection findings.${formatEvidenceGate(gate, lang)}`;
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -619,12 +634,19 @@ Guidelines:
             })),
           };
         } catch (err) {
-          const fallback = lang === "ko"
-            ? "AI 상담 연결 중 일시적인 지연이 발생했습니다. 센서 편차와 권장 조치를 다시 확인해 주세요."
-            : lang === "ja"
-            ? "AI相談への接続中に一時的な遅延が発生しました。センサーの偏差と推奨措置を再確認してください。"
-            : "Temporary delay connecting to AI consultation. Please recheck sensor deviations and recommendations.";
-          return { reply: fallback, manualSources: [] };
+          console.warn("AI consultation fallback used:", err instanceof Error ? err.message : "unknown error");
+          return {
+            reply: buildSafeFallbackDiagnostic(sensorContext, lang),
+            manualSources: manualSources.map((source, index) => ({
+              label: index + 1,
+              documentId: source.documentId,
+              documentTitle: source.documentTitle,
+              chunkIndex: source.chunkIndex,
+              content: source.content,
+              relevanceScore: source.relevanceScore,
+              matchedTerms: source.matchedTerms,
+            })),
+          };
         }
       }),
 
