@@ -779,6 +779,9 @@ export default function Dashboard() {
   const [isChatOpen, setIsChatOpen] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("chat") === "open",
   );
+  const chatLaunchButtonRef = useRef<HTMLButtonElement>(null);
+  const chatCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const wasChatOpenRef = useRef(isChatOpen);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("history") === "open",
@@ -1437,6 +1440,19 @@ export default function Dashboard() {
     showManualRagModal,
     showResetConfirmModal,
   ]);
+
+  useEffect(() => {
+    if (isChatOpen) {
+      wasChatOpenRef.current = true;
+      const focusTimer = window.setTimeout(() => chatCloseButtonRef.current?.focus(), 0);
+      return () => window.clearTimeout(focusTimer);
+    }
+
+    if (wasChatOpenRef.current) {
+      chatLaunchButtonRef.current?.focus();
+      wasChatOpenRef.current = false;
+    }
+  }, [isChatOpen]);
 
   const handleResetChat = async () => {
     try {
@@ -2720,6 +2736,7 @@ export default function Dashboard() {
       {/* ── 플로팅 챗봇 버튼 ── */}
       <button
         type="button"
+        ref={chatLaunchButtonRef}
         onClick={() => setIsChatOpen(true)}
         aria-label={lang === "ko" ? "AI 수석 엔지니어 상담 열기" : lang === "ja" ? "AIシニアエンジニア相談を開く" : "Open AI expert chatbot"}
         className="fixed bottom-5 right-4 sm:bottom-8 sm:right-8 z-[495] flex items-center gap-2.5 sm:gap-3 px-5 py-4 sm:px-7 sm:py-5 rounded-full shadow-2xl font-extrabold text-sm sm:text-base transition-transform duration-200 hover:scale-[1.04] active:scale-[0.97]"
@@ -2746,6 +2763,9 @@ export default function Dashboard() {
       {isChatOpen && (
         <div className="fixed inset-0 z-[550] flex items-stretch justify-center bg-black/60 backdrop-blur-sm animate-fadeIn sm:items-center sm:p-4">
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chat-dialog-title"
             className="relative flex h-[100dvh] min-h-0 w-full flex-col overflow-hidden border shadow-2xl sm:h-[min(600px,90vh)] sm:w-[95vw] sm:max-w-lg sm:rounded-2xl"
             style={{
               background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
@@ -2759,7 +2779,7 @@ export default function Dashboard() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <h3 className="text-xs sm:text-sm font-bold truncate" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
+                    <h3 id="chat-dialog-title" className="text-xs sm:text-sm font-bold truncate" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
                       {lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Expert Engineer"}
                     </h3>
                     <span className="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono border whitespace-nowrap shrink-0" style={{ borderColor: "oklch(0.75 0.18 200 / 0.3)", background: "oklch(0.75 0.18 200 / 0.1)", color: "oklch(0.75 0.18 200)" }}>
@@ -2774,6 +2794,7 @@ export default function Dashboard() {
                 </div>
                 <button
                   type="button"
+                  ref={chatCloseButtonRef}
                   onClick={() => setIsChatOpen(false)}
                   aria-label={lang === "ko" ? "상담 닫기" : lang === "ja" ? "相談を閉じる" : "Close consultation"}
                   className="ml-auto w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border shrink-0"
