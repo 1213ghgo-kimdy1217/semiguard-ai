@@ -4265,6 +4265,21 @@ export default function Dashboard() {
               aria-relevant="additions text"
               aria-busy={isChatLoading}
               aria-label={lang === "ko" ? "AI 상담 메시지" : lang === "ja" ? "AI相談メッセージ" : "AI consultation messages"}
+              aria-describedby="chat-message-log-help"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Home") {
+                  event.preventDefault();
+                  event.currentTarget.scrollTo({ top: 0, behavior: "smooth" });
+                }
+                if (event.key === "End") {
+                  event.preventDefault();
+                  event.currentTarget.scrollTo({ top: event.currentTarget.scrollHeight, behavior: "smooth" });
+                  isChatNearBottomRef.current = true;
+                  setIsChatAwayFromLatest(false);
+                  setUnreadChatMessageCount(0);
+                }
+              }}
               onScroll={(event) => {
                 const element = event.currentTarget;
                 const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 56;
@@ -4273,6 +4288,9 @@ export default function Dashboard() {
                 if (isNearBottom) setUnreadChatMessageCount(0);
               }}
               className="h-full overflow-y-auto space-y-3 p-3 sm:p-4 custom-scrollbar">
+              <span id="chat-message-log-help" className="sr-only">
+                {lang === "ko" ? "이 메시지 영역에 포커스를 둔 뒤 Home 키로 처음 메시지, End 키로 최신 메시지로 이동할 수 있습니다." : lang === "ja" ? "このメッセージ領域にフォーカスして、Homeキーで最初のメッセージ、Endキーで最新メッセージへ移動できます。" : "When this message area is focused, use Home to move to the first message and End to move to the latest message."}
+              </span>
               {/* 여기서부터 메시지 목록 */}
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className={`flex items-end gap-1.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
