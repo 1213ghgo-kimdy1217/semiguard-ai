@@ -4243,6 +4243,11 @@ export default function Dashboard() {
             <div className="relative min-h-0 flex-1">
             <div
               ref={chatMessageListRef}
+              role="log"
+              aria-live="polite"
+              aria-relevant="additions text"
+              aria-busy={isChatLoading}
+              aria-label={lang === "ko" ? "AI 상담 메시지" : lang === "ja" ? "AI相談メッセージ" : "AI consultation messages"}
               onScroll={(event) => {
                 const element = event.currentTarget;
                 const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 56;
