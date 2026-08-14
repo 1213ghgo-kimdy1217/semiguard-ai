@@ -5556,6 +5556,8 @@ export default function Dashboard() {
                 <span className="text-[11px] text-muted-foreground">
                   {lang === "ko"
                     ? `총 ${filteredLogs.length}개 중 ${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, filteredLogs.length)}개`
+                    : lang === "ja"
+                    ? `全${filteredLogs.length}件中 ${(logPage - 1) * LOG_PAGE_SIZE + 1}～${Math.min(logPage * LOG_PAGE_SIZE, filteredLogs.length)}件`
                     : `${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, filteredLogs.length)} of ${filteredLogs.length}`}
                 </span>
                 <div className="flex items-center gap-1">
@@ -5564,7 +5566,7 @@ export default function Dashboard() {
                     disabled={logPage === 1}
                     className="px-2.5 py-1 rounded-lg text-xs border transition-all duration-150 disabled:opacity-30 hover:opacity-80 active:scale-95"
                     style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.60 0.01 240)" }}>
-                    ‹ {lang === "ko" ? "이전" : "Prev"}
+                    ‹ {lang === "ko" ? "이전" : lang === "ja" ? "前へ" : "Prev"}
                   </button>
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter(p => p === 1 || p === totalPages || Math.abs(p - logPage) <= 1)
@@ -5593,7 +5595,7 @@ export default function Dashboard() {
                     disabled={logPage === totalPages}
                     className="px-2.5 py-1 rounded-lg text-xs border transition-all duration-150 disabled:opacity-30 hover:opacity-80 active:scale-95"
                     style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.60 0.01 240)" }}>
-                    {lang === "ko" ? "다음" : "Next"} ›
+                    {lang === "ko" ? "다음" : lang === "ja" ? "次へ" : "Next"} ›
                   </button>
                 </div>
               </div>
