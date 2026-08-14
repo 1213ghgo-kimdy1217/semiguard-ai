@@ -21,11 +21,19 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   startLogin();
 };
 
+const isTemporaryTransportResponse = (error: unknown) =>
+  error instanceof TRPCClientError
+  && error.message.includes("Unexpected token '<'");
+
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
     redirectToLoginIfUnauthorized(error);
-    console.error("[API Query Error]", error);
+    if (isTemporaryTransportResponse(error)) {
+      console.warn("[API Query Temporary Transport Error]", error);
+    } else {
+      console.error("[API Query Error]", error);
+    }
   }
 });
 
@@ -33,7 +41,11 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
-    console.error("[API Mutation Error]", error);
+    if (isTemporaryTransportResponse(error)) {
+      console.warn("[API Mutation Temporary Transport Error]", error);
+    } else {
+      console.error("[API Mutation Error]", error);
+    }
   }
 });
 

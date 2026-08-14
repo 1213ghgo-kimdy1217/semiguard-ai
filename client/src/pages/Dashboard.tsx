@@ -1351,6 +1351,10 @@ export default function Dashboard() {
         onSuccess: () => {
           utils.semiguard.getLogs.invalidate();
           utils.semiguard.getStats.invalidate();
+        },
+        onError: (error) => {
+          // 개발 서버 재시작·일시 네트워크 지연은 다음 4초 폴링 주기에서 자동 복구한다.
+          console.warn("Auto polling will retry on the next interval:", error);
         }
       });
       setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
