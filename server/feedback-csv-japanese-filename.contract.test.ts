@@ -14,6 +14,6 @@ describe("feedback CSV Japanese filename contract", () => {
 
   it("keeps UTF-8 BOM content and uses the localized filename for downloads", () => {
     expect(dashboardSource).toContain('const csv = `\\ufeff${[headers, ...rows]');
-    expect(dashboardSource).toContain('anchor.download = `${filenamePrefix}_${filterName}_${new Date().toISOString().slice(0, 10)}.csv`;');
+    expect(dashboardSource).toContain('anchor.download = `${filenamePrefix}_${filterName}${reasonName}_${new Date().toISOString().slice(0, 10)}.csv`;');
   });
 });

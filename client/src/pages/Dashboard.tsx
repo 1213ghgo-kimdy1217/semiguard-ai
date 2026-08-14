@@ -800,6 +800,7 @@ export default function Dashboard() {
   );
   const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
   const [feedbackHistoryFilter, setFeedbackHistoryFilter] = useState<"all" | "like" | "dislike">("all");
+  const [feedbackReasonFilter, setFeedbackReasonFilter] = useState<"all" | "inaccurate" | "insufficient" | "irrelevant" | "other">("all");
   const [feedbackHistorySearch, setFeedbackHistorySearch] = useState("");
   const [feedbackHistoryStartDate, setFeedbackHistoryStartDate] = useState("");
   const [feedbackHistoryEndDate, setFeedbackHistoryEndDate] = useState("");
@@ -966,10 +967,12 @@ export default function Dashboard() {
   const feedbackEndAt = feedbackHistoryEndDate ? new Date(`${feedbackHistoryEndDate}T23:59:59.999`).getTime() : null;
   const filteredFeedbackHistory = allFeedbackHistory.filter(item => {
     const matchesType = feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter;
+    const matchesReason = feedbackReasonFilter === "all"
+      || (item.feedbackType === "dislike" && item.reasonCode === feedbackReasonFilter);
     const searchable = [item.reasonCode, item.reasonText, item.messageContent, item.regeneratedContent].filter(Boolean).join(" ").toLocaleLowerCase();
     const createdAt = new Date(item.createdAt).getTime();
     const matchesDate = (feedbackStartAt === null || createdAt >= feedbackStartAt) && (feedbackEndAt === null || createdAt <= feedbackEndAt);
-    return matchesType && matchesDate && (!normalizedFeedbackSearch || searchable.includes(normalizedFeedbackSearch));
+    return matchesType && matchesReason && matchesDate && (!normalizedFeedbackSearch || searchable.includes(normalizedFeedbackSearch));
   });
   const sortedFeedbackHistory = [...filteredFeedbackHistory].sort((a, b) => {
     const delta = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -985,7 +988,7 @@ export default function Dashboard() {
   useEffect(() => {
     setFeedbackHistoryPage(1);
     setFeedbackKeywordSummary(null);
-  }, [feedbackHistoryFilter, feedbackHistorySearch, feedbackHistoryStartDate, feedbackHistoryEndDate, feedbackHistorySort]);
+  }, [feedbackHistoryFilter, feedbackReasonFilter, feedbackHistorySearch, feedbackHistoryStartDate, feedbackHistoryEndDate, feedbackHistorySort]);
 
   useEffect(() => {
     setFeedbackHistoryPage(currentPage => Math.min(currentPage, feedbackHistoryTotalPages));
@@ -1026,9 +1029,18 @@ export default function Dashboard() {
       : feedbackHistoryFilter === "like"
         ? (lang === "ko" ? "긍정" : lang === "ja" ? "肯定" : "positive")
         : (lang === "ko" ? "부정" : lang === "ja" ? "否定" : "negative");
+    const reasonName = feedbackReasonFilter === "all"
+      ? ""
+      : `_${feedbackReasonFilter === "inaccurate"
+        ? (lang === "ko" ? "정확성" : lang === "ja" ? "正確性" : "accuracy")
+        : feedbackReasonFilter === "insufficient"
+          ? (lang === "ko" ? "설명부족" : lang === "ja" ? "説明不足" : "insufficient")
+          : feedbackReasonFilter === "irrelevant"
+            ? (lang === "ko" ? "관련없음" : lang === "ja" ? "関連なし" : "irrelevant")
+            : (lang === "ko" ? "기타" : lang === "ja" ? "その他" : "other")}`;
     const filenamePrefix = lang === "ko" ? "세미가드_피드백" : lang === "ja" ? "セミガード_フィードバック" : "semiguard-feedback";
     anchor.href = url;
-    anchor.download = `${filenamePrefix}_${filterName}_${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.download = `${filenamePrefix}_${filterName}${reasonName}_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -3445,7 +3457,7 @@ export default function Dashboard() {
                   </button>
                 </div>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
-                  <div className="flex items-center gap-1 rounded-lg border p-1" style={{ borderColor: th.border2, background: th.bgCard }}>
+                  <div className="flex flex-wrap items-center gap-1 rounded-lg border p-1" style={{ borderColor: th.border2, background: th.bgCard }}>
                     {([
                       { id: "all", ko: "전체", ja: "すべて", en: "All", icon: "☷" },
                       { id: "like", ko: "긍정", ja: "肯定", en: "Positive", icon: "👍" },
@@ -3454,7 +3466,10 @@ export default function Dashboard() {
                       <button
                         key={filter.id}
                         type="button"
-                        onClick={() => setFeedbackHistoryFilter(filter.id)}
+                        onClick={() => {
+                          setFeedbackHistoryFilter(filter.id);
+                          if (filter.id !== "dislike") setFeedbackReasonFilter("all");
+                        }}
                         className="rounded-md px-2 py-1 text-[9px] font-bold transition-all active:scale-95"
                         style={{
                           background: feedbackHistoryFilter === filter.id ? "oklch(0.62 0.20 300 / 0.20)" : "transparent",
@@ -3463,6 +3478,31 @@ export default function Dashboard() {
                         {filter.icon} {lang === "ko" ? filter.ko : lang === "ja" ? filter.ja : filter.en}
                       </button>
                     ))}
+                    {feedbackHistoryFilter !== "like" && negativeFeedbackCount > 0 && (
+                      <>
+                        <span className="mx-0.5 h-3 w-px" style={{ background: th.border2 }} aria-hidden="true" />
+                        {([
+                          { id: "all", ko: "사유 전체", ja: "理由すべて", en: "All reasons", icon: "☷" },
+                          { id: "inaccurate", ko: "정확성", ja: "正確性", en: "Accuracy", icon: "◎" },
+                          { id: "insufficient", ko: "설명 부족", ja: "説明不足", en: "Detail", icon: "≡" },
+                          { id: "irrelevant", ko: "관련 없음", ja: "関連なし", en: "Relevance", icon: "↗" },
+                          { id: "other", ko: "기타", ja: "その他", en: "Other", icon: "…" },
+                        ] as const).map(filter => (
+                          <button
+                            key={`reason-${filter.id}`}
+                            type="button"
+                            onClick={() => setFeedbackReasonFilter(filter.id)}
+                            title={lang === "ko" ? `부정 평가 사유: ${filter.ko}` : lang === "ja" ? `否定評価の理由: ${filter.ja}` : `Negative feedback reason: ${filter.en}`}
+                            className="rounded-md px-2 py-1 text-[9px] font-bold transition-all active:scale-95"
+                            style={{
+                              background: feedbackReasonFilter === filter.id ? "oklch(0.62 0.20 300 / 0.20)" : "transparent",
+                              color: feedbackReasonFilter === filter.id ? (isDark ? "oklch(0.86 0.14 300)" : "oklch(0.42 0.20 300)") : th.textMuted,
+                            }}>
+                            {filter.icon} {lang === "ko" ? filter.ko : lang === "ja" ? filter.ja : filter.en}
+                          </button>
+                        ))}
+                      </>
+                    )}
                   </div>
                   {!!allFeedbackHistory.length && (
                     <div className="flex items-center gap-1">
