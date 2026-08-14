@@ -488,3 +488,7 @@
 - [x] 제목·원문 통합 검색 요청에 250ms 디바운스 적용
 - [x] 검색 대기·서버 검색 중 상태를 KO/EN/JA·모바일 UI에 표시
 - [x] TypeScript·Vitest·프로덕션 빌드 회귀 검증 및 문서화 (85개 테스트 전체 통과)
+
+## Baseline 브라우저 호환성 데이터 갱신 (진행 중)
+- [x] 최신 baseline-browser-mapping 개발 의존성으로 빌드 경고 해소
+- [x] 서버 재시작 후 TypeScript·Vitest·프로덕션 빌드 및 경고 재검증 (85개 테스트·빌드 통과)
