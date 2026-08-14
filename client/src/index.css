@@ -197,3 +197,9 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* 키보드 탐색 시 현재 제어 요소를 명확히 표시 */
+:where(button, a, input, textarea, select, [role="button"]):focus-visible {
+  outline: 2px solid oklch(0.75 0.18 200);
+  outline-offset: 2px;
+}
