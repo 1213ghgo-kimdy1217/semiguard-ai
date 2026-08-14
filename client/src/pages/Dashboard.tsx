@@ -740,8 +740,11 @@ export default function Dashboard() {
   const [messageFeedbacks, setMessageFeedbacks] = useState<Record<number, "like" | "dislike">>({});
   const [activeDislikeIdx, setActiveDislikeIdx] = useState<number | null>(null);
   const [messageReasons, setMessageReasons] = useState<Record<number, string>>({});
+  const [otherReasonIdx, setOtherReasonIdx] = useState<number | null>(null);
+  const [otherFeedbackText, setOtherFeedbackText] = useState("");
+  const [isFeedbackRegenerating, setIsFeedbackRegenerating] = useState(false);
 
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number }>>([
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean }>>([
     {
       role: "assistant",
       content: lang === "ko"
@@ -847,6 +850,48 @@ export default function Dashboard() {
         },
       ]);
     } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  const regenerateWithFeedback = async (assistantIndex: number) => {
+    if (isChatLoading || isFeedbackRegenerating || !messageReasons[assistantIndex]) return;
+    const sourceMessages = chatMessages.slice(0, assistantIndex);
+    if (!sourceMessages.some(message => message.role === "user")) return;
+
+    setIsFeedbackRegenerating(true);
+    setIsChatLoading(true);
+    try {
+      const sensorContext = {
+        current: current?.sensorData.current ?? 5.0,
+        temperature: current?.sensorData.temperature ?? 45.0,
+        vibration: current?.sensorData.vibration ?? 2.0,
+        noise: current?.sensorData.noise ?? 55.0,
+        anomalyScore: current?.anomalyScore ?? 10,
+        riskLevel: current?.riskLevel ?? "normal",
+      };
+      const feedbackHistory = Object.entries(messageFeedbacks).map(([idxStr, type]) => ({
+        type,
+        reason: messageReasons[Number(idxStr)],
+      }));
+      const result = await chatMutation.mutateAsync({
+        sensorContext,
+        messages: sourceMessages.map(message => ({ role: message.role, content: message.content })),
+        lang,
+        feedbackHistory,
+      });
+      const improvedReply = { role: "assistant" as const, content: result.reply, timestamp: Date.now(), feedbackApplied: true };
+      setChatMessages(previous => [...previous, improvedReply]);
+      if (activeSessionId !== null) {
+        await saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "assistant", content: result.reply });
+        chatUtils.semiguard.getChatSessions.invalidate();
+      }
+      toast.success(lang === "ko" ? "피드백을 반영한 답변을 생성했습니다." : lang === "ja" ? "フィードバックを反映した回答を生成しました。" : "Generated an answer using your feedback.");
+    } catch (error) {
+      console.error("Feedback regeneration failed:", error);
+      toast.error(lang === "ko" ? "답변을 다시 생성하지 못했습니다. 잠시 후 재시도해 주세요." : "Could not regenerate the answer. Please try again.");
+    } finally {
+      setIsFeedbackRegenerating(false);
       setIsChatLoading(false);
     }
   };
@@ -2236,6 +2281,12 @@ export default function Dashboard() {
                               color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)",
                             }
                       }>
+                      {msg.feedbackApplied && (
+                        <div className="mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold"
+                          style={{ background: "oklch(0.65 0.18 200 / 0.14)", color: "oklch(0.68 0.18 200)", border: "1px solid oklch(0.65 0.18 200 / 0.30)" }}>
+                          ✨ {lang === "ko" ? "피드백이 반영된 답변입니다" : lang === "ja" ? "フィードバックを反映した回答です" : "Feedback-informed response"}
+                        </div>
+                      )}
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     </div>
                     {msg.role === "assistant" && (
@@ -2256,7 +2307,7 @@ export default function Dashboard() {
                           <span>{copiedIndex === idx ? "✅" : "📋"}</span>
                           <span>{copiedIndex === idx ? (lang === "ko" ? "복사됨" : lang === "ja" ? "コピー済" : "Copied") : (lang === "ko" ? "복사" : lang === "ja" ? "コピー" : "Copy")}</span>
                         </button>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1">
                           <button
                             type="button"
                             onClick={() => {
@@ -2302,7 +2353,7 @@ export default function Dashboard() {
 
                             {/* 싫어요 사유 선택 소형 팝업 */}
                             {activeDislikeIdx === idx && (
-                              <div className="absolute left-0 bottom-full mb-2 z-50 w-56 p-2.5 rounded-xl shadow-xl border animate-fadeIn"
+                              <div className="absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 rounded-xl shadow-xl border animate-fadeIn"
                                 style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: th.border2 }}>
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-[10px] font-bold" style={{ color: th.text }}>
@@ -2327,9 +2378,15 @@ export default function Dashboard() {
                                       type="button"
                                       onClick={() => {
                                         const label = lang === "ko" ? reasonItem.ko : lang === "ja" ? reasonItem.ja : reasonItem.en;
+                                        if (reasonItem.id === "other") {
+                                          setOtherReasonIdx(idx);
+                                          setOtherFeedbackText("");
+                                          return;
+                                        }
                                         setMessageReasons(prev => ({ ...prev, [idx]: label }));
+                                        setOtherReasonIdx(null);
                                         setActiveDislikeIdx(null);
-                                        toast.success(lang === "ko" ? "소중한 피드백이 반영되었습니다. 다음 답변부터 즉시 개선됩니다!" : "Feedback submitted. Next answers will be adapted!");
+                                        toast.success(lang === "ko" ? "피드백이 반영되었습니다. 아래 버튼으로 답변을 다시 생성할 수 있습니다." : "Feedback saved. You can regenerate the answer below.");
                                       }}
                                       className={`text-left px-2 py-1 rounded text-[10px] border transition-all ${
                                         messageReasons[idx] === (lang === "ko" ? reasonItem.ko : lang === "ja" ? reasonItem.ja : reasonItem.en)
@@ -2340,10 +2397,51 @@ export default function Dashboard() {
                                       {lang === "ko" ? reasonItem.ko : lang === "ja" ? reasonItem.ja : reasonItem.en}
                                     </button>
                                   ))}
+                                  {otherReasonIdx === idx && (
+                                    <div className="mt-1.5 border-t pt-2" style={{ borderColor: th.border2 }}>
+                                      <textarea
+                                        value={otherFeedbackText}
+                                        onChange={(event) => setOtherFeedbackText(event.target.value)}
+                                        maxLength={300}
+                                        rows={3}
+                                        placeholder={lang === "ko" ? "부족했던 점을 직접 적어 주세요." : lang === "ja" ? "改善してほしい点を入力してください。" : "Tell us what should be improved."}
+                                        className="w-full resize-none rounded-lg border px-2 py-1.5 text-[10px] outline-none focus:ring-1"
+                                        style={{ background: th.bgCard, borderColor: th.border2, color: th.text }}
+                                      />
+                                      <div className="mt-1.5 flex justify-end gap-1">
+                                        <button type="button" onClick={() => setOtherReasonIdx(null)} className="px-2 py-1 text-[10px]" style={{ color: th.textMuted }}>
+                                          {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={!otherFeedbackText.trim()}
+                                          onClick={() => {
+                                            setMessageReasons(prev => ({ ...prev, [idx]: `${lang === "ko" ? "기타" : lang === "ja" ? "その他" : "Other"}: ${otherFeedbackText.trim()}` }));
+                                            setOtherReasonIdx(null);
+                                            setActiveDislikeIdx(null);
+                                            toast.success(lang === "ko" ? "구체적인 피드백이 반영되었습니다." : "Detailed feedback saved.");
+                                          }}
+                                          className="rounded-md px-2 py-1 text-[10px] font-bold text-white disabled:opacity-40"
+                                          style={{ background: "oklch(0.58 0.20 20)" }}>
+                                          {lang === "ko" ? "제출" : lang === "ja" ? "送信" : "Submit"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
                           </div>
+                          {messageFeedbacks[idx] === "dislike" && messageReasons[idx] && (
+                            <button
+                              type="button"
+                              disabled={isChatLoading || isFeedbackRegenerating}
+                              onClick={() => regenerateWithFeedback(idx)}
+                              className="rounded px-2 py-0.5 text-[10px] font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                              style={{ background: "oklch(0.65 0.18 200 / 0.15)", color: "oklch(0.70 0.18 200)", border: "1px solid oklch(0.65 0.18 200 / 0.35)" }}>
+                              ✨ {isFeedbackRegenerating ? (lang === "ko" ? "생성 중" : lang === "ja" ? "生成中" : "Generating") : (lang === "ko" ? "답변 다시 생성하기" : lang === "ja" ? "回答を再生成" : "Regenerate answer")}
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -3116,5 +3214,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-
