@@ -771,9 +771,19 @@ export default function Dashboard() {
   const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
   const [showDeleteAllFeedbackConfirm, setShowDeleteAllFeedbackConfirm] = useState(false);
   const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
+  const normalizedHistorySearch = searchKeyword.trim();
+  const searchChatSessionsQuery = trpc.semiguard.searchChatSessions.useQuery(
+    { query: normalizedHistorySearch || "pending" },
+    { enabled: isChatOpen && normalizedHistorySearch.length > 0 },
+  );
+  const visibleChatSessions = normalizedHistorySearch.length > 0
+    ? (searchChatSessionsQuery.data ?? [])
+    : (chatSessionsQuery.data ?? []);
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
@@ -802,8 +812,6 @@ export default function Dashboard() {
   const updateSessionTitleMutation = trpc.semiguard.updateChatSessionTitle.useMutation();
   const setChatSessionPinnedMutation = trpc.semiguard.setChatSessionPinned.useMutation();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [editingSessionTitle, setEditingSessionTitle] = useState("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -2697,10 +2705,7 @@ export default function Dashboard() {
                       ))}
                     </div>
                     <span className="text-[9px]" style={{ color: th.textMuted }}>
-                      {(chatSessionsQuery.data ?? []).filter(session =>
-                        (historySessionFilter === "all" || session.isPinned === 1) &&
-                        (!searchKeyword.trim() || session.title.toLocaleLowerCase().includes(searchKeyword.trim().toLocaleLowerCase()))
-                      ).length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " results"}
+                      {visibleChatSessions.filter(session => historySessionFilter === "all" || session.isPinned === 1).length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " results"}
                     </span>
                   </div>
                 </div>
@@ -2753,18 +2758,14 @@ export default function Dashboard() {
                   </div>
                 )}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                  {chatSessionsQuery.isLoading ? (
+                  {chatSessionsQuery.isLoading || (normalizedHistorySearch.length > 0 && searchChatSessionsQuery.isLoading) ? (
                     <div className="flex items-center justify-center py-8 text-xs text-muted-foreground gap-2">
                       <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>{lang === "ko" ? "기록 불러오는 중..." : lang === "ja" ? "履歴を読み込んでいます..." : "Loading history..."}</span>
                     </div>
                   ) : chatSessionsQuery.data && chatSessionsQuery.data.length > 0 ? (
                     (() => {
-                      const normalizedSearchKeyword = searchKeyword.trim().toLocaleLowerCase();
-                      const filtered = chatSessionsQuery.data.filter(session =>
-                        (historySessionFilter === "all" || session.isPinned === 1) &&
-                        (!normalizedSearchKeyword || session.title.toLocaleLowerCase().includes(normalizedSearchKeyword))
-                      );
+                      const filtered = visibleChatSessions.filter(session => historySessionFilter === "all" || session.isPinned === 1);
                       if (filtered.length === 0) {
                         return (
                           <p className="text-[11px] text-muted-foreground text-center py-6">

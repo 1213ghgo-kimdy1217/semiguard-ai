@@ -631,6 +631,10 @@ Guidelines:
       return db.getChatSessions(ctx.user.id);
     }),
 
+    searchChatSessions: protectedProcedure
+      .input(z.object({ query: z.string().trim().min(1).max(120) }))
+      .query(async ({ ctx, input }) => db.searchChatSessionsForUser(ctx.user.id, input.query)),
+
     // 새 상담 세션 생성
     createChatSession: protectedProcedure
       .input(z.object({ title: z.string().optional() }).optional())

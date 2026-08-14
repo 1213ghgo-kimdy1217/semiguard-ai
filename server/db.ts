@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, socialAccountLinks, users, chatSessions, chatMessagesTable, chatFeedback, manualChunks, manualDocuments } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { and, asc, count, desc, eq, like, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, like, or } from "drizzle-orm";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -238,6 +238,37 @@ export async function getChatSessions(userId: number) {
     .from(chatSessions)
     .leftJoin(chatMessagesTable, eq(chatMessagesTable.sessionId, chatSessions.id))
     .where(eq(chatSessions.userId, userId))
+    .groupBy(chatSessions.id)
+    .orderBy(desc(chatSessions.isPinned), desc(chatSessions.updatedAt));
+}
+
+export async function searchChatSessionsForUser(userId: number, searchText: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const term = `%${searchText.trim()}%`;
+  const messageMatches = await db
+    .selectDistinct({ sessionId: chatMessagesTable.sessionId })
+    .from(chatMessagesTable)
+    .innerJoin(chatSessions, eq(chatMessagesTable.sessionId, chatSessions.id))
+    .where(and(eq(chatSessions.userId, userId), like(chatMessagesTable.content, term)));
+  const matchingSessionIds = messageMatches.map(match => match.sessionId);
+  const ownershipAndSearch = matchingSessionIds.length > 0
+    ? and(eq(chatSessions.userId, userId), or(like(chatSessions.title, term), inArray(chatSessions.id, matchingSessionIds)))
+    : and(eq(chatSessions.userId, userId), like(chatSessions.title, term));
+
+  return db
+    .select({
+      id: chatSessions.id,
+      userId: chatSessions.userId,
+      title: chatSessions.title,
+      isPinned: chatSessions.isPinned,
+      createdAt: chatSessions.createdAt,
+      updatedAt: chatSessions.updatedAt,
+      messageCount: count(chatMessagesTable.id),
+    })
+    .from(chatSessions)
+    .leftJoin(chatMessagesTable, eq(chatMessagesTable.sessionId, chatSessions.id))
+    .where(ownershipAndSearch)
     .groupBy(chatSessions.id)
     .orderBy(desc(chatSessions.isPinned), desc(chatSessions.updatedAt));
 }
