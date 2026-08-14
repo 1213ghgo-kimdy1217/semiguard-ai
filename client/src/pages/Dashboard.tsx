@@ -1040,6 +1040,65 @@ export default function Dashboard() {
     }
   };
 
+  const exportActiveChatMarkdown = () => {
+    if (isChatLoading) {
+      toast.info(lang === "ko" ? "AI 답변 생성이 끝난 뒤 현재 상담을 내보낼 수 있습니다." : lang === "ja" ? "AI回答の生成が完了してから現在の相談をエクスポートできます。" : "Export the current consultation after the AI response is complete.");
+      return;
+    }
+    if (activeSessionId === null || createSessionMutation.isPending) {
+      toast.info(lang === "ko" ? "상담 세션을 준비 중입니다. 잠시 후 다시 시도해 주세요." : lang === "ja" ? "相談セッションを準備中です。しばらくしてからもう一度お試しください。" : "Your consultation session is being prepared. Please try again in a moment.");
+      return;
+    }
+    const exportableMessages = chatMessages.filter(message => message.content.trim().length > 0);
+    if (!exportableMessages.some(message => message.role === "user")) {
+      toast.info(lang === "ko" ? "질문을 보낸 뒤 현재 상담을 내보낼 수 있습니다." : lang === "ja" ? "質問を送信した後に現在の相談をエクスポートできます。" : "Send a question before exporting the current consultation.");
+      return;
+    }
+
+    try {
+      const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
+      const activeSession = chatSessionsQuery.data?.find(session => session.id === activeSessionId);
+      const title = activeSession?.title.trim() || (lang === "ko" ? "현재 상담" : lang === "ja" ? "現在の相談" : "Current Consultation");
+      const exportedAtLabel = lang === "ko" ? "내보낸 시각" : lang === "ja" ? "エクスポート時刻" : "Exported at";
+      const updatedAtLabel = lang === "ko" ? "현재 대화 시각" : lang === "ja" ? "現在の会話時刻" : "Current conversation time";
+      const userLabel = lang === "ko" ? "사용자" : lang === "ja" ? "ユーザー" : "User";
+      const assistantLabel = lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Senior Engineer";
+      const markdown = [
+        `# ${title}`,
+        "",
+        `- ${updatedAtLabel}: ${new Date().toLocaleString(locale)}`,
+        `- ${exportedAtLabel}: ${new Date().toLocaleString(locale)}`,
+        "",
+        "---",
+        "",
+        ...exportableMessages.flatMap(message => [
+          `## ${message.role === "user" ? userLabel : assistantLabel}`,
+          "",
+          message.content,
+          "",
+          `> ${new Date(message.timestamp).toLocaleString(locale)}`,
+          "",
+          "---",
+          "",
+        ]),
+      ].join("\n");
+      const blob = new Blob([`\ufeff${markdown}`], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      const safeTitle = title.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 40) || "consultation";
+      anchor.href = url;
+      anchor.download = `semiguard-current-${safeTitle}-${new Date().toISOString().slice(0, 10)}.md`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      toast.success(lang === "ko" ? "현재 상담을 Markdown 파일로 내보냈습니다." : lang === "ja" ? "現在の相談をMarkdownファイルとしてエクスポートしました。" : "Current consultation exported as a Markdown file.");
+    } catch (error) {
+      console.error("Active consultation export failed:", error);
+      toast.error(lang === "ko" ? "현재 상담을 내보내지 못했습니다." : lang === "ja" ? "現在の相談をエクスポートできませんでした。" : "Could not export the current consultation.");
+    }
+  };
+
   const exportChatSessionMarkdown = async (session: { id: number; title: string; updatedAt: Date | string }) => {
     try {
       const messages = await chatUtils.client.semiguard.getChatMessages.query({ sessionId: session.id });
@@ -2420,6 +2479,17 @@ export default function Dashboard() {
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
                   style={{ borderColor: "oklch(0.65 0.22 145 / 0.4)", background: "oklch(0.65 0.22 145 / 0.10)", color: "oklch(0.75 0.18 145)" }}>
                   📂 {lang === "ko" ? "기록" : lang === "ja" ? "履歴" : "History"}
+                </button>
+                <button
+                  type="button"
+                  onClick={exportActiveChatMarkdown}
+                  aria-disabled={isChatLoading || activeSessionId === null || !chatMessages.some(message => message.role === "user")}
+                  title={isChatLoading
+                    ? (lang === "ko" ? "AI 답변 생성이 끝난 뒤 내보낼 수 있습니다." : lang === "ja" ? "AI回答の生成完了後にエクスポートできます。" : "Available after the AI response is complete.")
+                    : (lang === "ko" ? "현재 상담을 Markdown 파일로 내보내기" : lang === "ja" ? "現在の相談をMarkdownファイルとしてエクスポート" : "Export current consultation as Markdown")}
+                  className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
+                  style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)", opacity: isChatLoading || activeSessionId === null || !chatMessages.some(message => message.role === "user") ? 0.58 : 1 }}>
+                  ⬇️ {lang === "ko" ? "내보내기" : lang === "ja" ? "出力" : "Export"}
                 </button>
                 <button
                   type="button"

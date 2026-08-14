@@ -492,3 +492,8 @@
 ## Baseline 브라우저 호환성 데이터 갱신 (진행 중)
 - [x] 최신 baseline-browser-mapping 개발 의존성으로 빌드 경고 해소
 - [x] 서버 재시작 후 TypeScript·Vitest·프로덕션 빌드 및 경고 재검증 (85개 테스트·빌드 통과)
+
+## 현재 활성 상담 Markdown 내보내기 (진행 중)
+- [x] 활성 챗봇 창에서 현재 상담을 Markdown 파일로 즉시 내보내는 제어 추가
+- [x] 활성 세션 부재·저장 중·빈 대화 상태를 안전하게 안내하고 KO/EN/JA·모바일 UI 적용
+- [x] 내보내기 회귀 테스트·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (87개 테스트·빌드 통과)
