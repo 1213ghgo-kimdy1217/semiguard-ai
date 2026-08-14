@@ -781,6 +781,7 @@ export default function Dashboard() {
   );
   const chatLaunchButtonRef = useRef<HTMLButtonElement>(null);
   const chatCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const chatDialogRef = useRef<HTMLDivElement>(null);
   const wasChatOpenRef = useRef(isChatOpen);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(() =>
@@ -1452,6 +1453,36 @@ export default function Dashboard() {
       chatLaunchButtonRef.current?.focus();
       wasChatOpenRef.current = false;
     }
+  }, [isChatOpen]);
+
+  useEffect(() => {
+    if (!isChatOpen) return;
+
+    const trapChatFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const dialog = chatDialogRef.current;
+      if (!dialog) return;
+
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter(element => !element.hasAttribute("aria-hidden") && element.getClientRects().length > 0);
+      if (focusable.length === 0) return;
+
+      const firstFocusable = focusable[0];
+      const lastFocusable = focusable[focusable.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && (activeElement === firstFocusable || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && (activeElement === lastFocusable || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
+    };
+
+    window.addEventListener("keydown", trapChatFocus);
+    return () => window.removeEventListener("keydown", trapChatFocus);
   }, [isChatOpen]);
 
   const handleResetChat = async () => {
@@ -2763,6 +2794,7 @@ export default function Dashboard() {
       {isChatOpen && (
         <div className="fixed inset-0 z-[550] flex items-stretch justify-center bg-black/60 backdrop-blur-sm animate-fadeIn sm:items-center sm:p-4">
           <div
+            ref={chatDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="chat-dialog-title"
