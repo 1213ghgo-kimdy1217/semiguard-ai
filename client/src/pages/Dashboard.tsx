@@ -1049,6 +1049,9 @@ export default function Dashboard() {
     },
   ]);
   const [chatInput, setChatInput] = useState("");
+  const chatDraftStorageKey = `semiguard_chat_draft_${activeSessionId ?? "pending"}`;
+  const activeChatDraftKeyRef = useRef<string | null>(null);
+  const isRestoringChatDraftRef = useRef(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatMutation = trpc.semiguard.chatWithAi.useMutation();
   const FEEDBACK_PAGE_SIZE = 5;
@@ -1523,6 +1526,36 @@ export default function Dashboard() {
   }, [chatMessages.length, isChatOpen]);
 
   useEffect(() => {
+    if (activeChatDraftKeyRef.current === chatDraftStorageKey) return;
+    activeChatDraftKeyRef.current = chatDraftStorageKey;
+    isRestoringChatDraftRef.current = true;
+
+    try {
+      setChatInput(sessionStorage.getItem(chatDraftStorageKey) ?? "");
+    } catch {
+      setChatInput("");
+    }
+  }, [chatDraftStorageKey]);
+
+  useEffect(() => {
+    if (activeChatDraftKeyRef.current !== chatDraftStorageKey) return;
+    if (isRestoringChatDraftRef.current) {
+      isRestoringChatDraftRef.current = false;
+      return;
+    }
+
+    try {
+      if (chatInput.trim()) {
+        sessionStorage.setItem(chatDraftStorageKey, chatInput.slice(0, 4000));
+      } else {
+        sessionStorage.removeItem(chatDraftStorageKey);
+      }
+    } catch {
+      // 저장소를 사용할 수 없는 환경에서는 입력 UX만 유지합니다.
+    }
+  }, [chatDraftStorageKey, chatInput]);
+
+  useEffect(() => {
     const focusTimer = window.setTimeout(() => {
       if (showHistoryPanel) {
         wasHistoryPanelOpenRef.current = true;
@@ -1597,7 +1630,14 @@ export default function Dashboard() {
     isChatNearBottomRef.current = true;
     setIsChatAwayFromLatest(false);
     setUnreadChatMessageCount(0);
-    if (!textToSend) setChatInput("");
+    if (!textToSend) {
+      setChatInput("");
+      try {
+        sessionStorage.removeItem(chatDraftStorageKey);
+      } catch {
+        // 저장소 정리가 실패해도 메시지 전송은 계속합니다.
+      }
+    }
     setIsChatLoading(true);
 
     if (activeSessionId !== null) {
