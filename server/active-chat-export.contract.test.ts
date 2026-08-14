@@ -8,7 +8,8 @@ describe("active consultation Markdown export contract", () => {
   it("exports the visible in-memory conversation directly from the active chat header", () => {
     expect(dashboardSource).toContain("const exportActiveChatMarkdown = () =>");
     expect(dashboardSource).toContain("exportableMessages.flatMap(message");
-    expect(dashboardSource).toContain("semiguard-current-");
+    expect(dashboardSource).toContain('"semiguard-current"');
+    expect(dashboardSource).toContain('lang === "ja" ? "セミガード_現在の相談"');
     expect(dashboardSource).toContain("onClick={exportActiveChatMarkdown}");
   });
 

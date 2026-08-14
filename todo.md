@@ -589,3 +589,7 @@
 ## 상담 기록 CSV 일본어 파일명 보완 (진행 중)
 - [x] 일본어 상담 기록 CSV의 파일명 현지화
 - [x] 일본어 상담 기록 CSV 계약 테스트·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (125개 테스트·빌드 통과)
+
+## 상담 Markdown 일본어 파일명 보완 (진행 중)
+- [x] 현재·과거 상담 Markdown 파일명의 일본어 현지화
+- [x] 일본어 Markdown 파일명 계약 테스트·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (127개 테스트·빌드 통과)

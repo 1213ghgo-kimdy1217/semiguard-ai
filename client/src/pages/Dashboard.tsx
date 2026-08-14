@@ -1137,8 +1137,9 @@ export default function Dashboard() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       const safeTitle = title.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 40) || "consultation";
+      const filenamePrefix = lang === "ko" ? "세미가드_현재상담" : lang === "ja" ? "セミガード_現在の相談" : "semiguard-current";
       anchor.href = url;
-      anchor.download = `semiguard-current-${safeTitle}-${new Date().toISOString().slice(0, 10)}.md`;
+      anchor.download = `${filenamePrefix}_${safeTitle}_${new Date().toISOString().slice(0, 10)}.md`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -1186,8 +1187,9 @@ export default function Dashboard() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       const safeTitle = title.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 40) || "consultation";
+      const filenamePrefix = lang === "ko" ? "세미가드_상담기록" : lang === "ja" ? "セミガード_相談履歴" : "semiguard";
       anchor.href = url;
-      anchor.download = `semiguard-${safeTitle}-${new Date().toISOString().slice(0, 10)}.md`;
+      anchor.download = `${filenamePrefix}_${safeTitle}_${new Date().toISOString().slice(0, 10)}.md`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
