@@ -2688,6 +2688,13 @@ export default function Dashboard() {
                       <p className="py-2 text-center text-[10px]" style={{ color: th.textMuted }}>
                         {lang === "ko" ? "매뉴얼 목록을 불러오는 중..." : lang === "ja" ? "マニュアル一覧を読み込み中..." : "Loading manuals..."}
                       </p>
+                    ) : manualDocumentsQuery.isError ? (
+                      <div className="flex flex-col items-center gap-1.5 py-3 text-center text-[10px]" style={{ color: th.textMuted }}>
+                        <p>⚠️ {lang === "ko" ? "매뉴얼 목록을 불러오지 못했습니다." : lang === "ja" ? "マニュアル一覧を読み込めませんでした。" : "Could not load manuals."}</p>
+                        <button type="button" onClick={() => void manualDocumentsQuery.refetch()} disabled={manualDocumentsQuery.isFetching} className="rounded border px-2 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                          ↻ {manualDocumentsQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                        </button>
+                      </div>
                     ) : allManualDocuments.length > 0 ? (
                       <>
                         <div className="relative mb-2">
@@ -2716,6 +2723,13 @@ export default function Dashboard() {
                               ? (lang === "ko" ? "입력을 확인하는 중..." : lang === "ja" ? "入力を確認中..." : "Waiting for input...")
                               : (lang === "ko" ? "매뉴얼 제목과 원문을 검색하는 중..." : lang === "ja" ? "マニュアルのタイトル・原文を検索中..." : "Searching manual titles and content...")}
                           </p>
+                        ) : normalizedManualSearch && manualDocumentSearchQuery.isError ? (
+                          <div className="flex flex-col items-center gap-1.5 py-3 text-center text-[10px]" style={{ color: th.textMuted }}>
+                            <p>⚠️ {lang === "ko" ? "매뉴얼 검색 결과를 불러오지 못했습니다." : lang === "ja" ? "マニュアル検索結果を読み込めませんでした。" : "Could not load manual search results."}</p>
+                            <button type="button" onClick={() => void manualDocumentSearchQuery.refetch()} disabled={manualDocumentSearchQuery.isFetching} className="rounded border px-2 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                              ↻ {manualDocumentSearchQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                            </button>
+                          </div>
                         ) : filteredManualDocuments.length > 0 ? (
                         <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
                         {filteredManualDocuments.map(document => (
@@ -2762,6 +2776,13 @@ export default function Dashboard() {
                                 </p>
                                 {manualPreviewQuery.isLoading ? (
                                   <p className="py-1 text-[9px]" style={{ color: th.textMuted }}>{lang === "ko" ? "원문을 불러오는 중..." : lang === "ja" ? "原文を読み込み中..." : "Loading source..."}</p>
+                                ) : manualPreviewQuery.isError ? (
+                                  <div className="flex items-center justify-between gap-2 py-1 text-[9px]" style={{ color: th.textMuted }}>
+                                    <span>⚠️ {lang === "ko" ? "원문을 불러오지 못했습니다." : lang === "ja" ? "原文を読み込めませんでした。" : "Could not load the source."}</span>
+                                    <button type="button" onClick={() => void manualPreviewQuery.refetch()} disabled={manualPreviewQuery.isFetching} className="shrink-0 rounded border px-1.5 py-0.5 font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                                      ↻ {lang === "ko" ? "재시도" : lang === "ja" ? "再試行" : "Retry"}
+                                    </button>
+                                  </div>
                                 ) : manualPreviewQuery.data ? (
                                   <>
                                     <div className="mb-1.5 flex justify-end gap-1">
