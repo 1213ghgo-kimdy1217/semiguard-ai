@@ -756,6 +756,7 @@ export default function Dashboard() {
   const [manualContent, setManualContent] = useState("");
   const [manualSearchQuery, setManualSearchQuery] = useState("");
   const [manualDocumentToDelete, setManualDocumentToDelete] = useState<number | null>(null);
+  const [previewManualDocumentId, setPreviewManualDocumentId] = useState<number | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [showFeedbackHistoryPanel, setShowFeedbackHistoryPanel] = useState(false);
   const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
@@ -787,6 +788,10 @@ export default function Dashboard() {
   const addManualTextMutation = trpc.semiguard.addManualText.useMutation();
   const deleteManualDocumentMutation = trpc.semiguard.deleteManualDocument.useMutation();
   const manualDocumentsQuery = trpc.semiguard.getManualDocuments.useQuery(undefined, { enabled: isChatOpen });
+  const manualPreviewQuery = trpc.semiguard.getManualDocumentPreview.useQuery(
+    { documentId: previewManualDocumentId ?? 1 },
+    { enabled: isChatOpen && showManualRagModal && previewManualDocumentId !== null },
+  );
   const allManualDocuments = manualDocumentsQuery.data ?? [];
   const normalizedManualSearch = manualSearchQuery.trim().toLocaleLowerCase();
   const filteredManualDocuments = allManualDocuments.filter(document =>
@@ -2471,14 +2476,44 @@ export default function Dashboard() {
                                   {document.chunkCount}{lang === "ko" ? "개 구간" : lang === "ja" ? "区間" : " chunks"} · {new Date(document.updatedAt).toLocaleDateString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US")}
                                 </p>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => setManualDocumentToDelete(document.id)}
-                                className="shrink-0 rounded border border-red-500/35 bg-red-500/10 px-1.5 py-1 text-[9px] font-bold text-red-400 transition-all hover:bg-red-500/20"
-                                aria-label={lang === "ko" ? "매뉴얼 삭제" : lang === "ja" ? "マニュアルを削除" : "Delete manual"}>
-                                🗑️
-                              </button>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewManualDocumentId(previewManualDocumentId === document.id ? null : document.id)}
+                                  className="rounded border px-1.5 py-1 text-[9px] font-bold transition-all hover:opacity-80"
+                                  style={{ borderColor: "oklch(0.72 0.15 75 / 0.4)", background: "oklch(0.72 0.15 75 / 0.10)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}
+                                  aria-label={lang === "ko" ? "매뉴얼 원문 보기" : lang === "ja" ? "マニュアルの原文を見る" : "View manual source"}>
+                                  {previewManualDocumentId === document.id ? (lang === "ko" ? "닫기" : lang === "ja" ? "閉じる" : "Close") : (lang === "ko" ? "원문" : lang === "ja" ? "原文" : "Source")}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setManualDocumentToDelete(document.id)}
+                                  className="rounded border border-red-500/35 bg-red-500/10 px-1.5 py-1 text-[9px] font-bold text-red-400 transition-all hover:bg-red-500/20"
+                                  aria-label={lang === "ko" ? "매뉴얼 삭제" : lang === "ja" ? "マニュアルを削除" : "Delete manual"}>
+                                  🗑️
+                                </button>
+                              </div>
                             </div>
+                            {previewManualDocumentId === document.id && (
+                              <div className="mt-2 border-t pt-2" style={{ borderColor: th.border2 }}>
+                                <p className="mb-1 text-[9px] font-bold" style={{ color: th.textMuted }}>
+                                  {lang === "ko" ? "저장된 원문 구간" : lang === "ja" ? "保存された原文区間" : "Stored source sections"}
+                                </p>
+                                {manualPreviewQuery.isLoading ? (
+                                  <p className="py-1 text-[9px]" style={{ color: th.textMuted }}>{lang === "ko" ? "원문을 불러오는 중..." : lang === "ja" ? "原文を読み込み中..." : "Loading source..."}</p>
+                                ) : manualPreviewQuery.data ? (
+                                  <div className="max-h-36 space-y-1 overflow-y-auto pr-1 custom-scrollbar">
+                                    {manualPreviewQuery.data.chunks.map(chunk => (
+                                      <div key={chunk.id} className="rounded border px-1.5 py-1 text-[9px] leading-relaxed" style={{ borderColor: th.border2, background: th.bgCard2, color: th.text }}>
+                                        <span className="mr-1 font-bold" style={{ color: th.textMuted }}>[{chunk.chunkIndex + 1}]</span>{chunk.content}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="py-1 text-[9px] text-red-400">{lang === "ko" ? "원문을 불러오지 못했습니다." : lang === "ja" ? "原文を読み込めませんでした。" : "Could not load the source."}</p>
+                                )}
+                              </div>
+                            )}
                             {manualDocumentToDelete === document.id && (
                               <div className="mt-2 border-t pt-2" style={{ borderColor: th.border2 }}>
                                 <p className="text-[9px] leading-relaxed text-red-400">

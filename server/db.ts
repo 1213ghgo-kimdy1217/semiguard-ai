@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, socialAccountLinks, users, chatSessions, chatMessagesTable, chatFeedback, manualChunks, manualDocuments } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { and, count, desc, eq, like, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, like, or } from "drizzle-orm";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -449,6 +449,31 @@ export async function deleteManualDocumentForUser(input: { userId: number; docum
   await db.delete(manualDocuments)
     .where(and(eq(manualDocuments.id, input.documentId), eq(manualDocuments.userId, input.userId)));
   return true;
+}
+
+export async function getManualDocumentPreviewForUser(input: { userId: number; documentId: number }) {
+  const db = await getDb();
+  if (!db) return null;
+  const document = await db.select({
+    id: manualDocuments.id,
+    title: manualDocuments.title,
+    updatedAt: manualDocuments.updatedAt,
+  })
+    .from(manualDocuments)
+    .where(and(eq(manualDocuments.id, input.documentId), eq(manualDocuments.userId, input.userId)))
+    .limit(1);
+  if (!document[0]) return null;
+
+  const chunks = await db.select({
+    id: manualChunks.id,
+    chunkIndex: manualChunks.chunkIndex,
+    content: manualChunks.content,
+  })
+    .from(manualChunks)
+    .where(eq(manualChunks.documentId, input.documentId))
+    .orderBy(asc(manualChunks.chunkIndex))
+    .limit(60);
+  return { document: document[0], chunks };
 }
 
 export async function searchManualChunksForUser(userId: number, query: string, limit = 3) {

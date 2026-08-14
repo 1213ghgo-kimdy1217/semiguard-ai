@@ -816,6 +816,14 @@ Guidelines:
 
     getManualDocuments: protectedProcedure.query(async ({ ctx }) => db.getManualDocumentsForUser(ctx.user.id)),
 
+    getManualDocumentPreview: protectedProcedure
+      .input(z.object({ documentId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const preview = await db.getManualDocumentPreviewForUser({ userId: ctx.user.id, documentId: input.documentId });
+        if (!preview) throw new TRPCError({ code: "NOT_FOUND", message: "Manual document was not found" });
+        return preview;
+      }),
+
     deleteManualDocument: protectedProcedure
       .input(z.object({ documentId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => ({
