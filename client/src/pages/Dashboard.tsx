@@ -785,6 +785,8 @@ export default function Dashboard() {
   const chatMessageListRef = useRef<HTMLDivElement>(null);
   const isChatNearBottomRef = useRef(true);
   const [isChatAwayFromLatest, setIsChatAwayFromLatest] = useState(false);
+  const previousChatMessageCountRef = useRef(0);
+  const [unreadChatMessageCount, setUnreadChatMessageCount] = useState(0);
   const wasChatOpenRef = useRef(isChatOpen);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(() =>
@@ -1497,6 +1499,20 @@ export default function Dashboard() {
     return () => window.cancelAnimationFrame(frame);
   }, [chatMessages.length, isChatLoading, isChatOpen]);
 
+  useEffect(() => {
+    const addedMessageCount = chatMessages.length - previousChatMessageCountRef.current;
+    previousChatMessageCountRef.current = chatMessages.length;
+
+    if (!isChatOpen) {
+      setUnreadChatMessageCount(0);
+      return;
+    }
+
+    if (addedMessageCount > 0 && !isChatNearBottomRef.current) {
+      setUnreadChatMessageCount(count => count + addedMessageCount);
+    }
+  }, [chatMessages.length, isChatOpen]);
+
   const handleResetChat = async () => {
     try {
       const newTitle = chatMessages.length > 1
@@ -1541,6 +1557,7 @@ export default function Dashboard() {
     setChatMessages(nextMessages);
     isChatNearBottomRef.current = true;
     setIsChatAwayFromLatest(false);
+    setUnreadChatMessageCount(0);
     if (!textToSend) setChatInput("");
     setIsChatLoading(true);
 
@@ -4253,6 +4270,7 @@ export default function Dashboard() {
                 const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 56;
                 isChatNearBottomRef.current = isNearBottom;
                 setIsChatAwayFromLatest(!isNearBottom);
+                if (isNearBottom) setUnreadChatMessageCount(0);
               }}
               className="h-full overflow-y-auto space-y-3 p-3 sm:p-4 custom-scrollbar">
               {/* 여기서부터 메시지 목록 */}
@@ -4520,11 +4538,16 @@ export default function Dashboard() {
                   if (messageList) messageList.scrollTo({ top: messageList.scrollHeight, behavior: "smooth" });
                   isChatNearBottomRef.current = true;
                   setIsChatAwayFromLatest(false);
+                  setUnreadChatMessageCount(0);
                 }}
                 className="absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-full border px-3 py-1.5 text-[10px] font-bold shadow-lg transition-all hover:opacity-85 active:scale-95"
                 style={{ borderColor: "oklch(0.65 0.18 200 / 0.55)", background: isDark ? "oklch(0.20 0.03 230 / 0.96)" : "oklch(0.98 0.005 240 / 0.96)", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.40 0.16 220)" }}
-                aria-label={lang === "ko" ? "최신 메시지로 이동" : lang === "ja" ? "最新メッセージへ移動" : "Jump to latest message"}>
-                ↓ {lang === "ko" ? "최신" : lang === "ja" ? "最新" : "Latest"}
+                aria-label={unreadChatMessageCount > 0
+                  ? (lang === "ko" ? `최신 메시지로 이동, 새 답변 ${unreadChatMessageCount}개` : lang === "ja" ? `最新メッセージへ移動、新しい回答 ${unreadChatMessageCount}件` : `Jump to latest message, ${unreadChatMessageCount} new answers`)
+                  : (lang === "ko" ? "최신 메시지로 이동" : lang === "ja" ? "最新メッセージへ移動" : "Jump to latest message")}>
+                ↓ {unreadChatMessageCount > 0
+                  ? (lang === "ko" ? `새 답변 ${unreadChatMessageCount}` : lang === "ja" ? `新着 ${unreadChatMessageCount}` : `New ${unreadChatMessageCount}`)
+                  : (lang === "ko" ? "최신" : lang === "ja" ? "最新" : "Latest")}
               </button>
             )}
             </div>
