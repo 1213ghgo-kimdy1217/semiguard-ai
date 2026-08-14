@@ -803,6 +803,7 @@ export default function Dashboard() {
   const setChatSessionPinnedMutation = trpc.semiguard.setChatSessionPinned.useMutation();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [editingSessionTitle, setEditingSessionTitle] = useState("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -2665,6 +2666,29 @@ export default function Dashboard() {
                       </button>
                     )}
                   </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1 rounded-lg border p-0.5" style={{ borderColor: th.border2, background: th.bgCard2 }}>
+                      {(["all", "pinned"] as const).map(filter => (
+                        <button
+                          key={filter}
+                          type="button"
+                          onClick={() => setHistorySessionFilter(filter)}
+                          className="rounded px-2 py-1 text-[9px] font-bold transition-all"
+                          style={{
+                            background: historySessionFilter === filter ? "oklch(0.67 0.17 210 / 0.20)" : "transparent",
+                            color: historySessionFilter === filter ? (isDark ? "oklch(0.84 0.12 210)" : "oklch(0.42 0.15 210)") : th.textMuted,
+                          }}>
+                          {filter === "all" ? (lang === "ko" ? "전체" : lang === "ja" ? "すべて" : "All") : (lang === "ko" ? "📌 고정" : lang === "ja" ? "📌 固定" : "📌 Pinned")}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-[9px]" style={{ color: th.textMuted }}>
+                      {(chatSessionsQuery.data ?? []).filter(session =>
+                        (historySessionFilter === "all" || session.isPinned === 1) &&
+                        (!searchKeyword.trim() || session.title.toLocaleLowerCase().includes(searchKeyword.trim().toLocaleLowerCase()))
+                      ).length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " results"}
+                    </span>
+                  </div>
                 </div>
 
                 {/* 전체 초기화 2단계 확인 모달 */}
@@ -2722,13 +2746,17 @@ export default function Dashboard() {
                     </div>
                   ) : chatSessionsQuery.data && chatSessionsQuery.data.length > 0 ? (
                     (() => {
+                      const normalizedSearchKeyword = searchKeyword.trim().toLocaleLowerCase();
                       const filtered = chatSessionsQuery.data.filter(session =>
-                        session.title.toLowerCase().includes(searchKeyword.toLowerCase())
+                        (historySessionFilter === "all" || session.isPinned === 1) &&
+                        (!normalizedSearchKeyword || session.title.toLocaleLowerCase().includes(normalizedSearchKeyword))
                       );
                       if (filtered.length === 0) {
                         return (
                           <p className="text-[11px] text-muted-foreground text-center py-6">
-                            {lang === "ko" ? "검색 결과가 없습니다." : lang === "ja" ? "検索結果がありません。" : "No matching consultations found."}
+                            {historySessionFilter === "pinned"
+                              ? (lang === "ko" ? "고정한 상담 기록이 없습니다." : lang === "ja" ? "固定した相談履歴はありません。" : "No pinned consultations found.")
+                              : (lang === "ko" ? "검색 결과가 없습니다." : lang === "ja" ? "検索結果がありません。" : "No matching consultations found.")}
                           </p>
                         );
                       }

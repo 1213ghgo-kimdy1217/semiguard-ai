@@ -25,4 +25,11 @@ describe("consultation session pin contract", () => {
     expect(dashboardSource).toContain("相談履歴を上部に固定しました。");
     expect(dashboardSource).toContain("Pin consultation to top");
   });
+
+  it("keeps combined search and pinned-session filtering controls", () => {
+    expect(dashboardSource).toContain('historySessionFilter, setHistorySessionFilter');
+    expect(dashboardSource).toContain('(["all", "pinned"] as const)');
+    expect(dashboardSource).toContain("고정한 상담 기록이 없습니다.");
+    expect(dashboardSource).toContain("No pinned consultations found.");
+  });
 });
