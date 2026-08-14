@@ -670,7 +670,7 @@ function MonthlyHeatmap({
 
       {/* 범례 */}
       <div className="flex items-center gap-3 mt-4 flex-wrap">
-        <span className="text-[9px] text-muted-foreground">{lang === "ko" ? "범례:" : "Legend:"}</span>
+        <span className="text-[9px] text-muted-foreground">{lang === "ko" ? "범례:" : lang === "ja" ? "凡例:" : "Legend:"}</span>
         {legend.map(({ level, label }) => (
           <div key={level} className="flex items-center gap-1">
             <div className="w-3 h-3 rounded-sm" style={{ background: CELL_COLOR[level], border: `1px solid ${CELL_BORDER[level]}` }} />
@@ -679,7 +679,7 @@ function MonthlyHeatmap({
         ))}
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-sm" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }} />
-          <span className="text-[9px] text-muted-foreground">{lang === "ko" ? "데이터 없음" : "No data"}</span>
+          <span className="text-[9px] text-muted-foreground">{lang === "ko" ? "데이터 없음" : lang === "ja" ? "データなし" : "No data"}</span>
         </div>
       </div>
     </div>
