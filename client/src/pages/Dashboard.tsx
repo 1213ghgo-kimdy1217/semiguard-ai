@@ -980,6 +980,12 @@ export default function Dashboard() {
   });
   const positiveFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "like").length;
   const negativeFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "dislike").length;
+  const feedbackReasonCounts = allFeedbackHistory.reduce<Record<"inaccurate" | "insufficient" | "irrelevant" | "other", number>>((counts, item) => {
+    if (item.feedbackType === "dislike" && item.reasonCode && item.reasonCode in counts) {
+      counts[item.reasonCode as keyof typeof counts] += 1;
+    }
+    return counts;
+  }, { inaccurate: 0, insufficient: 0, irrelevant: 0, other: 0 });
   const positiveFeedbackRatio = allFeedbackHistory.length ? Math.round((positiveFeedbackCount / allFeedbackHistory.length) * 100) : 0;
   const negativeFeedbackRatio = allFeedbackHistory.length ? 100 - positiveFeedbackRatio : 0;
   const feedbackHistoryTotalPages = Math.max(1, Math.ceil(sortedFeedbackHistory.length / FEEDBACK_PAGE_SIZE));
@@ -3499,11 +3505,11 @@ export default function Dashboard() {
                       <>
                         <span className="mx-0.5 h-3 w-px" style={{ background: th.border2 }} aria-hidden="true" />
                         {([
-                          { id: "all", ko: "사유 전체", ja: "理由すべて", en: "All reasons", icon: "☷" },
-                          { id: "inaccurate", ko: "정확성", ja: "正確性", en: "Accuracy", icon: "◎" },
-                          { id: "insufficient", ko: "설명 부족", ja: "説明不足", en: "Detail", icon: "≡" },
-                          { id: "irrelevant", ko: "관련 없음", ja: "関連なし", en: "Relevance", icon: "↗" },
-                          { id: "other", ko: "기타", ja: "その他", en: "Other", icon: "…" },
+                          { id: "all", ko: "사유 전체", ja: "理由すべて", en: "All reasons", icon: "☷", count: negativeFeedbackCount },
+                          { id: "inaccurate", ko: "정확성", ja: "正確性", en: "Accuracy", icon: "◎", count: feedbackReasonCounts.inaccurate },
+                          { id: "insufficient", ko: "설명 부족", ja: "説明不足", en: "Detail", icon: "≡", count: feedbackReasonCounts.insufficient },
+                          { id: "irrelevant", ko: "관련 없음", ja: "関連なし", en: "Relevance", icon: "↗", count: feedbackReasonCounts.irrelevant },
+                          { id: "other", ko: "기타", ja: "その他", en: "Other", icon: "…", count: feedbackReasonCounts.other },
                         ] as const).map(filter => (
                           <button
                             key={`reason-${filter.id}`}
@@ -3515,7 +3521,7 @@ export default function Dashboard() {
                               background: feedbackReasonFilter === filter.id ? "oklch(0.62 0.20 300 / 0.20)" : "transparent",
                               color: feedbackReasonFilter === filter.id ? (isDark ? "oklch(0.86 0.14 300)" : "oklch(0.42 0.20 300)") : th.textMuted,
                             }}>
-                            {filter.icon} {lang === "ko" ? filter.ko : lang === "ja" ? filter.ja : filter.en}
+                            {filter.icon} {lang === "ko" ? filter.ko : lang === "ja" ? filter.ja : filter.en} <span className="opacity-70">{filter.count}</span>
                           </button>
                         ))}
                       </>
