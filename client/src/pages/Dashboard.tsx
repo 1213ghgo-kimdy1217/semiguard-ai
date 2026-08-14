@@ -2127,8 +2127,11 @@ export default function Dashboard() {
                 <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "oklch(0.75 0.18 200)", borderTopColor: "transparent" }} />
               </div>
             ) : llmHistoryQuery.isError ? (
-              <div className="px-4 py-6 text-center text-xs" style={{ color: "rgb(239,68,68)" }}>
-                {lang === "ko" ? "분석 이력을 불러오지 못했습니다." : lang === "ja" ? "分析履歴を取得できませんでした。" : "Failed to load analysis history."}
+              <div className="flex flex-col items-center gap-2 px-4 py-6 text-center text-xs" style={{ color: "rgb(239,68,68)" }}>
+                <p>{lang === "ko" ? "분석 이력을 불러오지 못했습니다." : lang === "ja" ? "分析履歴を取得できませんでした。" : "Failed to load analysis history."}</p>
+                <button type="button" onClick={() => void llmHistoryQuery.refetch()} disabled={llmHistoryQuery.isFetching} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
+                  ↻ {llmHistoryQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                </button>
               </div>
             ) : !llmHistoryQuery.data || llmHistoryQuery.data.length === 0 ? (
               <div className="px-4 py-6 text-center text-xs text-muted-foreground">
