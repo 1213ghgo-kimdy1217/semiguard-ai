@@ -754,6 +754,7 @@ export default function Dashboard() {
   );
   const [manualTitle, setManualTitle] = useState("");
   const [manualContent, setManualContent] = useState("");
+  const [manualSearchQuery, setManualSearchQuery] = useState("");
   const [manualDocumentToDelete, setManualDocumentToDelete] = useState<number | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [showFeedbackHistoryPanel, setShowFeedbackHistoryPanel] = useState(false);
@@ -786,6 +787,11 @@ export default function Dashboard() {
   const addManualTextMutation = trpc.semiguard.addManualText.useMutation();
   const deleteManualDocumentMutation = trpc.semiguard.deleteManualDocument.useMutation();
   const manualDocumentsQuery = trpc.semiguard.getManualDocuments.useQuery(undefined, { enabled: isChatOpen });
+  const allManualDocuments = manualDocumentsQuery.data ?? [];
+  const normalizedManualSearch = manualSearchQuery.trim().toLocaleLowerCase();
+  const filteredManualDocuments = allManualDocuments.filter(document =>
+    !normalizedManualSearch || document.title.toLocaleLowerCase().includes(normalizedManualSearch),
+  );
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
   const updateSessionTitleMutation = trpc.semiguard.updateChatSessionTitle.useMutation();
@@ -2425,16 +2431,38 @@ export default function Dashboard() {
                         📚 {lang === "ko" ? "등록된 RAG 매뉴얼" : lang === "ja" ? "登録済みRAGマニュアル" : "Registered RAG manuals"}
                       </h5>
                       <span className="text-[10px]" style={{ color: th.textMuted }}>
-                        {manualDocumentsQuery.data?.length ?? 0}{lang === "ko" ? "개" : lang === "ja" ? "件" : " items"}
+                        {normalizedManualSearch ? `${filteredManualDocuments.length}/` : ""}{allManualDocuments.length}{lang === "ko" ? "개" : lang === "ja" ? "件" : " items"}
                       </span>
                     </div>
                     {manualDocumentsQuery.isLoading ? (
                       <p className="py-2 text-center text-[10px]" style={{ color: th.textMuted }}>
                         {lang === "ko" ? "매뉴얼 목록을 불러오는 중..." : lang === "ja" ? "マニュアル一覧を読み込み中..." : "Loading manuals..."}
                       </p>
-                    ) : manualDocumentsQuery.data && manualDocumentsQuery.data.length > 0 ? (
-                      <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
-                        {manualDocumentsQuery.data.map(document => (
+                    ) : allManualDocuments.length > 0 ? (
+                      <>
+                        <div className="relative mb-2">
+                          <input
+                            value={manualSearchQuery}
+                            onChange={event => setManualSearchQuery(event.target.value)}
+                            placeholder={lang === "ko" ? "매뉴얼 제목 검색..." : lang === "ja" ? "マニュアルのタイトルを検索..." : "Search manual titles..."}
+                            className="w-full rounded-lg border px-2.5 py-1.5 pr-7 text-[10px] outline-none focus:ring-2 focus:ring-amber-500/35"
+                            style={{ borderColor: th.border2, background: th.bgCard, color: th.text }}
+                            aria-label={lang === "ko" ? "RAG 매뉴얼 제목 검색" : lang === "ja" ? "RAGマニュアルのタイトルを検索" : "Search RAG manual titles"}
+                          />
+                          {manualSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setManualSearchQuery("")}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded px-1 text-[10px] hover:opacity-70"
+                              style={{ color: th.textMuted }}
+                              aria-label={lang === "ko" ? "매뉴얼 검색 지우기" : lang === "ja" ? "マニュアル検索をクリア" : "Clear manual search"}>
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                        {filteredManualDocuments.length > 0 ? (
+                        <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
+                        {filteredManualDocuments.map(document => (
                           <div key={document.id} className="rounded-lg border p-2" style={{ borderColor: th.border2, background: th.bgCard }}>
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
@@ -2483,7 +2511,13 @@ export default function Dashboard() {
                             )}
                           </div>
                         ))}
-                      </div>
+                        </div>
+                        ) : (
+                          <p className="rounded-lg border border-dashed p-2 text-center text-[10px] leading-relaxed" style={{ borderColor: th.border2, color: th.textMuted }}>
+                            {lang === "ko" ? "검색어와 일치하는 매뉴얼이 없습니다." : lang === "ja" ? "検索語に一致するマニュアルがありません。" : "No manuals match your search."}
+                          </p>
+                        )}
+                      </>
                     ) : (
                       <p className="rounded-lg border border-dashed p-2 text-center text-[10px] leading-relaxed" style={{ borderColor: th.border2, color: th.textMuted }}>
                         {lang === "ko" ? "등록된 매뉴얼이 없습니다. 위에서 첫 매뉴얼을 등록해 보세요." : lang === "ja" ? "登録済みのマニュアルはありません。上から最初のマニュアルを登録してください。" : "No manuals registered yet. Add your first manual above."}
