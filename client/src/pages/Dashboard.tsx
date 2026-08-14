@@ -1054,6 +1054,7 @@ export default function Dashboard() {
   const activeChatDraftKeyRef = useRef<string | null>(null);
   const isRestoringChatDraftRef = useRef(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [chatLoadingElapsedSeconds, setChatLoadingElapsedSeconds] = useState(0);
   const chatMutation = trpc.semiguard.chatWithAi.useMutation();
   const FEEDBACK_PAGE_SIZE = 5;
   const allFeedbackHistory = feedbackHistoryQuery.data ?? [];
@@ -1555,6 +1556,21 @@ export default function Dashboard() {
       // 저장소를 사용할 수 없는 환경에서는 입력 UX만 유지합니다.
     }
   }, [chatDraftStorageKey, chatInput]);
+
+  useEffect(() => {
+    if (!isChatLoading) {
+      setChatLoadingElapsedSeconds(0);
+      return;
+    }
+
+    const startedAt = Date.now();
+    setChatLoadingElapsedSeconds(0);
+    const intervalId = window.setInterval(() => {
+      setChatLoadingElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isChatLoading]);
 
   useEffect(() => {
     const focusTimer = window.setTimeout(() => {
@@ -4628,6 +4644,11 @@ export default function Dashboard() {
                         : lang === "ja"
                         ? "シニアエンジニアAIが回答を作成中です..."
                         : "Expert AI engineer is typing..."}
+                      {chatLoadingElapsedSeconds >= 5 && (
+                        <span className="ml-1 text-[10px] opacity-75">
+                          {lang === "ko" ? `${chatLoadingElapsedSeconds}초 경과` : lang === "ja" ? `${chatLoadingElapsedSeconds}秒経過` : `${chatLoadingElapsedSeconds}s elapsed`}
+                        </span>
+                      )}
                     </span>
                   </div>
                 </div>
