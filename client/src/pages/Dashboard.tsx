@@ -396,7 +396,7 @@ function ScoreLineChart({
   if (data.length < 2) {
     return (
       <div className="flex items-center justify-center h-[200px] text-xs text-muted-foreground">
-        {lang === "ko" ? "데이터가 쌓이면 차트가 표시됩니다." : "Chart will appear as data accumulates."}
+        {lang === "ko" ? "데이터가 쌓이면 차트가 표시됩니다." : lang === "ja" ? "データが蓄積されるとグラフが表示されます。" : "Chart will appear as data accumulates."}
       </div>
     );
   }
@@ -490,11 +490,13 @@ function ScoreLineChart({
         return (
           <g style={{ pointerEvents: "none" }}>
             <rect x={tx} y={ty} width={TW} height={TH} rx={6} fill={tooltipBg} stroke={tooltipBorder} strokeWidth={1} />
-            <text x={tx + 8} y={ty + 15} fontSize={10} fill={riskColor} fontWeight="600">{`${lang === "ko" ? "점수" : "Score"}: ${tooltip.score}`}</text>
+            <text x={tx + 8} y={ty + 15} fontSize={10} fill={riskColor} fontWeight="600">{`${lang === "ko" ? "점수" : lang === "ja" ? "スコア" : "Score"}: ${tooltip.score}`}</text>
             <text x={tx + 8} y={ty + 30} fontSize={9} fill={tooltipTime}>{tooltip.time}</text>
             <text x={tx + 8} y={ty + 42} fontSize={9} fill={riskColor} opacity={0.8}>{
               lang === "ko"
                 ? tooltip.risk === "danger" ? "위험" : tooltip.risk === "warning" ? "경고" : tooltip.risk === "caution" ? "주의" : "정상"
+                : lang === "ja"
+                  ? tooltip.risk === "danger" ? "危険" : tooltip.risk === "warning" ? "警告" : tooltip.risk === "caution" ? "注意" : "正常"
                 : tooltip.risk.charAt(0).toUpperCase() + tooltip.risk.slice(1)
             }</text>
           </g>
@@ -561,16 +563,18 @@ function MonthlyHeatmap({
 
   const weekDays = lang === "ko"
     ? ["일", "월", "화", "수", "목", "금", "토"]
-    : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    : lang === "ja"
+      ? ["日", "月", "火", "水", "木", "金", "土"]
+      : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   const monthLabel = calMonth.toLocaleDateString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { year: "numeric", month: "long" });
 
   // 범례 항목
   const legend: { level: RiskLevel; label: string }[] = [
-    { level: "normal",  label: lang === "ko" ? "정상" : "Normal" },
-    { level: "caution", label: lang === "ko" ? "주의" : "Caution" },
-    { level: "warning", label: lang === "ko" ? "경고" : "Warning" },
-    { level: "danger",  label: lang === "ko" ? "위험" : "Danger" },
+    { level: "normal",  label: lang === "ko" ? "정상" : lang === "ja" ? "正常" : "Normal" },
+    { level: "caution", label: lang === "ko" ? "주의" : lang === "ja" ? "注意" : "Caution" },
+    { level: "warning", label: lang === "ko" ? "경고" : lang === "ja" ? "警告" : "Warning" },
+    { level: "danger",  label: lang === "ko" ? "위험" : lang === "ja" ? "危険" : "Danger" },
   ];
 
   return (
@@ -578,7 +582,7 @@ function MonthlyHeatmap({
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-          {lang === "ko" ? "월간 위험도 히트맵" : "Monthly Risk Heatmap"}
+          {lang === "ko" ? "월간 위험도 히트맵" : lang === "ja" ? "月間リスクヒートマップ" : "Monthly Risk Heatmap"}
         </p>
         <div className="flex items-center gap-2">
           <button onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
@@ -4618,13 +4622,13 @@ export default function Dashboard() {
               <div className="rounded-xl border p-4 mb-4" style={{ background: th.bgCard, borderColor: th.border }}>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-                    {lang === "ko" ? "위험도 점수 추이 (최근 50개)" : "Risk Score Trend (Last 50)"}
+                    {lang === "ko" ? "위험도 점수 추이 (최근 50개)" : lang === "ja" ? "リスクスコア推移（直近50件）" : "Risk Score Trend (Last 50)"}
                   </p>
                   <div className="flex gap-3 text-[9px]">
                     {(["normal","caution","warning","danger"] as const).map(r => (
                       <span key={r} className="flex items-center gap-1">
                         <span className="inline-block w-2 h-2 rounded-full" style={{ background: RISK_COLOR_MAP[r] }} />
-                        <span className="text-muted-foreground capitalize">{r}</span>
+                        <span className="text-muted-foreground capitalize">{lang === "ko" ? t[r] : lang === "ja" ? ({ normal: "正常", caution: "注意", warning: "警告", danger: "危険" } as const)[r] : r}</span>
                       </span>
                     ))}
                   </div>
@@ -4674,8 +4678,8 @@ export default function Dashboard() {
               style={{ background: "rgba(34,197,94,0.15)", borderBottom: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}
               onClick={() => setNewLogCount(0)}
             >
-              <span>🔔 {lang === "ko" ? `새 기록 ${newLogCount}건이 추가되었습니다` : `${newLogCount} new record${newLogCount > 1 ? "s" : ""} added`}</span>
-              <span className="text-xs opacity-70">{lang === "ko" ? "클릭하여 닫기" : "Click to dismiss"}</span>
+              <span>🔔 {lang === "ko" ? `새 기록 ${newLogCount}건이 추가되었습니다` : lang === "ja" ? `新しい記録が${newLogCount}件追加されました` : `${newLogCount} new record${newLogCount > 1 ? "s" : ""} added`}</span>
+              <span className="text-xs opacity-70">{lang === "ko" ? "클릭하여 닫기" : lang === "ja" ? "クリックして閉じる" : "Click to dismiss"}</span>
             </div>
           )}
           {/* 탭 헤더 - 2행 구조 */}
@@ -4691,9 +4695,9 @@ export default function Dashboard() {
               );
               const totalAbnormal = rangedLogs.filter(l => l.riskLevel !== "normal").length;
               const stats = [
-                { label: lang === "ko" ? "위험" : "Danger",  count: rangedLogs.filter(l => l.riskLevel === "danger").length,  color: "#ef4444", bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.25)",   icon: "🔴" },
-                { label: lang === "ko" ? "경고" : "Warning", count: rangedLogs.filter(l => l.riskLevel === "warning").length, color: "#f97316", bg: "rgba(249,115,22,0.08)",  border: "rgba(249,115,22,0.25)",  icon: "🟠" },
-                { label: lang === "ko" ? "주의" : "Caution", count: rangedLogs.filter(l => l.riskLevel === "caution").length, color: "#eab308", bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   icon: "🟡" },
+                { label: lang === "ko" ? "위험" : lang === "ja" ? "危険" : "Danger",  count: rangedLogs.filter(l => l.riskLevel === "danger").length,  color: "#ef4444", bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.25)",   icon: "🔴" },
+                { label: lang === "ko" ? "경고" : lang === "ja" ? "警告" : "Warning", count: rangedLogs.filter(l => l.riskLevel === "warning").length, color: "#f97316", bg: "rgba(249,115,22,0.08)",  border: "rgba(249,115,22,0.25)",  icon: "🟠" },
+                { label: lang === "ko" ? "주의" : lang === "ja" ? "注意" : "Caution", count: rangedLogs.filter(l => l.riskLevel === "caution").length, color: "#eab308", bg: "rgba(234,179,8,0.08)",   border: "rgba(234,179,8,0.25)",   icon: "🟡" },
               ];
               return stats.map(s => {
                 const pct = totalAbnormal > 0 ? Math.round(s.count / totalAbnormal * 100) : 0;
@@ -4722,7 +4726,7 @@ export default function Dashboard() {
           </div>
           {/* 날짜 범위 필터 */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "기간 (연-월-일)" : "Period (YYYY-MM-DD)"}:</span>
+            <span className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "기간 (연-월-일)" : lang === "ja" ? "期間（年-月-日）" : "Period (YYYY-MM-DD)"}:</span>
             <input type="date" value={dateStart}
               onChange={e => { setDateStart(e.target.value); setLogPage(1); }}
               className="text-[10px] px-2 py-1 rounded-lg border outline-none"
@@ -4736,11 +4740,11 @@ export default function Dashboard() {
               <button onClick={() => { setDateStart(""); setDateEnd(""); setLogPage(1); }}
                 className="text-[10px] px-2 py-1 rounded-lg border transition-all hover:opacity-70"
                 style={{ borderColor: th.border2, color: th.textMuted }}>
-                {lang === "ko" ? "초기화" : "Reset"}
+                {lang === "ko" ? "초기화" : lang === "ja" ? "リセット" : "Reset"}
               </button>
             )}
             <span className="text-[10px] ml-auto" style={{ color: th.textMuted }}>
-              {lang === "ko" ? `${filteredLogs.length}건 표시` : `${filteredLogs.length} records`}
+              {lang === "ko" ? `${filteredLogs.length}건 표시` : lang === "ja" ? `${filteredLogs.length}件表示` : `${filteredLogs.length} records`}
             </span>
           </div>
           {/* 1행: 제목 + CSV/클리어 버튼 */}
