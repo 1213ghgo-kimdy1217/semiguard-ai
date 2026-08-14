@@ -813,6 +813,8 @@ export default function Dashboard() {
     (activeHistorySessionPage - 1) * historySessionPageSize,
     activeHistorySessionPage * historySessionPageSize,
   );
+  const filteredHistoryMessageCount = filteredAndSortedChatSessions.reduce((total, session) => total + Number(session.messageCount ?? 0), 0);
+  const filteredHistoryPinnedCount = filteredAndSortedChatSessions.filter(session => session.isPinned === 1).length;
   useEffect(() => {
     setHistorySessionPage(1);
   }, [normalizedHistorySearch, historySessionFilter, historySessionSort, historySessionStartDate, historySessionEndDate]);
@@ -2834,6 +2836,20 @@ export default function Dashboard() {
                         {lang === "ko" ? "초기화" : lang === "ja" ? "リセット" : "Reset"}
                       </button>
                     )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 rounded-lg border p-1.5" style={{ borderColor: th.border2, background: th.bgCard2 }}>
+                    <div className="min-w-0 text-center">
+                      <p className="text-[8px]" style={{ color: th.textMuted }}>{lang === "ko" ? "세션" : lang === "ja" ? "セッション" : "Sessions"}</p>
+                      <p className="text-[11px] font-bold" style={{ color: th.text }}>{filteredAndSortedChatSessions.length}</p>
+                    </div>
+                    <div className="min-w-0 text-center border-x" style={{ borderColor: th.border2 }}>
+                      <p className="text-[8px]" style={{ color: th.textMuted }}>{lang === "ko" ? "대화" : lang === "ja" ? "メッセージ" : "Messages"}</p>
+                      <p className="text-[11px] font-bold" style={{ color: th.text }}>{filteredHistoryMessageCount}</p>
+                    </div>
+                    <div className="min-w-0 text-center">
+                      <p className="text-[8px]" style={{ color: th.textMuted }}>{lang === "ko" ? "고정" : lang === "ja" ? "固定" : "Pinned"}</p>
+                      <p className="text-[11px] font-bold text-amber-400">{filteredHistoryPinnedCount}</p>
+                    </div>
                   </div>
                 </div>
 
