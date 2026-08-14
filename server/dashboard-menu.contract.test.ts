@@ -16,7 +16,8 @@ describe("dashboard slide menu interaction contract", () => {
   });
 
   it("supports closing by backdrop and Escape while locking body scroll", () => {
-    expect(dashboardSource).toContain("if (event.key === \"Escape\") setMenuOpen(false)");
+    expect(dashboardSource).toContain('if (event.key !== "Escape") return;');
+    expect(dashboardSource).toContain("event.preventDefault();\n        setMenuOpen(false);");
     expect(dashboardSource).toContain('document.body.style.overflow = "hidden"');
     expect(dashboardSource).toContain("onClick={() => setMenuOpen(false)}");
   });

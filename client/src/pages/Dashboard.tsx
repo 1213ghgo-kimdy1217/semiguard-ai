@@ -709,6 +709,9 @@ export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("menu") === "open",
   );
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const menuCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const wasMenuOpenRef = useRef(menuOpen);
 
   useEffect(() => {
     try {
@@ -1852,17 +1855,28 @@ export default function Dashboard() {
 
   // 슬라이드 메뉴가 열린 동안 Escape로 닫고 배경 스크롤을 잠급니다.
   useEffect(() => {
-    if (!menuOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
-    };
+    if (menuOpen) {
+      wasMenuOpenRef.current = true;
+      const focusTimer = window.setTimeout(() => menuCloseButtonRef.current?.focus(), 0);
+      const previousOverflow = document.body.style.overflow;
+      const closeOnEscape = (event: KeyboardEvent) => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        setMenuOpen(false);
+      };
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", closeOnEscape);
+      return () => {
+        window.clearTimeout(focusTimer);
+        document.body.style.overflow = previousOverflow;
+        window.removeEventListener("keydown", closeOnEscape);
+      };
+    }
+
+    if (wasMenuOpenRef.current) {
+      menuTriggerRef.current?.focus();
+      wasMenuOpenRef.current = false;
+    }
   }, [menuOpen]);
 
   useEffect(() => {
@@ -2640,6 +2654,7 @@ export default function Dashboard() {
               </div>
               <button
                 type="button"
+                ref={menuCloseButtonRef}
                 onPointerDown={() => setMenuOpen(false)}
                 onClick={() => setMenuOpen(false)}
                 aria-label={lang === "ko" ? "메뉴 닫기" : lang === "ja" ? "メニューを閉じる" : "Close menu"}
@@ -2735,6 +2750,7 @@ export default function Dashboard() {
           <AlertPanel riskLevel={riskLevel} relayTripped={relayTripped} t={t} />
           <button
             type="button"
+            ref={menuTriggerRef}
             onClick={() => setMenuOpen(true)}
             aria-expanded={menuOpen}
             aria-controls="dashboard-settings-menu"
