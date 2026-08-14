@@ -732,7 +732,9 @@ export default function Dashboard() {
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("chat") === "open",
   );
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
-  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(() =>
+    import.meta.env.DEV && new URLSearchParams(window.location.search).get("history") === "open",
+  );
   const [showManualRagModal, setShowManualRagModal] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("manual") === "open",
   );
@@ -772,8 +774,11 @@ export default function Dashboard() {
   const manualDocumentsQuery = trpc.semiguard.getManualDocuments.useQuery(undefined, { enabled: isChatOpen });
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
+  const updateSessionTitleMutation = trpc.semiguard.updateChatSessionTitle.useMutation();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
+  const [editingSessionTitle, setEditingSessionTitle] = useState("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [messageFeedbacks, setMessageFeedbacks] = useState<Record<number, "like" | "dislike">>({});
   const [activeDislikeIdx, setActiveDislikeIdx] = useState<number | null>(null);
@@ -2582,12 +2587,85 @@ export default function Dashboard() {
                             : "oklch(0.96 0.005 240)",
                           borderColor: activeSessionId === session.id ? "oklch(0.75 0.18 200)" : th.border2
                         }}>
-                        <div className="truncate flex-1 pr-2">
-                          <p className="font-bold truncate">{session.title}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {new Date(session.updatedAt).toLocaleString()}
-                          </p>
+                        <div className="min-w-0 flex-1 pr-2">
+                          {editingSessionId === session.id ? (
+                            <div className="space-y-1.5" onClick={event => event.stopPropagation()}>
+                              <input
+                                value={editingSessionTitle}
+                                maxLength={120}
+                                autoFocus
+                                onChange={event => setEditingSessionTitle(event.target.value)}
+                                onKeyDown={event => {
+                                  if (event.key === "Escape") {
+                                    setEditingSessionId(null);
+                                    return;
+                                  }
+                                  if (event.key === "Enter") {
+                                    event.preventDefault();
+                                    if (!editingSessionTitle.trim()) return;
+                                    void (async () => {
+                                      try {
+                                        const result = await updateSessionTitleMutation.mutateAsync({ sessionId: session.id, title: editingSessionTitle.trim() });
+                                        if (!result.success) throw new Error("Session was not found");
+                                        chatUtils.semiguard.getChatSessions.invalidate();
+                                        setEditingSessionId(null);
+                                        toast.success(lang === "ko" ? "상담 기록 제목을 수정했습니다." : lang === "ja" ? "相談履歴のタイトルを変更しました。" : "Consultation title updated.");
+                                      } catch (error) {
+                                        console.error("Failed to update consultation title:", error);
+                                        toast.error(lang === "ko" ? "상담 기록 제목을 수정하지 못했습니다." : lang === "ja" ? "相談履歴のタイトルを変更できませんでした。" : "Could not update the consultation title.");
+                                      }
+                                    })();
+                                  }
+                                }}
+                                className="w-full rounded border px-2 py-1 text-[10px] outline-none focus:ring-2 focus:ring-cyan-500/40"
+                                style={{ borderColor: th.border2, background: th.bgCard, color: th.text }}
+                                aria-label={lang === "ko" ? "상담 기록 제목" : lang === "ja" ? "相談履歴のタイトル" : "Consultation title"}
+                              />
+                              <div className="flex justify-end gap-1">
+                                <button type="button" onClick={() => setEditingSessionId(null)} className="rounded px-1.5 py-0.5 text-[9px]" style={{ color: th.textMuted }}>
+                                  {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={updateSessionTitleMutation.isPending || !editingSessionTitle.trim()}
+                                  onClick={async () => {
+                                    try {
+                                      const result = await updateSessionTitleMutation.mutateAsync({ sessionId: session.id, title: editingSessionTitle.trim() });
+                                      if (!result.success) throw new Error("Session was not found");
+                                      chatUtils.semiguard.getChatSessions.invalidate();
+                                      setEditingSessionId(null);
+                                      toast.success(lang === "ko" ? "상담 기록 제목을 수정했습니다." : lang === "ja" ? "相談履歴のタイトルを変更しました。" : "Consultation title updated.");
+                                    } catch (error) {
+                                      console.error("Failed to update consultation title:", error);
+                                      toast.error(lang === "ko" ? "상담 기록 제목을 수정하지 못했습니다." : lang === "ja" ? "相談履歴のタイトルを変更できませんでした。" : "Could not update the consultation title.");
+                                    }
+                                  }}
+                                  className="rounded bg-cyan-600 px-1.5 py-0.5 text-[9px] font-bold text-white disabled:opacity-45">
+                                  {updateSessionTitleMutation.isPending ? "…" : (lang === "ko" ? "저장" : lang === "ja" ? "保存" : "Save")}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="font-bold truncate">{session.title}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {new Date(session.updatedAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US")}
+                              </p>
+                            </>
+                          )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setEditingSessionId(session.id);
+                            setEditingSessionTitle(session.title);
+                          }}
+                          className="p-1 text-xs hover:opacity-75"
+                          title={lang === "ko" ? "제목 수정" : lang === "ja" ? "タイトルを編集" : "Edit title"}
+                          aria-label={lang === "ko" ? "상담 기록 제목 수정" : lang === "ja" ? "相談履歴のタイトルを編集" : "Edit consultation title"}>
+                          ✏️
+                        </button>
                         <button
                           type="button"
                           onClick={async (e) => {

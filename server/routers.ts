@@ -824,10 +824,10 @@ Guidelines:
 
     // 세션 제목 변경
     updateChatSessionTitle: protectedProcedure
-      .input(z.object({ sessionId: z.number(), title: z.string() }))
-      .mutation(async ({ input }) => {
-        await db.updateSessionTitle(input.sessionId, input.title);
-        return { success: true };
+      .input(z.object({ sessionId: z.number().int().positive(), title: z.string().trim().min(1).max(120) }))
+      .mutation(async ({ ctx, input }) => {
+        const updated = await db.updateSessionTitle(input.sessionId, ctx.user.id, input.title);
+        return { success: updated };
       }),
 
     // 세션 삭제

@@ -251,10 +251,13 @@ export async function addChatMessage(sessionId: number, role: "user" | "assistan
   return Number(result[0].insertId);
 }
 
-export async function updateSessionTitle(sessionId: number, title: string) {
+export async function updateSessionTitle(sessionId: number, userId: number, title: string) {
   const db = await getDb();
-  if (!db) return;
-  await db.update(chatSessions).set({ title }).where(eq(chatSessions.id, sessionId));
+  if (!db) return false;
+  const result = await db.update(chatSessions)
+    .set({ title: title.trim().slice(0, 120), updatedAt: new Date() })
+    .where(and(eq(chatSessions.id, sessionId), eq(chatSessions.userId, userId)));
+  return result[0].affectedRows > 0;
 }
 
 export async function deleteChatSession(sessionId: number, userId: number) {
