@@ -4247,11 +4247,20 @@ export default function Dashboard() {
           <>
             {/* 임팩트 통계 섹션 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <ImpactCard label={t.totalVisitors} value={getStats.data?.totalVisitors ?? 0} icon="👥" color="#38bdf8" />
-              <ImpactCard label={t.totalDetections} value={getStats.data?.totalDetections ?? 0} icon="📊" color="#a78bfa" />
-              <ImpactCard label={t.dangerCount} value={getStats.data?.dangerCount ?? 0} icon="⚠️" color="#ef4444" />
-              <ImpactCard label={t.uptimePct} value={`${getStats.data?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" />
+              <ImpactCard label={t.totalVisitors} value={getStats.isError ? "—" : (getStats.data?.totalVisitors ?? 0)} icon="👥" color="#38bdf8" />
+              <ImpactCard label={t.totalDetections} value={getStats.isError ? "—" : (getStats.data?.totalDetections ?? 0)} icon="📊" color="#a78bfa" />
+              <ImpactCard label={t.dangerCount} value={getStats.isError ? "—" : (getStats.data?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" />
+              <ImpactCard label={t.uptimePct} value={getStats.isError ? "—" : `${getStats.data?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" />
             </div>
+
+            {getStats.isError && (
+              <div className="mb-6 flex flex-col items-start justify-between gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center" role="alert" style={{ background: "oklch(0.65 0.20 25 / 0.08)", borderColor: "oklch(0.65 0.20 25 / 0.45)", color: th.textMuted }}>
+                <p>⚠️ {lang === "ko" ? "운영 통계를 불러오지 못했습니다. KPI와 예상 절감 비용은 최신 값이 아닐 수 있습니다." : lang === "ja" ? "運用統計を読み込めませんでした。KPIと予想削減コストは最新値ではない可能性があります。" : "Could not load operational statistics. KPI values and expected savings may not be current."}</p>
+                <button type="button" onClick={() => void getStats.refetch()} disabled={getStats.isFetching} className="shrink-0 rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
+                  ↻ {getStats.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                </button>
+              </div>
+            )}
 
             {/* 절감 비용 카드 */}
             <div className="rounded-xl border p-4 sm:p-5 mb-6 flex flex-col gap-2"
@@ -4259,7 +4268,7 @@ export default function Dashboard() {
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t.savedCost}</p>
               <div className="flex items-end gap-2">
                 <span className="text-3xl font-bold font-mono" style={{ color: "#22c55e" }}>
-                  ₩{displayedSavedCost.toLocaleString()}
+                  {getStats.isError ? "—" : `₩${displayedSavedCost.toLocaleString()}`}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">{t.impactDesc}</p>
