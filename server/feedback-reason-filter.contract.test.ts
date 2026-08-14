@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("feedback reason filter contract", () => {
   it("filters negative feedback by the persisted reason code without affecting other filters", () => {
-    expect(dashboardSource).toContain('const [feedbackReasonFilter, setFeedbackReasonFilter] = useState<"all" | "inaccurate" | "insufficient" | "irrelevant" | "other">("all")');
+    expect(dashboardSource).toContain('const [feedbackReasonFilter, setFeedbackReasonFilter] = useState<"all" | "inaccurate" | "insufficient" | "irrelevant" | "other">(() => {');
     expect(dashboardSource).toContain('item.feedbackType === "dislike" && item.reasonCode === feedbackReasonFilter');
     expect(dashboardSource).toContain('return matchesType && matchesReason && matchesDate');
     expect(dashboardSource).toContain('feedbackHistoryFilter, feedbackReasonFilter, feedbackHistorySearch');
