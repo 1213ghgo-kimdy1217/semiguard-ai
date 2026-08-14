@@ -738,6 +738,8 @@ export default function Dashboard() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [messageFeedbacks, setMessageFeedbacks] = useState<Record<number, "like" | "dislike">>({});
+  const [activeDislikeIdx, setActiveDislikeIdx] = useState<number | null>(null);
+  const [messageReasons, setMessageReasons] = useState<Record<number, string>>({});
 
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number }>>([
     {
@@ -813,10 +815,20 @@ export default function Dashboard() {
         anomalyScore: current?.anomalyScore ?? 10,
         riskLevel: current?.riskLevel ?? "normal",
       };
+      // 수집된 피드백 이력을 서버로 전달하여 LLM이 실시간 학습하도록 반영
+      const feedbackHistory = Object.entries(messageFeedbacks).map(([idxStr, type]) => {
+        const idx = Number(idxStr);
+        return {
+          type,
+          reason: messageReasons[idx],
+        };
+      });
+
       const res = await chatMutation.mutateAsync({
         sensorContext,
         messages: nextMessages.map(m => ({ role: m.role, content: m.content })),
         lang,
+        feedbackHistory,
       });
       const aiReply = res.reply;
       setChatMessages(prev => [...prev, { role: "assistant", content: aiReply, timestamp: Date.now() }]);
@@ -2260,21 +2272,78 @@ export default function Dashboard() {
                             style={{ borderColor: messageFeedbacks[idx] === "like" ? undefined : th.border2, background: messageFeedbacks[idx] === "like" ? undefined : th.bgCard, color: messageFeedbacks[idx] === "like" ? undefined : th.textMuted }}>
                             👍 {messageFeedbacks[idx] === "like" && "1"}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMessageFeedbacks(prev => ({
-                                ...prev,
-                                [idx]: prev[idx] === "dislike" ? (undefined as any) : "dislike",
-                              }));
-                            }}
-                            title={lang === "ko" ? "아쉬워요" : lang === "ja" ? "イマイチ" : "Not helpful"}
-                            className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
-                              messageFeedbacks[idx] === "dislike" ? "bg-rose-500/20 border-rose-500 text-rose-500 font-bold" : "opacity-60 hover:opacity-100"
-                            }`}
-                            style={{ borderColor: messageFeedbacks[idx] === "dislike" ? undefined : th.border2, background: messageFeedbacks[idx] === "dislike" ? undefined : th.bgCard, color: messageFeedbacks[idx] === "dislike" ? undefined : th.textMuted }}>
-                            👎 {messageFeedbacks[idx] === "dislike" && "1"}
-                          </button>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextState = messageFeedbacks[idx] === "dislike" ? undefined : "dislike";
+                                setMessageFeedbacks(prev => ({
+                                  ...prev,
+                                  [idx]: nextState as any,
+                                }));
+                                if (nextState === "dislike") {
+                                  setActiveDislikeIdx(idx);
+                                } else {
+                                  setActiveDislikeIdx(null);
+                                  setMessageReasons(prev => {
+                                    const copy = { ...prev };
+                                    delete copy[idx];
+                                    return copy;
+                                  });
+                                }
+                              }}
+                              title={lang === "ko" ? "아쉬워요" : lang === "ja" ? "イマイチ" : "Not helpful"}
+                              className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
+                                messageFeedbacks[idx] === "dislike" ? "bg-rose-500/20 border-rose-500 text-rose-500 font-bold" : "opacity-60 hover:opacity-100"
+                              }`}
+                              style={{ borderColor: messageFeedbacks[idx] === "dislike" ? undefined : th.border2, background: messageFeedbacks[idx] === "dislike" ? undefined : th.bgCard, color: messageFeedbacks[idx] === "dislike" ? undefined : th.textMuted }}>
+                              👎 {messageFeedbacks[idx] === "dislike" && "1"}
+                            </button>
+
+                            {/* 싫어요 사유 선택 소형 팝업 */}
+                            {activeDislikeIdx === idx && (
+                              <div className="absolute left-0 bottom-full mb-2 z-50 w-56 p-2.5 rounded-xl shadow-xl border animate-fadeIn"
+                                style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: th.border2 }}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[10px] font-bold" style={{ color: th.text }}>
+                                    {lang === "ko" ? "어떤 점이 아쉬우셨나요?" : lang === "ja" ? "どの点が物足りなかったですか？" : "What was missing?"}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveDislikeIdx(null)}
+                                    className="text-[10px] hover:opacity-70 px-1" style={{ color: th.textMuted }}>
+                                    ✕
+                                  </button>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  {[
+                                    { id: "inaccurate", ko: "정확하지 않음", ja: "正確ではない", en: "Inaccurate" },
+                                    { id: "insufficient", ko: "설명 및 근거 부족", ja: "説明・根拠が不足", en: "Insufficient details" },
+                                    { id: "irrelevant", ko: "질문과 관련 없음", ja: "質問と関係ない", en: "Irrelevant" },
+                                    { id: "other", ko: "기타 사유", ja: "その他", en: "Other" },
+                                  ].map((reasonItem) => (
+                                    <button
+                                      key={reasonItem.id}
+                                      type="button"
+                                      onClick={() => {
+                                        const label = lang === "ko" ? reasonItem.ko : lang === "ja" ? reasonItem.ja : reasonItem.en;
+                                        setMessageReasons(prev => ({ ...prev, [idx]: label }));
+                                        setActiveDislikeIdx(null);
+                                        toast.success(lang === "ko" ? "소중한 피드백이 반영되었습니다. 다음 답변부터 즉시 개선됩니다!" : "Feedback submitted. Next answers will be adapted!");
+                                      }}
+                                      className={`text-left px-2 py-1 rounded text-[10px] border transition-all ${
+                                        messageReasons[idx] === (lang === "ko" ? reasonItem.ko : lang === "ja" ? reasonItem.ja : reasonItem.en)
+                                          ? "bg-rose-500/20 border-rose-500 font-bold"
+                                          : "hover:opacity-80"
+                                      }`}
+                                      style={{ borderColor: th.border2, background: th.bgCard, color: th.text }}>
+                                      {lang === "ko" ? reasonItem.ko : lang === "ja" ? reasonItem.ja : reasonItem.en}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}

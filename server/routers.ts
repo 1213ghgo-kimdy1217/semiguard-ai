@@ -417,10 +417,14 @@ export const appRouter = router({
             })
           ),
           lang: z.enum(["ko", "en", "ja"]).default("ko"),
+          feedbackHistory: z.array(z.object({
+            type: z.enum(["like", "dislike"]),
+            reason: z.string().optional(),
+          })).optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { sensorContext, messages, lang } = input;
+        const { sensorContext, messages, lang, feedbackHistory } = input;
 
         // 대화가 무한히 쌓이는 것을 방지하기 위해 최근 12개 메시지만 유지하고,
         // 그 이전 대화가 있다면 핵심 요약 컨텍스트로 압축하여 시스템 프롬프트에 주입합니다.
@@ -491,6 +495,23 @@ Guidelines:
 3. 専門的で信頼性の高いシニアエンジニアのトーンを維持してください。`;
 
         const systemPrompt = lang === "ko" ? systemPromptKo : lang === "ja" ? systemPromptJa : systemPromptEn;
+        
+        let feedbackContext = "";
+        if (feedbackHistory && feedbackHistory.length > 0) {
+          const dislikes = feedbackHistory.filter((f: { type: string; reason?: string }) => f.type === "dislike");
+          if (dislikes.length > 0) {
+            const reasons = dislikes.map((d: { type: string; reason?: string }) => d.reason).filter(Boolean).join(", ");
+            if (lang === "ko") {
+              feedbackContext = `\n[사용자 피드백 학습 지침]: 최근 사용자가 이전 답변에 대해 '아쉬움'을 표시했습니다 (사유: ${reasons || '설명 보완 필요'}). 다음 답변에서는 더 구체적인 원인과 근거를 제시하고 해당 지적 사항이 반복되지 않도록 유의하세요.`;
+            } else if (lang === "ja") {
+              feedbackContext = `\n[ユーザーフィードバック学習指示]: ユーザーが以前の回答に「イマイチ」と評価しました（理由: ${reasons || '説明の補足が必要'}）。次の回答では、より具体的な原因と根拠を示し、同様の指摘が繰り返されないように注意してください。`;
+            } else {
+              feedbackContext = `\n[User Feedback Learning Directive]: The user expressed dissatisfaction with recent answers (Reason: ${reasons || 'needs more clarity'}). Ensure subsequent answers provide deeper root-cause evidence and avoid previous shortcomings.`;
+            }
+          }
+        }
+
+        const finalSystemPrompt = systemPrompt + feedbackContext;
 
         const combinedMessages = [
           ...(compressedSummary ? [{ role: "system" as const, content: compressedSummary }] : []),
@@ -498,7 +519,7 @@ Guidelines:
         ];
 
         const formattedMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: finalSystemPrompt },
           ...combinedMessages,
         ];
 
