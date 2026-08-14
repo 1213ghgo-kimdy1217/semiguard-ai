@@ -808,7 +808,11 @@ export default function Dashboard() {
   const [feedbackHistorySearch, setFeedbackHistorySearch] = useState("");
   const [feedbackHistoryStartDate, setFeedbackHistoryStartDate] = useState("");
   const [feedbackHistoryEndDate, setFeedbackHistoryEndDate] = useState("");
-  const [feedbackHistoryDatePreset, setFeedbackHistoryDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">("all");
+  const [feedbackHistoryDatePreset, setFeedbackHistoryDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">(() => {
+    const stored = window.localStorage.getItem("semiguard_feedback_date_preset");
+    return stored === "today" || stored === "week" || stored === "month" ? stored : "all";
+  });
+  const [feedbackDatePresetRestored, setFeedbackDatePresetRestored] = useState(false);
   const [feedbackHistorySort, setFeedbackHistorySort] = useState<"newest" | "oldest">(() => {
     return window.localStorage.getItem("semiguard_feedback_sort") === "oldest" ? "oldest" : "newest";
   });
@@ -1047,6 +1051,9 @@ export default function Dashboard() {
   useEffect(() => {
     window.localStorage.setItem("semiguard_feedback_sort", feedbackHistorySort);
   }, [feedbackHistorySort]);
+  useEffect(() => {
+    window.localStorage.setItem("semiguard_feedback_date_preset", feedbackHistoryDatePreset);
+  }, [feedbackHistoryDatePreset]);
 
   const hasActiveFeedbackFilters = feedbackHistoryFilter !== "all"
     || feedbackReasonFilter !== "all"
@@ -1086,6 +1093,13 @@ export default function Dashboard() {
     setFeedbackHistoryStartDate(formatDateInput(start));
     setFeedbackHistoryEndDate(formatDateInput(end));
   };
+  useEffect(() => {
+    if (feedbackDatePresetRestored) return;
+    if (feedbackHistoryDatePreset === "today" || feedbackHistoryDatePreset === "week" || feedbackHistoryDatePreset === "month") {
+      applyFeedbackDatePreset(feedbackHistoryDatePreset);
+    }
+    setFeedbackDatePresetRestored(true);
+  }, [feedbackDatePresetRestored, feedbackHistoryDatePreset]);
 
   useEffect(() => {
     setFeedbackHistoryPage(currentPage => Math.min(currentPage, feedbackHistoryTotalPages));

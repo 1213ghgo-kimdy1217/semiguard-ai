@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("feedback quick date presets contract", () => {
   it("offers all, today, seven-day, and thirty-day ranges with explicit date values", () => {
-    expect(dashboardSource).toContain('const [feedbackHistoryDatePreset, setFeedbackHistoryDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">("all")');
+    expect(dashboardSource).toContain('const [feedbackHistoryDatePreset, setFeedbackHistoryDatePreset] = useState<"all" | "today" | "week" | "month" | "custom">(() => {');
     expect(dashboardSource).toContain('const applyFeedbackDatePreset = (preset: "all" | "today" | "week" | "month") =>');
     expect(dashboardSource).toContain('if (preset === "week") start.setDate(start.getDate() - 6);');
     expect(dashboardSource).toContain('if (preset === "month") start.setDate(start.getDate() - 29);');
