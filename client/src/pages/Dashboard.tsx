@@ -4854,9 +4854,16 @@ export default function Dashboard() {
       )}
 
       {/* ── 탭 ── */}
-      <div className="flex border-b px-5" style={{ borderColor: th.border }}>
+      <div className="flex border-b px-5" role="tablist" aria-label={lang === "ko" ? "대시보드 보기 전환" : lang === "ja" ? "ダッシュボード表示の切り替え" : "Dashboard view switcher"} style={{ borderColor: th.border }}>
         {(["dashboard", "log"] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
+          <button key={tab} id={`dashboard-tab-${tab}`} role="tab" aria-selected={activeTab === tab} aria-controls={`dashboard-panel-${tab}`} tabIndex={activeTab === tab ? 0 : -1} onClick={() => setActiveTab(tab)}
+            onKeyDown={(event) => {
+              const nextTab = event.key === "ArrowRight" ? (tab === "dashboard" ? "log" : "dashboard") : event.key === "ArrowLeft" ? (tab === "dashboard" ? "log" : "dashboard") : null;
+              if (!nextTab) return;
+              event.preventDefault();
+              setActiveTab(nextTab);
+              window.requestAnimationFrame(() => document.getElementById(`dashboard-tab-${nextTab}`)?.focus());
+            }}
             className="px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 mr-1"
             style={{
               borderColor: activeTab === tab ? "oklch(0.65 0.18 200)" : "transparent",
@@ -4868,6 +4875,7 @@ export default function Dashboard() {
       </div>
 
       <main id="dashboard-main" tabIndex={-1} className="flex-1 p-3 sm:p-5 focus:outline-none">
+        <div id={`dashboard-panel-${activeTab}`} role="tabpanel" aria-labelledby={`dashboard-tab-${activeTab}`}>
         {activeTab === "dashboard" ? (
           <>
             {/* 임팩트 통계 섹션 */}
@@ -5556,6 +5564,7 @@ export default function Dashboard() {
             )}
           </div>
         )}
+        </div>
       </main>
 
       <style>{`
