@@ -733,6 +733,9 @@ export default function Dashboard() {
   const [showFeedbackHistoryPanel, setShowFeedbackHistoryPanel] = useState(false);
   const [messageFeedbackIds, setMessageFeedbackIds] = useState<Record<number, number>>({});
   const [feedbackHistoryFilter, setFeedbackHistoryFilter] = useState<"all" | "like" | "dislike">("all");
+  const [feedbackHistorySearch, setFeedbackHistorySearch] = useState("");
+  const [feedbackHistoryPage, setFeedbackHistoryPage] = useState(1);
+  const [animatedPositiveRatio, setAnimatedPositiveRatio] = useState(0);
   const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
   const [showDeleteAllFeedbackConfirm, setShowDeleteAllFeedbackConfirm] = useState(false);
   const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
@@ -780,12 +783,34 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatMutation = trpc.semiguard.chatWithAi.useMutation();
+  const FEEDBACK_PAGE_SIZE = 5;
   const allFeedbackHistory = feedbackHistoryQuery.data ?? [];
-  const filteredFeedbackHistory = allFeedbackHistory.filter(item => feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter);
+  const normalizedFeedbackSearch = feedbackHistorySearch.trim().toLocaleLowerCase();
+  const filteredFeedbackHistory = allFeedbackHistory.filter(item => {
+    const matchesType = feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter;
+    const searchable = [item.reasonCode, item.reasonText, item.messageContent, item.regeneratedContent].filter(Boolean).join(" ").toLocaleLowerCase();
+    return matchesType && (!normalizedFeedbackSearch || searchable.includes(normalizedFeedbackSearch));
+  });
   const positiveFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "like").length;
   const negativeFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "dislike").length;
   const positiveFeedbackRatio = allFeedbackHistory.length ? Math.round((positiveFeedbackCount / allFeedbackHistory.length) * 100) : 0;
   const negativeFeedbackRatio = allFeedbackHistory.length ? 100 - positiveFeedbackRatio : 0;
+  const feedbackHistoryTotalPages = Math.max(1, Math.ceil(filteredFeedbackHistory.length / FEEDBACK_PAGE_SIZE));
+  const paginatedFeedbackHistory = filteredFeedbackHistory.slice((feedbackHistoryPage - 1) * FEEDBACK_PAGE_SIZE, feedbackHistoryPage * FEEDBACK_PAGE_SIZE);
+
+  useEffect(() => {
+    setFeedbackHistoryPage(1);
+  }, [feedbackHistoryFilter, feedbackHistorySearch]);
+
+  useEffect(() => {
+    setFeedbackHistoryPage(currentPage => Math.min(currentPage, feedbackHistoryTotalPages));
+  }, [feedbackHistoryTotalPages]);
+
+  useEffect(() => {
+    setAnimatedPositiveRatio(0);
+    const timer = window.setTimeout(() => setAnimatedPositiveRatio(positiveFeedbackRatio), 80);
+    return () => window.clearTimeout(timer);
+  }, [positiveFeedbackRatio, allFeedbackHistory.length]);
 
   const exportFilteredFeedbackCsv = () => {
     if (filteredFeedbackHistory.length === 0) {
@@ -2516,19 +2541,40 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
+                <div className="relative mb-2">
+                  <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px]">🔎</span>
+                  <input
+                    type="search"
+                    value={feedbackHistorySearch}
+                    onChange={event => setFeedbackHistorySearch(event.target.value)}
+                    placeholder={lang === "ko" ? "답변·사유·재생성 내용 검색..." : lang === "ja" ? "回答・理由・再生成内容を検索..." : "Search answers, reasons, or regenerations..."}
+                    className="w-full rounded-lg border py-1.5 pl-7 pr-7 text-[10px] outline-none transition-all focus:ring-1 focus:ring-fuchsia-500"
+                    style={{ background: th.bgCard, borderColor: th.border2, color: th.text }}
+                  />
+                  {feedbackHistorySearch && (
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackHistorySearch("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[10px] transition-opacity hover:opacity-70"
+                      style={{ color: th.textMuted }}
+                      aria-label="Clear search">
+                      ✕
+                    </button>
+                  )}
+                </div>
                 {!feedbackHistoryQuery.isLoading && allFeedbackHistory.length > 0 && (
                   <div className="mb-2 rounded-xl border p-2" style={{ borderColor: th.border2, background: isDark ? "oklch(0.16 0.02 240)" : "oklch(0.97 0.006 240)" }}>
                     <div className="mb-1.5 flex items-center justify-between text-[9px] font-bold" style={{ color: th.textMuted }}>
                       <span>{lang === "ko" ? "전체 피드백 평가 요약" : lang === "ja" ? "全フィードバック評価の要約" : "All feedback summary"}</span>
                       <span>{allFeedbackHistory.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " total"}</span>
                     </div>
-                    <div className="flex h-2 overflow-hidden rounded-full" style={{ background: "oklch(0.60 0.05 240 / 0.18)" }}>
-                      <div className="h-full transition-all duration-300" style={{ width: `${positiveFeedbackRatio}%`, background: "oklch(0.68 0.20 145)" }} />
-                      <div className="h-full transition-all duration-300" style={{ width: `${negativeFeedbackRatio}%`, background: "oklch(0.62 0.20 20)" }} />
+                    <div className="flex h-2.5 overflow-hidden rounded-full shadow-inner" style={{ background: "oklch(0.60 0.05 240 / 0.18)" }}>
+                      <div className="h-full transition-[width] duration-700 ease-out" style={{ width: `${animatedPositiveRatio}%`, background: "linear-gradient(90deg, oklch(0.60 0.19 145), oklch(0.76 0.18 145))" }} />
+                      <div className="h-full transition-[width] duration-700 ease-out" style={{ width: `${allFeedbackHistory.length ? 100 - animatedPositiveRatio : 0}%`, background: "linear-gradient(90deg, oklch(0.78 0.16 35), oklch(0.60 0.20 20))" }} />
                     </div>
                     <div className="mt-1.5 flex items-center justify-between text-[9px]">
-                      <span style={{ color: "oklch(0.70 0.18 145)" }}>👍 {lang === "ko" ? "긍정" : lang === "ja" ? "肯定" : "Positive"} {positiveFeedbackCount} ({positiveFeedbackRatio}%)</span>
-                      <span style={{ color: "oklch(0.65 0.20 20)" }}>👎 {lang === "ko" ? "부정" : lang === "ja" ? "否定" : "Negative"} {negativeFeedbackCount} ({negativeFeedbackRatio}%)</span>
+                      <span className="font-bold" style={{ color: "oklch(0.70 0.18 145)" }}>👍 {lang === "ko" ? "긍정" : lang === "ja" ? "肯定" : "Positive"} {positiveFeedbackCount} ({animatedPositiveRatio}%)</span>
+                      <span className="font-bold" style={{ color: "oklch(0.65 0.20 20)" }}>👎 {lang === "ko" ? "부정" : lang === "ja" ? "否定" : "Negative"} {negativeFeedbackCount} ({allFeedbackHistory.length ? 100 - animatedPositiveRatio : 0}%)</span>
                     </div>
                   </div>
                 )}
@@ -2632,8 +2678,8 @@ export default function Dashboard() {
                       <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>{lang === "ko" ? "피드백 이력 불러오는 중..." : lang === "ja" ? "フィードバック履歴を読み込み中..." : "Loading feedback history..."}</span>
                     </div>
-                  ) : filteredFeedbackHistory.length > 0 ? (
-                    filteredFeedbackHistory.map(item => {
+                  ) : paginatedFeedbackHistory.length > 0 ? (
+                    paginatedFeedbackHistory.map(item => {
                       const reasonLabelMap: Record<string, { ko: string; ja: string; en: string }> = {
                         inaccurate: { ko: "정확하지 않음", ja: "正確ではない", en: "Inaccurate" },
                         insufficient: { ko: "설명 및 근거 부족", ja: "説明・根拠が不足", en: "Insufficient details" },
@@ -2711,9 +2757,32 @@ export default function Dashboard() {
                         : (lang === "ko"
                           ? "저장된 피드백 이력이 없습니다. AI 답변에 좋아요·아쉬워요를 남기면 여기에 모입니다."
                           : lang === "ja"
-                            ? "保存されたフィードバック履歴がありません。AIの回答に評価を残すとここに表示されます。"
+                          ? "保存されたフィードバック履歴がありません。AIの回答に評価を残すとここに表示されます。"
                             : "No feedback yet. Rate an AI answer and it will appear here.")}
                     </p>
+                  )}
+                  {filteredFeedbackHistory.length > FEEDBACK_PAGE_SIZE && (
+                    <div className="flex items-center justify-between gap-2 border-t pt-2" style={{ borderColor: th.border2 }}>
+                      <button
+                        type="button"
+                        onClick={() => setFeedbackHistoryPage(page => Math.max(1, page - 1))}
+                        disabled={feedbackHistoryPage === 1}
+                        className="rounded-md border px-2 py-1 text-[9px] font-bold disabled:opacity-35"
+                        style={{ borderColor: th.border2, color: th.textMuted }}>
+                        ← {lang === "ko" ? "이전" : lang === "ja" ? "前へ" : "Prev"}
+                      </button>
+                      <span className="text-[9px] font-bold" style={{ color: th.textMuted }}>
+                        {feedbackHistoryPage} / {feedbackHistoryTotalPages} · {filteredFeedbackHistory.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " items"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setFeedbackHistoryPage(page => Math.min(feedbackHistoryTotalPages, page + 1))}
+                        disabled={feedbackHistoryPage === feedbackHistoryTotalPages}
+                        className="rounded-md border px-2 py-1 text-[9px] font-bold disabled:opacity-35"
+                        style={{ borderColor: th.border2, color: th.textMuted }}>
+                        {lang === "ko" ? "다음" : lang === "ja" ? "次へ" : "Next"} →
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
