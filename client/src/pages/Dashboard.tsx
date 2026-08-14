@@ -2300,6 +2300,12 @@ export default function Dashboard() {
 
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
+      <a
+        href="#dashboard-main"
+        className="sr-only z-[1200] rounded-b-lg bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 focus:not-sr-only focus:absolute focus:left-4 focus:top-0 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+      >
+        {lang === "ko" ? "대시보드 콘텐츠로 건너뛰기" : lang === "ja" ? "ダッシュボードのコンテンツへ移動" : "Skip to dashboard content"}
+      </a>
       {/* ── 위험 화면 플래시 효과 ── */}
       {dangerFlash && (
         <div
@@ -4857,7 +4863,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <main className="flex-1 p-3 sm:p-5">
+      <main id="dashboard-main" tabIndex={-1} className="flex-1 p-3 sm:p-5 focus:outline-none">
         {activeTab === "dashboard" ? (
           <>
             {/* 임팩트 통계 섹션 */}
