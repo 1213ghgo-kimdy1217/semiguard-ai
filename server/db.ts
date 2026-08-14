@@ -500,6 +500,58 @@ export async function getManualDocumentsForUser(userId: number) {
     .orderBy(desc(manualDocuments.updatedAt));
 }
 
+export async function searchManualDocumentsForUser(userId: number, searchText: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const normalized = searchText.trim();
+  if (!normalized) return getManualDocumentsForUser(userId);
+  const term = `%${normalized}%`;
+
+  const chunkMatches = await db
+    .select({ documentId: manualChunks.documentId, content: manualChunks.content })
+    .from(manualChunks)
+    .innerJoin(manualDocuments, eq(manualChunks.documentId, manualDocuments.id))
+    .where(and(
+      eq(manualDocuments.userId, userId),
+      or(like(manualChunks.content, term), like(manualChunks.keywords, term)),
+    ))
+    .limit(100);
+  const matchingDocumentIds = Array.from(new Set(chunkMatches.map(match => match.documentId)));
+  const excerptByDocumentId = new Map<number, string>();
+  for (const match of chunkMatches) {
+    if (!excerptByDocumentId.has(match.documentId)) {
+      excerptByDocumentId.set(match.documentId, match.content.replace(/\s+/g, " ").trim().slice(0, 140));
+    }
+  }
+
+  const ownershipAndSearch = matchingDocumentIds.length > 0
+    ? and(eq(manualDocuments.userId, userId), or(like(manualDocuments.title, term), inArray(manualDocuments.id, matchingDocumentIds)))
+    : and(eq(manualDocuments.userId, userId), like(manualDocuments.title, term));
+  const documents = await db.select({
+    id: manualDocuments.id,
+    title: manualDocuments.title,
+    sourceType: manualDocuments.sourceType,
+    createdAt: manualDocuments.createdAt,
+    updatedAt: manualDocuments.updatedAt,
+    chunkCount: count(manualChunks.id),
+  })
+    .from(manualDocuments)
+    .leftJoin(manualChunks, eq(manualChunks.documentId, manualDocuments.id))
+    .where(ownershipAndSearch)
+    .groupBy(
+      manualDocuments.id,
+      manualDocuments.title,
+      manualDocuments.sourceType,
+      manualDocuments.createdAt,
+      manualDocuments.updatedAt,
+    )
+    .orderBy(desc(manualDocuments.updatedAt));
+  return documents.map(document => ({
+    ...document,
+    matchedContentExcerpt: excerptByDocumentId.get(document.id) ?? null,
+  }));
+}
+
 export async function deleteManualDocumentForUser(input: { userId: number; documentId: number }) {
   const db = await getDb();
   if (!db) return false;

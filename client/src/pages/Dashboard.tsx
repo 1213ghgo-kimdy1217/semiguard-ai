@@ -861,15 +861,17 @@ export default function Dashboard() {
   const addManualTextMutation = trpc.semiguard.addManualText.useMutation();
   const deleteManualDocumentMutation = trpc.semiguard.deleteManualDocument.useMutation();
   const manualDocumentsQuery = trpc.semiguard.getManualDocuments.useQuery(undefined, { enabled: isChatOpen });
+  const normalizedManualSearch = manualSearchQuery.trim();
+  const manualDocumentSearchQuery = trpc.semiguard.searchManualDocuments.useQuery(
+    { search: normalizedManualSearch || "_" },
+    { enabled: isChatOpen && showManualRagModal && normalizedManualSearch.length > 0 },
+  );
   const manualPreviewQuery = trpc.semiguard.getManualDocumentPreview.useQuery(
     { documentId: previewManualDocumentId ?? 1 },
     { enabled: isChatOpen && showManualRagModal && previewManualDocumentId !== null },
   );
   const allManualDocuments = manualDocumentsQuery.data ?? [];
-  const normalizedManualSearch = manualSearchQuery.trim().toLocaleLowerCase();
-  const filteredManualDocuments = allManualDocuments.filter(document =>
-    !normalizedManualSearch || document.title.toLocaleLowerCase().includes(normalizedManualSearch),
-  );
+  const filteredManualDocuments = normalizedManualSearch ? (manualDocumentSearchQuery.data ?? []) : allManualDocuments;
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
   const updateSessionTitleMutation = trpc.semiguard.updateChatSessionTitle.useMutation();
@@ -2556,7 +2558,7 @@ export default function Dashboard() {
                         {normalizedManualSearch ? `${filteredManualDocuments.length}/` : ""}{allManualDocuments.length}{lang === "ko" ? "개" : lang === "ja" ? "件" : " items"}
                       </span>
                     </div>
-                    {manualDocumentsQuery.isLoading ? (
+                    {manualDocumentsQuery.isLoading || manualDocumentSearchQuery.isLoading ? (
                       <p className="py-2 text-center text-[10px]" style={{ color: th.textMuted }}>
                         {lang === "ko" ? "매뉴얼 목록을 불러오는 중..." : lang === "ja" ? "マニュアル一覧を読み込み中..." : "Loading manuals..."}
                       </p>
@@ -2566,10 +2568,10 @@ export default function Dashboard() {
                           <input
                             value={manualSearchQuery}
                             onChange={event => setManualSearchQuery(event.target.value)}
-                            placeholder={lang === "ko" ? "매뉴얼 제목 검색..." : lang === "ja" ? "マニュアルのタイトルを検索..." : "Search manual titles..."}
+                            placeholder={lang === "ko" ? "매뉴얼 제목 또는 원문 검색..." : lang === "ja" ? "マニュアルのタイトル・原文を検索..." : "Search manual titles or content..."}
                             className="w-full rounded-lg border px-2.5 py-1.5 pr-7 text-[10px] outline-none focus:ring-2 focus:ring-amber-500/35"
                             style={{ borderColor: th.border2, background: th.bgCard, color: th.text }}
-                            aria-label={lang === "ko" ? "RAG 매뉴얼 제목 검색" : lang === "ja" ? "RAGマニュアルのタイトルを検索" : "Search RAG manual titles"}
+                            aria-label={lang === "ko" ? "RAG 매뉴얼 제목 또는 원문 검색" : lang === "ja" ? "RAGマニュアルのタイトル・原文を検索" : "Search RAG manual titles or content"}
                           />
                           {manualSearchQuery && (
                             <button
@@ -2592,6 +2594,16 @@ export default function Dashboard() {
                                 <p className="mt-0.5 text-[9px]" style={{ color: th.textMuted }}>
                                   {document.chunkCount}{lang === "ko" ? "개 구간" : lang === "ja" ? "区間" : " chunks"} · {new Date(document.updatedAt).toLocaleDateString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US")}
                                 </p>
+                                {(() => {
+                                  const matchedExcerpt = "matchedContentExcerpt" in document && typeof document.matchedContentExcerpt === "string"
+                                    ? document.matchedContentExcerpt
+                                    : null;
+                                  return matchedExcerpt ? (
+                                    <p className="mt-1 line-clamp-2 text-[9px] leading-relaxed" style={{ color: isDark ? "oklch(0.78 0.12 80)" : "oklch(0.42 0.13 75)" }}>
+                                      {lang === "ko" ? "원문 일치: " : lang === "ja" ? "原文一致: " : "Content match: "}{matchedExcerpt}
+                                    </p>
+                                  ) : null;
+                                })()}
                               </div>
                               <div className="flex shrink-0 items-center gap-1">
                                 <button

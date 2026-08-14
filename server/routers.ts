@@ -867,6 +867,10 @@ Guidelines:
 
     getManualDocuments: protectedProcedure.query(async ({ ctx }) => db.getManualDocumentsForUser(ctx.user.id)),
 
+    searchManualDocuments: protectedProcedure
+      .input(z.object({ search: z.string().trim().min(1).max(120) }))
+      .query(async ({ ctx, input }) => db.searchManualDocumentsForUser(ctx.user.id, input.search)),
+
     getManualDocumentPreview: protectedProcedure
       .input(z.object({ documentId: z.number().int().positive() }))
       .query(async ({ ctx, input }) => {

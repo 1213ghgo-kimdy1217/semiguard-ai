@@ -12,8 +12,8 @@ describe("RAG manual search contract", () => {
   });
 
   it("keeps accessible multilingual search and empty-state labels", () => {
-    expect(dashboardSource).toContain("RAG 매뉴얼 제목 검색");
-    expect(dashboardSource).toContain("RAGマニュアルのタイトルを検索");
+    expect(dashboardSource).toContain("RAG 매뉴얼 제목 또는 원문 검색");
+    expect(dashboardSource).toContain("RAGマニュアルのタイトル・原文を検索");
     expect(dashboardSource).toContain("No manuals match your search.");
   });
 });
