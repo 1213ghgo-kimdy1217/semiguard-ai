@@ -735,6 +735,7 @@ export default function Dashboard() {
   const [feedbackHistoryFilter, setFeedbackHistoryFilter] = useState<"all" | "like" | "dislike">("all");
   const [feedbackToDelete, setFeedbackToDelete] = useState<number | null>(null);
   const [showDeleteAllFeedbackConfirm, setShowDeleteAllFeedbackConfirm] = useState(false);
+  const [showDeleteAllFeedbackFinalConfirm, setShowDeleteAllFeedbackFinalConfirm] = useState(false);
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
@@ -779,6 +780,46 @@ export default function Dashboard() {
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatMutation = trpc.semiguard.chatWithAi.useMutation();
+  const allFeedbackHistory = feedbackHistoryQuery.data ?? [];
+  const filteredFeedbackHistory = allFeedbackHistory.filter(item => feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter);
+  const positiveFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "like").length;
+  const negativeFeedbackCount = allFeedbackHistory.filter(item => item.feedbackType === "dislike").length;
+  const positiveFeedbackRatio = allFeedbackHistory.length ? Math.round((positiveFeedbackCount / allFeedbackHistory.length) * 100) : 0;
+  const negativeFeedbackRatio = allFeedbackHistory.length ? 100 - positiveFeedbackRatio : 0;
+
+  const exportFilteredFeedbackCsv = () => {
+    if (filteredFeedbackHistory.length === 0) {
+      toast.info(lang === "ko" ? "내보낼 피드백 기록이 없습니다." : lang === "ja" ? "エクスポートするフィードバック履歴がありません。" : "There are no feedback records to export.");
+      return;
+    }
+    const escapeCsv = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+    const headers = lang === "ko"
+      ? ["평가", "사유 코드", "직접 사유", "평가한 답변", "재생성 답변", "평가 시간", "재생성 시간"]
+      : lang === "ja"
+        ? ["評価", "理由コード", "直接理由", "評価した回答", "再生成回答", "評価時刻", "再生成時刻"]
+        : ["Feedback", "Reason code", "Reason text", "Rated answer", "Regenerated answer", "Feedback time", "Regenerated time"];
+    const rows = filteredFeedbackHistory.map(item => [
+      item.feedbackType === "like" ? (lang === "ko" ? "긍정" : lang === "ja" ? "肯定" : "Positive") : (lang === "ko" ? "부정" : lang === "ja" ? "否定" : "Negative"),
+      item.reasonCode,
+      item.reasonText,
+      item.messageContent,
+      item.regeneratedContent,
+      new Date(item.createdAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"),
+      item.regeneratedAt ? new Date(item.regeneratedAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US") : "",
+    ]);
+    const csv = `\ufeff${[headers, ...rows].map(row => row.map(escapeCsv).join(",")).join("\r\n")}`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    const filterName = feedbackHistoryFilter === "all" ? "all" : feedbackHistoryFilter === "like" ? "positive" : "negative";
+    anchor.href = url;
+    anchor.download = `semiguard-feedback-${filterName}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    toast.success(lang === "ko" ? `${filteredFeedbackHistory.length}개 피드백 기록을 CSV로 내보냈습니다.` : lang === "ja" ? `${filteredFeedbackHistory.length}件のフィードバック履歴をCSVでエクスポートしました。` : `Exported ${filteredFeedbackHistory.length} feedback records as CSV.`);
+  };
 
   // 최초 챗봇 오픈 시 세션이 없으면 기본 세션 생성
   useEffect(() => {
@@ -2455,15 +2496,42 @@ export default function Dashboard() {
                       </button>
                     ))}
                   </div>
-                  {!!feedbackHistoryQuery.data?.length && (
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteAllFeedbackConfirm(true)}
-                      className="rounded-lg border border-red-500/35 bg-red-500/10 px-2 py-1 text-[9px] font-bold text-red-400 transition-all hover:bg-red-500/20 active:scale-95">
-                      🗑️ {lang === "ko" ? "전체 삭제" : lang === "ja" ? "すべて削除" : "Clear all"}
-                    </button>
+                  {!!allFeedbackHistory.length && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={exportFilteredFeedbackCsv}
+                        disabled={filteredFeedbackHistory.length === 0}
+                        title={lang === "ko" ? "현재 필터 결과를 CSV로 내보내기" : lang === "ja" ? "現在のフィルター結果をCSVでエクスポート" : "Export current filtered results as CSV"}
+                        className="rounded-lg border px-2 py-1 text-[9px] font-bold transition-all hover:opacity-80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                        style={{ borderColor: "oklch(0.65 0.18 200 / 0.40)", background: "oklch(0.65 0.18 200 / 0.10)", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.17 200)" }}>
+                        ⬇️ CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteAllFeedbackConfirm(true)}
+                        className="rounded-lg border border-red-500/35 bg-red-500/10 px-2 py-1 text-[9px] font-bold text-red-400 transition-all hover:bg-red-500/20 active:scale-95">
+                        🗑️ {lang === "ko" ? "전체 삭제" : lang === "ja" ? "すべて削除" : "Clear all"}
+                      </button>
+                    </div>
                   )}
                 </div>
+                {!feedbackHistoryQuery.isLoading && allFeedbackHistory.length > 0 && (
+                  <div className="mb-2 rounded-xl border p-2" style={{ borderColor: th.border2, background: isDark ? "oklch(0.16 0.02 240)" : "oklch(0.97 0.006 240)" }}>
+                    <div className="mb-1.5 flex items-center justify-between text-[9px] font-bold" style={{ color: th.textMuted }}>
+                      <span>{lang === "ko" ? "전체 피드백 평가 요약" : lang === "ja" ? "全フィードバック評価の要約" : "All feedback summary"}</span>
+                      <span>{allFeedbackHistory.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " total"}</span>
+                    </div>
+                    <div className="flex h-2 overflow-hidden rounded-full" style={{ background: "oklch(0.60 0.05 240 / 0.18)" }}>
+                      <div className="h-full transition-all duration-300" style={{ width: `${positiveFeedbackRatio}%`, background: "oklch(0.68 0.20 145)" }} />
+                      <div className="h-full transition-all duration-300" style={{ width: `${negativeFeedbackRatio}%`, background: "oklch(0.62 0.20 20)" }} />
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-between text-[9px]">
+                      <span style={{ color: "oklch(0.70 0.18 145)" }}>👍 {lang === "ko" ? "긍정" : lang === "ja" ? "肯定" : "Positive"} {positiveFeedbackCount} ({positiveFeedbackRatio}%)</span>
+                      <span style={{ color: "oklch(0.65 0.20 20)" }}>👎 {lang === "ko" ? "부정" : lang === "ja" ? "否定" : "Negative"} {negativeFeedbackCount} ({negativeFeedbackRatio}%)</span>
+                    </div>
+                  </div>
+                )}
                 {feedbackToDelete !== null && (
                   <div className="absolute inset-0 z-[590] flex flex-col items-center justify-center rounded-xl bg-black/80 p-4 text-center backdrop-blur-md animate-fadeIn">
                     <p className="text-xs font-bold text-red-300">
@@ -2513,6 +2581,31 @@ export default function Dashboard() {
                       </button>
                       <button
                         type="button"
+                        onClick={() => {
+                          setShowDeleteAllFeedbackConfirm(false);
+                          setShowDeleteAllFeedbackFinalConfirm(true);
+                        }}
+                        className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white">
+                        {lang === "ko" ? "다음 확인" : lang === "ja" ? "次の確認" : "Continue"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {showDeleteAllFeedbackFinalConfirm && (
+                  <div className="absolute inset-0 z-[595] flex flex-col items-center justify-center rounded-xl bg-black/90 p-4 text-center backdrop-blur-md animate-fadeIn">
+                    <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500/20 text-lg">🛑</span>
+                    <p className="text-xs font-bold text-red-300">
+                      {lang === "ko" ? "최종 확인: 모든 피드백을 영구 삭제할까요?" : lang === "ja" ? "最終確認：すべてのフィードバックを完全に削除しますか？" : "Final confirmation: permanently delete all feedback?"}
+                    </p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                      {lang === "ko" ? "이 동작은 취소할 수 없습니다. 계속하려면 아래 '영구 삭제'를 눌러주세요." : lang === "ja" ? "この操作は取り消せません。続行するには下の「完全に削除」を押してください。" : "This cannot be undone. Press 'Delete permanently' below to continue."}
+                    </p>
+                    <div className="mt-4 flex items-center gap-2">
+                      <button type="button" onClick={() => setShowDeleteAllFeedbackFinalConfirm(false)} className="rounded-lg border px-3 py-1.5 text-xs font-bold" style={{ borderColor: th.border2, color: th.textMuted }}>
+                        {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
+                      </button>
+                      <button
+                        type="button"
                         disabled={deleteAllChatFeedbacksMutation.isPending}
                         onClick={async () => {
                           try {
@@ -2524,11 +2617,11 @@ export default function Dashboard() {
                             console.error("Failed to delete all feedback:", error);
                             toast.error(lang === "ko" ? "전체 피드백 기록을 삭제하지 못했습니다." : lang === "ja" ? "すべてのフィードバック履歴を削除できませんでした。" : "Could not delete all feedback records.");
                           } finally {
-                            setShowDeleteAllFeedbackConfirm(false);
+                            setShowDeleteAllFeedbackFinalConfirm(false);
                           }
                         }}
                         className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
-                        {deleteAllChatFeedbacksMutation.isPending ? (lang === "ko" ? "삭제 중" : lang === "ja" ? "削除中" : "Deleting") : (lang === "ko" ? "전체 삭제" : lang === "ja" ? "すべて削除" : "Delete all")}
+                        {deleteAllChatFeedbacksMutation.isPending ? (lang === "ko" ? "삭제 중" : lang === "ja" ? "削除中" : "Deleting") : (lang === "ko" ? "영구 삭제" : lang === "ja" ? "完全に削除" : "Delete permanently")}
                       </button>
                     </div>
                   </div>
@@ -2539,8 +2632,8 @@ export default function Dashboard() {
                       <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>{lang === "ko" ? "피드백 이력 불러오는 중..." : lang === "ja" ? "フィードバック履歴を読み込み中..." : "Loading feedback history..."}</span>
                     </div>
-                  ) : feedbackHistoryQuery.data && feedbackHistoryQuery.data.filter(item => feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter).length > 0 ? (
-                    feedbackHistoryQuery.data.filter(item => feedbackHistoryFilter === "all" || item.feedbackType === feedbackHistoryFilter).map(item => {
+                  ) : filteredFeedbackHistory.length > 0 ? (
+                    filteredFeedbackHistory.map(item => {
                       const reasonLabelMap: Record<string, { ko: string; ja: string; en: string }> = {
                         inaccurate: { ko: "정확하지 않음", ja: "正確ではない", en: "Inaccurate" },
                         insufficient: { ko: "설명 및 근거 부족", ja: "説明・根拠が不足", en: "Insufficient details" },
