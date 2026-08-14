@@ -2838,6 +2838,8 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setShowHistoryPanel(!showHistoryPanel)}
+                  aria-expanded={showHistoryPanel}
+                  aria-controls="chat-history-panel"
                   title={lang === "ko" ? "과거 상담 기록 보기" : lang === "ja" ? "過去の相談履歴を見る" : "View Consultation History"}
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
                   style={{ borderColor: "oklch(0.65 0.22 145 / 0.4)", background: "oklch(0.65 0.22 145 / 0.10)", color: "oklch(0.75 0.18 145)" }}>
@@ -2860,6 +2862,8 @@ export default function Dashboard() {
                     setShowFeedbackHistoryPanel(previous => !previous);
                     setShowHistoryPanel(false);
                   }}
+                  aria-expanded={showFeedbackHistoryPanel}
+                  aria-controls="chat-feedback-panel"
                   title={lang === "ko" ? "피드백·재생성 답변 히스토리 보기" : lang === "ja" ? "フィードバック・再生成回答の履歴を見る" : "View feedback and regenerated answer history"}
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
                   style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", background: "oklch(0.62 0.20 300 / 0.12)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
@@ -2868,6 +2872,8 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setShowManualRagModal(true)}
+                  aria-expanded={showManualRagModal}
+                  aria-controls="chat-manual-panel"
                   title={lang === "ko" ? "설비 매뉴얼을 RAG 지식으로 등록" : lang === "ja" ? "設備マニュアルをRAG知識として登録" : "Add equipment manual as RAG knowledge"}
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
                   style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
@@ -2931,7 +2937,7 @@ export default function Dashboard() {
 
             {/* 설비 매뉴얼 RAG 지식 등록 모달 */}
             {showManualRagModal && (
-              <div className="absolute inset-0 z-[565] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md animate-fadeIn">
+              <div id="chat-manual-panel" className="absolute inset-0 z-[565] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md animate-fadeIn">
                 <div className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border p-4 sm:p-5 shadow-2xl space-y-3 custom-scrollbar" style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -3238,7 +3244,7 @@ export default function Dashboard() {
 
             {/* 상담 기록 사이드 패널 */}
             {showHistoryPanel && (
-              <div className="absolute inset-0 z-[570] flex flex-col border p-3 shadow-2xl backdrop-blur-md animate-fadeIn sm:inset-x-auto sm:right-4 sm:top-14 sm:bottom-2 sm:w-72 sm:rounded-xl"
+              <div id="chat-history-panel" className="absolute inset-0 z-[570] flex flex-col border p-3 shadow-2xl backdrop-blur-md animate-fadeIn sm:inset-x-auto sm:right-4 sm:top-14 sm:bottom-2 sm:w-72 sm:rounded-xl"
                 style={{
                   background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
                   borderColor: "oklch(0.75 0.18 200 / 0.4)",
@@ -3702,7 +3708,7 @@ export default function Dashboard() {
 
             {/* 피드백·재생성 답변 히스토리 사이드 패널 */}
             {showFeedbackHistoryPanel && (
-              <div className="absolute inset-0 z-[570] flex flex-col border p-3 shadow-2xl backdrop-blur-md animate-fadeIn sm:inset-x-auto sm:right-4 sm:top-14 sm:bottom-2 sm:w-80 sm:rounded-xl"
+              <div id="chat-feedback-panel" className="absolute inset-0 z-[570] flex flex-col border p-3 shadow-2xl backdrop-blur-md animate-fadeIn sm:inset-x-auto sm:right-4 sm:top-14 sm:bottom-2 sm:w-80 sm:rounded-xl"
                 style={{
                   background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
                   borderColor: "oklch(0.62 0.20 300 / 0.45)",
