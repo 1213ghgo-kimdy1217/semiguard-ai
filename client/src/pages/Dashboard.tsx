@@ -787,6 +787,15 @@ export default function Dashboard() {
   const [isChatAwayFromLatest, setIsChatAwayFromLatest] = useState(false);
   const previousChatMessageCountRef = useRef(0);
   const [unreadChatMessageCount, setUnreadChatMessageCount] = useState(0);
+  const historyPanelTriggerRef = useRef<HTMLButtonElement>(null);
+  const historyPanelCloseRef = useRef<HTMLButtonElement>(null);
+  const feedbackPanelTriggerRef = useRef<HTMLButtonElement>(null);
+  const feedbackPanelCloseRef = useRef<HTMLButtonElement>(null);
+  const manualPanelTriggerRef = useRef<HTMLButtonElement>(null);
+  const manualPanelCloseRef = useRef<HTMLButtonElement>(null);
+  const wasHistoryPanelOpenRef = useRef(false);
+  const wasFeedbackPanelOpenRef = useRef(false);
+  const wasManualPanelOpenRef = useRef(false);
   const wasChatOpenRef = useRef(isChatOpen);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(() =>
@@ -1512,6 +1521,36 @@ export default function Dashboard() {
       setUnreadChatMessageCount(count => count + addedMessageCount);
     }
   }, [chatMessages.length, isChatOpen]);
+
+  useEffect(() => {
+    const focusTimer = window.setTimeout(() => {
+      if (showHistoryPanel) {
+        wasHistoryPanelOpenRef.current = true;
+        historyPanelCloseRef.current?.focus();
+      } else if (wasHistoryPanelOpenRef.current) {
+        historyPanelTriggerRef.current?.focus();
+        wasHistoryPanelOpenRef.current = false;
+      }
+
+      if (showFeedbackHistoryPanel) {
+        wasFeedbackPanelOpenRef.current = true;
+        feedbackPanelCloseRef.current?.focus();
+      } else if (wasFeedbackPanelOpenRef.current) {
+        feedbackPanelTriggerRef.current?.focus();
+        wasFeedbackPanelOpenRef.current = false;
+      }
+
+      if (showManualRagModal) {
+        wasManualPanelOpenRef.current = true;
+        manualPanelCloseRef.current?.focus();
+      } else if (wasManualPanelOpenRef.current) {
+        manualPanelTriggerRef.current?.focus();
+        wasManualPanelOpenRef.current = false;
+      }
+    }, 0);
+
+    return () => window.clearTimeout(focusTimer);
+  }, [showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal]);
 
   const handleResetChat = async () => {
     try {
@@ -2868,6 +2907,7 @@ export default function Dashboard() {
               <div className="-mb-1 flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
                 <button
                   type="button"
+                  ref={historyPanelTriggerRef}
                   onClick={() => setShowHistoryPanel(!showHistoryPanel)}
                   aria-expanded={showHistoryPanel}
                   aria-controls="chat-history-panel"
@@ -2889,6 +2929,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
+                  ref={feedbackPanelTriggerRef}
                   onClick={() => {
                     setShowFeedbackHistoryPanel(previous => !previous);
                     setShowHistoryPanel(false);
@@ -2902,6 +2943,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
+                  ref={manualPanelTriggerRef}
                   onClick={() => setShowManualRagModal(true)}
                   aria-expanded={showManualRagModal}
                   aria-controls="chat-manual-panel"
@@ -2977,7 +3019,7 @@ export default function Dashboard() {
                         {lang === "ko" ? "매뉴얼·점검표의 텍스트를 등록하면, AI가 질문과 관련된 부분을 찾아 근거로 제시합니다. 민감정보는 제외해 주세요." : lang === "ja" ? "マニュアル・点検表のテキストを登録すると、AIが質問に関連する箇所を根拠として提示します。機密情報は除外してください。" : "Add manual or checklist text. The AI retrieves relevant sections as evidence. Exclude confidential information."}
                       </p>
                     </div>
-                    <button type="button" onClick={() => setShowManualRagModal(false)} className="text-sm shrink-0 hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "매뉴얼 등록 닫기" : lang === "ja" ? "マニュアル登録を閉じる" : "Close manual registration"}>✕</button>
+                    <button type="button" ref={manualPanelCloseRef} onClick={() => setShowManualRagModal(false)} className="text-sm shrink-0 hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "매뉴얼 등록 닫기" : lang === "ja" ? "マニュアル登録を閉じる" : "Close manual registration"}>✕</button>
                   </div>
                   <input
                     value={manualTitle}
@@ -3297,6 +3339,7 @@ export default function Dashboard() {
                       )}
                       <button
                         type="button"
+                        ref={historyPanelCloseRef}
                         onClick={() => setShowHistoryPanel(false)}
                         className="text-xs text-muted-foreground hover:opacity-70"
                         aria-label={lang === "ko" ? "상담 기록 닫기" : lang === "ja" ? "相談履歴を閉じる" : "Close consultation history"}>
@@ -3760,6 +3803,7 @@ export default function Dashboard() {
                   </div>
                   <button
                     type="button"
+                    ref={feedbackPanelCloseRef}
                     onClick={() => setShowFeedbackHistoryPanel(false)}
                     className="shrink-0 text-xs text-muted-foreground hover:opacity-70"
                     aria-label={lang === "ko" ? "피드백 이력 닫기" : lang === "ja" ? "フィードバック履歴を閉じる" : "Close feedback history"}>
