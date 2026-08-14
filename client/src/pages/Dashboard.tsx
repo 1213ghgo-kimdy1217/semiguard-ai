@@ -774,6 +774,7 @@ export default function Dashboard() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [historySessionFilter, setHistorySessionFilter] = useState<"all" | "pinned">("all");
   const [historySessionSort, setHistorySessionSort] = useState<"newest" | "oldest" | "title">("newest");
+  const [historySessionPage, setHistorySessionPage] = useState(1);
 
   const chatUtils = trpc.useUtils();
   const chatSessionsQuery = trpc.semiguard.getChatSessions.useQuery(undefined, { enabled: isChatOpen });
@@ -795,6 +796,16 @@ export default function Dashboard() {
       const timeB = new Date(b.updatedAt).getTime();
       return historySessionSort === "oldest" ? timeA - timeB : timeB - timeA;
     });
+  const historySessionPageSize = 8;
+  const historySessionTotalPages = Math.max(1, Math.ceil(filteredAndSortedChatSessions.length / historySessionPageSize));
+  const activeHistorySessionPage = Math.min(historySessionPage, historySessionTotalPages);
+  const paginatedChatSessions = filteredAndSortedChatSessions.slice(
+    (activeHistorySessionPage - 1) * historySessionPageSize,
+    activeHistorySessionPage * historySessionPageSize,
+  );
+  useEffect(() => {
+    setHistorySessionPage(1);
+  }, [normalizedHistorySearch, historySessionFilter, historySessionSort]);
   const createSessionMutation = trpc.semiguard.createChatSession.useMutation();
   const saveMessageMutation = trpc.semiguard.saveChatMessage.useMutation();
   const saveFeedbackMutation = trpc.semiguard.saveChatFeedback.useMutation();
@@ -2801,7 +2812,7 @@ export default function Dashboard() {
                           </p>
                         );
                       }
-                      return filtered.map((session) => (
+                      return paginatedChatSessions.map((session) => (
                       <div
                         key={session.id}
                         onClick={async () => {
@@ -2985,6 +2996,32 @@ export default function Dashboard() {
                     </p>
                   )}
                 </div>
+                {filteredAndSortedChatSessions.length > historySessionPageSize && (
+                  <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2" style={{ borderColor: th.border }}>
+                    <button
+                      type="button"
+                      onClick={() => setHistorySessionPage(Math.max(1, activeHistorySessionPage - 1))}
+                      disabled={activeHistorySessionPage === 1}
+                      className="rounded border px-2 py-1 text-[10px] font-bold disabled:cursor-not-allowed disabled:opacity-35"
+                      style={{ borderColor: th.border2, color: th.textMuted }}
+                      aria-label={lang === "ko" ? "상담 기록 이전 페이지" : lang === "ja" ? "相談履歴の前のページ" : "Previous consultation history page"}>
+                      {lang === "ko" ? "이전" : lang === "ja" ? "前へ" : "Previous"}
+                    </button>
+                    <span className="text-[10px] font-medium" style={{ color: th.textMuted }}>
+                      {activeHistorySessionPage} / {historySessionTotalPages}
+                      <span className="ml-1 text-[9px]">({filteredAndSortedChatSessions.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : ""})</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setHistorySessionPage(Math.min(historySessionTotalPages, activeHistorySessionPage + 1))}
+                      disabled={activeHistorySessionPage === historySessionTotalPages}
+                      className="rounded border px-2 py-1 text-[10px] font-bold disabled:cursor-not-allowed disabled:opacity-35"
+                      style={{ borderColor: th.border2, color: th.textMuted }}
+                      aria-label={lang === "ko" ? "상담 기록 다음 페이지" : lang === "ja" ? "相談履歴の次のページ" : "Next consultation history page"}>
+                      {lang === "ko" ? "다음" : lang === "ja" ? "次へ" : "Next"}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
