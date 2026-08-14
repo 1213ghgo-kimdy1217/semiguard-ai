@@ -24,4 +24,10 @@ describe("mobile chatbot and localization contract", () => {
     expect(dashboardSource).toContain("回答の生成中にエラーが発生しました");
     expect(dashboardSource).toContain("回答を再生成できませんでした");
   });
+
+  it("offers a safe retry action after a temporary chat service failure", () => {
+    expect(dashboardSource).toContain("recoveryPrompt");
+    expect(dashboardSource).toContain("같은 질문 다시 시도");
+    expect(dashboardSource).toContain("Try the same question again");
+  });
 });

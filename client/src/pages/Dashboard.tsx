@@ -785,7 +785,7 @@ export default function Dashboard() {
   type ManualSource = { label: number; documentId: number; documentTitle: string; chunkIndex: number; content: string };
   const [activeManualSource, setActiveManualSource] = useState<ManualSource | null>(null);
 
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[] }>>([
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string }>>([
     {
       role: "assistant",
       content: lang === "ko"
@@ -973,7 +973,18 @@ export default function Dashboard() {
         feedbackHistory,
       });
       const aiReply = res.reply;
-      setChatMessages(prev => [...prev, { role: "assistant", content: aiReply, timestamp: Date.now(), manualSources: res.manualSources ?? [] }]);
+      const isTemporaryServiceReply = lang === "ko"
+        ? aiReply.includes("AI 상담 연결 중 일시적인 지연")
+        : lang === "ja"
+          ? aiReply.includes("AI相談への接続中に一時的な遅延")
+          : aiReply.includes("Temporary delay connecting to AI consultation");
+      setChatMessages(prev => [...prev, {
+        role: "assistant",
+        content: aiReply,
+        timestamp: Date.now(),
+        manualSources: res.manualSources ?? [],
+        recoveryPrompt: isTemporaryServiceReply ? text.trim() : undefined,
+      }]);
 
       if (activeSessionId !== null) {
         saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "assistant", content: aiReply }).catch(err => console.error("Failed to save AI message:", err));
@@ -990,6 +1001,7 @@ export default function Dashboard() {
               ? "回答の生成中にエラーが発生しました。しばらくしてからもう一度お試しください。"
               : "Error generating response. Please try again.",
           timestamp: Date.now(),
+          recoveryPrompt: text.trim(),
         },
       ]);
     } finally {
@@ -3031,6 +3043,16 @@ export default function Dashboard() {
                         </div>
                       )}
                       <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                      {msg.role === "assistant" && msg.recoveryPrompt && (
+                        <button
+                          type="button"
+                          onClick={() => void handleSendChatMessage(msg.recoveryPrompt)}
+                          disabled={isChatLoading}
+                          className="mt-3 inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:opacity-85 disabled:opacity-45"
+                          style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", background: "oklch(0.65 0.18 200 / 0.12)", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.16 220)" }}>
+                          ↻ {lang === "ko" ? "같은 질문 다시 시도" : lang === "ja" ? "同じ質問をもう一度試す" : "Try the same question again"}
+                        </button>
+                      )}
                       {msg.role === "assistant" && msg.manualSources && msg.manualSources.length > 0 && (
                         <div className="mt-3 border-t pt-2" style={{ borderColor: th.border2 }}>
                           <p className="mb-1.5 text-[9px] font-bold" style={{ color: th.textMuted }}>
