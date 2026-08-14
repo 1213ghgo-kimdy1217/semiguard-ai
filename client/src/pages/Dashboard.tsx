@@ -776,6 +776,8 @@ export default function Dashboard() {
   const [showHistoryPanel, setShowHistoryPanel] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("history") === "open",
   );
+  const [loadingHistorySessionId, setLoadingHistorySessionId] = useState<number | null>(null);
+  const [historySessionLoadError, setHistorySessionLoadError] = useState<{ id: number; title: string } | null>(null);
   const [showManualRagModal, setShowManualRagModal] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("manual") === "open",
   );
@@ -1181,6 +1183,36 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Consultation export failed:", error);
       toast.error(lang === "ko" ? "상담 기록을 내보내지 못했습니다." : lang === "ja" ? "相談履歴をエクスポートできませんでした。" : "Could not export the consultation history.");
+    }
+  };
+
+  const loadHistorySession = async (session: { id: number; title: string }) => {
+    if (loadingHistorySessionId === session.id) return;
+    setLoadingHistorySessionId(session.id);
+    setHistorySessionLoadError(null);
+    try {
+      const res = await chatUtils.client.semiguard.getChatMessages.query({ sessionId: session.id });
+      setActiveSessionId(session.id);
+      setShowHistoryPanel(false);
+      if (res && res.length > 0) {
+        setChatMessages(res.map(message => ({
+          role: message.role as "user" | "assistant",
+          content: message.content,
+          timestamp: message.createdAt ? new Date(message.createdAt).getTime() : Date.now(),
+        })));
+      } else {
+        setChatMessages([{
+          role: "assistant",
+          content: lang === "ko" ? "저장된 대화가 없는 세션입니다." : lang === "ja" ? "保存された会話のないセッションです。" : "Empty session.",
+          timestamp: Date.now(),
+        }]);
+      }
+    } catch (error) {
+      console.error("Failed to load session messages:", error);
+      setHistorySessionLoadError({ id: session.id, title: session.title });
+      toast.error(lang === "ko" ? "상담 기록을 열지 못했습니다." : lang === "ja" ? "相談履歴を開けませんでした。" : "Could not open the consultation history.");
+    } finally {
+      setLoadingHistorySessionId(null);
     }
   };
 
@@ -3112,11 +3144,38 @@ export default function Dashboard() {
                     </div>
                   </div>
                 )}
+                {historySessionLoadError && (
+                  <div className="mb-2 rounded-lg border p-2 text-[10px]" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", background: "oklch(0.65 0.20 25 / 0.08)", color: th.textMuted }}>
+                    <p>⚠️ {lang === "ko" ? `“${historySessionLoadError.title}” 기록을 열지 못했습니다.` : lang === "ja" ? `「${historySessionLoadError.title}」の履歴を開けませんでした。` : `Could not open “${historySessionLoadError.title}”.`}</p>
+                    <div className="mt-1.5 flex justify-end gap-1.5">
+                      <button type="button" onClick={() => void loadHistorySession(historySessionLoadError)} disabled={loadingHistorySessionId === historySessionLoadError.id} className="rounded border px-2 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
+                        ↻ {loadingHistorySessionId === historySessionLoadError.id ? (lang === "ko" ? "다시 여는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                      </button>
+                      <button type="button" onClick={() => setHistorySessionLoadError(null)} className="rounded px-2 py-1 text-[9px]" style={{ color: th.textMuted }}>
+                        {lang === "ko" ? "닫기" : lang === "ja" ? "閉じる" : "Dismiss"}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                   {chatSessionsQuery.isLoading || isHistorySearchPending || (debouncedHistorySearch.length > 0 && searchChatSessionsQuery.isLoading) ? (
                     <div className="flex items-center justify-center py-8 text-xs text-muted-foreground gap-2">
                       <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>{isHistorySearchPending || debouncedHistorySearch.length > 0 ? (lang === "ko" ? "기록 검색 중..." : lang === "ja" ? "履歴を検索中..." : "Searching history...") : (lang === "ko" ? "기록 불러오는 중..." : lang === "ja" ? "履歴を読み込んでいます..." : "Loading history...")}</span>
+                    </div>
+                  ) : chatSessionsQuery.isError ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" style={{ color: th.textMuted }}>
+                      <p>⚠️ {lang === "ko" ? "상담 기록을 불러오지 못했습니다." : lang === "ja" ? "相談履歴を読み込めませんでした。" : "Could not load consultation history."}</p>
+                      <button type="button" onClick={() => void chatSessionsQuery.refetch()} disabled={chatSessionsQuery.isFetching} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.22 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                        ↻ {chatSessionsQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                      </button>
+                    </div>
+                  ) : normalizedHistorySearch && searchChatSessionsQuery.isError ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" style={{ color: th.textMuted }}>
+                      <p>⚠️ {lang === "ko" ? "상담 기록 검색 결과를 불러오지 못했습니다." : lang === "ja" ? "相談履歴の検索結果を読み込めませんでした。" : "Could not load consultation search results."}</p>
+                      <button type="button" onClick={() => void searchChatSessionsQuery.refetch()} disabled={searchChatSessionsQuery.isFetching} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.22 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                        ↻ {searchChatSessionsQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                      </button>
                     </div>
                   ) : chatSessionsQuery.data && chatSessionsQuery.data.length > 0 ? (
                     (() => {
@@ -3133,31 +3192,7 @@ export default function Dashboard() {
                       return paginatedChatSessions.map((session) => (
                       <div
                         key={session.id}
-                        onClick={async () => {
-                          setActiveSessionId(session.id);
-                          setShowHistoryPanel(false);
-                          // 해당 세션 메시지 조회
-                          try {
-                            const res = await chatUtils.client.semiguard.getChatMessages.query({ sessionId: session.id });
-                            if (res && res.length > 0) {
-                              setChatMessages(res.map(m => ({
-                                role: m.role as "user" | "assistant",
-                                content: m.content,
-                                timestamp: m.createdAt ? new Date(m.createdAt).getTime() : Date.now()
-                              })));
-                            } else {
-                              setChatMessages([
-                                {
-                                  role: "assistant",
-                                  content: lang === "ko" ? "저장된 대화가 없는 세션입니다." : lang === "ja" ? "保存された会話のないセッションです。" : "Empty session.",
-                                  timestamp: Date.now(),
-                                },
-                              ]);
-                            }
-                          } catch (err) {
-                            console.error("Failed to load session messages:", err);
-                          }
-                        }}
+                        onClick={() => void loadHistorySession(session)}
                         className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex items-center justify-between ${
                           activeSessionId === session.id ? "ring-2 ring-sky-500 shadow-sm" : ""
                         }`}
