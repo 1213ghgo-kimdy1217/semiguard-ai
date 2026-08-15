@@ -12,17 +12,18 @@ import { lazy, Suspense, useEffect, useState } from "react";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 type LoadingLanguage = "ko" | "en" | "ja";
+type LoadingCopy = { title: string; description: string; slowDescription: string; retry: string; context: string };
 
-const dashboardLoadingCopy: Record<LoadingLanguage, { title: string; description: string; slowDescription: string; retry: string }> = {
-  ko: { title: "SemiGuard AI 대시보드를 준비하고 있습니다.", description: "대시보드 데이터를 불러오는 중입니다…", slowDescription: "로딩이 평소보다 오래 걸리고 있습니다. 계속되면 새로고침해 주세요.", retry: "지금 새로고침" },
-  en: { title: "Preparing the SemiGuard AI dashboard…", description: "Loading dashboard data…", slowDescription: "Loading is taking longer than usual. Refresh if it continues.", retry: "Refresh now" },
-  ja: { title: "SemiGuard AIダッシュボードを準備しています。", description: "ダッシュボードのデータを読み込み中です…", slowDescription: "読み込みに通常より時間がかかっています。続く場合は更新してください。", retry: "今すぐ更新" },
+const dashboardLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
+  ko: { title: "SemiGuard AI 대시보드를 준비하고 있습니다.", description: "대시보드 데이터를 불러오는 중입니다…", slowDescription: "로딩이 평소보다 오래 걸리고 있습니다. 계속되면 새로고침해 주세요.", retry: "지금 새로고침", context: "반도체 장비 예지안전 시스템" },
+  en: { title: "Preparing the SemiGuard AI dashboard…", description: "Loading dashboard data…", slowDescription: "Loading is taking longer than usual. Refresh if it continues.", retry: "Refresh now", context: "Semiconductor equipment predictive safety system" },
+  ja: { title: "SemiGuard AIダッシュボードを準備しています。", description: "ダッシュボードのデータを読み込み中です…", slowDescription: "読み込みに通常より時間がかかっています。続く場合は更新してください。", retry: "今すぐ更新", context: "半導体装置の予知安全システム" },
 };
 
-const authLoadingCopy: Record<LoadingLanguage, { title: string; description: string; slowDescription: string; retry: string }> = {
-  ko: { title: "보안 로그인 상태를 확인하고 있습니다.", description: "세션 정보를 안전하게 불러오는 중입니다…", slowDescription: "확인이 평소보다 오래 걸리고 있습니다. 계속되면 새로고침해 주세요.", retry: "지금 새로고침" },
-  en: { title: "Verifying your secure sign-in…", description: "Loading your session safely…", slowDescription: "Verification is taking longer than usual. Refresh if it continues.", retry: "Refresh now" },
-  ja: { title: "安全なログイン状態を確認しています。", description: "セッション情報を安全に読み込み中です…", slowDescription: "確認に通常より時間がかかっています。続く場合は更新してください。", retry: "今すぐ更新" },
+const authLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
+  ko: { title: "보안 로그인 상태를 확인하고 있습니다.", description: "세션 정보를 안전하게 불러오는 중입니다…", slowDescription: "확인이 평소보다 오래 걸리고 있습니다. 계속되면 새로고침해 주세요.", retry: "지금 새로고침", context: "반도체 장비 예지안전 시스템" },
+  en: { title: "Verifying your secure sign-in…", description: "Loading your session safely…", slowDescription: "Verification is taking longer than usual. Refresh if it continues.", retry: "Refresh now", context: "Semiconductor equipment predictive safety system" },
+  ja: { title: "安全なログイン状態を確認しています。", description: "セッション情報を安全に読み込み中です…", slowDescription: "確認に通常より時間がかかっています。続く場合は更新してください。", retry: "今すぐ更新", context: "半導体装置の予知安全システム" },
 };
 
 function getDashboardLoadingLanguage(): LoadingLanguage {
@@ -32,6 +33,20 @@ function getDashboardLoadingLanguage(): LoadingLanguage {
   } catch {
     return "ko";
   }
+}
+
+function LoadingBrand({ context }: Pick<LoadingCopy, "context">) {
+  return (
+    <div className="mb-2 flex items-center gap-3" aria-label={`SemiGuard AI · ${context}`}>
+      <div aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/60 bg-cyan-300/10 text-sm font-black text-cyan-200 shadow-[0_0_24px_rgba(103,232,249,0.16)]">
+        SG
+      </div>
+      <div className="min-w-0 text-left">
+        <p className="text-sm font-bold tracking-wide text-slate-100">SemiGuard AI</p>
+        <p className="mt-0.5 text-[11px] font-medium text-cyan-100/70">{context}</p>
+      </div>
+    </div>
+  );
 }
 
 function DashboardModuleLoading() {
@@ -45,7 +60,8 @@ function DashboardModuleLoading() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 to-slate-800 px-6 text-center" role="status" aria-live="polite">
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" />
+      <LoadingBrand context={copy.context} />
+      <div aria-hidden="true" className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" />
       <p className="text-sm font-semibold text-slate-100">{copy.title}</p>
       <p className="text-xs text-slate-400">{copy.description}</p>
       {isSlowLoading && (
@@ -71,13 +87,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const authCopy = authLoadingCopy[getDashboardLoadingLanguage()];
 
   useEffect(() => {
-    // loading이 false가 되면 초기화 완료
     if (!loading) {
       setIsInitialized(true);
     }
   }, [loading]);
 
-  // 초기화 완료 후 user 없으면 로그인 페이지로
   useEffect(() => {
     if (isInitialized && !user) {
       setLocation("/login");
@@ -93,10 +107,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(timeoutId);
   }, [loading, isInitialized]);
 
-  // 로딩 중이거나 초기화 중
   if (loading || !isInitialized) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 to-slate-800 px-6 text-center" role="status" aria-live="polite">
+        <LoadingBrand context={authCopy.context} />
         <div aria-hidden="true" className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" />
         <p className="text-sm font-semibold text-slate-100">{authCopy.title}</p>
         <p className="text-xs text-slate-400">{authCopy.description}</p>
@@ -115,7 +129,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // user가 없으면 null 반환 (로그인 페이지로 이동 중)
   if (!user) {
     return null;
   }
