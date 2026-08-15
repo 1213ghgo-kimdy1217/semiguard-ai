@@ -2597,7 +2597,8 @@ export default function Dashboard() {
               <button
                 onClick={() => setLlmAnalysis(null)}
                 className="w-5 h-5 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70"
-                style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}>
+                style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}
+                aria-label={lang === "ko" ? "AI 분석 패널 닫기" : lang === "ja" ? "AI分析パネルを閉じる" : "Close AI analysis panel"}>
                 ✕
               </button>
             </div>
