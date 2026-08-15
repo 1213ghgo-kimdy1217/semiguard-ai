@@ -384,7 +384,7 @@ export function Login() {
           </div>
 
           {!isOauthEnabled && (
-            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-xs leading-relaxed text-cyan-100" role="status">
+            <div id="preview-social-login-notice" className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-xs leading-relaxed text-cyan-100" role="status">
               {loginUi.previewSocialNotice}
             </div>
           )}
@@ -396,6 +396,7 @@ export function Login() {
               type="button"
               onClick={() => handleSocialLogin(startGoogleLogin)}
               disabled={!isOauthEnabled}
+              aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`w-full h-12 justify-start gap-3 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
@@ -413,6 +414,7 @@ export function Login() {
               type="button"
               onClick={() => handleSocialLogin(startNaverLogin)}
               disabled={!isOauthEnabled}
+              aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`w-full h-12 justify-start gap-3 px-4 bg-[#03C75A] hover:bg-[#02B350] text-white font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
@@ -427,6 +429,7 @@ export function Login() {
               type="button"
               onClick={() => handleSocialLogin(startKakaoLogin)}
               disabled={!isOauthEnabled}
+              aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`w-full h-12 justify-start gap-3 px-4 bg-[#FEE500] hover:bg-[#F2DA00] text-[#191600] font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
