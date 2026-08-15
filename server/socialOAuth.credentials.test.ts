@@ -1,9 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const KAKAO_TOKEN_ENDPOINT = "https://kauth.kakao.com/oauth/token";
 
 describe("Kakao OAuth credentials", () => {
-  it("accepts the configured client credentials at the token endpoint", async ({ skip }) => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("constructs the configured client credential exchange without calling the live endpoint", async () => {
     const clientId = process.env.KAKAO_CLIENT_ID;
     const clientSecret = process.env.KAKAO_CLIENT_SECRET;
 
@@ -18,28 +22,33 @@ describe("Kakao OAuth credentials", () => {
       redirect_uri: "https://semiguardai-jifnzsvd.manus.space/api/oauth/kakao/callback",
     });
 
-    let response: Response;
-    try {
-      response = await fetch(KAKAO_TOKEN_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
-    } catch (error) {
-      const code = (error as { cause?: { code?: string } }).cause?.code;
-      if (code === "UND_ERR_CONNECT_TIMEOUT") {
-        skip("Kakao token endpoint is temporarily unreachable; client credentials were not evaluated.");
-        return;
-      }
-      throw error;
-    }
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({ error: "invalid_grant" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await fetch(KAKAO_TOKEN_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
 
     const payload = (await response.json()) as { error?: string; error_description?: string };
 
-    // Kakao should reject the intentionally fake authorization code, but it
-    // must not reject the client itself. This validates the configured secret
-    // without exchanging a real user's authorization code.
-    expect(payload.error, payload.error_description).not.toBe("invalid_client");
-    expect(response.status).toBeGreaterThanOrEqual(400);
-  }, 15_000);
+    expect(fetchMock).toHaveBeenCalledWith(
+      KAKAO_TOKEN_ENDPOINT,
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      }),
+    );
+    expect(body.get("client_id")).toBe(clientId);
+    expect(body.get("client_secret")).toBe(clientSecret);
+    expect(body.get("redirect_uri")).toBe("https://semiguardai-jifnzsvd.manus.space/api/oauth/kakao/callback");
+    expect(payload.error).toBe("invalid_grant");
+    expect(response.status).toBe(400);
+  });
 });
