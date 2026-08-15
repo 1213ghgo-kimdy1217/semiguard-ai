@@ -2990,6 +2990,7 @@ export default function Dashboard() {
           </button>
           {/* 음소거 토글 */}
           <button
+            type="button"
             onClick={() => {
               setMuted(m => {
                 const next = !m;
@@ -3036,6 +3037,7 @@ export default function Dashboard() {
           )}
           {/* 데모 자동 실행 토글 */}
           <button
+            type="button"
             onClick={() => setDemoRunning(r => !r)}
             title={demoRunning ? (lang === "ko" ? "데모 중지" : lang === "ja" ? "デモを停止" : "Stop Demo") : (lang === "ko" ? "데모 자동 실행" : lang === "ja" ? "デモ自動実行" : "Auto Demo")}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95"
@@ -3066,6 +3068,7 @@ export default function Dashboard() {
           )}
           {/* PDF 내보내기 버튼 */}
           <button
+            type="button"
             id="btn-export-pdf"
             disabled={pdfExporting}
             onClick={async () => {
@@ -3119,6 +3122,7 @@ export default function Dashboard() {
           </button>
           {/* 로그아웃 버튼 */}
           <button
+            type="button"
             id="btn-logout"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}

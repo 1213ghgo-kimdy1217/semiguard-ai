@@ -29,6 +29,13 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('localStorage.setItem("semiguard_muted"');
   });
 
+  it("declares header actions as non-submitting buttons", () => {
+    expect(dashboardSource).toContain('type="button"\n            onClick={() => {');
+    expect(dashboardSource).toContain('type="button"\n            onClick={() => setDemoRunning(r => !r)}');
+    expect(dashboardSource).toContain('type="button"\n            id="btn-export-pdf"');
+    expect(dashboardSource).toContain('type="button"\n            id="btn-logout"');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
