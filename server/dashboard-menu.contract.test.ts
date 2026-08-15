@@ -125,6 +125,12 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('<button type="button" onClick={() => setShowAiHistory(false)}');
   });
 
+  it("connects the AI analysis history trigger to its expandable region", () => {
+    expect(dashboardSource).toContain('aria-controls="ai-analysis-history-panel"');
+    expect(dashboardSource).toContain('aria-expanded={showAiHistory}');
+    expect(dashboardSource).toContain('id="ai-analysis-history-panel" role="region" aria-labelledby="ai-analysis-history-title"');
+  });
+
   it("exposes consultation and feedback pagination context to assistive technology", () => {
     expect(dashboardSource).toContain('role="navigation" aria-label={lang === "ko" ? "상담 기록 페이지 탐색"');
     expect(dashboardSource).toContain('`상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지`');

@@ -2750,7 +2750,7 @@ export default function Dashboard() {
 
       {/* ── AI 분석 히스토리 패널 ── */}
       {showAiHistory && (
-        <div className="fixed bottom-6 left-4 sm:left-6 z-[490] w-[calc(100vw-2rem)] max-w-80 rounded-2xl shadow-2xl overflow-hidden"
+        <div id="ai-analysis-history-panel" role="region" aria-labelledby="ai-analysis-history-title" className="fixed bottom-6 left-4 sm:left-6 z-[490] w-[calc(100vw-2rem)] max-w-80 rounded-2xl shadow-2xl overflow-hidden"
           style={{
             background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
             border: "1px solid oklch(0.75 0.18 200 / 0.35)",
@@ -2760,7 +2760,7 @@ export default function Dashboard() {
           <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: "oklch(0.75 0.18 200 / 0.20)", background: "oklch(0.75 0.18 200 / 0.06)" }}>
             <div className="flex items-center gap-2">
               <span className="text-sm">📋</span>
-              <span className="text-xs font-bold" style={{ color: "oklch(0.75 0.18 200)" }}>
+              <span id="ai-analysis-history-title" className="text-xs font-bold" style={{ color: "oklch(0.75 0.18 200)" }}>
                 {lang === "ko" ? "AI 분석 히스토리 (최근 5건)" : lang === "ja" ? "AI分析履歴（直近5件）" : "AI Analysis History (Last 5)"}
               </span>
             </div>
@@ -2812,6 +2812,9 @@ export default function Dashboard() {
       {/* AI 히스토리 토글 버튼 */}
       {!showAiHistory && (
         <button
+          type="button"
+          aria-controls="ai-analysis-history-panel"
+          aria-expanded={showAiHistory}
           onClick={() => setShowAiHistory(true)}
           className="fixed bottom-6 left-4 sm:left-6 z-[490] flex items-center gap-2 px-3 py-2 rounded-xl shadow-lg text-xs font-bold border transition-all duration-200 hover:opacity-90 active:scale-95"
           style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", borderColor: "oklch(0.75 0.18 200 / 0.40)", color: "oklch(0.75 0.18 200)", bottom: isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined }}>
