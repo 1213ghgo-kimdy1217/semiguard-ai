@@ -2739,25 +2739,25 @@ export default function Dashboard() {
                 {lang === "ko" ? "EN" : lang === "en" ? "日本語" : "한국어"}
               </button>
               <button type="button" onClick={() => setIsDark(d => { const next = !d; try { localStorage.setItem("semiguard_theme", next ? "dark" : "light"); } catch {} return next; })} className="min-h-11 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: isDark ? "oklch(0.35 0.01 240)" : "oklch(0.75 0.08 80 / 0.5)", color: isDark ? "oklch(0.65 0.15 60)" : "oklch(0.40 0.08 80)", background: isDark ? "oklch(0.15 0.01 240)" : "oklch(0.92 0.04 80 / 0.3)" }}>
-                {isDark ? "☀️" : "🌙"} {isDark ? (lang === "ko" ? "라이트" : "Light") : (lang === "ko" ? "다크" : "Dark")}
+                {isDark ? "☀️" : "🌙"} {isDark ? (lang === "ko" ? "라이트" : lang === "ja" ? "ライト" : "Light") : (lang === "ko" ? "다크" : lang === "ja" ? "ダーク" : "Dark")}
               </button>
               <button type="button" onClick={() => { setMuted(m => { const next = !m; mutedRef.current = next; try { localStorage.setItem("semiguard_muted", String(next)); } catch {} return next; }); }} className="min-h-11 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: muted ? "oklch(0.35 0.01 240)" : "oklch(0.65 0.18 200 / 0.4)", color: muted ? "oklch(0.45 0.01 240)" : "oklch(0.65 0.18 200)", background: muted ? (isDark ? "oklch(0.15 0.01 240)" : "oklch(0.88 0.01 240)") : "oklch(0.65 0.18 200 / 0.08)" }}>
-                {muted ? "🔕" : "🔔"} {muted ? (lang === "ko" ? "음소거 해제" : "Unmute") : (lang === "ko" ? "음소거" : "Mute")}
+                {muted ? "🔕" : "🔔"} {muted ? (lang === "ko" ? "음소거 해제" : lang === "ja" ? "ミュート解除" : "Unmute") : (lang === "ko" ? "음소거" : lang === "ja" ? "ミュート" : "Mute")}
               </button>
             </div>
             {!muted && (
               <div className="rounded-xl border p-3 mb-3" style={{ borderColor: th.border2, background: th.bgCard2 }}>
-                <div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold">{lang === "ko" ? "볼륨" : "Volume"}</span><span className="text-xs font-mono" style={{ color: th.accent }}>{Math.round(volume * 100)}%</span></div>
-                <input type="range" min={0} max={1} step={0.05} value={volume} aria-label={lang === "ko" ? "경고음 볼륨" : "Alert volume"} onChange={e => { const v = parseFloat(e.target.value); setVolume(v); volumeRef.current = v; try { localStorage.setItem("semiguard_volume", String(v)); } catch {} }} className="w-full accent-cyan-400 cursor-pointer" />
+                <div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold">{lang === "ko" ? "볼륨" : lang === "ja" ? "音量" : "Volume"}</span><span className="text-xs font-mono" style={{ color: th.accent }}>{Math.round(volume * 100)}%</span></div>
+                <input type="range" min={0} max={1} step={0.05} value={volume} aria-label={lang === "ko" ? "경고음 볼륨" : lang === "ja" ? "警告音量" : "Alert volume"} onChange={e => { const v = parseFloat(e.target.value); setVolume(v); volumeRef.current = v; try { localStorage.setItem("semiguard_volume", String(v)); } catch {} }} className="w-full accent-cyan-400 cursor-pointer" />
               </div>
             )}
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 mt-5">{lang === "ko" ? "시연 및 보고서" : lang === "ja" ? "デモとレポート" : "Demo & report"}</p>
             <button type="button" onClick={() => setDemoRunning(r => !r)} className="w-full min-h-11 flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: demoRunning ? "oklch(0.65 0.20 30 / 0.6)" : th.border2, color: demoRunning ? "oklch(0.75 0.20 30)" : th.textMuted, background: demoRunning ? "oklch(0.65 0.20 30 / 0.12)" : th.bgCard2 }}>
-              <span>{demoRunning ? "■" : "▶"} {demoRunning ? (lang === "ko" ? "데모 중지" : "Stop demo") : (lang === "ko" ? "데모 자동 실행" : "Auto demo")}</span><span className="text-[10px]">{demoRunning ? `${demoSpeed}s` : ""}</span>
+              <span>{demoRunning ? "■" : "▶"} {demoRunning ? (lang === "ko" ? "데모 중지" : lang === "ja" ? "デモを停止" : "Stop demo") : (lang === "ko" ? "데모 자동 실행" : lang === "ja" ? "デモ自動実行" : "Auto demo")}</span><span className="text-[10px]">{demoRunning ? `${demoSpeed}s` : ""}</span>
             </button>
-            {demoRunning && <div className="rounded-xl border p-3 mt-2" style={{ borderColor: th.border2, background: th.bgCard2 }}><div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold">{lang === "ko" ? "데모 간격" : "Demo interval"}</span><span className="text-xs font-mono" style={{ color: "oklch(0.75 0.20 30)" }}>{demoSpeed}s</span></div><input type="range" min={1} max={10} step={1} value={demoSpeed} onChange={e => setDemoSpeed(Number(e.target.value))} aria-label={lang === "ko" ? "데모 간격" : "Demo interval"} className="w-full accent-orange-400 cursor-pointer" /></div>}
-            <button type="button" onClick={() => document.getElementById("btn-export-pdf")?.click()} className="w-full min-h-11 mt-2 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: th.border2, color: th.accent, background: th.bgCard2 }}>📄 {lang === "ko" ? "PDF 보고서 내보내기" : "Export PDF report"}</button>
-            <div className="border-t mt-5 pt-5" style={{ borderColor: th.border }}><button type="button" onClick={() => document.getElementById("btn-logout")?.click()} className="w-full min-h-11 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: "oklch(0.65 0.20 30 / 0.6)", color: "oklch(0.75 0.20 30)", background: "oklch(0.65 0.20 30 / 0.12)" }}>🚪 {lang === "ko" ? "로그아웃" : "Logout"}</button></div>
+            {demoRunning && <div className="rounded-xl border p-3 mt-2" style={{ borderColor: th.border2, background: th.bgCard2 }}><div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold">{lang === "ko" ? "데모 간격" : lang === "ja" ? "デモ間隔" : "Demo interval"}</span><span className="text-xs font-mono" style={{ color: "oklch(0.75 0.20 30)" }}>{demoSpeed}s</span></div><input type="range" min={1} max={10} step={1} value={demoSpeed} onChange={e => setDemoSpeed(Number(e.target.value))} aria-label={lang === "ko" ? "데모 간격" : lang === "ja" ? "デモ間隔" : "Demo interval"} className="w-full accent-orange-400 cursor-pointer" /></div>}
+            <button type="button" onClick={() => document.getElementById("btn-export-pdf")?.click()} className="w-full min-h-11 mt-2 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: th.border2, color: th.accent, background: th.bgCard2 }}>📄 {lang === "ko" ? "PDF 보고서 내보내기" : lang === "ja" ? "PDFレポートを出力" : "Export PDF report"}</button>
+            <div className="border-t mt-5 pt-5" style={{ borderColor: th.border }}><button type="button" onClick={() => document.getElementById("btn-logout")?.click()} className="w-full min-h-11 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: "oklch(0.65 0.20 30 / 0.6)", color: "oklch(0.75 0.20 30)", background: "oklch(0.65 0.20 30 / 0.12)" }}>🚪 {lang === "ko" ? "로그아웃" : lang === "ja" ? "ログアウト" : "Logout"}</button></div>
           </aside>
         </>
       )}
@@ -2815,7 +2815,7 @@ export default function Dashboard() {
               try { localStorage.setItem("semiguard_theme", next ? "dark" : "light"); } catch {}
               return next;
             })}
-            title={isDark ? (lang === "ko" ? "라이트 모드" : "Light Mode") : (lang === "ko" ? "다크 모드" : "Dark Mode")}
+            title={isDark ? (lang === "ko" ? "라이트 모드" : lang === "ja" ? "ライトモード" : "Light Mode") : (lang === "ko" ? "다크 모드" : lang === "ja" ? "ダークモード" : "Dark Mode")}
             className="hidden w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base"
             style={{
               borderColor: isDark ? "oklch(0.35 0.01 240)" : "oklch(0.75 0.08 80 / 0.5)",
@@ -2834,7 +2834,7 @@ export default function Dashboard() {
                 return next;
               });
             }}
-            title={muted ? (lang === "ko" ? "소리 켜기" : "Unmute") : (lang === "ko" ? "소리 끄기" : "Mute")}
+            title={muted ? (lang === "ko" ? "소리 켜기" : lang === "ja" ? "音声をオン" : "Unmute") : (lang === "ko" ? "소리 끄기" : lang === "ja" ? "音声をオフ" : "Mute")}
             className="hidden w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base"
             style={{
               borderColor: muted ? "oklch(0.35 0.01 240)" : "oklch(0.65 0.18 200 / 0.4)",
@@ -2845,7 +2845,7 @@ export default function Dashboard() {
           </button>
           {/* 볼륨 슬라이더 - 모바일 숨김 */}
           {!muted && !isMobile && (
-            <div className="hidden flex items-center gap-1.5" title={lang === "ko" ? "볼륨 조절" : "Volume"}>
+            <div className="hidden flex items-center gap-1.5" title={lang === "ko" ? "볼륨 조절" : lang === "ja" ? "音量調節" : "Volume"}>
               <span style={{ fontSize: 11, color: "oklch(0.50 0.01 240)" }}>🔉</span>
               <input
                 type="range"
@@ -2873,7 +2873,7 @@ export default function Dashboard() {
           {/* 데모 자동 실행 토글 */}
           <button
             onClick={() => setDemoRunning(r => !r)}
-            title={demoRunning ? (lang === "ko" ? "데모 중지" : "Stop Demo") : (lang === "ko" ? "데모 자동 실행" : "Auto Demo")}
+            title={demoRunning ? (lang === "ko" ? "데모 중지" : lang === "ja" ? "デモを停止" : "Stop Demo") : (lang === "ko" ? "데모 자동 실행" : lang === "ja" ? "デモ自動実行" : "Auto Demo")}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95"
             style={{
               borderColor: demoRunning ? "oklch(0.65 0.20 30 / 0.6)" : "oklch(0.35 0.01 240)",
@@ -2881,16 +2881,16 @@ export default function Dashboard() {
               background: demoRunning ? "oklch(0.65 0.20 30 / 0.12)" : th.bgCard,
             }}>
             {demoRunning ? (
-              <><span className="inline-block w-2 h-2 rounded-sm" style={{ background: "oklch(0.75 0.20 30)", animation: "pulse 1s ease-in-out infinite" }} /> {lang === "ko" ? "데모 중" : "Demo ON"}</>
+              <><span className="inline-block w-2 h-2 rounded-sm" style={{ background: "oklch(0.75 0.20 30)", animation: "pulse 1s ease-in-out infinite" }} /> {lang === "ko" ? "데모 중" : lang === "ja" ? "デモ実行中" : "Demo ON"}</>
             ) : (
-              <><span>▶</span> {lang === "ko" ? "데모" : "Demo"}</>
+              <><span>▶</span> {lang === "ko" ? "데모" : lang === "ja" ? "デモ" : "Demo"}</>
             )}
           </button>
           {/* 데모 속도 슬라이더 - 모바일 숨김 */}
           {demoRunning && !isMobile && (
             <div className="hidden flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs"
               style={{ borderColor: th.border2, background: th.bgCard }}>
-              <span style={{ color: "oklch(0.50 0.01 240)" }}>{lang === "ko" ? "속도" : "Speed"}</span>
+              <span style={{ color: "oklch(0.50 0.01 240)" }}>{lang === "ko" ? "속도" : lang === "ja" ? "速度" : "Speed"}</span>
               <input
                 type="range" min={1} max={10} step={1}
                 value={demoSpeed}
@@ -2907,7 +2907,7 @@ export default function Dashboard() {
             onClick={async () => {
               // PDF 전용: 헤더/버튼 숨기고 센서+차트 영역만 캡처
               const captureEl = document.getElementById('pdf-capture-area');
-              if (!captureEl) { toast.error(lang === "ko" ? "캡처 영역을 찾을 수 없습니다." : "Capture area not found."); return; }
+              if (!captureEl) { toast.error(lang === "ko" ? "캡처 영역을 찾을 수 없습니다." : lang === "ja" ? "キャプチャ領域が見つかりません。" : "Capture area not found."); return; }
               const el = captureEl;
               setPdfExporting(true);
               try {
@@ -2940,15 +2940,15 @@ export default function Dashboard() {
                 });
                 pdf.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH);
                 pdf.save(`semiguard_report_${new Date().toISOString().slice(0,10)}.pdf`);
-                toast.success(lang === "ko" ? "PDF가 저장되었습니다." : "PDF saved successfully.");
+                toast.success(lang === "ko" ? "PDF가 저장되었습니다." : lang === "ja" ? "PDFを保存しました。" : "PDF saved successfully.");
               } catch (e) {
                 console.error('PDF export error:', e);
-                toast.error(lang === "ko" ? "PDF 내보내기 실패: " + String(e) : "PDF export failed: " + String(e));
+                toast.error(lang === "ko" ? "PDF 내보내기 실패: " + String(e) : lang === "ja" ? "PDF出力に失敗しました: " + String(e) : "PDF export failed: " + String(e));
               } finally {
                 setPdfExporting(false);
               }
             }}
-            title={lang === "ko" ? "PDF 내보내기" : "Export PDF"}
+            title={lang === "ko" ? "PDF 내보내기" : lang === "ja" ? "PDFを出力" : "Export PDF"}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
             style={{ borderColor: th.border2, color: "oklch(0.65 0.18 200)", background: th.bgCard }}>
             {pdfExporting ? <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid oklch(0.65 0.18 200)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "📄"} {lang === "ko" ? "PDF" : "PDF"}
@@ -2962,13 +2962,13 @@ export default function Dashboard() {
                 setLocation("/login");
               } catch (e) {
                 console.error("Logout error:", e);
-                toast.error(lang === "ko" ? "로그아웃 실패" : "Logout failed");
+                toast.error(lang === "ko" ? "로그아웃 실패" : lang === "ja" ? "ログアウトに失敗しました" : "Logout failed");
               }
             }}
-            title={lang === "ko" ? "로그아웃" : "Logout"}
+            title={lang === "ko" ? "로그아웃" : lang === "ja" ? "ログアウト" : "Logout"}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95"
             style={{ borderColor: "oklch(0.65 0.20 30 / 0.6)", color: "oklch(0.75 0.20 30)", background: "oklch(0.65 0.20 30 / 0.12)" }}>
-            🚪 {lang === "ko" ? "로그아웃" : "Logout"}
+            🚪 {lang === "ko" ? "로그아웃" : lang === "ja" ? "ログアウト" : "Logout"}
           </button>
         </div>
       </header>
