@@ -3018,6 +3018,8 @@ export default function Dashboard() {
                 max={1}
                 step={0.05}
                 value={volume}
+                aria-label={lang === "ko" ? "알림 음량" : lang === "ja" ? "通知音量" : "Alert volume"}
+                aria-valuetext={lang === "ko" ? `${Math.round(volume * 100)}퍼센트` : lang === "ja" ? `${Math.round(volume * 100)}パーセント` : `${Math.round(volume * 100)} percent`}
                 onChange={e => {
                   const v = parseFloat(e.target.value);
                   setVolume(v);
@@ -3060,6 +3062,8 @@ export default function Dashboard() {
               <input
                 type="range" min={1} max={10} step={1}
                 value={demoSpeed}
+                aria-label={lang === "ko" ? "데모 실행 간격" : lang === "ja" ? "デモ実行間隔" : "Demo interval"}
+                aria-valuetext={lang === "ko" ? `${demoSpeed}초` : lang === "ja" ? `${demoSpeed}秒` : `${demoSpeed} seconds`}
                 onChange={e => setDemoSpeed(Number(e.target.value))}
                 className="w-20 h-1 accent-orange-400 cursor-pointer"
               />

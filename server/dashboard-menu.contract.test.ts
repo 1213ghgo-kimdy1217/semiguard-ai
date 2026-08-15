@@ -36,6 +36,13 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('type="button"\n            id="btn-logout"');
   });
 
+  it("provides localized names and values for header range controls", () => {
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "알림 음량"');
+    expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `${Math.round(volume * 100)}퍼센트`');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "데모 실행 간격"');
+    expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `${demoSpeed}초`');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
