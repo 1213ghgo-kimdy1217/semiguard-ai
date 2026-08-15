@@ -111,6 +111,11 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('aria-label={lang === "ko" ? "다음 페이지"');
   });
 
+  it("declares monthly heatmap month navigation as non-submitting buttons", () => {
+    expect(dashboardSource).toContain('<button type="button" aria-label={lang === "ko" ? "이전 달"');
+    expect(dashboardSource).toContain('<button type="button" aria-label={lang === "ko" ? "다음 달"');
+  });
+
   it("exposes consultation and feedback pagination context to assistive technology", () => {
     expect(dashboardSource).toContain('role="navigation" aria-label={lang === "ko" ? "상담 기록 페이지 탐색"');
     expect(dashboardSource).toContain('`상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지`');
