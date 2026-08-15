@@ -119,6 +119,68 @@ export function Login() {
           failed: "로그인 실패: 명찰 번호 또는 비밀번호를 확인해주세요.",
           succeeded: "로그인이 완료되었습니다!",
         };
+  const loginUi = loginLanguage === "ja"
+    ? {
+        subtitle: "半導体装置予知安全システム",
+        employeeLogin: "社員証番号ログイン",
+        badgeLabel: "社員証番号",
+        badgePlaceholder: "例: EMP-2024-001",
+        passwordLabel: "パスワード",
+        passwordPlaceholder: "パスワードを入力",
+        signingIn: "ログイン中…",
+        signIn: "ログイン",
+        noAccount: "アカウントをお持ちでないですか?",
+        signUp: "新規登録",
+        linkedSocialLogin: "連携済みソーシャルアカウントでログイン",
+        previewSocialNotice: "開発プレビューでは、OAuth提供元に登録されたコールバックURLと異なるためソーシャルログインを一時的に無効化しています。実際のソーシャルログインは公開サイトで利用してください。",
+        publishedSiteOnly: "公開サイトでソーシャルログインを利用してください。",
+        googleLogin: "Googleでログイン",
+        naverLogin: "Naverでログイン",
+        kakaoLogin: "Kakaoでログイン",
+        socialLinkHint: "ソーシャルログインは、新規登録後にダッシュボードメニューからアカウントを連携して利用できます。",
+        terms: "ログインすると利用規約に同意したものとみなされます。",
+      }
+    : loginLanguage === "en"
+      ? {
+          subtitle: "Semiconductor Predictive Safety System",
+          employeeLogin: "Badge number sign-in",
+          badgeLabel: "Company badge number",
+          badgePlaceholder: "e.g. EMP-2024-001",
+          passwordLabel: "Password",
+          passwordPlaceholder: "Enter password",
+          signingIn: "Signing in…",
+          signIn: "Sign in",
+          noAccount: "Don't have an account?",
+          signUp: "Sign up",
+          linkedSocialLogin: "Sign in with a linked social account",
+          previewSocialNotice: "Social login is temporarily disabled in the development preview because its callback URL differs from the registered OAuth provider URL. Please use the published site.",
+          publishedSiteOnly: "Use the published site for social login.",
+          googleLogin: "Continue with Google",
+          naverLogin: "Continue with Naver",
+          kakaoLogin: "Continue with Kakao",
+          socialLinkHint: "After signing up, link a social account from the dashboard menu to use social login.",
+          terms: "By signing in, you agree to the Terms of Service.",
+        }
+      : {
+          subtitle: "반도체 장비 예지안전 시스템",
+          employeeLogin: "사번 로그인",
+          badgeLabel: "회사 명찰 번호",
+          badgePlaceholder: "예: EMP-2024-001",
+          passwordLabel: "비밀번호",
+          passwordPlaceholder: "비밀번호 입력",
+          signingIn: "로그인 중...",
+          signIn: "로그인",
+          noAccount: "계정이 없으신가요?",
+          signUp: "회원가입",
+          linkedSocialLogin: "연결된 소셜 계정으로 로그인",
+          previewSocialNotice: "개발 미리보기에서는 OAuth 제공자의 등록된 콜백 주소와 달라 소셜 로그인을 잠시 비활성화했습니다. 실제 소셜 로그인은 배포된 사이트에서 이용해주세요.",
+          publishedSiteOnly: "배포된 사이트에서 소셜 로그인을 이용해주세요.",
+          googleLogin: "Google로 로그인",
+          naverLogin: "네이버로 로그인",
+          kakaoLogin: "카카오로 로그인",
+          socialLinkHint: "소셜 로그인은 회원가입 후 대시보드 메뉴에서 계정을 연결한 뒤 사용할 수 있습니다.",
+          terms: "로그인하면 서비스 이용약관에 동의하는 것입니다.",
+        };
   const isOauthEnabled = !import.meta.env.DEV;
   const handleSocialLogin = (start: () => void) => {
     if (!isOauthEnabled) {
@@ -184,7 +246,7 @@ export function Login() {
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">SemiGuard AI</h1>
-              <h2 className="text-slate-400 text-xs sm:text-sm font-normal m-0">반도체 장비 예지안전 시스템</h2>
+              <h2 className="text-slate-400 text-xs sm:text-sm font-normal m-0">{loginUi.subtitle}</h2>
             </div>
           </div>
 
@@ -196,16 +258,16 @@ export function Login() {
 
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">사번 로그인</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{loginUi.employeeLogin}</p>
             {/* Badge Number */}
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-slate-300 text-sm font-medium">
-                회사 명찰 번호
+                {loginUi.badgeLabel}
               </Label>
               <Input
                 id="badgeNumber"
                 type="text"
-                placeholder="예: EMP-2024-001"
+                placeholder={loginUi.badgePlaceholder}
                 value={badgeNumber}
                 onChange={(e) => setBadgeNumber(e.target.value)}
                 autoComplete="username"
@@ -218,12 +280,12 @@ export function Login() {
             {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-slate-300 text-sm font-medium">
-                비밀번호
+                {loginUi.passwordLabel}
               </Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="비밀번호 입력"
+                placeholder={loginUi.passwordPlaceholder}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
@@ -238,20 +300,20 @@ export function Login() {
               disabled={isLoading}
               className="w-full h-12 bg-cyan-500 hover:bg-cyan-600 text-white font-bold text-base transition-transform duration-150 active:scale-[0.98]"
             >
-              {isLoading ? "로그인 중..." : "로그인"}
+              {isLoading ? loginUi.signingIn : loginUi.signIn}
             </Button>
           </form>
 
           {/* Signup Link */}
           <div className="text-center">
             <p className="text-slate-400 text-sm">
-              계정이 없으신가요?{" "}
+              {loginUi.noAccount}{" "}
               <button
                 type="button"
                 onClick={() => setLocation("/signup")}
                 className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
               >
-                회원가입
+                {loginUi.signUp}
               </button>
             </p>
           </div>
@@ -262,13 +324,13 @@ export function Login() {
               <div className="w-full border-t border-slate-600"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-3 bg-slate-800 text-slate-400 text-xs">연결된 소셜 계정으로 로그인</span>
+              <span className="px-3 bg-slate-800 text-slate-400 text-xs">{loginUi.linkedSocialLogin}</span>
             </div>
           </div>
 
           {!isOauthEnabled && (
             <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-xs leading-relaxed text-cyan-100" role="status">
-              개발 미리보기에서는 OAuth 제공자의 등록된 콜백 주소와 달라 소셜 로그인을 잠시 비활성화했습니다. 실제 소셜 로그인은 배포된 사이트에서 이용해주세요.
+              {loginUi.previewSocialNotice}
             </div>
           )}
 
@@ -279,7 +341,7 @@ export function Login() {
               type="button"
               onClick={() => handleSocialLogin(startGoogleLogin)}
               disabled={!isOauthEnabled}
-              title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
+              title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`w-full h-12 justify-start gap-3 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -288,7 +350,7 @@ export function Login() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              <span className="flex-1 text-left">Google로 로그인</span>
+              <span className="flex-1 text-left">{loginUi.googleLogin}</span>
             </Button>
 
             {/* Naver Login */}
@@ -296,13 +358,13 @@ export function Login() {
               type="button"
               onClick={() => handleSocialLogin(startNaverLogin)}
               disabled={!isOauthEnabled}
-              title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
+              title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`w-full h-12 justify-start gap-3 px-4 bg-[#03C75A] hover:bg-[#02B350] text-white font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white text-[13px] font-black leading-none text-[#03C75A]" aria-hidden="true">
                 N
               </span>
-              <span className="flex-1 text-left">네이버로 로그인</span>
+              <span className="flex-1 text-left">{loginUi.naverLogin}</span>
             </Button>
 
             {/* Kakao Login */}
@@ -310,23 +372,23 @@ export function Login() {
               type="button"
               onClick={() => handleSocialLogin(startKakaoLogin)}
               disabled={!isOauthEnabled}
-              title={!isOauthEnabled ? "배포된 사이트에서 소셜 로그인을 이용해주세요." : undefined}
+              title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`w-full h-12 justify-start gap-3 px-4 bg-[#FEE500] hover:bg-[#F2DA00] text-[#191600] font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 3C6.9 3 2.8 6.2 2.8 10.2c0 2.5 1.7 4.7 4.2 6L6.1 20c-.1.4.3.7.6.5l4.2-2.8c.4 0 .7.1 1.1.1 5.1 0 9.2-3.2 9.2-7.6C21.2 6.2 17.1 3 12 3z" />
               </svg>
-              <span className="flex-1 text-left">카카오로 로그인</span>
+              <span className="flex-1 text-left">{loginUi.kakaoLogin}</span>
             </Button>
           </div>
 
           <p className="text-center text-[11px] leading-relaxed text-slate-500">
-            소셜 로그인은 회원가입 후 대시보드 메뉴에서 계정을 연결한 뒤 사용할 수 있습니다.
+            {loginUi.socialLinkHint}
           </p>
 
           {/* Footer */}
           <p className="text-center text-xs text-slate-500">
-            로그인하면 서비스 이용약관에 동의하는 것입니다.
+            {loginUi.terms}
           </p>
         </div>
       </Card>
