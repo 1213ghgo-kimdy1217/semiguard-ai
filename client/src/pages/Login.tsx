@@ -13,14 +13,22 @@ export function Login() {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
 
-  const loginLanguage = (() => {
+  const [loginLanguage, setLoginLanguage] = useState<"ko" | "en" | "ja">(() => {
     try {
       const saved = window.localStorage.getItem("semiguard_lang");
       return saved === "en" || saved === "ja" ? saved : "ko";
     } catch {
       return "ko";
     }
-  })();
+  });
+  const selectLoginLanguage = (nextLanguage: "ko" | "en" | "ja") => {
+    setLoginLanguage(nextLanguage);
+    try {
+      window.localStorage.setItem("semiguard_lang", nextLanguage);
+    } catch {
+      // 저장소가 제한된 환경에서는 현재 로그인 화면에서만 언어 선택을 적용한다.
+    }
+  };
 
   useEffect(() => {
     const metadata = loginLanguage === "ja"
@@ -239,6 +247,26 @@ export function Login() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-4 py-8 sm:py-12">
       <Card className="w-full max-w-md p-6 sm:p-8 bg-slate-800/90 border-slate-700 shadow-2xl">
         <div className="space-y-6">
+          <div className="flex justify-end" role="group" aria-label={loginLanguage === "ja" ? "表示言語" : loginLanguage === "en" ? "Display language" : "표시 언어"}>
+            <div className="inline-flex rounded-lg border border-slate-700 bg-slate-900/60 p-1">
+              {([
+                ["ko", "한국어"],
+                ["en", "EN"],
+                ["ja", "日本語"],
+              ] as const).map(([language, label]) => (
+                <button
+                  key={language}
+                  type="button"
+                  onClick={() => selectLoginLanguage(language)}
+                  aria-pressed={loginLanguage === language}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${loginLanguage === language ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Header */}
           <div className="text-center space-y-3">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-2xl shadow-lg">
