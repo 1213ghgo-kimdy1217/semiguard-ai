@@ -116,6 +116,10 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('<button type="button" aria-label={lang === "ko" ? "다음 달"');
   });
 
+  it("declares anomaly detail modal close control as a non-submitting button", () => {
+    expect(dashboardSource).toContain('<button ref={selectedLogCloseRef} type="button" onClick={() => setSelectedLog(null)}');
+  });
+
   it("exposes consultation and feedback pagination context to assistive technology", () => {
     expect(dashboardSource).toContain('role="navigation" aria-label={lang === "ko" ? "상담 기록 페이지 탐색"');
     expect(dashboardSource).toContain('`상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지`');

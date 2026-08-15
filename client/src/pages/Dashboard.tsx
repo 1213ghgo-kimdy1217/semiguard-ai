@@ -2555,7 +2555,7 @@ export default function Dashboard() {
                         ? lvl === "danger" ? "危険" : lvl === "warning" ? "警告" : lvl === "caution" ? "注意" : "正常"
                         : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
                   </span>
-                  <button ref={selectedLogCloseRef} onClick={() => setSelectedLog(null)}
+                  <button ref={selectedLogCloseRef} type="button" onClick={() => setSelectedLog(null)}
                     className="text-lg leading-none hover:opacity-60 transition-opacity"
                     style={{ color: isDark ? "oklch(0.50 0.01 240)" : "oklch(0.45 0.01 240)" }}
                     aria-label={lang === "ko" ? "이상 이력 상세 닫기" : lang === "ja" ? "異常履歴詳細を閉じる" : "Close anomaly detail"}>✕</button>
