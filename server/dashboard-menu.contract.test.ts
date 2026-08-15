@@ -43,6 +43,13 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `${demoSpeed}초`');
   });
 
+  it("provides localized current values for range controls in the slide menu", () => {
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "경고음 볼륨"');
+    expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `${Math.round(volume * 100)}퍼센트`');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "데모 간격"');
+    expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `${demoSpeed}초`');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
