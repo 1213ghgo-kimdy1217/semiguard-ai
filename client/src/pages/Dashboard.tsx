@@ -1711,12 +1711,32 @@ export default function Dashboard() {
     }
 
     const startedAt = Date.now();
-    setChatLoadingElapsedSeconds(0);
-    const intervalId = window.setInterval(() => {
+    let intervalId: number | null = null;
+    const updateElapsed = () => {
       setChatLoadingElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
-    }, 1000);
+    };
+    const stopElapsedTimer = () => {
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+    const startElapsedTimer = () => {
+      if (document.visibilityState === "hidden" || intervalId !== null) return;
+      updateElapsed();
+      intervalId = window.setInterval(updateElapsed, 1000);
+    };
+    const handleChatLoadingVisibilityChange = () => {
+      if (document.visibilityState === "hidden") stopElapsedTimer();
+      else startElapsedTimer();
+    };
 
-    return () => window.clearInterval(intervalId);
+    startElapsedTimer();
+    document.addEventListener("visibilitychange", handleChatLoadingVisibilityChange);
+    return () => {
+      stopElapsedTimer();
+      document.removeEventListener("visibilitychange", handleChatLoadingVisibilityChange);
+    };
   }, [isChatLoading]);
 
   useEffect(() => {
