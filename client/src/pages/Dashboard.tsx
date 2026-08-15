@@ -4126,6 +4126,10 @@ export default function Dashboard() {
             {/* 피드백·재생성 답변 히스토리 사이드 패널 */}
             {showFeedbackHistoryPanel && (
               <div id="chat-feedback-panel" className="absolute inset-0 z-[570] flex flex-col border p-3 shadow-2xl backdrop-blur-md animate-fadeIn sm:inset-x-auto sm:right-4 sm:top-14 sm:bottom-2 sm:w-80 sm:rounded-xl"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="feedback-history-panel-title"
+                aria-describedby="feedback-history-panel-description"
                 style={{
                   background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
                   borderColor: "oklch(0.62 0.20 300 / 0.45)",
@@ -4133,10 +4137,10 @@ export default function Dashboard() {
                 }}>
                 <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b" style={{ borderColor: th.border }}>
                   <div className="min-w-0">
-                    <h4 className="text-xs font-bold flex items-center gap-1.5">
+                    <h4 id="feedback-history-panel-title" className="text-xs font-bold flex items-center gap-1.5">
                       ✨ {lang === "ko" ? "피드백·재생성 히스토리" : lang === "ja" ? "フィードバック・再生成履歴" : "Feedback & Regeneration History"}
                     </h4>
-                    <p className="mt-0.5 text-[10px] leading-relaxed" style={{ color: th.textMuted }}>
+                    <p id="feedback-history-panel-description" className="mt-0.5 text-[10px] leading-relaxed" style={{ color: th.textMuted }}>
                       {lang === "ko"
                         ? "남긴 평가와 사유, 그에 따라 다시 생성된 답변을 최신순으로 모아 봅니다."
                         : lang === "ja"
@@ -4233,7 +4237,11 @@ export default function Dashboard() {
                 </div>
                 <div className="relative mb-2">
                   <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px]">🔎</span>
+                  <label className="sr-only" htmlFor="feedback-history-search">
+                    {lang === "ko" ? "피드백 이력 검색" : lang === "ja" ? "フィードバック履歴を検索" : "Search feedback history"}
+                  </label>
                   <input
+                    id="feedback-history-search"
                     type="search"
                     value={feedbackHistorySearch}
                     onChange={event => setFeedbackHistorySearch(event.target.value)}
