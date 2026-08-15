@@ -81,6 +81,12 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('<button type="button" onClick={handleResetCost}');
   });
 
+  it("labels anomaly history date filters in every supported language", () => {
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "이상 이력 시작일"');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "이상 이력 종료일"');
+    expect(dashboardSource).toContain('<button type="button" onClick={() => { setDateStart(""); setDateEnd(""); setLogPage(1); }}');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
