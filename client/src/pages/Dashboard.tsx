@@ -5480,11 +5480,11 @@ export default function Dashboard() {
               )}
               {(["all", "normal", "caution", "warning", "danger"] as const).map(f => {
                 const labelMap: Record<typeof f, string> = {
-                  all:     lang === "ko" ? "전체" : "All",
-                  normal:  lang === "ko" ? "정상" : "Normal",
-                  caution: lang === "ko" ? "주의" : "Caution",
-                  warning: lang === "ko" ? "경고" : "Warning",
-                  danger:  lang === "ko" ? "위험" : "Danger",
+                  all:     lang === "ko" ? "전체" : lang === "ja" ? "すべて" : "All",
+                  normal:  lang === "ko" ? "정상" : lang === "ja" ? "正常" : "Normal",
+                  caution: lang === "ko" ? "주의" : lang === "ja" ? "注意" : "Caution",
+                  warning: lang === "ko" ? "경고" : lang === "ja" ? "警告" : "Warning",
+                  danger:  lang === "ko" ? "위험" : lang === "ja" ? "危険" : "Danger",
                 };
                 const colorMap: Record<typeof f, string> = {
                   all:     "oklch(0.65 0.18 200)",
@@ -5525,7 +5525,7 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {logsLoading ? (
-                    <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">Loading...</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">{lang === "ko" ? "불러오는 중..." : lang === "ja" ? "読み込み中..." : "Loading..."}</td></tr>
                   ) : getLogs.isError ? (
                     <tr>
                       <td colSpan={8} className="px-4 py-10 text-center">
