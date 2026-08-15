@@ -2189,7 +2189,7 @@ export default function Dashboard() {
       setInitialized(true);
     }
 
-    autoPollingRef.current = setInterval(() => {
+    const runPollingCycle = () => {
       const now = Date.now();
       const elapsed = Math.round((now - lastUpdateRef.current) / 1000);
       // 자동 폴링: 80% 정상, 10% 주의, 10% 경고 (자연스러운 변동)
@@ -2229,10 +2229,31 @@ export default function Dashboard() {
         setTimeout(() => setRelayTripped(false), 2000);
         triggerLlmAnalysis(result);
       }
-    }, 4000);
+    };
+    const stopAutoPolling = () => {
+      if (autoPollingRef.current) {
+        clearInterval(autoPollingRef.current);
+        autoPollingRef.current = null;
+      }
+    };
+    const startAutoPolling = () => {
+      if (document.visibilityState === "hidden" || autoPollingRef.current) return;
+      autoPollingRef.current = setInterval(runPollingCycle, 4000);
+    };
+    const handlePollingVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        stopAutoPolling();
+      } else {
+        runPollingCycle();
+        startAutoPolling();
+      }
+    };
 
+    startAutoPolling();
+    document.addEventListener("visibilitychange", handlePollingVisibilityChange);
     return () => {
-      if (autoPollingRef.current) clearInterval(autoPollingRef.current);
+      stopAutoPolling();
+      document.removeEventListener("visibilitychange", handlePollingVisibilityChange);
     };
   }, [initialized]);
 
