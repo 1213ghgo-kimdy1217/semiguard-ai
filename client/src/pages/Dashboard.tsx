@@ -2669,10 +2669,11 @@ export default function Dashboard() {
 
       {/* ── AI 분석 히스토리 패널 ── */}
       {showAiHistory && (
-        <div className="fixed bottom-6 left-6 z-[490] w-80 rounded-2xl shadow-2xl overflow-hidden"
+        <div className="fixed bottom-6 left-4 sm:left-6 z-[490] w-[calc(100vw-2rem)] max-w-80 rounded-2xl shadow-2xl overflow-hidden"
           style={{
             background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
             border: "1px solid oklch(0.75 0.18 200 / 0.35)",
+            bottom: isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined,
             animation: "slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1)"
           }}>
           <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: "oklch(0.75 0.18 200 / 0.20)", background: "oklch(0.75 0.18 200 / 0.06)" }}>
@@ -2731,8 +2732,8 @@ export default function Dashboard() {
       {!showAiHistory && (
         <button
           onClick={() => setShowAiHistory(true)}
-          className="fixed bottom-6 left-6 z-[490] flex items-center gap-2 px-3 py-2 rounded-xl shadow-lg text-xs font-bold border transition-all duration-200 hover:opacity-90 active:scale-95"
-          style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", borderColor: "oklch(0.75 0.18 200 / 0.40)", color: "oklch(0.75 0.18 200)" }}>
+          className="fixed bottom-6 left-4 sm:left-6 z-[490] flex items-center gap-2 px-3 py-2 rounded-xl shadow-lg text-xs font-bold border transition-all duration-200 hover:opacity-90 active:scale-95"
+          style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", borderColor: "oklch(0.75 0.18 200 / 0.40)", color: "oklch(0.75 0.18 200)", bottom: isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined }}>
           📋 {lang === "ko" ? "AI 분석 이력" : lang === "ja" ? "AI分析履歴" : "AI History"}
           {llmHistoryQuery.data && llmHistoryQuery.data.length > 0 && (
             <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "oklch(0.75 0.18 200)", color: "white" }}>
