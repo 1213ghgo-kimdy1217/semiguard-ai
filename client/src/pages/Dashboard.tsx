@@ -721,6 +721,14 @@ export default function Dashboard() {
     }
   });
   const t = translations[lang] as Translation;
+  const trpcUtils = trpc.useUtils();
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      void trpcUtils.auth.me.invalidate();
+      setLocation("/login");
+    },
+    onError: () => toast.error(lang === "ko" ? "로그아웃 실패" : lang === "ja" ? "ログアウトに失敗しました" : "Logout failed"),
+  });
   const [isDark, setIsDark] = useState<boolean>(() => {
     try { return localStorage.getItem("semiguard_theme") !== "light"; } catch { return true; }
   });
@@ -2959,20 +2967,12 @@ export default function Dashboard() {
           {/* 로그아웃 버튼 */}
           <button
             id="btn-logout"
-            onClick={async () => {
-              try {
-                const response = await fetch("/api/trpc/auth.logout", { method: "POST" });
-                if (!response.ok) throw new Error(`Logout request failed with ${response.status}`);
-                setLocation("/login");
-              } catch (e) {
-                console.error("Logout error:", e);
-                toast.error(lang === "ko" ? "로그아웃 실패" : lang === "ja" ? "ログアウトに失敗しました" : "Logout failed");
-              }
-            }}
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
             title={lang === "ko" ? "로그아웃" : lang === "ja" ? "ログアウト" : "Logout"}
-            className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95"
+            className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
             style={{ borderColor: "oklch(0.65 0.20 30 / 0.6)", color: "oklch(0.75 0.20 30)", background: "oklch(0.65 0.20 30 / 0.12)" }}>
-            🚪 {lang === "ko" ? "로그아웃" : lang === "ja" ? "ログアウト" : "Logout"}
+            {logoutMutation.isPending ? <span aria-hidden="true" style={{ display: "inline-block", width: 12, height: 12, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "🚪"} {logoutMutation.isPending ? (lang === "ko" ? "로그아웃 중…" : lang === "ja" ? "ログアウト中…" : "Logging out…") : (lang === "ko" ? "로그아웃" : lang === "ja" ? "ログアウト" : "Logout")}
           </button>
         </div>
       </header>
