@@ -1561,7 +1561,6 @@ export default function Dashboard() {
       if (showHistoryPanel) return setShowHistoryPanel(false);
       if (showResetConfirmModal) return setShowResetConfirmModal(false);
 
-      setActiveDislikeIdx(null);
       setIsChatOpen(false);
     };
 
@@ -3137,10 +3136,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   ref={chatCloseButtonRef}
-                  onClick={() => {
-                    setActiveDislikeIdx(null);
-                    setIsChatOpen(false);
-                  }}
+                  onClick={() => setIsChatOpen(false)}
                   aria-label={lang === "ko" ? "상담 닫기" : lang === "ja" ? "相談を閉じる" : "Close consultation"}
                   className="ml-auto w-7 h-7 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70 border shrink-0"
                   style={{ borderColor: th.border2, color: th.textMuted }}>
