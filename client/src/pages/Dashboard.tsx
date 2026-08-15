@@ -5821,10 +5821,12 @@ export default function Dashboard() {
                     ? `全${filteredLogs.length}件中 ${(logPage - 1) * LOG_PAGE_SIZE + 1}～${Math.min(logPage * LOG_PAGE_SIZE, filteredLogs.length)}件`
                     : `${(logPage - 1) * LOG_PAGE_SIZE + 1}–${Math.min(logPage * LOG_PAGE_SIZE, filteredLogs.length)} of ${filteredLogs.length}`}
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" role="navigation" aria-label={lang === "ko" ? "이상 이력 페이지 탐색" : lang === "ja" ? "異常履歴ページの移動" : "Anomaly history pagination"}>
                   <button
+                    type="button"
                     onClick={() => setLogPage(p => Math.max(1, p - 1))}
                     disabled={logPage === 1}
+                    aria-label={lang === "ko" ? "이전 페이지" : lang === "ja" ? "前のページ" : "Previous page"}
                     className="px-2.5 py-1 rounded-lg text-xs border transition-all duration-150 disabled:opacity-30 hover:opacity-80 active:scale-95"
                     style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.60 0.01 240)" }}>
                     ‹ {lang === "ko" ? "이전" : lang === "ja" ? "前へ" : "Prev"}
@@ -5839,8 +5841,10 @@ export default function Dashboard() {
                     .map((p, i) =>
                       p === "…"
                         ? <span key={`ell-${i}`} className="px-1 text-xs text-muted-foreground">…</span>
-                        : <button key={p}
+                        : <button key={p} type="button"
                             onClick={() => setLogPage(p as number)}
+                            aria-current={logPage === p ? "page" : undefined}
+                            aria-label={lang === "ko" ? `${p}페이지${logPage === p ? ", 현재 페이지" : ""}` : lang === "ja" ? `${p}ページ${logPage === p ? "、現在のページ" : ""}` : `Page ${p}${logPage === p ? ", current page" : ""}`}
                             className="w-7 h-7 rounded-lg text-xs border transition-all duration-150 hover:opacity-80 active:scale-95"
                             style={{
                               borderColor: logPage === p ? "oklch(0.65 0.18 200 / 0.6)" : "oklch(0.25 0.02 240)",
@@ -5852,8 +5856,10 @@ export default function Dashboard() {
                           </button>
                     )}
                   <button
+                    type="button"
                     onClick={() => setLogPage(p => Math.min(totalPages, p + 1))}
                     disabled={logPage === totalPages}
+                    aria-label={lang === "ko" ? "다음 페이지" : lang === "ja" ? "次のページ" : "Next page"}
                     className="px-2.5 py-1 rounded-lg text-xs border transition-all duration-150 disabled:opacity-30 hover:opacity-80 active:scale-95"
                     style={{ borderColor: "oklch(0.25 0.02 240)", color: "oklch(0.60 0.01 240)" }}>
                     {lang === "ko" ? "다음" : lang === "ja" ? "次へ" : "Next"} ›

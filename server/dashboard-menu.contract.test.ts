@@ -103,6 +103,14 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('`새 이상 이력 ${newLogCount}건 알림 닫기`');
   });
 
+  it("exposes anomaly pagination as an accessible current-page navigation", () => {
+    expect(dashboardSource).toContain('role="navigation" aria-label={lang === "ko" ? "이상 이력 페이지 탐색"');
+    expect(dashboardSource).toContain('aria-current={logPage === p ? "page" : undefined}');
+    expect(dashboardSource).toContain('`${p}페이지${logPage === p ? ", 현재 페이지" : ""}`');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "이전 페이지"');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "다음 페이지"');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
