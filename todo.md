@@ -1050,6 +1050,10 @@
 - [x] Wouter 패치와 Tailwind Nano ID 재정의가 현재 pnpm 구성에서도 계속 적용되도록 설정 이전
 - [x] 잠금 파일·TypeScript·Vitest·프로덕션 빌드·운영 의존성 감사 검증 및 README 문서화 (290개 테스트·빌드 통과, critical 0건·high 4건)
 
+## 로그인 보조 제어 키보드 포커스 접근성 (진행 중)
+- [x] 언어 선택·비밀번호 표시·회원가입 이동 제어에 명확한 키보드 포커스 표시 제공
+- [x] KO·EN·JA·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (291개 테스트·빌드 통과)
+
 ## 인증 대기 화면 서비스 식별성 보완 (진행 중)
 - [x] 모바일·데스크톱 인증 대기 화면에 SemiGuard AI 서비스 식별과 안전 상태 맥락 제공
 - [x] KO·EN·JA·접근성·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (284개 테스트·빌드 통과)

@@ -270,7 +270,7 @@ export function Login() {
                   type="button"
                   onClick={() => selectLoginLanguage(language)}
                   aria-pressed={loginLanguage === language}
-                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${loginLanguage === language ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"}`}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 ${loginLanguage === language ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"}`}
                 >
                   {label}
                 </button>
@@ -341,7 +341,7 @@ export function Login() {
                   aria-label={showPassword ? loginUi.hidePassword : loginUi.showPassword}
                   aria-pressed={showPassword}
                   disabled={isLoading}
-                  className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50"
+                  className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50"
                 >
                   {showPassword ? loginUi.hidePassword : loginUi.showPassword}
                 </button>
@@ -366,7 +366,7 @@ export function Login() {
               <button
                 type="button"
                 onClick={() => setLocation("/signup")}
-                className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors"
+                className="text-cyan-400 hover:text-cyan-300 font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 rounded"
               >
                 {loginUi.signUp}
               </button>
