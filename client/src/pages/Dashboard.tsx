@@ -3059,7 +3059,8 @@ export default function Dashboard() {
               <h2 className="text-xl font-bold mb-2">{t.landingTitle}</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">{t.landingDesc}</p>
             </div>
-            <button onClick={() => setShowLanding(false)}
+            <button type="button" onClick={() => setShowLanding(false)}
+              aria-label={lang === "ko" ? "서비스 소개 닫기" : lang === "ja" ? "サービス紹介を閉じる" : "Close service introduction"}
               className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-70"
               style={{ borderColor: th.border2, color: th.textMuted }}>
               ✕
