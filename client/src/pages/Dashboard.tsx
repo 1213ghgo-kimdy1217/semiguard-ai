@@ -668,7 +668,7 @@ function MonthlyHeatmap({
           const isToday = key === todayStr;
           return (
             <div key={day}
-              title={lvl ? `${key}: ${lang === "ko" ? { normal: "정상", caution: "주의", warning: "경고", danger: "위험" }[lvl] : lvl}` : key}
+              title={lvl ? `${key}: ${lang === "ko" ? { normal: "정상", caution: "주의", warning: "경고", danger: "위험" }[lvl] : lang === "ja" ? { normal: "正常", caution: "注意", warning: "警告", danger: "危険" }[lvl] : lvl}` : key}
               onClick={() => onDateClick?.(key)}
               className="aspect-square flex items-center justify-center rounded text-[10px] font-mono transition-all duration-200 select-none"
               style={{
