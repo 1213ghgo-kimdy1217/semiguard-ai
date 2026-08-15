@@ -22,6 +22,8 @@ const SIGNUP_COPY = {
     dateOfBirth: "생년월일",
     password: "비밀번호",
     passwordPlaceholder: "6자 이상",
+    passwordStrengthLabel: "비밀번호 강도",
+    passwordStrength: { tooShort: "6자 이상 필요", weak: "낮음", fair: "보통", strong: "높음" },
     showPassword: "비밀번호 표시",
     hidePassword: "비밀번호 숨기기",
     passwordConfirm: "비밀번호 확인",
@@ -54,6 +56,8 @@ const SIGNUP_COPY = {
     dateOfBirth: "Date of birth",
     password: "Password",
     passwordPlaceholder: "At least 6 characters",
+    passwordStrengthLabel: "Password strength",
+    passwordStrength: { tooShort: "Use at least 6 characters", weak: "Weak", fair: "Fair", strong: "Strong" },
     showPassword: "Show password",
     hidePassword: "Hide password",
     passwordConfirm: "Confirm password",
@@ -86,6 +90,8 @@ const SIGNUP_COPY = {
     dateOfBirth: "生年月日",
     password: "パスワード",
     passwordPlaceholder: "6文字以上",
+    passwordStrengthLabel: "パスワードの強度",
+    passwordStrength: { tooShort: "6文字以上必要", weak: "弱い", fair: "普通", strong: "強い" },
     showPassword: "パスワードを表示",
     hidePassword: "パスワードを隠す",
     passwordConfirm: "パスワード確認",
@@ -113,6 +119,17 @@ const LANGUAGE_LOCALES: Record<Language, string> = {
   ja: "ja-JP",
 };
 
+type PasswordStrengthLevel = "tooShort" | "weak" | "fair" | "strong";
+
+function getPasswordStrength(password: string): { level: PasswordStrengthLevel; score: number } {
+  if (password.length < 6) return { level: "tooShort", score: 0 };
+
+  const characterGroups = [/[a-z]/.test(password), /[A-Z]/.test(password), /\d/.test(password), /[^A-Za-z\d]/.test(password)].filter(Boolean).length;
+  if (password.length >= 10 && characterGroups >= 3) return { level: "strong", score: 3 };
+  if (characterGroups >= 2) return { level: "fair", score: 2 };
+  return { level: "weak", score: 1 };
+}
+
 export function Signup() {
   const [, setLocation] = useLocation();
   const [language, setLanguage] = useState<Language>(() => {
@@ -134,6 +151,7 @@ export function Signup() {
     passwordConfirm: "",
   });
   const copy = SIGNUP_COPY[language];
+  const passwordStrength = getPasswordStrength(formData.password);
 
   useEffect(() => {
     document.documentElement.lang = LANGUAGE_LOCALES[language];
@@ -260,6 +278,16 @@ export function Signup() {
                 <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50">
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
+              </div>
+              <div className="space-y-1.5" aria-live="polite" aria-atomic="true">
+                <div className="flex gap-1" aria-hidden="true">
+                  <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 1 ? "bg-rose-400" : "bg-slate-600"}`} />
+                  <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 2 ? "bg-amber-400" : "bg-slate-600"}`} />
+                  <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 3 ? "bg-emerald-400" : "bg-slate-600"}`} />
+                </div>
+                <p className="text-xs text-slate-400">
+                  {copy.passwordStrengthLabel}: <span className="font-semibold text-slate-200">{copy.passwordStrength[passwordStrength.level]}</span>
+                </p>
               </div>
             </div>
             <div className="space-y-2">
