@@ -61,7 +61,7 @@ function DashboardModuleLoading() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 to-slate-800 px-6 text-center" role="status" aria-live="polite">
       <LoadingBrand context={copy.context} />
-      <div aria-hidden="true" className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" />
+      <div aria-hidden="true" className="h-10 w-10 animate-spin motion-reduce:animate-none rounded-full border-2 border-cyan-300 border-t-transparent" />
       <p className="text-sm font-semibold text-slate-100">{copy.title}</p>
       <p className="text-xs text-slate-400">{copy.description}</p>
       {isSlowLoading && (
@@ -111,7 +111,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 to-slate-800 px-6 text-center" role="status" aria-live="polite">
         <LoadingBrand context={authCopy.context} />
-        <div aria-hidden="true" className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300 border-t-transparent" />
+        <div aria-hidden="true" className="h-10 w-10 animate-spin motion-reduce:animate-none rounded-full border-2 border-cyan-300 border-t-transparent" />
         <p className="text-sm font-semibold text-slate-100">{authCopy.title}</p>
         <p className="text-xs text-slate-400">{authCopy.description}</p>
         {isSlowLoading && (
