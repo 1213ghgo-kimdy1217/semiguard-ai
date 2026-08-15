@@ -3110,7 +3110,7 @@ export default function Dashboard() {
               borderColor: "oklch(0.75 0.18 200 / 0.4)",
             }}>
             {/* 챗봇 헤더 */}
-            <div className="flex flex-col gap-2 border-b px-3 py-3 sm:px-5 sm:py-4" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
+            <div className="flex flex-col gap-2 border-b px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 sm:py-4" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0" style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))", color: "white" }}>
                   🤖

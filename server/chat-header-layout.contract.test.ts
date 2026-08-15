@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("chat header layout contract", () => {
   it("keeps the title row separate from the horizontally scrollable controls", () => {
-    expect(dashboardSource).toContain('flex flex-col gap-2 border-b px-3 py-3 sm:px-5 sm:py-4');
+    expect(dashboardSource).toContain('flex flex-col gap-2 border-b px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 sm:py-4');
     expect(dashboardSource).toContain('flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar');
   });
 
