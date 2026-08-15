@@ -2960,7 +2960,8 @@ export default function Dashboard() {
             id="btn-logout"
             onClick={async () => {
               try {
-                await fetch("/api/trpc/auth.logout", { method: "POST" });
+                const response = await fetch("/api/trpc/auth.logout", { method: "POST" });
+                if (!response.ok) throw new Error(`Logout request failed with ${response.status}`);
                 setLocation("/login");
               } catch (e) {
                 console.error("Logout error:", e);
