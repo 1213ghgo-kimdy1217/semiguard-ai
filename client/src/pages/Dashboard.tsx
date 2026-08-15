@@ -645,11 +645,11 @@ function MonthlyHeatmap({
           {lang === "ko" ? "월간 위험도 히트맵" : lang === "ja" ? "月間リスクヒートマップ" : "Monthly Risk Heatmap"}
         </p>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+          <button aria-label={lang === "ko" ? "이전 달" : lang === "ja" ? "前の月" : "Previous month"} onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
             className="w-6 h-6 flex items-center justify-center rounded text-xs border transition-all hover:opacity-80 active:scale-95"
             style={{ borderColor: th.border2, color: th.textMuted }}>‹</button>
           <span className="text-xs font-semibold min-w-[90px] text-center">{monthLabel}</span>
-          <button onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+          <button aria-label={lang === "ko" ? "다음 달" : lang === "ja" ? "次の月" : "Next month"} onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
             className="w-6 h-6 flex items-center justify-center rounded text-xs border transition-all hover:opacity-80 active:scale-95"
             style={{ borderColor: th.border2, color: th.textMuted }}>›</button>
         </div>
