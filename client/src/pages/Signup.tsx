@@ -24,6 +24,7 @@ const SIGNUP_COPY = {
     passwordPlaceholder: "6자 이상",
     passwordStrengthLabel: "비밀번호 강도",
     passwordStrength: { tooShort: "6자 이상 필요", weak: "낮음", fair: "보통", strong: "높음" },
+    capsLockWarning: "Caps Lock이 켜져 있습니다.",
     showPassword: "비밀번호 표시",
     hidePassword: "비밀번호 숨기기",
     passwordConfirm: "비밀번호 확인",
@@ -58,6 +59,7 @@ const SIGNUP_COPY = {
     passwordPlaceholder: "At least 6 characters",
     passwordStrengthLabel: "Password strength",
     passwordStrength: { tooShort: "Use at least 6 characters", weak: "Weak", fair: "Fair", strong: "Strong" },
+    capsLockWarning: "Caps Lock is on.",
     showPassword: "Show password",
     hidePassword: "Hide password",
     passwordConfirm: "Confirm password",
@@ -92,6 +94,7 @@ const SIGNUP_COPY = {
     passwordPlaceholder: "6文字以上",
     passwordStrengthLabel: "パスワードの強度",
     passwordStrength: { tooShort: "6文字以上必要", weak: "弱い", fair: "普通", strong: "強い" },
+    capsLockWarning: "Caps Lockがオンになっています。",
     showPassword: "パスワードを表示",
     hidePassword: "パスワードを隠す",
     passwordConfirm: "パスワード確認",
@@ -143,6 +146,7 @@ export function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const [formData, setFormData] = useState({
     badgeNumber: "",
     name: "",
@@ -186,6 +190,9 @@ export function Signup() {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData((previous) => ({ ...previous, [name]: value }));
+  };
+  const handleCapsLock = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    setCapsLockOn(event.getModifierState("CapsLock"));
   };
 
   const handleSignup = async (event: React.FormEvent) => {
@@ -274,7 +281,7 @@ export function Signup() {
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
               <div className="relative">
-                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
                 <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50">
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
@@ -289,15 +296,17 @@ export function Signup() {
                   {copy.passwordStrengthLabel}: <span className="font-semibold text-slate-200">{copy.passwordStrength[passwordStrength.level]}</span>
                 </p>
               </div>
+              {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status">{copy.capsLockWarning}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="passwordConfirm" className="text-sm font-medium text-slate-300">{copy.passwordConfirm}</Label>
               <div className="relative">
-                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
                 <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50">
                   {showPasswordConfirm ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
+              {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status">{copy.capsLockWarning}</p>}
             </div>
             <Button type="submit" disabled={isLoading} className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 font-semibold text-white transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50">
               {isLoading ? copy.submitting : copy.submit}

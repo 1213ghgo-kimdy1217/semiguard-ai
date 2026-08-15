@@ -74,6 +74,7 @@ export function Login() {
   const [badgeNumber, setBadgeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const oauthError = new URLSearchParams(window.location.search).get("oauth_error");
   const oauthParts = oauthError?.split("_") ?? [];
@@ -138,6 +139,7 @@ export function Login() {
         passwordPlaceholder: "パスワードを入力",
         showPassword: "パスワードを表示",
         hidePassword: "パスワードを隠す",
+        capsLockWarning: "Caps Lockがオンになっています。",
         signingIn: "ログイン中…",
         signIn: "ログイン",
         noAccount: "アカウントをお持ちでないですか?",
@@ -161,6 +163,7 @@ export function Login() {
           passwordPlaceholder: "Enter password",
           showPassword: "Show password",
           hidePassword: "Hide password",
+          capsLockWarning: "Caps Lock is on.",
           signingIn: "Signing in…",
           signIn: "Sign in",
           noAccount: "Don't have an account?",
@@ -183,6 +186,7 @@ export function Login() {
           passwordPlaceholder: "비밀번호 입력",
           showPassword: "비밀번호 표시",
           hidePassword: "비밀번호 숨기기",
+          capsLockWarning: "Caps Lock이 켜져 있습니다.",
           signingIn: "로그인 중...",
           signIn: "로그인",
           noAccount: "계정이 없으신가요?",
@@ -324,6 +328,9 @@ export function Login() {
                   placeholder={loginUi.passwordPlaceholder}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(event) => setCapsLockOn(event.getModifierState("CapsLock"))}
+                  onKeyUp={(event) => setCapsLockOn(event.getModifierState("CapsLock"))}
+                  onBlur={() => setCapsLockOn(false)}
                   autoComplete="current-password"
                   className="h-12 bg-slate-700/70 border-slate-600 pr-24 text-white placeholder-slate-500 text-base"
                   disabled={isLoading}
@@ -339,6 +346,7 @@ export function Login() {
                   {showPassword ? loginUi.hidePassword : loginUi.showPassword}
                 </button>
               </div>
+              {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status">{loginUi.capsLockWarning}</p>}
             </div>
 
             {/* Login Button */}
