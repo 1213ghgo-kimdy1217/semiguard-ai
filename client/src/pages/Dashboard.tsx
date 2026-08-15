@@ -5168,7 +5168,7 @@ export default function Dashboard() {
                       <span className="text-xs text-muted-foreground mb-0.5">{card.unit}</span>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[9px] text-muted-foreground opacity-60">{lang === "ko" ? "점수 추이" : "Score trend"}</span>
+                      <span className="text-[9px] text-muted-foreground opacity-60">{lang === "ko" ? "점수 추이" : lang === "ja" ? "スコア推移" : "Score trend"}</span>
                       <Sparkline data={scoreHistory} color={card.color} />
                     </div>
                   </div>
