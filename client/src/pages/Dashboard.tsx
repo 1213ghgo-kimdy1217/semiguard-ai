@@ -365,19 +365,21 @@ function HeartbeatIndicator({ alive, t }: { alive: boolean; t: Translation }) {
 // ─── 경고 패널 ──────────────────────────────────────────────────────────────
 function AlertPanel({ riskLevel, relayTripped, t }: { riskLevel: RiskLevel; relayTripped: boolean; t: Translation }) {
   const isDanger = riskLevel === "danger";
+  const label = `${t.alertLight}: ${isDanger ? t.danger : t.normal}. ${relayTripped ? t.relayActive : t.relayInactive}.`;
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex h-7 items-center gap-1 rounded-full border px-2 sm:h-auto sm:gap-2 sm:border-0 sm:px-0" role="img" aria-label={label} title={label}>
       <div className="flex items-center gap-1.5">
         <div className="w-2.5 h-2.5 rounded-full" style={{
           background: isDanger ? "#ef4444" : "#22c55e",
           animation: isDanger ? "pulse 0.5s infinite" : "none",
         }} />
-        <span className="text-xs font-semibold text-muted-foreground">{t.alertLight}</span>
+        <span className="hidden text-xs font-semibold text-muted-foreground sm:inline">{t.alertLight}</span>
       </div>
-      <div className="w-px h-4 bg-border" />
+      <div className="hidden h-4 w-px bg-border sm:block" />
       <div className="flex items-center gap-1.5">
+        <span className="h-2.5 w-2.5 rounded-full sm:hidden" aria-hidden="true" style={{ background: relayTripped ? "#ef4444" : "#22c55e" }} />
         <span className="text-xs font-semibold" style={{ color: relayTripped ? "#ef4444" : "#22c55e" }}>
-          {relayTripped ? t.relayActive : t.relayInactive}
+          <span className="hidden sm:inline">{relayTripped ? t.relayActive : t.relayInactive}</span>
         </span>
       </div>
     </div>
