@@ -184,8 +184,34 @@ function SensorFreshnessIndicator({ timestamp, lang }: { timestamp?: number; lan
   const [clock, setClock] = useState(() => Date.now());
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => setClock(Date.now()), 1000);
-    return () => window.clearInterval(intervalId);
+    let intervalId: number | null = null;
+    const updateClock = () => setClock(Date.now());
+    const stopClock = () => {
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+    const startClock = () => {
+      if (document.visibilityState === "hidden" || intervalId !== null) return;
+      updateClock();
+      intervalId = window.setInterval(updateClock, 1000);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        stopClock();
+      } else {
+        updateClock();
+        startClock();
+      }
+    };
+
+    startClock();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      stopClock();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const ageSeconds = timestamp ? Math.max(0, Math.floor((clock - timestamp) / 1000)) : null;

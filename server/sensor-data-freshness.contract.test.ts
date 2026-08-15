@@ -9,7 +9,8 @@ describe("sensor data freshness contract", () => {
     expect(dashboardSource).toContain("function SensorFreshnessIndicator({ timestamp, lang }");
     expect(dashboardSource).toContain("const [clock, setClock] = useState(() => Date.now());");
     expect(dashboardSource).toContain("const ageSeconds = timestamp ? Math.max(0, Math.floor((clock - timestamp) / 1000)) : null;");
-    expect(dashboardSource).toContain("window.setInterval(() => setClock(Date.now()), 1000)");
+    expect(dashboardSource).toContain("const updateClock = () => setClock(Date.now());");
+    expect(dashboardSource).toContain("window.setInterval(updateClock, 1000)");
     expect(dashboardSource).not.toContain("sensorFreshnessClock");
   });
 
