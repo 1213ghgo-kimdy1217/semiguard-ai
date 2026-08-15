@@ -2970,7 +2970,7 @@ export default function Dashboard() {
             <span className="hidden sm:inline">{lang === "ko" ? "메뉴" : lang === "ja" ? "メニュー" : "Menu"}</span>
           </button>
           {!isMobile && <div className="w-px h-5 bg-border" />}
-          <button onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")}
+          <button type="button" onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")}
             className="hidden px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-200 hover:opacity-80 active:scale-95"
             style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}
             title={lang === "ko" ? "영어로 전환" : lang === "en" ? "日本語に切替" : "한국어로 전환"}>
@@ -2978,6 +2978,7 @@ export default function Dashboard() {
           </button>
           {/* 다크/라이트 모드 전환 */}
           <button
+            type="button"
             onClick={() => setIsDark(d => {
               const next = !d;
               try { localStorage.setItem("semiguard_theme", next ? "dark" : "light"); } catch {}
