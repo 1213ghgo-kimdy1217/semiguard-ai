@@ -4901,7 +4901,7 @@ export default function Dashboard() {
             </div>
 
             {/* 입력 폼 영역 */}
-            <div className="flex flex-col gap-2 border-t p-2.5 sm:flex-row sm:items-end sm:p-4" style={{ borderColor: th.border, background: th.bgCard }}>
+            <div className="flex flex-col gap-2 border-t px-2.5 pb-[max(0.625rem,calc(env(safe-area-inset-bottom)+0.5rem))] pt-2.5 sm:flex-row sm:items-end sm:p-4" style={{ borderColor: th.border, background: th.bgCard }}>
               <textarea
                 rows={1}
                 value={chatInput}
