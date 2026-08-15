@@ -2537,7 +2537,7 @@ export default function Dashboard() {
                   color: "white",
                   boxShadow: "0 0 20px rgba(239,68,68,0.5)"
                 }}>
-                {lang === "ko" ? "확인" : "OK"}
+                {lang === "ko" ? "확인" : lang === "ja" ? "確認" : "OK"}
               </button>
             </div>
           </div>
@@ -2575,8 +2575,10 @@ export default function Dashboard() {
                 }}>
                 {lang === "ko"
                   ? (llmAnalysis.riskLevel === "danger" ? "위험" : llmAnalysis.riskLevel === "warning" ? "경고" : "주의")
-                  : llmAnalysis.riskLevel}
-                &nbsp;{llmAnalysis.score.toFixed(0)}점
+                  : lang === "ja"
+                    ? (llmAnalysis.riskLevel === "danger" ? "危険" : llmAnalysis.riskLevel === "warning" ? "警告" : "注意")
+                    : llmAnalysis.riskLevel}
+                &nbsp;{llmAnalysis.score.toFixed(0)}{lang === "ko" ? "점" : lang === "ja" ? "点" : ""}
               </span>
             </div>
             <p className="text-sm font-bold mb-2" style={{ color: th.text }}>
