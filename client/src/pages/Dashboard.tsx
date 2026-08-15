@@ -5722,8 +5722,10 @@ export default function Dashboard() {
                 };
                 const isActive = logFilter === f;
                 return (
-                  <button key={f}
+                  <button key={f} type="button"
                     onClick={() => { setLogFilter(f); setLogPage(1); }}
+                    aria-pressed={isActive}
+                    aria-label={lang === "ko" ? `${labelMap[f]} 위험 단계 필터${isActive ? ", 선택됨" : ""}` : lang === "ja" ? `${labelMap[f]}リスクレベルフィルター${isActive ? "、選択中" : ""}` : `${labelMap[f]} risk level filter${isActive ? ", selected" : ""}`}
                     className="px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all duration-150 hover:opacity-90 active:scale-95"
                     style={{
                       borderColor: isActive ? `${colorMap[f]}80` : "oklch(0.22 0.02 240)",

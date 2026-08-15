@@ -87,6 +87,12 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('<button type="button" onClick={() => { setDateStart(""); setDateEnd(""); setLogPage(1); }}');
   });
 
+  it("exposes anomaly risk filters as selected toggle controls", () => {
+    expect(dashboardSource).toContain('<button key={f} type="button"');
+    expect(dashboardSource).toContain('aria-pressed={isActive}');
+    expect(dashboardSource).toContain('`${labelMap[f]} 위험 단계 필터${isActive ? ", 선택됨" : ""}`');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
