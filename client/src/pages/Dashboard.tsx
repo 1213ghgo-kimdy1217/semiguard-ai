@@ -5274,6 +5274,7 @@ export default function Dashboard() {
                       {/* 초기화 버튼 */}
                       <div className="col-span-1 md:col-span-3 flex justify-end">
                         <button
+                          type="button"
                           onClick={() => {
                             const def = { normal: 29, caution: 49, warning: 69 };
                             setThresholds(def);
@@ -5359,6 +5360,7 @@ export default function Dashboard() {
                       ))}
                       <div className="col-span-1 md:col-span-2 xl:col-span-4 flex justify-end">
                         <button
+                          type="button"
                           onClick={() => {
                             const def = {
                               currentCaution: 7.0, currentWarning: 9.0, currentDanger: 11.0,

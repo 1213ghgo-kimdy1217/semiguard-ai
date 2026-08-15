@@ -68,6 +68,11 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('id="sensor-threshold-panel" role="region"');
   });
 
+  it("declares risk threshold reset actions as non-submitting buttons", () => {
+    expect(dashboardSource).toContain('type="button"\n                          onClick={() => {\n                            const def = { normal: 29, caution: 49, warning: 69 };');
+    expect(dashboardSource).toContain('type="button"\n                          onClick={() => {\n                            const def = {\n                              currentCaution: 7.0');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
