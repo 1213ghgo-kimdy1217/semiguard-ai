@@ -111,6 +111,15 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('aria-label={lang === "ko" ? "다음 페이지"');
   });
 
+  it("exposes consultation and feedback pagination context to assistive technology", () => {
+    expect(dashboardSource).toContain('role="navigation" aria-label={lang === "ko" ? "상담 기록 페이지 탐색"');
+    expect(dashboardSource).toContain('`상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지`');
+    expect(dashboardSource).toContain('role="navigation" aria-label={lang === "ko" ? "피드백 이력 페이지 탐색"');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "피드백 이력 이전 페이지"');
+    expect(dashboardSource).toContain('`피드백 이력 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} 페이지`');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "피드백 이력 다음 페이지"');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");

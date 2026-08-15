@@ -4102,7 +4102,7 @@ export default function Dashboard() {
                   )}
                 </div>
                 {filteredAndSortedChatSessions.length > historySessionPageSize && (
-                  <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2" style={{ borderColor: th.border }}>
+                  <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2" style={{ borderColor: th.border }} role="navigation" aria-label={lang === "ko" ? "상담 기록 페이지 탐색" : lang === "ja" ? "相談履歴ページの移動" : "Consultation history pagination"}>
                     <button
                       type="button"
                       onClick={() => setHistorySessionPage(Math.max(1, activeHistorySessionPage - 1))}
@@ -4112,7 +4112,7 @@ export default function Dashboard() {
                       aria-label={lang === "ko" ? "상담 기록 이전 페이지" : lang === "ja" ? "相談履歴の前のページ" : "Previous consultation history page"}>
                       {lang === "ko" ? "이전" : lang === "ja" ? "前へ" : "Previous"}
                     </button>
-                    <span className="text-[10px] font-medium" style={{ color: th.textMuted }}>
+                    <span className="text-[10px] font-medium" style={{ color: th.textMuted }} role="status" aria-live="polite" aria-label={lang === "ko" ? `상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지` : lang === "ja" ? `相談履歴 ${activeHistorySessionPage} / ${historySessionTotalPages} ページ` : `Consultation history page ${activeHistorySessionPage} of ${historySessionTotalPages}`}>
                       {activeHistorySessionPage} / {historySessionTotalPages}
                       <span className="ml-1 text-[9px]">({filteredAndSortedChatSessions.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : ""})</span>
                     </span>
@@ -4635,22 +4635,24 @@ export default function Dashboard() {
                     </p>
                   )}
                   {filteredFeedbackHistory.length > FEEDBACK_PAGE_SIZE && (
-                    <div className="flex items-center justify-between gap-2 border-t pt-2" style={{ borderColor: th.border2 }}>
+                    <div className="flex items-center justify-between gap-2 border-t pt-2" style={{ borderColor: th.border2 }} role="navigation" aria-label={lang === "ko" ? "피드백 이력 페이지 탐색" : lang === "ja" ? "フィードバック履歴ページの移動" : "Feedback history pagination"}>
                       <button
                         type="button"
                         onClick={() => setFeedbackHistoryPage(page => Math.max(1, page - 1))}
                         disabled={feedbackHistoryPage === 1}
+                        aria-label={lang === "ko" ? "피드백 이력 이전 페이지" : lang === "ja" ? "フィードバック履歴の前のページ" : "Previous feedback history page"}
                         className="rounded-md border px-2 py-1 text-[9px] font-bold disabled:opacity-35"
                         style={{ borderColor: th.border2, color: th.textMuted }}>
                         ← {lang === "ko" ? "이전" : lang === "ja" ? "前へ" : "Prev"}
                       </button>
-                      <span className="text-[9px] font-bold" style={{ color: th.textMuted }}>
+                      <span className="text-[9px] font-bold" style={{ color: th.textMuted }} role="status" aria-live="polite" aria-label={lang === "ko" ? `피드백 이력 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} 페이지` : lang === "ja" ? `フィードバック履歴 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} ページ` : `Feedback history page ${feedbackHistoryPage} of ${feedbackHistoryTotalPages}`}>
                         {feedbackHistoryPage} / {feedbackHistoryTotalPages} · {filteredFeedbackHistory.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " items"}
                       </span>
                       <button
                         type="button"
                         onClick={() => setFeedbackHistoryPage(page => Math.min(feedbackHistoryTotalPages, page + 1))}
                         disabled={feedbackHistoryPage === feedbackHistoryTotalPages}
+                        aria-label={lang === "ko" ? "피드백 이력 다음 페이지" : lang === "ja" ? "フィードバック履歴の次のページ" : "Next feedback history page"}
                         className="rounded-md border px-2 py-1 text-[9px] font-bold disabled:opacity-35"
                         style={{ borderColor: th.border2, color: th.textMuted }}>
                         {lang === "ko" ? "다음" : lang === "ja" ? "次へ" : "Next"} →
