@@ -73,6 +73,7 @@ export function Login() {
   }, [loginLanguage]);
   const [badgeNumber, setBadgeNumber] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const oauthError = new URLSearchParams(window.location.search).get("oauth_error");
   const oauthParts = oauthError?.split("_") ?? [];
@@ -135,6 +136,8 @@ export function Login() {
         badgePlaceholder: "例: EMP-2024-001",
         passwordLabel: "パスワード",
         passwordPlaceholder: "パスワードを入力",
+        showPassword: "パスワードを表示",
+        hidePassword: "パスワードを隠す",
         signingIn: "ログイン中…",
         signIn: "ログイン",
         noAccount: "アカウントをお持ちでないですか?",
@@ -156,6 +159,8 @@ export function Login() {
           badgePlaceholder: "e.g. EMP-2024-001",
           passwordLabel: "Password",
           passwordPlaceholder: "Enter password",
+          showPassword: "Show password",
+          hidePassword: "Hide password",
           signingIn: "Signing in…",
           signIn: "Sign in",
           noAccount: "Don't have an account?",
@@ -176,6 +181,8 @@ export function Login() {
           badgePlaceholder: "예: EMP-2024-001",
           passwordLabel: "비밀번호",
           passwordPlaceholder: "비밀번호 입력",
+          showPassword: "비밀번호 표시",
+          hidePassword: "비밀번호 숨기기",
           signingIn: "로그인 중...",
           signIn: "로그인",
           noAccount: "계정이 없으신가요?",
@@ -310,16 +317,28 @@ export function Login() {
               <Label htmlFor="password" className="text-slate-300 text-sm font-medium">
                 {loginUi.passwordLabel}
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder={loginUi.passwordPlaceholder}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                className="h-12 bg-slate-700/70 border-slate-600 text-white placeholder-slate-500 text-base"
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder={loginUi.passwordPlaceholder}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  className="h-12 bg-slate-700/70 border-slate-600 pr-24 text-white placeholder-slate-500 text-base"
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? loginUi.hidePassword : loginUi.showPassword}
+                  aria-pressed={showPassword}
+                  disabled={isLoading}
+                  className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50"
+                >
+                  {showPassword ? loginUi.hidePassword : loginUi.showPassword}
+                </button>
+              </div>
             </div>
 
             {/* Login Button */}

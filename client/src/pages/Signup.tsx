@@ -22,6 +22,8 @@ const SIGNUP_COPY = {
     dateOfBirth: "생년월일",
     password: "비밀번호",
     passwordPlaceholder: "6자 이상",
+    showPassword: "비밀번호 표시",
+    hidePassword: "비밀번호 숨기기",
     passwordConfirm: "비밀번호 확인",
     passwordConfirmPlaceholder: "비밀번호 재입력",
     submit: "회원가입",
@@ -52,6 +54,8 @@ const SIGNUP_COPY = {
     dateOfBirth: "Date of birth",
     password: "Password",
     passwordPlaceholder: "At least 6 characters",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     passwordConfirm: "Confirm password",
     passwordConfirmPlaceholder: "Re-enter your password",
     submit: "Create account",
@@ -82,6 +86,8 @@ const SIGNUP_COPY = {
     dateOfBirth: "生年月日",
     password: "パスワード",
     passwordPlaceholder: "6文字以上",
+    showPassword: "パスワードを表示",
+    hidePassword: "パスワードを隠す",
     passwordConfirm: "パスワード確認",
     passwordConfirmPlaceholder: "パスワードを再入力",
     submit: "アカウント登録",
@@ -118,6 +124,8 @@ export function Signup() {
     }
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [formData, setFormData] = useState({
     badgeNumber: "",
     name: "",
@@ -247,11 +255,21 @@ export function Signup() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
-              <Input id="password" name="password" type="password" placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+              <div className="relative">
+                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50">
+                  {showPassword ? copy.hidePassword : copy.showPassword}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="passwordConfirm" className="text-sm font-medium text-slate-300">{copy.passwordConfirm}</Label>
-              <Input id="passwordConfirm" name="passwordConfirm" type="password" placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+              <div className="relative">
+                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50">
+                  {showPasswordConfirm ? copy.hidePassword : copy.showPassword}
+                </button>
+              </div>
             </div>
             <Button type="submit" disabled={isLoading} className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 font-semibold text-white transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50">
               {isLoading ? copy.submitting : copy.submit}
