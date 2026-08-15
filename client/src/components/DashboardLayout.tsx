@@ -42,11 +42,25 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [, setLocation] = useLocation();
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
+  const [layoutLanguage] = useState<"ko" | "en" | "ja">(() => {
+    try {
+      const saved = window.localStorage.getItem("semiguard_lang");
+      return saved === "en" || saved === "ja" ? saved : "ko";
+    } catch {
+      return "ko";
+    }
+  });
   const { loading, user } = useAuth();
+  const authCopy = layoutLanguage === "ko"
+    ? { title: "로그인이 필요합니다", description: "이 대시보드에 접근하려면 로그인해야 합니다. 로그인 화면으로 이동해 계속하세요.", action: "로그인" }
+    : layoutLanguage === "ja"
+      ? { title: "ログインが必要です", description: "このダッシュボードにアクセスするにはログインが必要です。ログイン画面へ移動して続行してください。", action: "ログイン" }
+      : { title: "Sign in to continue", description: "Access to this dashboard requires authentication. Continue to launch the login flow.", action: "Sign in" };
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -57,16 +71,15 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    const [, setLocation] = useLocation();
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-6">
             <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Sign in to continue
+              {authCopy.title}
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              {authCopy.description}
             </p>
           </div>
           <Button
@@ -74,7 +87,7 @@ export default function DashboardLayout({
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"
           >
-            Sign in
+            {authCopy.action}
           </Button>
         </div>
       </div>
