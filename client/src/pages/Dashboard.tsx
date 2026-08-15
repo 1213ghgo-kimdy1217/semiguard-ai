@@ -2358,10 +2358,10 @@ export default function Dashboard() {
         const lvl = log.riskLevel as RiskLevel;
         const color = RISK_COLORS[lvl];
         const sensorItems = [
-          { label: lang === "ko" ? "전류" : "Current",     value: log.current.toFixed(2),    unit: "A",    icon: "⚡", color: "#38bdf8" },
-          { label: lang === "ko" ? "온도" : "Temperature", value: log.temperature.toFixed(1), unit: "°C",   icon: "🌡", color: "#fb923c" },
-          { label: lang === "ko" ? "진동" : "Vibration",   value: log.vibration.toFixed(2),   unit: "mm/s", icon: "📳", color: "#a78bfa" },
-          { label: lang === "ko" ? "소음" : "Noise",       value: log.noise.toFixed(1),       unit: "dB",   icon: "🔊", color: "#34d399" },
+          { label: lang === "ko" ? "전류" : lang === "ja" ? "電流" : "Current",          value: log.current.toFixed(2),    unit: "A",    icon: "⚡", color: "#38bdf8" },
+          { label: lang === "ko" ? "온도" : lang === "ja" ? "温度" : "Temperature",      value: log.temperature.toFixed(1), unit: "°C",   icon: "🌡", color: "#fb923c" },
+          { label: lang === "ko" ? "진동" : lang === "ja" ? "振動" : "Vibration",        value: log.vibration.toFixed(2),   unit: "mm/s", icon: "📳", color: "#a78bfa" },
+          { label: lang === "ko" ? "소음" : lang === "ja" ? "騒音" : "Noise",            value: log.noise.toFixed(1),       unit: "dB",   icon: "🔊", color: "#34d399" },
         ];
         return (
           <div className="fixed inset-0 z-[1100] flex items-center justify-center"
@@ -2386,7 +2386,9 @@ export default function Dashboard() {
                     style={{ color, background: RISK_BG[lvl], borderColor: RISK_BORDER[lvl] }}>
                     {lang === "ko"
                       ? lvl === "danger" ? "위험" : lvl === "warning" ? "경고" : lvl === "caution" ? "주의" : "정상"
-                      : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                      : lang === "ja"
+                        ? lvl === "danger" ? "危険" : lvl === "warning" ? "警告" : lvl === "caution" ? "注意" : "正常"
+                        : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
                   </span>
                   <button onClick={() => setSelectedLog(null)}
                     className="text-lg leading-none hover:opacity-60 transition-opacity"
