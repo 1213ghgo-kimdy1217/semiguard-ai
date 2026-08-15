@@ -3924,8 +3924,7 @@ export default function Dashboard() {
                       return paginatedChatSessions.map((session) => (
                       <div
                         key={session.id}
-                        onClick={() => void loadHistorySession(session)}
-                        className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex items-center justify-between ${
+                        className={`p-2.5 rounded-lg border text-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex items-center justify-between ${
                           activeSessionId === session.id ? "ring-2 ring-sky-500 shadow-sm" : ""
                         }`}
                         style={{
@@ -3938,7 +3937,7 @@ export default function Dashboard() {
                         }}>
                         <div className="min-w-0 flex-1 pr-2">
                           {editingSessionId === session.id ? (
-                            <div className="space-y-1.5" onClick={event => event.stopPropagation()}>
+                            <div className="space-y-1.5">
                               <input
                                 value={editingSessionTitle}
                                 maxLength={120}
@@ -3995,7 +3994,14 @@ export default function Dashboard() {
                               </div>
                             </div>
                           ) : (
-                            <>
+                            <button
+                              type="button"
+                              onClick={() => void loadHistorySession(session)}
+                              disabled={loadingHistorySessionId === session.id}
+                              aria-current={activeSessionId === session.id ? "page" : undefined}
+                              aria-label={lang === "ko" ? `상담 기록 열기: ${session.title}` : lang === "ja" ? `相談履歴を開く: ${session.title}` : `Open consultation history: ${session.title}`}
+                              className="block w-full rounded text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-1 disabled:cursor-wait disabled:opacity-60"
+                              style={{ "--tw-ring-offset-color": isDark ? "oklch(0.17 0.015 240)" : "oklch(0.96 0.005 240)" } as React.CSSProperties}>
                               <p className="font-bold truncate">{session.title}</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">
                                 {new Date(session.updatedAt).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US")}
@@ -4007,7 +4013,7 @@ export default function Dashboard() {
                                   🔎 {lang === "ko" ? "대화 일치:" : lang === "ja" ? "会話の一致:" : "Conversation match:"} {(session as { matchedMessageExcerpt?: string | null }).matchedMessageExcerpt}
                                 </p>
                               )}
-                            </>
+                            </button>
                           )}
                         </div>
                         <button

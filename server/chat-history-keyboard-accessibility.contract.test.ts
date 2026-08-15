@@ -1,0 +1,18 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Dashboard.tsx"), "utf8");
+
+describe("consultation history keyboard accessibility contract", () => {
+  it("uses a native button to open a saved consultation from the history list", () => {
+    expect(dashboardSource).toContain("onClick={() => void loadHistorySession(session)}");
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? `상담 기록 열기: ${session.title}`');
+    expect(dashboardSource).toContain('aria-current={activeSessionId === session.id ? "page" : undefined}');
+  });
+
+  it("keeps the open action visibly focusable and prevents duplicate loads while pending", () => {
+    expect(dashboardSource).toContain('disabled={loadingHistorySessionId === session.id}');
+    expect(dashboardSource).toContain("focus-visible:ring-cyan-400");
+  });
+});
