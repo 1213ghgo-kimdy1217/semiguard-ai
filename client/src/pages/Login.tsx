@@ -96,10 +96,33 @@ export function Login() {
     if (loginLanguage === "en") return `${oauthProviderLabel} login failed. Check the provider app settings or registered login account, then try again.`;
     return `${oauthProviderLabel} 로그인에 실패했습니다. 제공자의 앱 설정 또는 등록된 로그인 계정을 확인한 뒤 다시 시도해주세요.`;
   })();
+  const loginMessages = loginLanguage === "ja"
+    ? {
+        previewSocialDisabled: "開発プレビューではソーシャルログインを利用できません。公開サイトで利用してください。",
+        badgeRequired: "社員証番号を入力してください。",
+        passwordRequired: "パスワードを入力してください。",
+        failed: "ログインに失敗しました。社員証番号またはパスワードを確認してください。",
+        succeeded: "ログインが完了しました。",
+      }
+    : loginLanguage === "en"
+      ? {
+          previewSocialDisabled: "Social login is unavailable in the development preview. Please use the published site.",
+          badgeRequired: "Enter your badge number.",
+          passwordRequired: "Enter your password.",
+          failed: "Login failed. Check your badge number or password.",
+          succeeded: "Login successful.",
+        }
+      : {
+          previewSocialDisabled: "개발 미리보기에서는 소셜 로그인을 사용할 수 없습니다. 배포된 사이트에서 이용해주세요.",
+          badgeRequired: "회사 명찰 번호를 입력해주세요.",
+          passwordRequired: "비밀번호를 입력해주세요.",
+          failed: "로그인 실패: 명찰 번호 또는 비밀번호를 확인해주세요.",
+          succeeded: "로그인이 완료되었습니다!",
+        };
   const isOauthEnabled = !import.meta.env.DEV;
   const handleSocialLogin = (start: () => void) => {
     if (!isOauthEnabled) {
-      toast.info("개발 미리보기에서는 소셜 로그인을 사용할 수 없습니다. 배포된 사이트에서 이용해주세요.");
+      toast.info(loginMessages.previewSocialDisabled);
       return;
     }
     start();
@@ -109,11 +132,11 @@ export function Login() {
     e.preventDefault();
 
     if (!badgeNumber.trim()) {
-      toast.error("회사 명찰 번호를 입력해주세요.");
+      toast.error(loginMessages.badgeRequired);
       return;
     }
     if (!password) {
-      toast.error("비밀번호를 입력해주세요.");
+      toast.error(loginMessages.passwordRequired);
       return;
     }
 
@@ -135,16 +158,16 @@ export function Login() {
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.error) {
         const message = payload?.error?.json?.message ?? payload?.error?.message;
-        throw new Error(message || "로그인 실패");
+        throw new Error(message || loginMessages.failed);
       }
 
-      toast.success("로그인이 완료되었습니다!");
+      toast.success(loginMessages.succeeded);
       // 캐시를 무효화하고 대시보드로 이동
       await utils.auth.me.invalidate();
       window.location.href = "/";
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("로그인 실패: 명찰 번호 또는 비밀번호를 확인해주세요.");
+      toast.error(loginMessages.failed);
     } finally {
       setIsLoading(false);
     }
