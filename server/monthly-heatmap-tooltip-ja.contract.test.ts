@@ -6,6 +6,10 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("monthly heatmap tooltip Japanese contract", () => {
   it("localizes date-tooltip risk levels for Japanese instead of exposing raw codes", () => {
-    expect(dashboardSource).toContain('lang === "ja" ? { normal: "正常", caution: "注意", warning: "警告", danger: "危険" }[lvl] : lvl');
+    expect(dashboardSource).toContain('lang === "ja" ? "正常" : "Normal"');
+    expect(dashboardSource).toContain('lang === "ja" ? "注意" : "Caution"');
+    expect(dashboardSource).toContain('lang === "ja" ? "警告" : "Warning"');
+    expect(dashboardSource).toContain('lang === "ja" ? "危険" : "Danger"');
+    expect(dashboardSource).toContain('title={cellLabel}');
   });
 });

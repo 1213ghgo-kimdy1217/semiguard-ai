@@ -634,6 +634,8 @@ function MonthlyHeatmap({
     { level: "warning", label: lang === "ko" ? "경고" : lang === "ja" ? "警告" : "Warning" },
     { level: "danger",  label: lang === "ko" ? "위험" : lang === "ja" ? "危険" : "Danger" },
   ];
+  const riskLabelByLevel = Object.fromEntries(legend.map(({ level, label }) => [level, label])) as Record<RiskLevel, string>;
+  const noDataLabel = lang === "ko" ? "데이터 없음" : lang === "ja" ? "データなし" : "No data";
 
   return (
     <div className="rounded-xl border p-5" style={{ background: th.bgCard, borderColor: th.border }}>
@@ -669,11 +671,13 @@ function MonthlyHeatmap({
           const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const lvl = dayMap[key];
           const isToday = key === todayStr;
+          const cellLabel = `${key}: ${lvl ? riskLabelByLevel[lvl] : noDataLabel}`;
           return (
-            <div key={day}
-              title={lvl ? `${key}: ${lang === "ko" ? { normal: "정상", caution: "주의", warning: "경고", danger: "위험" }[lvl] : lang === "ja" ? { normal: "正常", caution: "注意", warning: "警告", danger: "危険" }[lvl] : lvl}` : key}
+            <button key={day} type="button" disabled={!onDateClick}
+              aria-label={cellLabel}
+              title={cellLabel}
               onClick={() => onDateClick?.(key)}
-              className="aspect-square flex items-center justify-center rounded text-[10px] font-mono transition-all duration-200 select-none"
+              className="aspect-square flex items-center justify-center rounded border-0 p-0 text-[10px] font-mono transition-all duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-1 disabled:cursor-default"
               style={{
                 cursor: onDateClick ? "pointer" : "default",
                 background: lvl ? CELL_COLOR[lvl] : (isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"),
@@ -684,7 +688,7 @@ function MonthlyHeatmap({
                 fontWeight: isToday ? 700 : 400,
               }}>
               {day}
-            </div>
+            </button>
           );
         })}
       </div>
