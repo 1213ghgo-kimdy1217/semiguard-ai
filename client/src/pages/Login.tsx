@@ -13,6 +13,15 @@ export function Login() {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
 
+  const loginLanguage = (() => {
+    try {
+      const saved = window.localStorage.getItem("semiguard_lang");
+      return saved === "en" || saved === "ja" ? saved : "ko";
+    } catch {
+      return "ko";
+    }
+  })();
+
   useEffect(() => {
     document.title = "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템";
 
@@ -39,16 +48,32 @@ export function Login() {
   const oauthParts = oauthError?.split("_") ?? [];
   const oauthProvider = oauthParts[0];
   const oauthReason = oauthParts.slice(1).join("_");
-  const oauthProviderLabel = oauthProvider === "google" ? "Google" : oauthProvider === "naver" ? "Naver" : oauthProvider === "kakao" ? "Kakao" : "소셜 로그인";
-  const oauthPolicyMessage = oauthReason === "unlinked"
-    ? `${oauthProviderLabel} 계정이 아직 연결되지 않았습니다. 먼저 회사 명찰 번호와 비밀번호로 회원가입·로그인한 뒤 대시보드 메뉴에서 연결해주세요.`
-    : oauthReason === "link_required"
-      ? "소셜 계정을 연결하려면 먼저 회사 명찰 번호와 비밀번호로 로그인해주세요."
-      : oauthReason === "already_linked"
-        ? "이 소셜 계정은 이미 다른 SemiGuard 계정에 연결되어 있습니다."
-        : oauthProvider === "kakao"
-          ? "Kakao 로그인에 실패했습니다. 카카오 디벨로퍼스에서 카카오 로그인 활성화, 리다이렉트 URI, 프로필 닉네임 동의항목을 확인한 뒤 잠시 후 다시 시도해주세요."
-          : `${oauthProviderLabel} 로그인에 실패했습니다. 제공자의 앱 설정 또는 등록된 로그인 계정을 확인한 뒤 다시 시도해주세요.`;
+  const oauthProviderLabel = oauthProvider === "google" ? "Google" : oauthProvider === "naver" ? "Naver" : oauthProvider === "kakao" ? "Kakao" : loginLanguage === "ja" ? "ソーシャルログイン" : loginLanguage === "en" ? "Social login" : "소셜 로그인";
+  const oauthPolicyMessage = (() => {
+    if (oauthReason === "unlinked") {
+      if (loginLanguage === "ja") return `${oauthProviderLabel}アカウントはまだ連携されていません。先に社員証番号とパスワードで登録・ログインし、ダッシュボードメニューから連携してください。`;
+      if (loginLanguage === "en") return `Your ${oauthProviderLabel} account is not linked yet. Sign up or sign in with your badge number and password, then link it from the dashboard menu.`;
+      return `${oauthProviderLabel} 계정이 아직 연결되지 않았습니다. 먼저 회사 명찰 번호와 비밀번호로 회원가입·로그인한 뒤 대시보드 메뉴에서 연결해주세요.`;
+    }
+    if (oauthReason === "link_required") {
+      if (loginLanguage === "ja") return "ソーシャルアカウントを連携するには、先に社員証番号とパスワードでログインしてください。";
+      if (loginLanguage === "en") return "Sign in with your badge number and password before linking a social account.";
+      return "소셜 계정을 연결하려면 먼저 회사 명찰 번호와 비밀번호로 로그인해주세요.";
+    }
+    if (oauthReason === "already_linked") {
+      if (loginLanguage === "ja") return "このソーシャルアカウントはすでに別のSemiGuardアカウントに連携されています。";
+      if (loginLanguage === "en") return "This social account is already linked to another SemiGuard account.";
+      return "이 소셜 계정은 이미 다른 SemiGuard 계정에 연결되어 있습니다.";
+    }
+    if (oauthProvider === "kakao") {
+      if (loginLanguage === "ja") return "Kakaoログインに失敗しました。カカオデベロッパーでKakaoログイン、リダイレクトURI、プロフィールの同意項目を確認してから、しばらくして再試行してください。";
+      if (loginLanguage === "en") return "Kakao login failed. Check Kakao Login activation, the redirect URI, and profile-consent settings in Kakao Developers, then try again.";
+      return "Kakao 로그인에 실패했습니다. 카카오 디벨로퍼스에서 카카오 로그인 활성화, 리다이렉트 URI, 프로필 닉네임 동의항목을 확인한 뒤 잠시 후 다시 시도해주세요.";
+    }
+    if (loginLanguage === "ja") return `${oauthProviderLabel}ログインに失敗しました。提供元のアプリ設定または登録済みのログインアカウントを確認してから再試行してください。`;
+    if (loginLanguage === "en") return `${oauthProviderLabel} login failed. Check the provider app settings or registered login account, then try again.`;
+    return `${oauthProviderLabel} 로그인에 실패했습니다. 제공자의 앱 설정 또는 등록된 로그인 계정을 확인한 뒤 다시 시도해주세요.`;
+  })();
   const isOauthEnabled = !import.meta.env.DEV;
   const handleSocialLogin = (start: () => void) => {
     if (!isOauthEnabled) {
