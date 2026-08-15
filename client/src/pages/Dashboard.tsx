@@ -3647,6 +3647,9 @@ export default function Dashboard() {
             {/* 상담 기록 사이드 패널 */}
             {showHistoryPanel && (
               <div id="chat-history-panel" className="absolute inset-0 z-[570] flex flex-col border p-3 shadow-2xl backdrop-blur-md animate-fadeIn sm:inset-x-auto sm:right-4 sm:top-14 sm:bottom-2 sm:w-72 sm:rounded-xl"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="consultation-history-panel-title"
                 style={{
                   background: isDark ? "oklch(0.14 0.02 240 / 0.95)" : "oklch(0.98 0.005 240 / 0.95)",
                   borderColor: "oklch(0.75 0.18 200 / 0.4)",
@@ -3654,7 +3657,7 @@ export default function Dashboard() {
                 }}>
                 <div className="flex flex-col gap-2 pb-2 border-b mb-2" style={{ borderColor: th.border }}>
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold flex items-center gap-1.5">
+                    <h4 id="consultation-history-panel-title" className="text-xs font-bold flex items-center gap-1.5">
                       📂 {lang === "ko" ? "과거 상담 기록" : lang === "ja" ? "過去の相談履歴" : "Consultation History"}
                     </h4>
                     <div className="flex items-center gap-2">
@@ -3678,7 +3681,11 @@ export default function Dashboard() {
                   </div>
                   {/* 검색창 */}
                   <div className="relative">
+                    <label className="sr-only" htmlFor="consultation-history-search">
+                      {lang === "ko" ? "상담 기록 검색" : lang === "ja" ? "相談履歴を検索" : "Search consultation history"}
+                    </label>
                     <input
+                      id="consultation-history-search"
                       type="text"
                       placeholder={lang === "ko" ? "과거 대화 내용 검색..." : lang === "ja" ? "過去の会話を検索..." : "Search past consultations..."}
                       value={searchKeyword}

@@ -15,4 +15,10 @@ describe("consultation history keyboard accessibility contract", () => {
     expect(dashboardSource).toContain('disabled={loadingHistorySessionId === session.id}');
     expect(dashboardSource).toContain("focus-visible:ring-cyan-400");
   });
+
+  it("exposes the full-screen history panel as a labeled dialog with a search label", () => {
+    expect(dashboardSource).toContain('role="dialog"\n                aria-modal="true"\n                aria-labelledby="consultation-history-panel-title"');
+    expect(dashboardSource).toContain('id="consultation-history-panel-title"');
+    expect(dashboardSource).toContain('htmlFor="consultation-history-search"');
+  });
 });
