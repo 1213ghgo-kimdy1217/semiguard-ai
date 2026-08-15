@@ -59,6 +59,15 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `현재 ${row.val.toFixed(s.step < 1 ? 2 : 0)}`');
   });
 
+  it("exposes risk threshold panels as accessible expandable regions", () => {
+    expect(dashboardSource).toContain('aria-expanded={showThresholdPanel}');
+    expect(dashboardSource).toContain('aria-controls="risk-threshold-panel"');
+    expect(dashboardSource).toContain('id="risk-threshold-panel" role="region"');
+    expect(dashboardSource).toContain('aria-expanded={showSensorPanel}');
+    expect(dashboardSource).toContain('aria-controls="sensor-threshold-panel"');
+    expect(dashboardSource).toContain('id="sensor-threshold-panel" role="region"');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");

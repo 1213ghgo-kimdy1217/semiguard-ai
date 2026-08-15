@@ -5180,7 +5180,10 @@ export default function Dashboard() {
               <div className="col-span-12 mb-2">
                 <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
                   <button
+                    type="button"
                     onClick={() => setShowThresholdPanel(p => !p)}
+                    aria-expanded={showThresholdPanel}
+                    aria-controls="risk-threshold-panel"
                     className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:opacity-80"
                     style={{ background: th.bgCard }}>
                     <div className="flex items-center gap-2">
@@ -5197,7 +5200,7 @@ export default function Dashboard() {
                     <span className="text-xs text-muted-foreground">{showThresholdPanel ? "▲" : "▼"}</span>
                   </button>
                   {showThresholdPanel && (
-                    <div className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-3 gap-5"
+                    <div id="risk-threshold-panel" role="region" aria-label={lang === "ko" ? "전체 위험도 임계값 설정" : lang === "ja" ? "全体リスクしきい値設定" : "Global risk threshold settings"} className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-3 gap-5"
                       style={{ background: th.bgCard2, borderColor: th.border }}>
                       {/* 정상 임계값 */}
                       <div className="flex flex-col gap-2">
@@ -5290,7 +5293,10 @@ export default function Dashboard() {
               <div className="col-span-12 mb-2">
                 <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
                   <button
+                    type="button"
                     onClick={() => setShowSensorPanel(p => !p)}
+                    aria-expanded={showSensorPanel}
+                    aria-controls="sensor-threshold-panel"
                     className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:opacity-80"
                     style={{ background: th.bgCard }}>
                     <div className="flex items-center gap-2">
@@ -5300,7 +5306,7 @@ export default function Dashboard() {
                     <span className="text-xs text-muted-foreground">{showSensorPanel ? "▲" : "▼"}</span>
                   </button>
                   {showSensorPanel && (
-                    <div className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5"
+                    <div id="sensor-threshold-panel" role="region" aria-label={lang === "ko" ? "센서별 위험도 임계값 설정" : lang === "ja" ? "センサー別リスクしきい値設定" : "Per-sensor risk threshold settings"} className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5"
                       style={{ background: th.bgCard2, borderColor: th.border }}>
                       {/* 전류 */}
                       {[
