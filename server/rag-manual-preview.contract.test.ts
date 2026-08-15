@@ -20,6 +20,14 @@ describe("RAG manual source preview contract", () => {
     expect(dashboardSource).toContain("Stored source sections");
   });
 
+  it("gives the manual manager dialog semantics and labeled registration fields", () => {
+    expect(dashboardSource).toContain('role="dialog" aria-modal="true" aria-labelledby="rag-manual-dialog-title"');
+    expect(dashboardSource).toContain('id="rag-manual-dialog-description"');
+    expect(dashboardSource).toContain('htmlFor="rag-manual-title"');
+    expect(dashboardSource).toContain('htmlFor="rag-manual-content"');
+    expect(dashboardSource).toContain('id="rag-manual-chunk-status"');
+  });
+
   it("keeps whole-source copy and Markdown export actions in the preview", () => {
     expect(dashboardSource).toContain("Manual source copied.");
     expect(dashboardSource).toContain('"semiguard-manual"');

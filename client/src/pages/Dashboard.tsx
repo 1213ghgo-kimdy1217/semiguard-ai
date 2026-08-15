@@ -3331,18 +3331,22 @@ export default function Dashboard() {
 
             {/* 설비 매뉴얼 RAG 지식 등록 모달 */}
             {showManualRagModal && (
-              <div id="chat-manual-panel" className="absolute inset-0 z-[565] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md animate-fadeIn">
+              <div id="chat-manual-panel" className="absolute inset-0 z-[565] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md animate-fadeIn" role="dialog" aria-modal="true" aria-labelledby="rag-manual-dialog-title" aria-describedby="rag-manual-dialog-description">
                 <div className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border p-4 sm:p-5 shadow-2xl space-y-3 custom-scrollbar" style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h4 className="text-sm font-bold" style={{ color: th.text }}>📘 {lang === "ko" ? "설비 매뉴얼 RAG 등록" : lang === "ja" ? "設備マニュアルRAG登録" : "Add Manual to RAG"}</h4>
-                      <p className="mt-1 text-[10px] leading-relaxed" style={{ color: th.textMuted }}>
+                      <h4 id="rag-manual-dialog-title" className="text-sm font-bold" style={{ color: th.text }}>📘 {lang === "ko" ? "설비 매뉴얼 RAG 등록" : lang === "ja" ? "設備マニュアルRAG登録" : "Add Manual to RAG"}</h4>
+                      <p id="rag-manual-dialog-description" className="mt-1 text-[10px] leading-relaxed" style={{ color: th.textMuted }}>
                         {lang === "ko" ? "매뉴얼·점검표의 텍스트를 등록하면, AI가 질문과 관련된 부분을 찾아 근거로 제시합니다. 민감정보는 제외해 주세요." : lang === "ja" ? "マニュアル・点検表のテキストを登録すると、AIが質問に関連する箇所を根拠として提示します。機密情報は除外してください。" : "Add manual or checklist text. The AI retrieves relevant sections as evidence. Exclude confidential information."}
                       </p>
                     </div>
                     <button type="button" ref={manualPanelCloseRef} onClick={() => setShowManualRagModal(false)} className="text-sm shrink-0 hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "매뉴얼 등록 닫기" : lang === "ja" ? "マニュアル登録を閉じる" : "Close manual registration"}>✕</button>
                   </div>
+                  <label htmlFor="rag-manual-title" className="sr-only">
+                    {lang === "ko" ? "RAG 매뉴얼 제목" : lang === "ja" ? "RAGマニュアルのタイトル" : "RAG manual title"}
+                  </label>
                   <input
+                    id="rag-manual-title"
                     value={manualTitle}
                     onChange={event => setManualTitle(event.target.value)}
                     maxLength={255}
@@ -3350,7 +3354,11 @@ export default function Dashboard() {
                     className="w-full rounded-lg border px-3 py-2 text-xs outline-none focus:ring-2"
                     style={{ background: isDark ? "oklch(0.18 0.02 240)" : "white", borderColor: th.border, color: th.text }}
                   />
+                  <label htmlFor="rag-manual-content" className="sr-only">
+                    {lang === "ko" ? "RAG 매뉴얼 본문" : lang === "ja" ? "RAGマニュアルの本文" : "RAG manual content"}
+                  </label>
                   <textarea
+                    id="rag-manual-content"
                     value={manualContent}
                     onChange={event => setManualContent(event.target.value)}
                     minLength={50}
@@ -3359,7 +3367,7 @@ export default function Dashboard() {
                     className="custom-scrollbar min-h-40 w-full resize-y rounded-lg border px-3 py-2 text-xs leading-relaxed outline-none focus:ring-2"
                     style={{ background: isDark ? "oklch(0.18 0.02 240)" : "white", borderColor: th.border, color: th.text }}
                   />
-                  <div className="rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" role="status" aria-live="polite" style={{ borderColor: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.55)" : th.border, background: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.10)" : "transparent", color: isManualChunkWarning ? (isDark ? "oklch(0.86 0.14 80)" : "oklch(0.45 0.16 75)") : th.textMuted }}>
+                  <div id="rag-manual-chunk-status" className="rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" role="status" aria-live="polite" style={{ borderColor: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.55)" : th.border, background: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.10)" : "transparent", color: isManualChunkWarning ? (isDark ? "oklch(0.86 0.14 80)" : "oklch(0.45 0.16 75)") : th.textMuted }}>
                     {manualChunkEstimate === 0
                       ? (lang === "ko" ? "본문을 입력하면 등록될 RAG 구간 수를 미리 계산합니다." : lang === "ja" ? "本文を入力すると、登録されるRAG区間数を事前に計算します。" : "Enter manual text to preview the number of RAG chunks to be registered.")
                       : isManualChunkWarning
