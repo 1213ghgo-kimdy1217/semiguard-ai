@@ -1046,6 +1046,10 @@
 - [x] 모바일 AI 분석 이력 제어·패널이 홈 제스처 영역과 겹치지 않도록 하단 안전 영역 반영
 - [x] 모바일·KO·EN·JA·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (320px 시각 점검·290개 테스트·빌드 통과)
 
+## pnpm 패치·재정의 구성 이전 (진행 중)
+- [x] Wouter 패치와 Tailwind Nano ID 재정의가 현재 pnpm 구성에서도 계속 적용되도록 설정 이전
+- [x] 잠금 파일·TypeScript·Vitest·프로덕션 빌드·운영 의존성 감사 검증 및 README 문서화 (290개 테스트·빌드 통과, critical 0건·high 4건)
+
 ## 인증 대기 화면 서비스 식별성 보완 (진행 중)
 - [x] 모바일·데스크톱 인증 대기 화면에 SemiGuard AI 서비스 식별과 안전 상태 맥락 제공
 - [x] KO·EN·JA·접근성·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (284개 테스트·빌드 통과)
