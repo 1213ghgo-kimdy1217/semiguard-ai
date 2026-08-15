@@ -231,9 +231,9 @@ function SensorFreshnessIndicator({ timestamp, lang }: { timestamp?: number; lan
         <span aria-hidden="true" className={`h-2 w-2 rounded-full ${freshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: color }} />
         {label}
       </div>
-      <div className="flex h-7 w-7 items-center justify-center rounded-full border sm:w-auto sm:gap-1.5 sm:px-2 xl:hidden" role="img" aria-label={label} title={label} style={{ borderColor: `${color}80`, color, background: `${color}1A` }}>
+      <div className="flex h-7 min-w-10 items-center justify-center gap-1 rounded-full border px-2 xl:hidden" role="img" aria-label={label} title={label} style={{ borderColor: `${color}80`, color, background: `${color}1A` }}>
         <span aria-hidden="true" className={`h-2 w-2 rounded-full ${freshness === "waiting" ? "animate-pulse" : ""}`} style={{ background: color }} />
-        <span className="hidden text-[10px] font-bold sm:inline">{ageSeconds === null ? "…" : `${ageSeconds}s`}</span>
+        <span className="text-[10px] font-bold">{ageSeconds === null ? "…" : `${ageSeconds}s`}</span>
       </div>
     </>
   );
@@ -395,18 +395,17 @@ function AlertPanel({ riskLevel, relayTripped, t }: { riskLevel: RiskLevel; rela
   return (
     <div className="flex h-7 items-center gap-1 rounded-full border px-2 sm:h-auto sm:gap-2 sm:border-0 sm:px-0" role="img" aria-label={label} title={label}>
       <div className="flex items-center gap-1.5">
-        <div className="w-2.5 h-2.5 rounded-full" style={{
+        <div className="hidden h-2.5 w-2.5 rounded-full sm:block" style={{
           background: isDanger ? "#ef4444" : "#22c55e",
           animation: isDanger ? "pulse 0.5s infinite" : "none",
         }} />
+        <span className="text-[10px] font-semibold sm:text-xs" style={{ color: isDanger ? "#ef4444" : "#22c55e" }}>{isDanger ? t.danger : t.normal}</span>
         <span className="hidden text-xs font-semibold text-muted-foreground sm:inline">{t.alertLight}</span>
       </div>
       <div className="hidden h-4 w-px bg-border sm:block" />
-      <div className="flex items-center gap-1.5">
-        <span className="h-2.5 w-2.5 rounded-full sm:hidden" aria-hidden="true" style={{ background: relayTripped ? "#ef4444" : "#22c55e" }} />
-        <span className="text-xs font-semibold" style={{ color: relayTripped ? "#ef4444" : "#22c55e" }}>
-          <span className="hidden sm:inline">{relayTripped ? t.relayActive : t.relayInactive}</span>
-        </span>
+      <div className="hidden items-center gap-1.5 sm:flex">
+        <span className="h-2.5 w-2.5 rounded-full" aria-hidden="true" style={{ background: relayTripped ? "#ef4444" : "#22c55e" }} />
+        <span className="text-xs font-semibold" style={{ color: relayTripped ? "#ef4444" : "#22c55e" }}>{relayTripped ? t.relayActive : t.relayInactive}</span>
       </div>
     </div>
   );
@@ -2939,7 +2938,7 @@ export default function Dashboard() {
                 {lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"}
               </div>
               <div className="flex h-7 w-7 items-center justify-center rounded-full border lg:hidden" role="status" aria-live="polite" aria-label={lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"} title={lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"} style={{ borderColor: "oklch(0.75 0.18 200 / 0.55)", color: "oklch(0.75 0.18 200)", background: "oklch(0.75 0.18 200 / 0.12)" }}>
-                <span aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full" style={{ background: "oklch(0.75 0.18 200)" }} />
+                <span aria-hidden="true" className="text-sm font-bold animate-pulse">↻</span>
               </div>
             </>
           )}
@@ -4167,6 +4166,7 @@ export default function Dashboard() {
                       <button
                         key={filter.id}
                         type="button"
+                        aria-pressed={feedbackHistoryFilter === filter.id}
                         onClick={() => {
                           setFeedbackHistoryFilter(filter.id);
                           if (filter.id !== "dislike") setFeedbackReasonFilter("all");
@@ -4192,6 +4192,7 @@ export default function Dashboard() {
                           <button
                             key={`reason-${filter.id}`}
                             type="button"
+                            aria-pressed={feedbackReasonFilter === filter.id}
                             onClick={() => setFeedbackReasonFilter(filter.id)}
                             title={lang === "ko" ? `부정 평가 사유: ${filter.ko}` : lang === "ja" ? `否定評価の理由: ${filter.ja}` : `Negative feedback reason: ${filter.en}`}
                             className="rounded-md px-2 py-1 text-[9px] font-bold transition-all active:scale-95"
@@ -4295,6 +4296,7 @@ export default function Dashboard() {
                     <button
                       key={preset.id}
                       type="button"
+                      aria-pressed={feedbackHistoryDatePreset === preset.id}
                       onClick={() => applyFeedbackDatePreset(preset.id)}
                       className="rounded border px-1.5 py-1 text-[9px] font-bold transition-all"
                       style={{

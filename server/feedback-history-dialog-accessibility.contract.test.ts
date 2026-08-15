@@ -17,4 +17,10 @@ describe("feedback history dialog accessibility contract", () => {
     expect(dashboardSource).toContain('id="feedback-history-search"');
     expect(dashboardSource).toContain('lang === "ja" ? "フィードバック履歴を検索"');
   });
+
+  it("announces the selected feedback type, reason, and quick date filters", () => {
+    expect(dashboardSource).toContain('aria-pressed={feedbackHistoryFilter === filter.id}');
+    expect(dashboardSource).toContain('aria-pressed={feedbackReasonFilter === filter.id}');
+    expect(dashboardSource).toContain('aria-pressed={feedbackHistoryDatePreset === preset.id}');
+  });
 });
