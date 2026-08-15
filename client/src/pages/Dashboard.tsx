@@ -3601,6 +3601,7 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => setSearchKeyword("")}
+                        aria-label={lang === "ko" ? "상담 기록 검색 지우기" : lang === "ja" ? "相談履歴の検索をクリア" : "Clear consultation history search"}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground hover:opacity-70">
                         ✕
                       </button>
@@ -4140,7 +4141,7 @@ export default function Dashboard() {
                       onClick={() => setFeedbackHistorySearch("")}
                       className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[10px] transition-opacity hover:opacity-70"
                       style={{ color: th.textMuted }}
-                      aria-label="Clear search">
+                      aria-label={lang === "ko" ? "피드백 검색 지우기" : lang === "ja" ? "フィードバック検索をクリア" : "Clear feedback search"}>
                       ✕
                     </button>
                   )}
@@ -4715,6 +4716,7 @@ export default function Dashboard() {
                                   <button
                                     type="button"
                                     onClick={() => setActiveDislikeIdx(null)}
+                                    aria-label={lang === "ko" ? "피드백 사유 선택 닫기" : lang === "ja" ? "フィードバック理由の選択を閉じる" : "Close feedback reason selection"}
                                     className="text-[10px] hover:opacity-70 px-1" style={{ color: th.textMuted }}>
                                     ✕
                                   </button>
