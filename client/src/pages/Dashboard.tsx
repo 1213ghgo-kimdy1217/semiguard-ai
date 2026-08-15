@@ -2458,7 +2458,7 @@ export default function Dashboard() {
                 ))}
               </div>
               {/* LLM 분석 결과 (저장된 경우) - 현재 언어에 맞는 컬럼 표시 */}
-              {(log.llmAnalysisKo || log.llmAnalysisEn) && (() => {
+              {(log.llmAnalysisKo || log.llmAnalysisEn || log.llmAnalysisJa) && (() => {
                 const raw = lang === "ko" ? log.llmAnalysisKo : lang === "ja" ? log.llmAnalysisJa : log.llmAnalysisEn;
                 const fallback = log.llmAnalysisKo || log.llmAnalysisEn || log.llmAnalysisJa;
                 try {
