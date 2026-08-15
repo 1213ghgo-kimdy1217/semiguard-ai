@@ -136,7 +136,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path={"/404"} component={NotFound} />
-      <Route component={Signup} />
+      <Route component={NotFound} />
     </Switch>
   );
 }
