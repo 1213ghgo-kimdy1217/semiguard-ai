@@ -247,7 +247,7 @@ export function Signup() {
                   type="button"
                   onClick={() => selectLanguage(nextLanguage)}
                   aria-pressed={language === nextLanguage}
-                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${language === nextLanguage ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:bg-slate-700 hover:text-slate-100"}`}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 ${language === nextLanguage ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:bg-slate-700 hover:text-slate-100"}`}
                 >
                   {label}
                 </button>
@@ -282,7 +282,7 @@ export function Signup() {
               <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
               <div className="relative">
                 <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
-                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50">
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
@@ -302,7 +302,7 @@ export function Signup() {
               <Label htmlFor="passwordConfirm" className="text-sm font-medium text-slate-300">{copy.passwordConfirm}</Label>
               <div className="relative">
                 <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
-                <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 disabled:opacity-50">
+                <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
                   {showPasswordConfirm ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
@@ -316,7 +316,7 @@ export function Signup() {
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-400">
               {copy.accountPrompt}{" "}
-              <button type="button" onClick={() => setLocation("/login")} className="font-semibold text-cyan-400 transition-colors hover:text-cyan-300">
+              <button type="button" onClick={() => setLocation("/login")} className="rounded font-semibold text-cyan-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800">
                 {copy.login}
               </button>
             </p>
