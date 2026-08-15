@@ -93,6 +93,10 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('`${labelMap[f]} 위험 단계 필터${isActive ? ", 선택됨" : ""}`');
   });
 
+  it("declares dashboard tabs as non-submitting controls", () => {
+    expect(dashboardSource).toContain('<button key={tab} type="button" id={`dashboard-tab-${tab}`} role="tab"');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
