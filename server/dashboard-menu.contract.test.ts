@@ -73,6 +73,14 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('type="button"\n                          onClick={() => {\n                            const def = {\n                              currentCaution: 7.0');
   });
 
+  it("declares simulator actions as non-submitting buttons", () => {
+    expect(dashboardSource).toContain('<button type="button" onClick={handleInjectNormal}');
+    expect(dashboardSource).toContain('<button type="button" onClick={handleInjectCaution}');
+    expect(dashboardSource).toContain('<button type="button" onClick={handleInjectWarning}');
+    expect(dashboardSource).toContain('<button type="button" onClick={handleInjectAnomaly}');
+    expect(dashboardSource).toContain('<button type="button" onClick={handleResetCost}');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");

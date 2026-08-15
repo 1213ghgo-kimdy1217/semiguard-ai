@@ -5498,28 +5498,28 @@ export default function Dashboard() {
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-relaxed">{t.simulatorDesc}</p>
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    <button onClick={handleInjectNormal} disabled={injectNormal.isPending}
+                    <button type="button" onClick={handleInjectNormal} disabled={injectNormal.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(34,197,94,0.10)", borderColor: "#22c55e45", color: "#22c55e" }}>
                       {injectNormal.isPending
                         ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#22c55e" /><span>{t.processing}</span></span>
                         : `▶ ${t.injectNormal}`}
                     </button>
-                    <button onClick={handleInjectCaution} disabled={injectCaution.isPending}
+                    <button type="button" onClick={handleInjectCaution} disabled={injectCaution.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(234,179,8,0.10)", borderColor: "#eab30845", color: "#eab308" }}>
                       {injectCaution.isPending
                         ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#eab308" /><span>{t.processing}</span></span>
                         : `⚡ ${t.injectCaution}`}
                     </button>
-                    <button onClick={handleInjectWarning} disabled={injectWarning.isPending}
+                    <button type="button" onClick={handleInjectWarning} disabled={injectWarning.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(249,115,22,0.10)", borderColor: "#f9731645", color: "#f97316" }}>
                       {injectWarning.isPending
                         ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#f97316" /><span>{t.processing}</span></span>
                         : `🔶 ${t.injectWarning}`}
                     </button>
-                    <button onClick={handleInjectAnomaly} disabled={injectAnomaly.isPending}
+                    <button type="button" onClick={handleInjectAnomaly} disabled={injectAnomaly.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(239,68,68,0.10)", borderColor: "#ef444445", color: "#ef4444" }}>
                       {injectAnomaly.isPending
@@ -5529,7 +5529,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 {/* 절감 비용 리셋 버튼 */}
-                <button onClick={handleResetCost} disabled={resetCostMutation.isPending}
+                <button type="button" onClick={handleResetCost} disabled={resetCostMutation.isPending}
                   className="w-full py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                   style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", borderColor: th.border2, color: th.textMuted }}>
                   {resetCostMutation.isPending
