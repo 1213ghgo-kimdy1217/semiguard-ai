@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Dashboard.tsx"), "utf8");
 
 describe("feedback search preference contract", () => {
-  it("restores and persists the feedback search query", () => {
-    expect(dashboardSource).toContain('window.localStorage.getItem("semiguard_feedback_search")');
-    expect(dashboardSource).toContain('window.localStorage.setItem("semiguard_feedback_search", feedbackHistorySearch)');
+  it("restores and safely persists the feedback search query", () => {
+    expect(dashboardSource).toContain('readDashboardPreference("semiguard_feedback_search")');
+    expect(dashboardSource).toContain('persistDashboardPreference("semiguard_feedback_search", feedbackHistorySearch)');
   });
 });
