@@ -30,7 +30,7 @@ function persistDashboardPreference(key: string, value: string) {
 // ─── 위험도 색상 매핑 ────────────────────────────────────────────────────────
 // ─── 버튼 스피너 ─────────────────────────────────────────────────────────────
 // ─── 미니 스파크라인 ──────────────────────────────────────────────────────────
-function Sparkline({ data, color }: { data: number[]; color: string }) {
+function Sparkline({ data, color, label }: { data: number[]; color: string; label: string }) {
   if (data.length < 2) return null;
   const W = 80, H = 28;
   const min = Math.min(...data);
@@ -44,7 +44,8 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   const lastPt = pts.split(" ").pop()!;
   const [lx, ly] = lastPt.split(",").map(Number);
   return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: "visible" }}>
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: "visible" }} role="img" aria-label={label}>
+      <title>{label}</title>
       <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5"
         strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
       <circle cx={lx} cy={ly} r="2.5" fill={color} />
@@ -5187,6 +5188,14 @@ export default function Dashboard() {
                   })();
                   const blinkBorderColor = alertLevel === "danger" ? "#ef4444" : alertLevel === "warning" ? "#f97316" : alertLevel === "caution" ? "#eab308" : `${card.color}35`;
                   const blinkAnim = alertLevel !== "normal" ? "sensorBlink 1s ease-in-out infinite" : "none";
+                  const currentScore = scoreHistory.at(-1) ?? 0;
+                  const minScore = Math.min(...scoreHistory);
+                  const maxScore = Math.max(...scoreHistory);
+                  const scoreTrendSummary = lang === "ko"
+                    ? `${card.label} 점수 추이. 현재 ${currentScore}, 최저 ${minScore}, 최고 ${maxScore}`
+                    : lang === "ja"
+                      ? `${card.label}のスコア推移。現在 ${currentScore}、最小 ${minScore}、最大 ${maxScore}`
+                      : `${card.label} score trend. Current ${currentScore}, minimum ${minScore}, maximum ${maxScore}`;
                   return (
                   <div key={card.label} className="rounded-xl p-4 border flex flex-col gap-2 transition-all duration-300"
                     style={{ background: "rgba(255,255,255,0.025)", borderColor: blinkBorderColor, animation: blinkAnim, borderWidth: alertLevel !== "normal" ? "2px" : "1px" }}>
@@ -5200,7 +5209,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
                       <span className="text-[9px] text-muted-foreground opacity-60">{lang === "ko" ? "점수 추이" : lang === "ja" ? "スコア推移" : "Score trend"}</span>
-                      <Sparkline data={scoreHistory} color={card.color} />
+                      <Sparkline data={scoreHistory} color={card.color} label={scoreTrendSummary} />
                     </div>
                   </div>
                   );
