@@ -23,9 +23,9 @@ describe("sensor data freshness contract", () => {
   });
 
   it("keeps compact header statuses readable instead of showing dot-only controls on mobile", () => {
-    expect(dashboardSource).toContain('className="flex h-7 min-w-10 items-center justify-center gap-1 rounded-full border px-2 xl:hidden"');
+    expect(dashboardSource).toContain('className="flex h-7 min-w-10 shrink-0 items-center justify-center gap-1 rounded-full border px-2 xl:hidden"');
     expect(dashboardSource).toContain('<span className="text-[10px] font-bold">{ageSeconds === null ? "…" : `${ageSeconds}s`}</span>');
     expect(dashboardSource).toContain('<span aria-hidden="true" className="text-sm font-bold animate-pulse">↻</span>');
-    expect(dashboardSource).toContain('<span className="text-[10px] font-semibold sm:text-xs" style={{ color: isDanger ? "#ef4444" : "#22c55e" }}>{isDanger ? t.danger : t.normal}</span>');
+    expect(dashboardSource).toContain('<span className="whitespace-nowrap text-[10px] font-semibold sm:text-xs" style={{ color: isDanger ? "#ef4444" : "#22c55e" }}>{isDanger ? t.danger : t.normal}</span>');
   });
 });

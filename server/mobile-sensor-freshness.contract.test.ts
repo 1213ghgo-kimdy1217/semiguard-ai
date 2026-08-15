@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("mobile sensor freshness contract", () => {
   it("keeps a compact freshness badge visible below the xl breakpoint", () => {
-    expect(dashboardSource).toContain('className="flex h-7 min-w-10 items-center justify-center gap-1 rounded-full border px-2 xl:hidden"');
+    expect(dashboardSource).toContain('className="flex h-7 min-w-10 shrink-0 items-center justify-center gap-1 rounded-full border px-2 xl:hidden"');
     expect(dashboardSource).toContain('className="text-[10px] font-bold">{ageSeconds === null ? "…" : `${ageSeconds}s`}</span>');
   });
 

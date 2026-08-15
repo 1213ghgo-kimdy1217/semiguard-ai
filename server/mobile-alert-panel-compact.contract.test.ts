@@ -9,7 +9,9 @@ describe("mobile alert panel compact contract", () => {
     expect(dashboardSource).toContain('role="img" aria-label={label} title={label}');
     expect(dashboardSource).toContain('hidden text-xs font-semibold text-muted-foreground sm:inline');
     expect(dashboardSource).toContain('className="hidden h-2.5 w-2.5 rounded-full sm:block"');
-    expect(dashboardSource).toContain('<span className="text-[10px] font-semibold sm:text-xs" style={{ color: isDanger ? "#ef4444" : "#22c55e" }}>{isDanger ? t.danger : t.normal}</span>');
+    expect(dashboardSource).toContain('className="flex h-7 min-w-10 shrink-0 items-center justify-center gap-1 rounded-full border px-2 xl:hidden"');
+    expect(dashboardSource).toContain('className="flex h-7 shrink-0 items-center gap-1 rounded-full border px-2 whitespace-nowrap sm:h-auto sm:gap-2 sm:border-0 sm:px-0"');
+    expect(dashboardSource).toContain('<span className="whitespace-nowrap text-[10px] font-semibold sm:text-xs" style={{ color: isDanger ? "#ef4444" : "#22c55e" }}>{isDanger ? t.danger : t.normal}</span>');
     expect(dashboardSource).toContain('<div className="hidden items-center gap-1.5 sm:flex">');
   });
 });
