@@ -1022,6 +1022,10 @@
 - [x] 호환성이 확인되는 소규모 보안 업데이트만 적용하고 회귀 검증 (AWS SDK 3.1111.0, tRPC 11.18.0, Axios 1.19.0, Drizzle ORM 0.45.2)
 - [x] 잔여 취약점과 변경 근거를 README에 기록 (critical 1건 제거, high 21건→4건; 잔여 4건은 Express 4·Recharts 2·Streamdown 1·Nano ID 메이저 업그레이드 검토 필요)
 
+## 로그인 제출 상태 접근성 (진행 중)
+- [x] 로그인 양식의 제출 중 상태를 보조기기에 명확히 전달
+- [x] KO·EN·JA·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (285개 테스트·빌드 통과)
+
 ## 인증 대기 화면 서비스 식별성 보완 (진행 중)
 - [x] 모바일·데스크톱 인증 대기 화면에 SemiGuard AI 서비스 식별과 안전 상태 맥락 제공
 - [x] KO·EN·JA·접근성·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (284개 테스트·빌드 통과)

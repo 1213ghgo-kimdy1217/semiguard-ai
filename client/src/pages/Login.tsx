@@ -296,7 +296,7 @@ export function Login() {
           )}
 
           {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4" aria-busy={isLoading}>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{loginUi.employeeLogin}</p>
             {/* Badge Number */}
             <div className="space-y-2">
