@@ -10,7 +10,7 @@ describe("not found locale contract", () => {
     expect(notFoundSource).toContain("페이지를 찾을 수 없습니다");
     expect(notFoundSource).toContain("Page Not Found");
     expect(notFoundSource).toContain("ページが見つかりません");
-    expect(notFoundSource).toContain("{copy.goHome}");
+    expect(notFoundSource).toContain("{user ? copy.goHome : copy.goLogin}");
   });
 
   it("synchronizes the document language and labels the recovery page", () => {

@@ -3,32 +3,37 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Home } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 type NotFoundLanguage = "ko" | "en" | "ja";
 
-const NOT_FOUND_COPY: Record<NotFoundLanguage, { title: string; description: string; moved: string; goHome: string }> = {
+const NOT_FOUND_COPY: Record<NotFoundLanguage, { title: string; description: string; moved: string; goHome: string; goLogin: string }> = {
   ko: {
     title: "페이지를 찾을 수 없습니다",
     description: "요청하신 페이지가 존재하지 않습니다.",
     moved: "주소가 변경되었거나 삭제되었을 수 있습니다.",
     goHome: "대시보드로 이동",
+    goLogin: "로그인으로 이동",
   },
   en: {
     title: "Page Not Found",
     description: "Sorry, the page you are looking for doesn't exist.",
     moved: "It may have been moved or deleted.",
     goHome: "Go Home",
+    goLogin: "Go to Login",
   },
   ja: {
     title: "ページが見つかりません",
     description: "お探しのページは存在しません。",
     moved: "ページのアドレスが変更または削除された可能性があります。",
     goHome: "ダッシュボードへ移動",
+    goLogin: "ログインへ移動",
   },
 };
 
 export default function NotFound() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [language] = useState<NotFoundLanguage>(() => {
     try {
       const saved = window.localStorage.getItem("semiguard_lang");
@@ -44,7 +49,7 @@ export default function NotFound() {
   }, [language]);
 
   const handleGoHome = () => {
-    setLocation("/");
+    setLocation(user ? "/" : "/login");
   };
 
   return (
@@ -78,7 +83,7 @@ export default function NotFound() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <Home className="w-4 h-4 mr-2" />
-              {copy.goHome}
+              {user ? copy.goHome : copy.goLogin}
             </Button>
           </div>
         </CardContent>
