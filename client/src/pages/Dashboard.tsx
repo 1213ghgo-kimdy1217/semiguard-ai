@@ -2673,7 +2673,8 @@ export default function Dashboard() {
             </div>
             <button onClick={() => setShowAiHistory(false)}
               className="w-5 h-5 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70"
-              style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}>✕</button>
+              style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}
+              aria-label={lang === "ko" ? "AI 분석 이력 닫기" : lang === "ja" ? "AI分析履歴を閉じる" : "Close AI analysis history"}>✕</button>
           </div>
           <div className="max-h-80 overflow-y-auto">
             {llmHistoryQuery.isLoading ? (
@@ -4233,7 +4234,7 @@ export default function Dashboard() {
                           ? (lang === "ko" ? "AI 핵심 키워드 요약" : lang === "ja" ? "AI主要キーワード要約" : "AI key-term summary")
                           : (lang === "ko" ? "기본 핵심 키워드 분석" : lang === "ja" ? "基本キーワード分析" : "Basic key-term analysis")}
                       </p>
-                      <button type="button" onClick={() => setFeedbackKeywordSummary(null)} className="text-[10px] hover:opacity-70" style={{ color: th.textMuted }} aria-label="Close">✕</button>
+                      <button type="button" onClick={() => setFeedbackKeywordSummary(null)} className="text-[10px] hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "핵심 키워드 요약 닫기" : lang === "ja" ? "主要キーワード要約を閉じる" : "Close key-term summary"}>✕</button>
                     </div>
                     {feedbackKeywordSummary.keywords.length > 0 && (
                       <div className="mt-1.5 flex flex-wrap gap-1">
@@ -5545,7 +5546,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border"
                   style={{ borderColor: "oklch(0.65 0.18 200 / 0.6)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.12)" }}>
                   📅 {selectedDate}
-                  <button onClick={() => setSelectedDate(null)} className="ml-1 hover:opacity-70 transition-opacity" title={lang === "ko" ? "날짜 필터 해제" : lang === "ja" ? "日付フィルター解除" : "Clear date filter"}>✕</button>
+                  <button onClick={() => setSelectedDate(null)} className="ml-1 hover:opacity-70 transition-opacity" title={lang === "ko" ? "날짜 필터 해제" : lang === "ja" ? "日付フィルター解除" : "Clear date filter"} aria-label={lang === "ko" ? "날짜 필터 해제" : lang === "ja" ? "日付フィルター解除" : "Clear date filter"}>✕</button>
                 </div>
               )}
               {(["all", "normal", "caution", "warning", "danger"] as const).map(f => {
