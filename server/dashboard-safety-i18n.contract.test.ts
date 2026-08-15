@@ -14,7 +14,7 @@ describe("dashboard safety Japanese localization contract", () => {
 
   it("localizes anomaly log notifications, filters, and result counts in Japanese", () => {
     expect(dashboardSource).toContain("新しい記録が${newLogCount}件追加されました");
-    expect(dashboardSource).toContain("クリックして閉じる");
+    expect(dashboardSource).toContain("選択して閉じる");
     expect(dashboardSource).toContain("${filteredLogs.length}件表示");
     expect(dashboardSource).toContain('lang === "ja" ? "危険" : "Danger"');
     expect(dashboardSource).toContain('lang === "ja" ? "リセット" : "Reset"');

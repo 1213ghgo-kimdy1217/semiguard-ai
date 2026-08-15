@@ -97,6 +97,12 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('<button key={tab} type="button" id={`dashboard-tab-${tab}`} role="tab"');
   });
 
+  it("exposes new anomaly record notices as keyboard-dismissible buttons", () => {
+    expect(dashboardSource).toContain('{newLogCount > 0 && (\n            <button\n              type="button"');
+    expect(dashboardSource).toContain('onClick={() => setNewLogCount(0)}');
+    expect(dashboardSource).toContain('`새 이상 이력 ${newLogCount}건 알림 닫기`');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");

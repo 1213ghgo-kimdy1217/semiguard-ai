@@ -5595,14 +5595,16 @@ export default function Dashboard() {
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: th.border }}>{/* 이상 이력 로그 탭 */}
           {/* 새 기록 알림 배너 */}
           {newLogCount > 0 && (
-            <div
-              className="flex items-center justify-between px-4 py-2 text-sm font-semibold cursor-pointer"
+            <button
+              type="button"
+              className="flex w-full items-center justify-between px-4 py-2 text-left text-sm font-semibold cursor-pointer"
               style={{ background: "rgba(34,197,94,0.15)", borderBottom: "1px solid rgba(34,197,94,0.3)", color: "#22c55e" }}
               onClick={() => setNewLogCount(0)}
+              aria-label={lang === "ko" ? `새 이상 이력 ${newLogCount}건 알림 닫기` : lang === "ja" ? `新しい異常履歴${newLogCount}件の通知を閉じる` : `Dismiss ${newLogCount} new anomaly record notification${newLogCount > 1 ? "s" : ""}`}
             >
               <span>🔔 {lang === "ko" ? `새 기록 ${newLogCount}건이 추가되었습니다` : lang === "ja" ? `新しい記録が${newLogCount}件追加されました` : `${newLogCount} new record${newLogCount > 1 ? "s" : ""} added`}</span>
-              <span className="text-xs opacity-70">{lang === "ko" ? "클릭하여 닫기" : lang === "ja" ? "クリックして閉じる" : "Click to dismiss"}</span>
-            </div>
+              <span className="text-xs opacity-70">{lang === "ko" ? "선택하여 닫기" : lang === "ja" ? "選択して閉じる" : "Select to dismiss"}</span>
+            </button>
           )}
           {/* 탭 헤더 - 2행 구조 */}
           <div className="px-5 py-3 border-b flex flex-col gap-2"
