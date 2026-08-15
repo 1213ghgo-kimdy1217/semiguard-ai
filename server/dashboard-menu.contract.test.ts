@@ -131,6 +131,11 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('id="ai-analysis-history-panel" role="region" aria-labelledby="ai-analysis-history-title"');
   });
 
+  it("exposes the floating AI analysis result as a named assistive-technology region", () => {
+    expect(dashboardSource).toContain('role="region" aria-labelledby="ai-analysis-result-title"');
+    expect(dashboardSource).toContain('id="ai-analysis-result-title"');
+  });
+
   it("exposes consultation and feedback pagination context to assistive technology", () => {
     expect(dashboardSource).toContain('role="navigation" aria-label={lang === "ko" ? "상담 기록 페이지 탐색"');
     expect(dashboardSource).toContain('`상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지`');

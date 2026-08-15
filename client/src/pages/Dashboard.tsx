@@ -2693,7 +2693,7 @@ export default function Dashboard() {
       )}
       {/* LLM 분석 결과 플로팅 패널 (위험/경고 탐지 후 dangerAlert 닫혀도 유지) */}
       {llmAnalysis && !dangerAlert && (
-        <div className="fixed bottom-6 right-6 z-[500] w-80 rounded-2xl shadow-2xl"
+        <div role="region" aria-labelledby="ai-analysis-result-title" className="fixed bottom-6 right-6 z-[500] w-80 rounded-2xl shadow-2xl"
           style={{
             background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
             border: `1px solid ${llmAnalysis.riskLevel === "danger" ? "rgba(239,68,68,0.5)" : "rgba(249,115,22,0.5)"}`,
@@ -2703,7 +2703,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-base">🤖</span>
-                <span className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
+                <span id="ai-analysis-result-title" className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
                   {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
                 </span>
               </div>
