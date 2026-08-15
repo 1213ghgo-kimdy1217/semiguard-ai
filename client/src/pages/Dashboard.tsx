@@ -746,9 +746,9 @@ export default function Dashboard() {
   const unlinkSocialMutation = trpc.auth.unlinkSocial.useMutation({
     onSuccess: () => {
       void socialLinksQuery.refetch();
-      toast.success(lang === "ko" ? "소셜 계정 연결을 해제했습니다." : "Social account unlinked.");
+      toast.success(lang === "ko" ? "소셜 계정 연결을 해제했습니다." : lang === "ja" ? "ソーシャルアカウントの連携を解除しました。" : "Social account unlinked.");
     },
-    onError: () => toast.error(lang === "ko" ? "소셜 계정 연결 해제에 실패했습니다." : "Failed to unlink social account."),
+    onError: () => toast.error(lang === "ko" ? "소셜 계정 연결 해제에 실패했습니다." : lang === "ja" ? "ソーシャルアカウントの連携解除に失敗しました。" : "Failed to unlink social account."),
   });
 
   // DB에서 임계값 불러오기 (초기 1회)
@@ -1918,7 +1918,7 @@ export default function Dashboard() {
     const provider = new URLSearchParams(window.location.search).get("social_linked");
     if (!provider) return;
     const label = provider === "google" ? "Google" : provider === "naver" ? "Naver" : provider === "kakao" ? "Kakao" : "소셜 계정";
-    toast.success(lang === "ko" ? `${label} 계정이 연결되었습니다.` : `${label} account linked successfully.`);
+    toast.success(lang === "ko" ? `${label} 계정이 연결되었습니다.` : lang === "ja" ? `${label}アカウントを連携しました。` : `${label} account linked successfully.`);
     void socialLinksQuery.refetch();
     window.history.replaceState({}, document.title, window.location.pathname);
   }, [lang]);
