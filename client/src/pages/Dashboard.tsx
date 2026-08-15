@@ -802,6 +802,7 @@ export default function Dashboard() {
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [current, setCurrent] = useState<AnomalyResult | null>(null);
   const [heartbeatAlive, setHeartbeatAlive] = useState(true);
+  const [autoPollingRetryPending, setAutoPollingRetryPending] = useState(false);
   const lastUpdateRef = useRef<number>(Date.now());
   const [relayTripped, setRelayTripped] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "log">("dashboard");
@@ -2126,11 +2127,13 @@ export default function Dashboard() {
       // 서버 DB에도 저장 (fire-and-forget)
       autoFetch.mutate(undefined, {
         onSuccess: () => {
+          setAutoPollingRetryPending(false);
           utils.semiguard.getLogs.invalidate();
           utils.semiguard.getStats.invalidate();
         },
         onError: (error) => {
           // 개발 서버 재시작·일시 네트워크 지연은 다음 4초 폴링 주기에서 자동 복구한다.
+          setAutoPollingRetryPending(true);
           console.warn("Auto polling will retry on the next interval:", error);
         }
       });
@@ -2789,6 +2792,17 @@ export default function Dashboard() {
           {!isMobile && <HeartbeatIndicator alive={heartbeatAlive} t={t} />}
           {!isMobile && <div className="w-px h-5 bg-border" />}
           <SensorFreshnessIndicator timestamp={sensorData?.timestamp} lang={lang} />
+          {autoPollingRetryPending && (
+            <>
+              <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold" role="status" aria-live="polite" title={lang === "ko" ? "자동 폴링 전송이 일시 지연되어 다음 주기에 다시 시도합니다." : lang === "ja" ? "自動ポーリングの送信が一時的に遅延しているため、次の周期に再試行します。" : "Automatic polling is temporarily delayed and will retry on the next interval."} style={{ color: "oklch(0.75 0.18 200)" }}>
+                <span aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full" style={{ background: "oklch(0.75 0.18 200)" }} />
+                {lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"}
+              </div>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border lg:hidden" role="status" aria-live="polite" aria-label={lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"} title={lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"} style={{ borderColor: "oklch(0.75 0.18 200 / 0.55)", color: "oklch(0.75 0.18 200)", background: "oklch(0.75 0.18 200 / 0.12)" }}>
+                <span aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full" style={{ background: "oklch(0.75 0.18 200)" }} />
+              </div>
+            </>
+          )}
           <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold" title={safetyMonitoringHasError ? (lang === "ko" ? "일부 안전 데이터 조회를 복구해야 합니다." : lang === "ja" ? "一部の安全データの復旧が必要です。" : "Some safety data needs recovery.") : safetyMonitoringInitializing ? (lang === "ko" ? "안전 데이터를 동기화하는 중입니다." : lang === "ja" ? "安全データを同期中です。" : "Synchronizing safety data.") : (lang === "ko" ? "핵심 안전 데이터가 연결되었습니다." : lang === "ja" ? "主要な安全データに接続されています。" : "Core safety data is connected.") } style={{ color: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }}>
             <span className={`h-2 w-2 rounded-full ${safetyMonitoringInitializing && !safetyMonitoringHasError ? "animate-pulse" : ""}`} style={{ background: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }} />
             {safetyMonitoringHasError ? (lang === "ko" ? "복구 필요" : lang === "ja" ? "復旧が必要" : "Recovery needed") : safetyMonitoringInitializing ? (lang === "ko" ? "동기화 중" : lang === "ja" ? "同期中" : "Syncing") : (lang === "ko" ? "데이터 연결" : lang === "ja" ? "データ接続" : "Data connected")}
