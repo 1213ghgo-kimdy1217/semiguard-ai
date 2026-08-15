@@ -2138,45 +2138,59 @@ export default function Dashboard() {
 
   // 데모 자동 실행 useEffect
   useEffect(() => {
-    if (demoRunning) {
-      const modes = ["normal", "caution", "warning", "danger"] as const;
-      let step = 0;
-      demoIntervalRef.current = setInterval(async () => {
-        const mode = modes[step % modes.length];
-        step++;
-        try {
-          let result;
-          if (mode === "normal") result = await injectNormal.mutateAsync();
-          else if (mode === "caution") result = await injectCaution.mutateAsync();
-          else if (mode === "warning") result = await injectWarning.mutateAsync();
-          else result = await injectAnomaly.mutateAsync();
-          setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
-          setCurrent(result);
-          setChartData(prev => [...prev, { ...result.sensorData, label: `D${step}` }].slice(-MAX_CHART_POINTS));
-          if (result.riskLevel === "danger") {
-            setRelayTripped(true);
-            setDangerAlert(true);
-            setDangerFlash(true);
-            setTimeout(() => setDangerFlash(false), 600);
-            playAlert();
-            setTimeout(() => setRelayTripped(false), 2000);
-            triggerLlmAnalysis(result);
-          }
-          await utils.semiguard.getStats.invalidate();
-          await utils.semiguard.getLogs.invalidate();
-        } catch (_) {}
-      }, demoSpeed * 1000);
-    } else {
+    const stopDemo = () => {
       if (demoIntervalRef.current) {
         clearInterval(demoIntervalRef.current);
         demoIntervalRef.current = null;
       }
+    };
+
+    if (!demoRunning) {
+      stopDemo();
+      return stopDemo;
     }
+
+    const modes = ["normal", "caution", "warning", "danger"] as const;
+    let step = 0;
+    const runDemoCycle = async () => {
+      const mode = modes[step % modes.length];
+      step++;
+      try {
+        let result;
+        if (mode === "normal") result = await injectNormal.mutateAsync();
+        else if (mode === "caution") result = await injectCaution.mutateAsync();
+        else if (mode === "warning") result = await injectWarning.mutateAsync();
+        else result = await injectAnomaly.mutateAsync();
+        setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
+        setCurrent(result);
+        setChartData(prev => [...prev, { ...result.sensorData, label: `D${step}` }].slice(-MAX_CHART_POINTS));
+        if (result.riskLevel === "danger") {
+          setRelayTripped(true);
+          setDangerAlert(true);
+          setDangerFlash(true);
+          setTimeout(() => setDangerFlash(false), 600);
+          playAlert();
+          setTimeout(() => setRelayTripped(false), 2000);
+          triggerLlmAnalysis(result);
+        }
+        await utils.semiguard.getStats.invalidate();
+        await utils.semiguard.getLogs.invalidate();
+      } catch (_) {}
+    };
+    const startDemo = () => {
+      if (document.visibilityState === "hidden" || demoIntervalRef.current) return;
+      demoIntervalRef.current = setInterval(runDemoCycle, demoSpeed * 1000);
+    };
+    const handleDemoVisibilityChange = () => {
+      if (document.visibilityState === "hidden") stopDemo();
+      else startDemo();
+    };
+
+    startDemo();
+    document.addEventListener("visibilitychange", handleDemoVisibilityChange);
     return () => {
-      if (demoIntervalRef.current) {
-        clearInterval(demoIntervalRef.current);
-        demoIntervalRef.current = null;
-      }
+      stopDemo();
+      document.removeEventListener("visibilitychange", handleDemoVisibilityChange);
     };
   }, [demoRunning, demoSpeed]);
 
