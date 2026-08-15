@@ -44,8 +44,13 @@ export default function DashboardLayout({
 }) {
   const [, setLocation] = useLocation();
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-    return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
+    try {
+      const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+      const parsed = saved ? parseInt(saved, 10) : NaN;
+      return Number.isFinite(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH ? parsed : DEFAULT_WIDTH;
+    } catch {
+      return DEFAULT_WIDTH;
+    }
   });
   const [layoutLanguage] = useState<"ko" | "en" | "ja">(() => {
     try {
@@ -63,7 +68,11 @@ export default function DashboardLayout({
       : { title: "Sign in to continue", description: "Access to this dashboard requires authentication. Continue to launch the login flow.", action: "Sign in" };
 
   useEffect(() => {
-    localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
+    try {
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
+    } catch {
+      // 제한된 저장소 환경에서도 현재 세션의 레이아웃 너비는 유지합니다.
+    }
   }, [sidebarWidth]);
 
   if (loading) {
