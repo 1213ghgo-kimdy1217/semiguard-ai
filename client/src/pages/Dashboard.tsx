@@ -851,6 +851,24 @@ export default function Dashboard() {
   }, [dangerAlert]);
   const prevLogCountRef = useRef(0);
   const [selectedLog, setSelectedLog] = useState<import("../../../shared/semiguard").AnomalyLogEntry | null>(null);
+  const selectedLogCloseRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!selectedLog) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = requestAnimationFrame(() => selectedLogCloseRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSelectedLog(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [selectedLog]);
   const [logPage, setLogPage] = useState(1);
   const LOG_PAGE_SIZE = 10;
   const [scoreHistory, setScoreHistory] = useState<number[]>([10]);
@@ -2421,13 +2439,16 @@ export default function Dashboard() {
             style={{ background: "rgba(0,0,0,0.65)", animation: "fadeIn 0.2s ease-out" }}
             onClick={() => setSelectedLog(null)}>
             <div className="relative w-full max-w-sm mx-4 rounded-2xl shadow-2xl overflow-hidden"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="anomaly-detail-modal-title"
               style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", border: `1px solid ${color}40` }}
               onClick={e => e.stopPropagation()}>
               {/* 헤더 */}
               <div className="px-5 py-4 border-b flex items-center justify-between"
                 style={{ borderColor: `${color}30`, background: `${color}10` }}>
                 <div>
-                  <p className="text-xs font-semibold" style={{ color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)" }}>
+                  <p id="anomaly-detail-modal-title" className="text-xs font-semibold" style={{ color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)" }}>
                     {lang === "ko" ? "이상 이력 상세" : lang === "ja" ? "異常履歴詳細" : "Anomaly Detail"}
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: isDark ? "oklch(0.50 0.01 240)" : "oklch(0.45 0.01 240)" }}>
@@ -2443,7 +2464,7 @@ export default function Dashboard() {
                         ? lvl === "danger" ? "危険" : lvl === "warning" ? "警告" : lvl === "caution" ? "注意" : "正常"
                         : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
                   </span>
-                  <button onClick={() => setSelectedLog(null)}
+                  <button ref={selectedLogCloseRef} onClick={() => setSelectedLog(null)}
                     className="text-lg leading-none hover:opacity-60 transition-opacity"
                     style={{ color: isDark ? "oklch(0.50 0.01 240)" : "oklch(0.45 0.01 240)" }}
                     aria-label={lang === "ko" ? "이상 이력 상세 닫기" : lang === "ja" ? "異常履歴詳細を閉じる" : "Close anomaly detail"}>✕</button>
