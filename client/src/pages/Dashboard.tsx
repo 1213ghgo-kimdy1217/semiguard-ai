@@ -472,6 +472,8 @@ function ScoreLineChart({
   const tooltipTime    = isDark ? "oklch(0.55 0.01 240)" : "oklch(0.40 0.01 240)";
 
   const [tooltip, setTooltip] = useState<{ x: number; y: number; score: number; time: string; risk: string } | null>(null);
+  const pointRefs = useRef<(SVGCircleElement | null)[]>([]);
+  const [activePointIndex, setActivePointIndex] = useState(0);
   const W = 800, H = 200, PAD = { top: 16, right: 16, bottom: 32, left: 44 };
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
@@ -505,6 +507,51 @@ function ScoreLineChart({
 
   // 폴리라인 포인트
   const points = data.map((d, i) => `${xScale(i)},${yScale(d.score)}`).join(" ");
+  const focusedPointIndex = Math.min(activePointIndex, data.length - 1);
+  const riskLabel = (risk: string) => lang === "ko"
+    ? risk === "danger" ? "위험" : risk === "warning" ? "경고" : risk === "caution" ? "주의" : "정상"
+    : lang === "ja"
+      ? risk === "danger" ? "危険" : risk === "warning" ? "警告" : risk === "caution" ? "注意" : "正常"
+      : risk.charAt(0).toUpperCase() + risk.slice(1);
+  const timeLocale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
+  const formatPointTime = (timestamp: string) => new Date(timestamp).toLocaleTimeString(timeLocale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const setPointTooltip = (d: { timestamp: string; score: number; riskLevel: string }, index: number) => {
+    setTooltip({
+      x: xScale(index),
+      y: yScale(d.score),
+      score: d.score,
+      time: formatPointTime(d.timestamp),
+      risk: d.riskLevel,
+    });
+  };
+  const pointLabel = (d: { timestamp: string; score: number; riskLevel: string }, index: number) => {
+    const position = `${index + 1}/${data.length}`;
+    const navigationHint = lang === "ko"
+      ? "왼쪽 또는 오른쪽 화살표 키로 인접한 점으로 이동"
+      : lang === "ja"
+        ? "左右の矢印キーで隣のデータ点へ移動"
+        : "Use Left or Right Arrow to move to an adjacent point";
+    return lang === "ko"
+      ? `위험도 데이터 ${position}, 점수 ${d.score}점, ${riskLabel(d.riskLevel)}, ${formatPointTime(d.timestamp)}. ${navigationHint}`
+      : lang === "ja"
+        ? `リスクデータ ${position}、スコア ${d.score}、${riskLabel(d.riskLevel)}、${formatPointTime(d.timestamp)}。${navigationHint}`
+        : `Risk data ${position}, score ${d.score}, ${riskLabel(d.riskLevel)}, ${formatPointTime(d.timestamp)}. ${navigationHint}`;
+  };
+  const handlePointKeyDown = (event: React.KeyboardEvent<SVGCircleElement>, index: number) => {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") nextIndex = Math.min(index + 1, data.length - 1);
+    if (event.key === "ArrowLeft") nextIndex = Math.max(index - 1, 0);
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = data.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    setActivePointIndex(nextIndex);
+    pointRefs.current[nextIndex]?.focus();
+  };
 
   // X축 레이블 (최대 6개)
   const xLabels: { i: number; label: string }[] = [];
@@ -520,7 +567,13 @@ function ScoreLineChart({
   }
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 200 }}>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full"
+      style={{ height: 200 }}
+      role="group"
+      aria-label={lang === "ko" ? "최근 위험도 점수 추이 차트" : lang === "ja" ? "最近のリスクスコア推移グラフ" : "Recent risk score trend chart"}
+    >
       {/* 배경 밴드 */}
       {bands.map((b, i) => (
         <rect key={i} x={PAD.left} y={b.y1} width={innerW} height={Math.abs(b.y2 - b.y1)} fill={b.color} />
@@ -542,20 +595,23 @@ function ScoreLineChart({
       {/* 점 */}
       {data.map((d, i) => (
         <circle key={i} cx={xScale(i)} cy={yScale(d.score)} r={3}
+          ref={(node) => { pointRefs.current[i] = node; }}
           fill={RISK_COLOR_MAP[d.riskLevel] ?? "#38bdf8"}
           stroke={chartDotStroke} strokeWidth={1}
           style={{ cursor: "crosshair" }}
-          onMouseEnter={() => {
-            const d2 = new Date(d.timestamp);
-            setTooltip({
-              x: xScale(i),
-              y: yScale(d.score),
-              score: d.score,
-              time: `${d2.getHours().toString().padStart(2,"0")}:${d2.getMinutes().toString().padStart(2,"0")}:${d2.getSeconds().toString().padStart(2,"0")}`,
-              risk: d.riskLevel,
-            });
+          role="button"
+          tabIndex={i === focusedPointIndex ? 0 : -1}
+          aria-label={pointLabel(d, i)}
+          onFocus={() => {
+            setActivePointIndex(i);
+            setPointTooltip(d, i);
           }}
-          onMouseLeave={() => setTooltip(null)}
+          onBlur={() => setTooltip(null)}
+          onKeyDown={(event) => handlePointKeyDown(event, i)}
+          onMouseEnter={() => setPointTooltip(d, i)}
+          onMouseLeave={() => {
+            if (document.activeElement !== pointRefs.current[i]) setTooltip(null);
+          }}
         />
       ))}
       {/* X축 레이블 */}
@@ -576,11 +632,7 @@ function ScoreLineChart({
             <text x={tx + 8} y={ty + 15} fontSize={10} fill={riskColor} fontWeight="600">{`${lang === "ko" ? "점수" : lang === "ja" ? "スコア" : "Score"}: ${tooltip.score}`}</text>
             <text x={tx + 8} y={ty + 30} fontSize={9} fill={tooltipTime}>{tooltip.time}</text>
             <text x={tx + 8} y={ty + 42} fontSize={9} fill={riskColor} opacity={0.8}>{
-              lang === "ko"
-                ? tooltip.risk === "danger" ? "위험" : tooltip.risk === "warning" ? "경고" : tooltip.risk === "caution" ? "주의" : "정상"
-                : lang === "ja"
-                  ? tooltip.risk === "danger" ? "危険" : tooltip.risk === "warning" ? "警告" : tooltip.risk === "caution" ? "注意" : "正常"
-                : tooltip.risk.charAt(0).toUpperCase() + tooltip.risk.slice(1)
+              riskLabel(tooltip.risk)
             }</text>
           </g>
         );
