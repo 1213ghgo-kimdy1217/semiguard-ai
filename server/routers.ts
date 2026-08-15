@@ -647,6 +647,7 @@ Guidelines:
           }
           return {
             reply,
+            usedFallback: false,
             manualSources: manualSources.map((source, index) => ({
               label: index + 1,
               documentId: source.documentId,
@@ -661,6 +662,7 @@ Guidelines:
           console.warn("AI consultation fallback used:", err instanceof Error ? err.message : "unknown error");
           return {
             reply: buildSafeFallbackDiagnostic(sensorContext, lang),
+            usedFallback: true,
             manualSources: manualSources.map((source, index) => ({
               label: index + 1,
               documentId: source.documentId,

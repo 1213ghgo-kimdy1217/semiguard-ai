@@ -1079,7 +1079,7 @@ export default function Dashboard() {
   const [activeManualSource, setActiveManualSource] = useState<ManualSource | null>(null);
   const [quickPromptStatus, setQuickPromptStatus] = useState("");
 
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string }>>([
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string; usedFallback?: boolean }>>([
     {
       role: "assistant",
       content: lang === "ko"
@@ -1746,7 +1746,8 @@ export default function Dashboard() {
         content: aiReply,
         timestamp: Date.now(),
         manualSources: res.manualSources ?? [],
-        recoveryPrompt: isTemporaryServiceReply ? text.trim() : undefined,
+        usedFallback: res.usedFallback ?? false,
+        recoveryPrompt: isTemporaryServiceReply || res.usedFallback ? text.trim() : undefined,
       }]);
 
       if (activeSessionId !== null) {
@@ -4503,6 +4504,12 @@ export default function Dashboard() {
                         <div className="mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold"
                           style={{ background: "oklch(0.65 0.18 200 / 0.14)", color: "oklch(0.68 0.18 200)", border: "1px solid oklch(0.65 0.18 200 / 0.30)" }}>
                           ✨ {lang === "ko" ? "피드백이 반영된 답변입니다" : lang === "ja" ? "フィードバックを反映した回答です" : "Feedback-informed response"}
+                        </div>
+                      )}
+                      {msg.usedFallback && (
+                        <div role="status" className="mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold"
+                          style={{ background: "oklch(0.76 0.14 82 / 0.14)", color: isDark ? "oklch(0.84 0.13 82)" : "oklch(0.44 0.13 62)", border: "1px solid oklch(0.76 0.14 82 / 0.35)" }}>
+                          🛡 {lang === "ko" ? "실시간 수치 기반 기본 안전 진단" : lang === "ja" ? "リアルタイム数値に基づく基本安全診断" : "Live-measurement safety fallback"}
                         </div>
                       )}
                       <p className="whitespace-pre-wrap break-words">{msg.content}</p>
