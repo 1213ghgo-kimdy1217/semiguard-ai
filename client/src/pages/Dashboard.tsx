@@ -5208,6 +5208,8 @@ export default function Dashboard() {
                           <span className="text-xs font-mono font-bold" style={{ color: "#22c55e" }}>{thresholds.normal}</span>
                         </div>
                         <input type="range" min={10} max={thresholds.caution - 1} value={thresholds.normal}
+                          aria-label={lang === "ko" ? "정상 최대 위험도 점수" : lang === "ja" ? "正常の最大リスクスコア" : "Normal maximum risk score"}
+                          aria-valuetext={lang === "ko" ? `${thresholds.normal}점` : lang === "ja" ? `${thresholds.normal}点` : `${thresholds.normal} points`}
                           className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
                           style={{ accentColor: "#22c55e" }}
                           onChange={e => {
@@ -5229,6 +5231,8 @@ export default function Dashboard() {
                           <span className="text-xs font-mono font-bold" style={{ color: "#eab308" }}>{thresholds.caution}</span>
                         </div>
                         <input type="range" min={thresholds.normal + 1} max={thresholds.warning - 1} value={thresholds.caution}
+                          aria-label={lang === "ko" ? "주의 최대 위험도 점수" : lang === "ja" ? "注意の最大リスクスコア" : "Caution maximum risk score"}
+                          aria-valuetext={lang === "ko" ? `${thresholds.caution}점` : lang === "ja" ? `${thresholds.caution}点` : `${thresholds.caution} points`}
                           className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
                           style={{ accentColor: "#eab308" }}
                           onChange={e => {
@@ -5250,6 +5254,8 @@ export default function Dashboard() {
                           <span className="text-xs font-mono font-bold" style={{ color: "#f97316" }}>{thresholds.warning}</span>
                         </div>
                         <input type="range" min={thresholds.caution + 1} max={89} value={thresholds.warning}
+                          aria-label={lang === "ko" ? "경고 최대 위험도 점수" : lang === "ja" ? "警告の最大リスクスコア" : "Warning maximum risk score"}
+                          aria-valuetext={lang === "ko" ? `${thresholds.warning}점` : lang === "ja" ? `${thresholds.warning}点` : `${thresholds.warning} points`}
                           className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
                           style={{ accentColor: "#f97316" }}
                           onChange={e => {
@@ -5336,6 +5342,8 @@ export default function Dashboard() {
                                 <span className="text-[9px] font-mono" style={{ color: row.color }}>{row.val.toFixed(s.step < 1 ? 2 : 0)}</span>
                               </div>
                               <input type="range" min={s.min} max={s.max} step={s.step} value={row.val}
+                                aria-label={lang === "ko" ? `${s.label} ${row.label} 임계값` : lang === "ja" ? `${s.label} ${row.label}しきい値` : `${s.label} ${row.label} threshold`}
+                                aria-valuetext={lang === "ko" ? `현재 ${row.val.toFixed(s.step < 1 ? 2 : 0)}` : lang === "ja" ? `現在 ${row.val.toFixed(s.step < 1 ? 2 : 0)}` : `Current ${row.val.toFixed(s.step < 1 ? 2 : 0)}`}
                                 className="w-full h-1 rounded-full appearance-none cursor-pointer"
                                 style={{ accentColor: row.color }}
                                 onChange={e => row.set(Number(e.target.value))} />

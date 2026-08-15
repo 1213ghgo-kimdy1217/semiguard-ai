@@ -50,6 +50,15 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `${demoSpeed}초`');
   });
 
+  it("provides localized names and values for risk threshold range controls", () => {
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "정상 최대 위험도 점수"');
+    expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `${thresholds.normal}점`');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "주의 최대 위험도 점수"');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "경고 최대 위험도 점수"');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? `${s.label} ${row.label} 임계값`');
+    expect(dashboardSource).toContain('aria-valuetext={lang === "ko" ? `현재 ${row.val.toFixed(s.step < 1 ? 2 : 0)}`');
+  });
+
   it("exposes account linking for all supported social providers", () => {
     expect(dashboardSource).toContain("trpc.auth.socialLinks.useQuery()");
     expect(dashboardSource).toContain("startGoogleLink");
