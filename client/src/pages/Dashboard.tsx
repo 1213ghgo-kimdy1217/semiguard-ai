@@ -1552,6 +1552,7 @@ export default function Dashboard() {
       if (showDeleteAllFeedbackFinalConfirm) return setShowDeleteAllFeedbackFinalConfirm(false);
       if (showDeleteAllFeedbackConfirm) return setShowDeleteAllFeedbackConfirm(false);
       if (feedbackToDelete !== null) return setFeedbackToDelete(null);
+      if (activeDislikeIdx !== null) return setActiveDislikeIdx(null);
       if (feedbackContextItem) return setFeedbackContextItem(null);
       if (showFeedbackHistoryPanel) return setShowFeedbackHistoryPanel(false);
       if (manualDocumentToDelete !== null) return setManualDocumentToDelete(null);
@@ -1567,6 +1568,7 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", handleChatEscape);
   }, [
     activeManualSource,
+    activeDislikeIdx,
     feedbackContextItem,
     feedbackToDelete,
     isChatOpen,
@@ -4708,10 +4710,13 @@ export default function Dashboard() {
 
                             {/* 싫어요 사유 선택 소형 팝업 */}
                             {activeDislikeIdx === idx && (
-                              <div className="absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 rounded-xl shadow-xl border animate-fadeIn"
+                              <div
+                                role="dialog"
+                                aria-labelledby={`feedback-reason-title-${idx}`}
+                                className="absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 rounded-xl shadow-xl border animate-fadeIn"
                                 style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: th.border2 }}>
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-[10px] font-bold" style={{ color: th.text }}>
+                                  <span id={`feedback-reason-title-${idx}`} className="text-[10px] font-bold" style={{ color: th.text }}>
                                     {lang === "ko" ? "어떤 점이 아쉬우셨나요?" : lang === "ja" ? "どの点が物足りなかったですか？" : "What was missing?"}
                                   </span>
                                   <button
