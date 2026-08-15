@@ -1165,3 +1165,7 @@
 ## 안전 점검: 상담·피드백 이력 페이지네이션 접근성 (진행 중)
 - [x] 상담·피드백 이력의 이전·다음 제어를 명시적 일반 버튼으로 선언하고 현재 페이지 탐색 맥락을 제공
 - [x] KO·EN·JA·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (318개 테스트·빌드 통과)
+
+## 안전 점검: Express path-to-regexp 보안 패치 (진행 중)
+- [ ] Express 4 전이 `path-to-regexp`를 공식 권고된 0.1.13으로 고정해 ReDoS high 취약점 제거 (현재 Express 4.21.2의 고정 전이 버전이 pnpm 재정의·대상 업데이트로 변경되지 않아, Express 호환 패치 또는 상위 버전 검토 후 진행)
+- [ ] 동결 설치·TypeScript·Vitest·프로덕션 빌드·운영 의존성 감사 검증 및 README 문서화
