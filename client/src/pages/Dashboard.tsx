@@ -810,6 +810,7 @@ export default function Dashboard() {
   const [showLanding, setShowLanding] = useState(true);
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dangerAlert, setDangerAlert] = useState(false);
+  const dangerAlertConfirmRef = useRef<HTMLButtonElement>(null);
   const [muted, setMuted] = useState<boolean>(false);
   const mutedRef = useRef<boolean>(false);
   // localStorage에서 초기값 복원
@@ -828,6 +829,24 @@ export default function Dashboard() {
   const volumeRef = useRef<number>(0.35);
   const [dangerFlash, setDangerFlash] = useState(false);
   const [newLogCount, setNewLogCount] = useState(0);
+
+  useEffect(() => {
+    if (!dangerAlert) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = requestAnimationFrame(() => dangerAlertConfirmRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setDangerAlert(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [dangerAlert]);
   const prevLogCountRef = useRef(0);
   const [selectedLog, setSelectedLog] = useState<import("../../../shared/semiguard").AnomalyLogEntry | null>(null);
   const [logPage, setLogPage] = useState(1);
@@ -2484,7 +2503,7 @@ export default function Dashboard() {
       {dangerAlert && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center"
           style={{ background: "rgba(0,0,0,0.7)", animation: "fadeIn 0.3s ease-out" }}>
-          <div className="relative w-full max-w-md mx-4 rounded-2xl p-8 shadow-2xl"
+          <div className="relative w-full max-w-md mx-4 rounded-2xl p-8 shadow-2xl" role="alertdialog" aria-modal="true" aria-labelledby="danger-alert-title" aria-describedby="danger-alert-description"
             style={{
               background: "linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.10))",
               border: "2px solid rgb(239,68,68)",
@@ -2492,10 +2511,10 @@ export default function Dashboard() {
             }}>
             <div className="flex flex-col items-center gap-4">
               <div className="text-6xl animate-pulse">🚨</div>
-              <h2 className="text-2xl font-bold text-center" style={{ color: "rgb(239,68,68)" }}>
+              <h2 id="danger-alert-title" className="text-2xl font-bold text-center" style={{ color: "rgb(239,68,68)" }}>
                 {lang === "ko" ? "위험 단계 도달!" : lang === "ja" ? "危険レベル到達！" : "DANGER LEVEL REACHED!"}
               </h2>
-              <p className="text-center text-sm" style={{ color: "rgb(220,38,38)" }}>
+              <p id="danger-alert-description" className="text-center text-sm" style={{ color: "rgb(220,38,38)" }}>
                 {lang === "ko"
                   ? "장비가 위험 상태에 도달했습니다. 즉시 점검이 필요합니다."
                   : lang === "ja"
@@ -2542,6 +2561,8 @@ export default function Dashboard() {
                 </div>
               )}
               <button
+                ref={dangerAlertConfirmRef}
+                type="button"
                 onClick={() => { setDangerAlert(false); }}
                 className="mt-4 px-6 py-2 rounded-lg font-bold transition-all duration-200 active:scale-95"
                 style={{
