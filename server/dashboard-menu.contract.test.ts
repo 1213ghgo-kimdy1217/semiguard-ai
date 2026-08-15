@@ -120,6 +120,11 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('<button ref={selectedLogCloseRef} type="button" onClick={() => setSelectedLog(null)}');
   });
 
+  it("declares AI analysis panel close controls as non-submitting buttons", () => {
+    expect(dashboardSource).toContain('<button\n                type="button"\n                onClick={() => setLlmAnalysis(null)}');
+    expect(dashboardSource).toContain('<button type="button" onClick={() => setShowAiHistory(false)}');
+  });
+
   it("exposes consultation and feedback pagination context to assistive technology", () => {
     expect(dashboardSource).toContain('role="navigation" aria-label={lang === "ko" ? "상담 기록 페이지 탐색"');
     expect(dashboardSource).toContain('`상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지`');

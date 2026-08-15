@@ -2708,6 +2708,7 @@ export default function Dashboard() {
                 </span>
               </div>
               <button
+                type="button"
                 onClick={() => setLlmAnalysis(null)}
                 className="w-5 h-5 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70"
                 style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}
@@ -2763,7 +2764,7 @@ export default function Dashboard() {
                 {lang === "ko" ? "AI 분석 히스토리 (최근 5건)" : lang === "ja" ? "AI分析履歴（直近5件）" : "AI Analysis History (Last 5)"}
               </span>
             </div>
-            <button onClick={() => setShowAiHistory(false)}
+            <button type="button" onClick={() => setShowAiHistory(false)}
               className="w-5 h-5 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70"
               style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}
               aria-label={lang === "ko" ? "AI 분석 이력 닫기" : lang === "ja" ? "AI分析履歴を閉じる" : "Close AI analysis history"}>✕</button>
