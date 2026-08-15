@@ -860,6 +860,11 @@ export default function Dashboard() {
       if (event.key === "Escape") {
         event.preventDefault();
         setSelectedLog(null);
+        return;
+      }
+      if (event.key === "Tab") {
+        event.preventDefault();
+        selectedLogCloseRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
