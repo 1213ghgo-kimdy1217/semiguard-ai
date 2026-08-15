@@ -51,10 +51,14 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
+    try {
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(meQuery.data)
+      );
+    } catch {
+      // 제한된 저장소 환경에서도 서버 기반 인증 상태는 계속 사용할 수 있습니다.
+    }
     return {
       user: meQuery.data ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,
