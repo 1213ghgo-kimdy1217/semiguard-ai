@@ -9,6 +9,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { toast } from "sonner";
 import { startGoogleLink, startNaverLink, startKakaoLink } from "@/const";
 
+const FALLBACK_DIAGNOSTIC_MARKERS = ["[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;
+
 // ─── 위험도 색상 매핑 ────────────────────────────────────────────────────────
 // ─── 버튼 스피너 ─────────────────────────────────────────────────────────────
 // ─── 미니 스파크라인 ──────────────────────────────────────────────────────────
@@ -1437,6 +1439,7 @@ export default function Dashboard() {
           role: message.role as "user" | "assistant",
           content: message.content,
           timestamp: message.createdAt ? new Date(message.createdAt).getTime() : Date.now(),
+          usedFallback: message.role === "assistant" && FALLBACK_DIAGNOSTIC_MARKERS.some(marker => message.content.includes(marker)),
         })));
       } else {
         setChatMessages([{
