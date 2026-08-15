@@ -99,15 +99,15 @@ class ErrorBoundary extends Component<Props, State> {
             <p className="mt-3 text-sm leading-relaxed text-slate-300">{copy.description}</p>
             <p className="mt-4 font-mono text-[11px] text-slate-500">{copy.reference}: {this.state.errorId}</p>
             <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
-              <button ref={this.retryButtonRef} type="button" onClick={this.retry} className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition-opacity hover:opacity-90">
+              <button ref={this.retryButtonRef} type="button" onClick={this.retry} className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
                 <RotateCcw size={16} aria-hidden="true" />
                 {copy.retry}
               </button>
-              <button type="button" onClick={this.goToLogin} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-500 px-4 py-2.5 text-sm font-bold text-slate-100 transition-opacity hover:opacity-80">
+              <button type="button" onClick={this.goToLogin} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-500 px-4 py-2.5 text-sm font-bold text-slate-100 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
                 <LogIn size={16} aria-hidden="true" />
                 {copy.login}
               </button>
-              <button type="button" onClick={() => window.location.reload()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-opacity hover:opacity-80">
+              <button type="button" onClick={() => window.location.reload()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
                 {copy.reload}
               </button>
             </div>
