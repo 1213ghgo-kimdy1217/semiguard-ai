@@ -1030,6 +1030,10 @@
 - [x] 비활성화된 Google·Naver·Kakao 로그인 제어와 개발 미리보기 안내를 보조기기용으로 연결
 - [x] KO·EN·JA·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (286개 테스트·빌드 통과)
 
+## 회원가입 생년월일 입력 다국어 맥락 (진행 중)
+- [x] 선택한 KO·EN·JA 언어 맥락을 생년월일 입력에 전달
+- [x] 모바일·다국어·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (287개 테스트·빌드 통과)
+
 ## 인증 대기 화면 서비스 식별성 보완 (진행 중)
 - [x] 모바일·데스크톱 인증 대기 화면에 SemiGuard AI 서비스 식별과 안전 상태 맥락 제공
 - [x] KO·EN·JA·접근성·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (284개 테스트·빌드 통과)
