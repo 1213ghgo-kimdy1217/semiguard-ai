@@ -58,4 +58,12 @@ describe("first-use feedback privacy and metrics contract", () => {
     expect(dashboardSource).toContain("event.shiftKey && document.activeElement === firstControl");
     expect(dashboardSource).toContain("document.activeElement === lastControl");
   });
+
+  it("lets a user defer automatic feedback prompts without removing the manual editor", () => {
+    expect(dashboardSource).toContain('FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY = "semiguard_first_use_feedback_prompt_dismissed"');
+    expect(dashboardSource).toContain("readDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY) === \"true\"");
+    expect(dashboardSource).toContain("isFirstUseFeedbackPromptDismissed");
+    expect(dashboardSource).toContain('persistDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY, "true")');
+    expect(dashboardSource).toContain("firstUseFeedbackTriggerRef");
+  });
 });

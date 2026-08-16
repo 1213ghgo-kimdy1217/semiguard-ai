@@ -13,6 +13,7 @@ import { Tooltip as AppTooltip, TooltipContent, TooltipTrigger } from "@/compone
 const FALLBACK_DIAGNOSTIC_MARKERS = ["[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;
 const CUSTOM_PERIOD_PRESETS_KEY = "semiguard_custom_period_presets";
 const MAX_CUSTOM_PERIOD_PRESETS = 8;
+const FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY = "semiguard_first_use_feedback_prompt_dismissed";
 
 type CustomPeriodPreset = {
   id: string;
@@ -1079,6 +1080,7 @@ export default function Dashboard() {
   const [isFirstUseFeedbackOpen, setIsFirstUseFeedbackOpen] = useState(false);
   const [firstUseEaseRating, setFirstUseEaseRating] = useState(0);
   const [firstUseDifficultStep, setFirstUseDifficultStep] = useState<"none" | "orientation" | "risk_review" | "analysis_review">("none");
+  const [isFirstUseFeedbackPromptDismissed, setIsFirstUseFeedbackPromptDismissed] = useState(() => readDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY) === "true");
   const onboardingInitializedRef = useRef(false);
   const feedbackPromptedRef = useRef(false);
   const firstUseFeedbackTriggerRef = useRef<HTMLButtonElement>(null);
@@ -1102,11 +1104,13 @@ export default function Dashboard() {
     if (!onboardingProgressQuery.data.completedAt) setIsOnboardingOpen(true);
   }, [onboardingProgressQuery.data]);
   useEffect(() => {
-    if (!onboardingProgressQuery.data?.completedAt || firstUseFeedbackQuery.isLoading || firstUseFeedbackQuery.data || feedbackPromptedRef.current) return;
+    if (!onboardingProgressQuery.data?.completedAt || firstUseFeedbackQuery.isLoading || firstUseFeedbackQuery.data || feedbackPromptedRef.current || isFirstUseFeedbackPromptDismissed) return;
     feedbackPromptedRef.current = true;
     setIsFirstUseFeedbackOpen(true);
-  }, [firstUseFeedbackQuery.data, firstUseFeedbackQuery.isLoading, onboardingProgressQuery.data?.completedAt]);
+  }, [firstUseFeedbackQuery.data, firstUseFeedbackQuery.isLoading, isFirstUseFeedbackPromptDismissed, onboardingProgressQuery.data?.completedAt]);
   const closeFirstUseFeedback = () => {
+    persistDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY, "true");
+    setIsFirstUseFeedbackPromptDismissed(true);
     setIsFirstUseFeedbackOpen(false);
     requestAnimationFrame(() => firstUseFeedbackTriggerRef.current?.focus());
   };
@@ -1169,6 +1173,10 @@ export default function Dashboard() {
     return next;
   });
   const isMobile = useIsMobile();
+  const hasCompletedFirstAnalysis = Boolean(onboardingProgressQuery.data?.completedAt);
+  const aiHistoryBottom = hasCompletedFirstAnalysis
+    ? (isMobile ? "max(8rem, calc(env(safe-area-inset-bottom) + 7.25rem))" : "7.5rem")
+    : (isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined);
   const [menuOpen, setMenuOpen] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("menu") === "open",
   );
@@ -3480,7 +3488,7 @@ export default function Dashboard() {
           style={{
             background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
             border: "1px solid oklch(0.75 0.18 200 / 0.35)",
-            bottom: isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined,
+            bottom: aiHistoryBottom,
             animation: "slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1)"
           }}>
           <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: "oklch(0.75 0.18 200 / 0.20)", background: "oklch(0.75 0.18 200 / 0.06)" }}>
@@ -3543,7 +3551,7 @@ export default function Dashboard() {
           aria-expanded={showAiHistory}
           onClick={() => setShowAiHistory(true)}
           className="fixed bottom-6 left-4 sm:left-6 z-[490] flex items-center gap-2 px-3 py-2 rounded-xl shadow-lg text-xs font-bold border transition-all duration-200 hover:opacity-90 active:scale-95"
-          style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", borderColor: "oklch(0.75 0.18 200 / 0.40)", color: "oklch(0.75 0.18 200)", bottom: isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined }}>
+          style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", borderColor: "oklch(0.75 0.18 200 / 0.40)", color: "oklch(0.75 0.18 200)", bottom: aiHistoryBottom }}>
           📋 {lang === "ko" ? "AI 분석 이력" : lang === "ja" ? "AI分析履歴" : "AI History"}
           {llmHistoryQuery.data && llmHistoryQuery.data.length > 0 && (
             <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "oklch(0.75 0.18 200)", color: "white" }}>
