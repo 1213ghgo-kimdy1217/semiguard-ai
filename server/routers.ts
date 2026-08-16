@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange, getOnboardingProgress, saveOnboardingProgress } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange, getOnboardingProgress, saveOnboardingProgress, getPreviousComparableRange } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
 import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
@@ -212,7 +212,17 @@ export const appRouter = router({
           input.period,
           input.period === "custom" ? { startAt: new Date(input.startAt), endAt: new Date(input.endAt) } : undefined,
         );
-        return { ...await getProductUsageMetrics(range.startAt, range.endAt), startAt: range.startAt.toISOString(), endAt: range.endAt.toISOString() };
+        const previousRange = getPreviousComparableRange(range.startAt, range.endAt);
+        const [current, previous] = await Promise.all([
+          getProductUsageMetrics(range.startAt, range.endAt),
+          getProductUsageMetrics(previousRange.startAt, previousRange.endAt),
+        ]);
+        return {
+          ...current,
+          startAt: range.startAt.toISOString(),
+          endAt: range.endAt.toISOString(),
+          previous: { ...previous, startAt: previousRange.startAt.toISOString(), endAt: previousRange.endAt.toISOString() },
+        };
       }),
     injectNormal: publicProcedure.mutation(async () => {
     const dbThresholds = await getThresholds();

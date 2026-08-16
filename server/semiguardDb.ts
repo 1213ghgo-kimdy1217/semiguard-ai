@@ -152,6 +152,14 @@ export async function getProductUsageMetrics(startAt: Date, endAt: Date) {
   };
 }
 
+export function getPreviousComparableRange(startAt: Date, endAt: Date) {
+  const durationMs = Math.max(1, endAt.getTime() - startAt.getTime() + 1);
+  return {
+    startAt: new Date(startAt.getTime() - durationMs),
+    endAt: new Date(startAt.getTime() - 1),
+  };
+}
+
 export async function getOnboardingProgress(userId: number) {
   const db = await getDb();
   if (!db) return { currentStep: 1, completedAt: null };
