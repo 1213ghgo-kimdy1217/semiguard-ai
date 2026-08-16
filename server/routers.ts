@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange, getOnboardingProgress, saveOnboardingProgress } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
 import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
@@ -183,6 +183,10 @@ export const appRouter = router({
   }),
 
   semiguard: router({
+    getOnboardingProgress: protectedProcedure.query(({ ctx }) => getOnboardingProgress(ctx.user.id)),
+    saveOnboardingProgress: protectedProcedure
+      .input(z.object({ currentStep: z.number().int().min(1).max(3), completed: z.boolean().optional().default(false) }))
+      .mutation(({ ctx, input }) => saveOnboardingProgress(ctx.user.id, input.currentStep, input.completed)),
     trackProductActivity: protectedProcedure
       .input(z.object({ eventType: z.enum(["visit", "analysis_started", "analysis_viewed"]) }))
       .mutation(async ({ ctx, input }) => {

@@ -1032,6 +1032,33 @@ export default function Dashboard() {
   const trpcUtils = trpc.useUtils();
   const authMeQuery = trpc.auth.me.useQuery(undefined, { staleTime: 60_000 });
   const isUsageMetricsAdmin = authMeQuery.data?.role === "admin";
+  const onboardingProgressQuery = trpc.semiguard.getOnboardingProgress.useQuery(undefined, { staleTime: 60_000 });
+  const saveOnboardingProgressMutation = trpc.semiguard.saveOnboardingProgress.useMutation();
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3>(1);
+  const onboardingInitializedRef = useRef(false);
+  const onboardingCopy = lang === "ko"
+    ? { title: "첫 안전 분석 안내", subtitle: "3단계로 위험 신호부터 점검 순서까지 확인해 보세요.", steps: ["위험 신호", "AI 근거", "점검 순서"], risk: "대시보드 상단의 위험도 점수와 센서 카드에서 먼저 주의가 필요한 신호를 확인합니다.", evidence: "AI 분석 결과에서는 수치 편차와 확인이 필요한 근거를 함께 읽습니다. AI 판단만으로 고장을 단정하지 않습니다.", action: "권장 점검 순서를 확인하고, 실제 설비 작업은 승인된 현장 안전 절차에 따라 담당자가 진행합니다.", later: "나중에", previous: "이전", next: "다음", finish: "안내 완료", review: "첫 분석 안내 다시 보기", progress: "진행" }
+    : lang === "ja"
+      ? { title: "初回安全分析ガイド", subtitle: "3段階で危険信号から点検順序まで確認できます。", steps: ["危険信号", "AI根拠", "点検順序"], risk: "ダッシュボード上部のリスクスコアとセンサーカードから、注意が必要な信号を確認します。", evidence: "AI分析結果では数値の偏差と確認すべき根拠を併せて読みます。AIの判断だけで故障を断定しません。", action: "推奨点検順序を確認し、実際の設備作業は承認された現場安全手順に従って担当者が進めます。", later: "後で", previous: "前へ", next: "次へ", finish: "ガイド完了", review: "初回分析ガイドを再表示", progress: "進行" }
+      : { title: "First safety analysis guide", subtitle: "Use three steps to move from a risk signal to an inspection sequence.", steps: ["Risk signal", "AI evidence", "Inspection order"], risk: "Start with the risk score and sensor cards at the top of the dashboard to see which signal needs attention.", evidence: "Read measured deviations and evidence in the AI analysis. An AI assessment alone does not confirm a failure.", action: "Review the recommended inspection order. A responsible operator performs real equipment work under approved on-site safety procedures.", later: "Later", previous: "Previous", next: "Next", finish: "Finish guide", review: "Review first analysis guide", progress: "Progress" };
+  useEffect(() => {
+    if (!onboardingProgressQuery.data || onboardingInitializedRef.current) return;
+    onboardingInitializedRef.current = true;
+    const currentStep = Math.min(3, Math.max(1, onboardingProgressQuery.data.currentStep)) as 1 | 2 | 3;
+    setOnboardingStep(currentStep);
+    if (!onboardingProgressQuery.data.completedAt) setIsOnboardingOpen(true);
+  }, [onboardingProgressQuery.data]);
+  const persistOnboardingStep = async (nextStep: 1 | 2 | 3, completed = false) => {
+    setOnboardingStep(nextStep);
+    try {
+      await saveOnboardingProgressMutation.mutateAsync({ currentStep: nextStep, completed });
+      await onboardingProgressQuery.refetch();
+      if (completed) toast.success(lang === "ko" ? "첫 분석 안내를 완료했습니다." : lang === "ja" ? "初回分析ガイドを完了しました。" : "First analysis guide completed.");
+    } catch {
+      toast.error(lang === "ko" ? "안내 진행 상태를 저장하지 못했습니다." : lang === "ja" ? "ガイドの進行状況を保存できませんでした。" : "Could not save guide progress.");
+    }
+  };
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       void trpcUtils.auth.me.invalidate();
@@ -5744,12 +5771,13 @@ export default function Dashboard() {
                 </div>
                 <span className="rounded-full border px-2 py-1 text-[9px] font-bold" style={{ borderColor: "oklch(0.64 0.15 285 / 0.45)", color: isDark ? "oklch(0.82 0.12 285)" : "oklch(0.45 0.16 285)" }}>{lang === "ko" ? "관리자 전용" : lang === "ja" ? "管理者専用" : "Admin only"}</span>
               </div>
-              {productUsageMetricsQuery.isLoading ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="status" aria-label={lang === "ko" ? "제품 사용 지표를 불러오는 중" : lang === "ja" ? "プロダクト利用指標を読み込み中" : "Loading product usage metrics"}>{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg border" style={{ borderColor: th.border, background: th.bgCard }} />)}</div> : productUsageMetricsQuery.isError ? <p className="rounded-lg border p-2 text-[10px]" role="alert" style={{ borderColor: "oklch(0.65 0.20 25 / 0.42)", color: th.textMuted }}>{lang === "ko" ? "제품 사용 지표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : lang === "ja" ? "プロダクト利用指標を読み込めませんでした。しばらくしてから再試行してください。" : "Could not load product usage metrics. Please try again shortly."}</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {productUsageMetricsQuery.isLoading ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="status" aria-label={lang === "ko" ? "제품 사용 지표를 불러오는 중" : lang === "ja" ? "プロダクト利用指標を読み込み中" : "Loading product usage metrics"}>{Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg border" style={{ borderColor: th.border, background: th.bgCard }} />)}</div> : productUsageMetricsQuery.isError ? <p className="rounded-lg border p-2 text-[10px]" role="alert" style={{ borderColor: "oklch(0.65 0.20 25 / 0.42)", color: th.textMuted }}>{lang === "ko" ? "제품 사용 지표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : lang === "ja" ? "プロダクト利用指標を読み込めませんでした。しばらくしてから再試行してください。" : "Could not load product usage metrics. Please try again shortly."}</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {[
                   { label: lang === "ko" ? "활성 사용자" : lang === "ja" ? "アクティブユーザー" : "Active users", value: productUsageMetricsQuery.data?.activeUsers ?? 0, detail: lang === "ko" ? "기간 내 방문" : lang === "ja" ? "期間内の訪問" : "Visited in range" },
                   { label: lang === "ko" ? "분석 시작" : lang === "ja" ? "分析開始" : "Analysis started", value: productUsageMetricsQuery.data?.analysisStartedUsers ?? 0, detail: lang === "ko" ? "AI 분석 요청" : lang === "ja" ? "AI分析リクエスト" : "AI analysis requested" },
                   { label: lang === "ko" ? "분석 완료율" : lang === "ja" ? "分析完了率" : "Analysis completion", value: `${productUsageMetricsQuery.data?.completionRate ?? 0}%`, detail: lang === "ko" ? "시작 대비 결과 확인" : lang === "ja" ? "開始に対する結果確認" : "Viewed after start" },
                   { label: lang === "ko" ? "재방문 사용자" : lang === "ja" ? "再訪問ユーザー" : "Returning users", value: productUsageMetricsQuery.data?.returningUsers ?? 0, detail: lang === "ko" ? "이전 방문 뒤 재방문" : lang === "ja" ? "以前の訪問後の再訪問" : "Visited before and in range" },
+                  { label: lang === "ko" ? "안내 완료율" : lang === "ja" ? "ガイド完了率" : "Guide completion", value: `${productUsageMetricsQuery.data?.onboardingCompletionRate ?? 0}%`, detail: lang === "ko" ? `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0}명 완료` : lang === "ja" ? `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0}人が完了` : `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0} completed` },
                 ].map(metric => <div key={metric.label} className="rounded-lg border p-2.5" style={{ borderColor: th.border2, background: th.bgCard }}><p className="text-[10px] font-bold" style={{ color: th.textMuted }}>{metric.label}</p><p className="mt-1 text-xl font-bold font-mono" style={{ color: th.text }}>{metric.value}</p><p className="mt-0.5 text-[9px]" style={{ color: th.textMuted }}>{metric.detail}</p></div>)}
               </div>}
             </section>}
@@ -6491,6 +6519,21 @@ export default function Dashboard() {
         )}
         </div>
       </main>
+
+      {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && (
+        <button type="button" onClick={() => setIsOnboardingOpen(true)} className="fixed bottom-5 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.65 0.18 200 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.16 220)" }} aria-label={onboardingCopy.review}>ⓘ {onboardingCopy.review}</button>
+      )}
+
+      {isOnboardingOpen && (
+        <div className="fixed inset-0 z-[650] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-analysis-onboarding-title">
+          <section className="w-full max-w-lg rounded-2xl border p-5 shadow-2xl sm:p-6" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.005 240)", color: th.text }}>
+            <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: "oklch(0.68 0.15 200)" }}>{onboardingCopy.progress} {onboardingStep}/3</p><h2 id="first-analysis-onboarding-title" className="mt-1 text-lg font-black">{onboardingCopy.title}</h2><p className="mt-2 text-xs leading-5" style={{ color: th.textMuted }}>{onboardingCopy.subtitle}</p></div><button type="button" onClick={() => setIsOnboardingOpen(false)} className="rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.textMuted }}>{onboardingCopy.later}</button></div>
+            <div className="mt-5 flex gap-2" aria-label={`${onboardingCopy.progress} ${onboardingStep}/3`}>{onboardingCopy.steps.map((label, index) => <button key={label} type="button" onClick={() => void persistOnboardingStep((index + 1) as 1 | 2 | 3)} className="flex-1 rounded-lg border px-2 py-2 text-[10px] font-bold transition focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: onboardingStep === index + 1 ? "oklch(0.65 0.18 200 / 0.65)" : th.border2, background: onboardingStep === index + 1 ? "oklch(0.65 0.18 200 / 0.12)" : "transparent", color: onboardingStep === index + 1 ? "oklch(0.75 0.14 200)" : th.textMuted }}>{index + 1}. {label}</button>)}</div>
+            <article className="mt-4 rounded-xl border p-4" style={{ borderColor: th.border2, background: isDark ? "oklch(0.18 0.02 240)" : "oklch(0.96 0.01 240)" }}><p className="text-sm leading-6">{onboardingStep === 1 ? onboardingCopy.risk : onboardingStep === 2 ? onboardingCopy.evidence : onboardingCopy.action}</p></article>
+            <div className="mt-5 flex items-center justify-between gap-3"><button type="button" disabled={onboardingStep === 1 || saveOnboardingProgressMutation.isPending} onClick={() => void persistOnboardingStep((onboardingStep - 1) as 1 | 2 | 3)} className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.text }}>{onboardingCopy.previous}</button>{onboardingStep < 3 ? <button type="button" disabled={saveOnboardingProgressMutation.isPending} onClick={() => void persistOnboardingStep((onboardingStep + 1) as 1 | 2 | 3)} className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-45">{onboardingCopy.next}</button> : <button type="button" disabled={saveOnboardingProgressMutation.isPending} onClick={() => { void persistOnboardingStep(3, true); setIsOnboardingOpen(false); }} className="rounded-lg border border-emerald-300/60 bg-emerald-300/10 px-3 py-2 text-xs font-bold text-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:opacity-45">{onboardingCopy.finish}</button>}</div>
+          </section>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin {

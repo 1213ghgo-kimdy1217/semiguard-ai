@@ -93,6 +93,18 @@ export const productActivityEvents = mysqlTable("product_activity_events", {
 export type ProductActivityEvent = typeof productActivityEvents.$inferSelect;
 export type ProductActivityEventType = "visit" | "analysis_started" | "analysis_viewed";
 
+// 첫 분석 완료 온보딩: 진행 단계와 완료 시각만 사용자별로 저장한다.
+// 안내 문구·입력 내용·설비 데이터는 저장하지 않는다.
+export const userOnboardingProgress = mysqlTable("user_onboarding_progress", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().unique(),
+  currentStep: int("current_step").notNull().default(1),
+  completedAt: timestamp("completed_at"),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserOnboardingProgress = typeof userOnboardingProgress.$inferSelect;
+
 // 전체 샘플 카운터 (정상 포함 모든 측정값 집계용)
 export const sampleStats = mysqlTable("sample_stats", {
   id: int("id").autoincrement().primaryKey(),

@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, lte, sql, count as drizzleCount } from "drizzle-orm";
-import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, productActivityEvents, type InsertAnomalyLog, type ProductActivityEventType } from "../drizzle/schema";
+import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, productActivityEvents, userOnboardingProgress, type InsertAnomalyLog, type ProductActivityEventType } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
@@ -116,7 +116,7 @@ export async function recordProductActivity(userId: number, eventType: ProductAc
 
 export async function getProductUsageMetrics(startAt: Date, endAt: Date) {
   const db = await getDb();
-  const empty = { activeUsers: 0, analysisStartedUsers: 0, analysisViewedUsers: 0, returningUsers: 0, completionRate: 0 };
+  const empty = { activeUsers: 0, analysisStartedUsers: 0, analysisViewedUsers: 0, returningUsers: 0, completionRate: 0, onboardingCompletedUsers: 0, onboardingCompletionRate: 0 };
   if (!db) return empty;
   const startDate = new Date(`${startAt.toISOString().slice(0, 10)}T00:00:00.000Z`);
   const endDate = new Date(`${endAt.toISOString().slice(0, 10)}T00:00:00.000Z`);
@@ -126,24 +126,56 @@ export async function getProductUsageMetrics(startAt: Date, endAt: Date) {
     const rows = await db.select({ total: sql<number>`COUNT(DISTINCT ${productActivityEvents.userId})` }).from(productActivityEvents).where(condition);
     return Number(rows[0]?.total ?? 0);
   };
-  const [activeUsers, analysisStartedUsers, analysisViewedUsers, visitEvents] = await Promise.all([
+  const [activeUsers, analysisStartedUsers, analysisViewedUsers, visitEvents, onboardingCompletionRows] = await Promise.all([
     countDistinctUsers("visit"),
     countDistinctUsers("analysis_started"),
     countDistinctUsers("analysis_viewed"),
     db.select({ userId: productActivityEvents.userId, eventDate: productActivityEvents.eventDate })
       .from(productActivityEvents)
       .where(and(eq(productActivityEvents.eventType, "visit"), lte(productActivityEvents.eventDate, endDate))),
+    db.select({ total: sql<number>`COUNT(DISTINCT ${userOnboardingProgress.userId})` })
+      .from(userOnboardingProgress)
+      .where(and(gte(userOnboardingProgress.completedAt, startAt), lte(userOnboardingProgress.completedAt, endAt))),
   ]);
   const activeUserIds = new Set(visitEvents.filter(event => event.eventDate >= startDate).map(event => event.userId));
   const priorUserIds = new Set(visitEvents.filter(event => event.eventDate < startDate).map(event => event.userId));
   const returningUsers = Array.from(activeUserIds).filter(userId => priorUserIds.has(userId)).length;
+  const onboardingCompletedUsers = Number(onboardingCompletionRows[0]?.total ?? 0);
   return {
     activeUsers,
     analysisStartedUsers,
     analysisViewedUsers,
     returningUsers,
     completionRate: analysisStartedUsers > 0 ? Math.round((analysisViewedUsers / analysisStartedUsers) * 100) : 0,
+    onboardingCompletedUsers,
+    onboardingCompletionRate: activeUsers > 0 ? Math.round((onboardingCompletedUsers / activeUsers) * 100) : 0,
   };
+}
+
+export async function getOnboardingProgress(userId: number) {
+  const db = await getDb();
+  if (!db) return { currentStep: 1, completedAt: null };
+  const rows = await db.select({ currentStep: userOnboardingProgress.currentStep, completedAt: userOnboardingProgress.completedAt })
+    .from(userOnboardingProgress)
+    .where(eq(userOnboardingProgress.userId, userId))
+    .limit(1);
+  return rows[0] ?? { currentStep: 1, completedAt: null };
+}
+
+export async function saveOnboardingProgress(userId: number, currentStep: number, completed: boolean) {
+  const db = await getDb();
+  if (!db) return { currentStep, completedAt: completed ? new Date() : null };
+  const now = new Date();
+  await db.insert(userOnboardingProgress)
+    .values({ userId, currentStep, completedAt: completed ? now : null })
+    .onDuplicateKeyUpdate({
+      set: {
+        currentStep,
+        ...(completed ? { completedAt: now } : {}),
+        updatedAt: now,
+      },
+    });
+  return getOnboardingProgress(userId);
 }
 
 // 날짜별 최고 위험도 집계 (히트맵용)
