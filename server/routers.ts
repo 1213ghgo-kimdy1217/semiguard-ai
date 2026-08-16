@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
 import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
@@ -183,6 +183,33 @@ export const appRouter = router({
   }),
 
   semiguard: router({
+    trackProductActivity: protectedProcedure
+      .input(z.object({ eventType: z.enum(["visit", "analysis_started", "analysis_viewed"]) }))
+      .mutation(async ({ ctx, input }) => {
+        await recordProductActivity(ctx.user.id, input.eventType);
+        return { success: true } as const;
+      }),
+    getProductUsageMetrics: protectedProcedure
+      .input(z.discriminatedUnion("period", [
+        z.object({ period: z.enum(["day", "week", "month"]) }),
+        z.object({
+          period: z.literal("custom"),
+          startAt: z.string().datetime({ offset: true }),
+          endAt: z.string().datetime({ offset: true }),
+        }).refine(({ startAt, endAt }) => new Date(startAt).getTime() <= new Date(endAt).getTime(), {
+          message: "Custom period start must not be after its end.", path: ["endAt"],
+        }).refine(({ startAt, endAt }) => new Date(endAt).getTime() - new Date(startAt).getTime() <= 366 * 24 * 60 * 60 * 1000, {
+          message: "Custom period must be 366 days or shorter.", path: ["endAt"],
+        }),
+      ]))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "관리자만 제품 사용 지표를 조회할 수 있습니다." });
+        const range = resolveDashboardPeriodRange(
+          input.period,
+          input.period === "custom" ? { startAt: new Date(input.startAt), endAt: new Date(input.endAt) } : undefined,
+        );
+        return { ...await getProductUsageMetrics(range.startAt, range.endAt), startAt: range.startAt.toISOString(), endAt: range.endAt.toISOString() };
+      }),
     injectNormal: publicProcedure.mutation(async () => {
     const dbThresholds = await getThresholds();
     const data = generateNormalData();

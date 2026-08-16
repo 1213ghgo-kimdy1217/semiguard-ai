@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, lte, sql, count as drizzleCount } from "drizzle-orm";
-import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, type InsertAnomalyLog } from "../drizzle/schema";
+import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, productActivityEvents, type InsertAnomalyLog, type ProductActivityEventType } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
@@ -105,6 +105,47 @@ export async function getTotalVisitors(): Promise<number> {
   return Number(rows[0]?.total ?? 0);
 }
 
+export async function recordProductActivity(userId: number, eventType: ProductActivityEventType): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const now = new Date();
+  const eventDate = new Date(`${now.toISOString().slice(0, 10)}T00:00:00.000Z`);
+  await db.insert(productActivityEvents).values({ userId, eventType, eventDate, occurredAt: now })
+    .onDuplicateKeyUpdate({ set: { occurredAt: now } });
+}
+
+export async function getProductUsageMetrics(startAt: Date, endAt: Date) {
+  const db = await getDb();
+  const empty = { activeUsers: 0, analysisStartedUsers: 0, analysisViewedUsers: 0, returningUsers: 0, completionRate: 0 };
+  if (!db) return empty;
+  const startDate = new Date(`${startAt.toISOString().slice(0, 10)}T00:00:00.000Z`);
+  const endDate = new Date(`${endAt.toISOString().slice(0, 10)}T00:00:00.000Z`);
+  const withinRange = and(gte(productActivityEvents.eventDate, startDate), lte(productActivityEvents.eventDate, endDate));
+  const countDistinctUsers = async (eventType?: ProductActivityEventType) => {
+    const condition = eventType ? and(withinRange, eq(productActivityEvents.eventType, eventType)) : withinRange;
+    const rows = await db.select({ total: sql<number>`COUNT(DISTINCT ${productActivityEvents.userId})` }).from(productActivityEvents).where(condition);
+    return Number(rows[0]?.total ?? 0);
+  };
+  const [activeUsers, analysisStartedUsers, analysisViewedUsers, visitEvents] = await Promise.all([
+    countDistinctUsers("visit"),
+    countDistinctUsers("analysis_started"),
+    countDistinctUsers("analysis_viewed"),
+    db.select({ userId: productActivityEvents.userId, eventDate: productActivityEvents.eventDate })
+      .from(productActivityEvents)
+      .where(and(eq(productActivityEvents.eventType, "visit"), lte(productActivityEvents.eventDate, endDate))),
+  ]);
+  const activeUserIds = new Set(visitEvents.filter(event => event.eventDate >= startDate).map(event => event.userId));
+  const priorUserIds = new Set(visitEvents.filter(event => event.eventDate < startDate).map(event => event.userId));
+  const returningUsers = Array.from(activeUserIds).filter(userId => priorUserIds.has(userId)).length;
+  return {
+    activeUsers,
+    analysisStartedUsers,
+    analysisViewedUsers,
+    returningUsers,
+    completionRate: analysisStartedUsers > 0 ? Math.round((analysisViewedUsers / analysisStartedUsers) * 100) : 0,
+  };
+}
+
 // 날짜별 최고 위험도 집계 (히트맵용)
 export async function getDailyMaxRisk(): Promise<{ date: string; riskLevel: string }[]> {
   const db = await getDb();
@@ -183,14 +224,19 @@ const DASHBOARD_PERIOD_MS: Record<PresetDashboardPeriod, number> = {
   month: 30 * 24 * 60 * 60 * 1000,
 };
 
-export async function getPeriodDashboardOverview(period: DashboardPeriod, customRange?: { startAt: Date; endAt: Date }) {
-  const db = await getDb();
+export function resolveDashboardPeriodRange(period: DashboardPeriod, customRange?: { startAt: Date; endAt: Date }) {
   const now = new Date();
   const startAt = period === "custom" ? customRange?.startAt : new Date(now.getTime() - DASHBOARD_PERIOD_MS[period]);
   const endAt = period === "custom" ? customRange?.endAt : now;
   if (!startAt || !endAt || startAt > endAt) {
     throw new Error("A valid custom dashboard date range is required.");
   }
+  return { startAt, endAt };
+}
+
+export async function getPeriodDashboardOverview(period: DashboardPeriod, customRange?: { startAt: Date; endAt: Date }) {
+  const db = await getDb();
+  const { startAt, endAt } = resolveDashboardPeriodRange(period, customRange);
   const startDate = startAt.toISOString().slice(0, 10);
   const endDate = endAt.toISOString().slice(0, 10);
   const emptySensors = {

@@ -1030,6 +1030,8 @@ export default function Dashboard() {
   });
   const t = translations[lang] as Translation;
   const trpcUtils = trpc.useUtils();
+  const authMeQuery = trpc.auth.me.useQuery(undefined, { staleTime: 60_000 });
+  const isUsageMetricsAdmin = authMeQuery.data?.role === "admin";
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       void trpcUtils.auth.me.invalidate();
@@ -2353,6 +2355,7 @@ export default function Dashboard() {
   const autoFetch = trpc.semiguard.autoFetch.useMutation();
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const analyzeAnomalyMutation = trpc.semiguard.analyzeAnomaly.useMutation();
+  const trackProductActivityMutation = trpc.semiguard.trackProductActivity.useMutation();
   const summarizePeriodForReportMutation = trpc.semiguard.summarizePeriodForReport.useMutation();
   const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month" | "custom">("day");
   const todayDateValue = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -2389,6 +2392,10 @@ export default function Dashboard() {
     : { period: dashboardPeriod }, [appliedCustomRange, dashboardPeriod]);
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
   const periodOverviewQuery = trpc.semiguard.getPeriodOverview.useQuery(dashboardPeriodInput, { refetchInterval: 5000 });
+  const productUsageMetricsQuery = trpc.semiguard.getProductUsageMetrics.useQuery(dashboardPeriodInput, {
+    enabled: isUsageMetricsAdmin,
+    refetchInterval: 15_000,
+  });
   const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 200 }, { refetchInterval: 5000 });
   const getDailyMaxRisk = trpc.semiguard.getDailyMaxRisk.useQuery(undefined, { refetchInterval: 10000 });
   const utils = trpc.useUtils();
@@ -2399,6 +2406,13 @@ export default function Dashboard() {
   const safetyMonitoringRetrying = getStats.isFetching || periodOverviewQuery.isFetching || getLogs.isFetching || getDailyMaxRisk.isFetching || getRecentScoresQuery.isFetching;
   const statsInitialLoading = periodOverviewQuery.isLoading && !periodOverviewQuery.data;
   const statsLoadingLabel = lang === "ko" ? "통계를 불러오는 중..." : lang === "ja" ? "統計を読み込み中..." : "Loading statistics...";
+  const activityVisitRecordedForUserRef = useRef<number | null>(null);
+  useEffect(() => {
+    const userId = authMeQuery.data?.id;
+    if (!userId || activityVisitRecordedForUserRef.current === userId) return;
+    activityVisitRecordedForUserRef.current = userId;
+    void trackProductActivityMutation.mutateAsync({ eventType: "visit" }).catch(() => undefined);
+  }, [authMeQuery.data?.id, trackProductActivityMutation]);
   const retrySafetyMonitoring = () => {
     void getStats.refetch();
     void periodOverviewQuery.refetch();
@@ -2841,6 +2855,7 @@ export default function Dashboard() {
     if (now - lastLlmCallRef.current < 30_000) return;
     lastLlmCallRef.current = now;
     setLlmLoading(true);
+    void trackProductActivityMutation.mutateAsync({ eventType: "analysis_started" }).catch(() => undefined);
     try {
       const analysis = await analyzeAnomalyMutation.mutateAsync({
         current: result.sensorData.current,
@@ -2856,12 +2871,13 @@ export default function Dashboard() {
         score: result.anomalyScore,
         riskLevel: result.riskLevel,
       });
+      void trackProductActivityMutation.mutateAsync({ eventType: "analysis_viewed" }).catch(() => undefined);
     } catch {
       // 분석 실패 시 무시
     } finally {
       setLlmLoading(false);
     }
-  }, [lang, analyzeAnomalyMutation]);
+  }, [lang, analyzeAnomalyMutation, trackProductActivityMutation]);
 
   const handleInjectNormal = async () => {
     try {
@@ -5719,6 +5735,24 @@ export default function Dashboard() {
               <ImpactCard label={t.dangerCount} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.dangerCount}: ${(selectedPeriodStats?.dangerCount ?? 0).toLocaleString()}`} />
               <ImpactCard label={t.uptimePct} value={periodOverviewQuery.isError ? "—" : `${selectedPeriodStats?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.uptimePct}: ${selectedPeriodStats?.uptimePct ?? 100}%`} />
             </div>}
+
+            {isUsageMetricsAdmin && <section className="mb-6 rounded-xl border p-3 sm:p-4" aria-labelledby="product-usage-metrics-title" style={{ borderColor: "oklch(0.64 0.15 285 / 0.40)", background: isDark ? "oklch(0.18 0.03 285 / 0.32)" : "oklch(0.97 0.02 285 / 0.38)" }}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 id="product-usage-metrics-title" className="text-xs font-bold" style={{ color: th.text }}>{lang === "ko" ? "대회용 제품 사용 지표" : lang === "ja" ? "大会向けプロダクト利用指標" : "Competition product usage metrics"}</h2>
+                  <p className="mt-0.5 text-[10px]" style={{ color: th.textMuted }}>{lang === "ko" ? `${selectedPeriodLabel} · 사용자 식별자·이벤트·날짜만 집계` : lang === "ja" ? `${selectedPeriodLabel}・ユーザーID・イベント・日付のみを集計` : `${selectedPeriodLabel} · aggregates only user ID, event type, and date`}</p>
+                </div>
+                <span className="rounded-full border px-2 py-1 text-[9px] font-bold" style={{ borderColor: "oklch(0.64 0.15 285 / 0.45)", color: isDark ? "oklch(0.82 0.12 285)" : "oklch(0.45 0.16 285)" }}>{lang === "ko" ? "관리자 전용" : lang === "ja" ? "管理者専用" : "Admin only"}</span>
+              </div>
+              {productUsageMetricsQuery.isLoading ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="status" aria-label={lang === "ko" ? "제품 사용 지표를 불러오는 중" : lang === "ja" ? "プロダクト利用指標を読み込み中" : "Loading product usage metrics"}>{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg border" style={{ borderColor: th.border, background: th.bgCard }} />)}</div> : productUsageMetricsQuery.isError ? <p className="rounded-lg border p-2 text-[10px]" role="alert" style={{ borderColor: "oklch(0.65 0.20 25 / 0.42)", color: th.textMuted }}>{lang === "ko" ? "제품 사용 지표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : lang === "ja" ? "プロダクト利用指標を読み込めませんでした。しばらくしてから再試行してください。" : "Could not load product usage metrics. Please try again shortly."}</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[
+                  { label: lang === "ko" ? "활성 사용자" : lang === "ja" ? "アクティブユーザー" : "Active users", value: productUsageMetricsQuery.data?.activeUsers ?? 0, detail: lang === "ko" ? "기간 내 방문" : lang === "ja" ? "期間内の訪問" : "Visited in range" },
+                  { label: lang === "ko" ? "분석 시작" : lang === "ja" ? "分析開始" : "Analysis started", value: productUsageMetricsQuery.data?.analysisStartedUsers ?? 0, detail: lang === "ko" ? "AI 분석 요청" : lang === "ja" ? "AI分析リクエスト" : "AI analysis requested" },
+                  { label: lang === "ko" ? "분석 완료율" : lang === "ja" ? "分析完了率" : "Analysis completion", value: `${productUsageMetricsQuery.data?.completionRate ?? 0}%`, detail: lang === "ko" ? "시작 대비 결과 확인" : lang === "ja" ? "開始に対する結果確認" : "Viewed after start" },
+                  { label: lang === "ko" ? "재방문 사용자" : lang === "ja" ? "再訪問ユーザー" : "Returning users", value: productUsageMetricsQuery.data?.returningUsers ?? 0, detail: lang === "ko" ? "이전 방문 뒤 재방문" : lang === "ja" ? "以前の訪問後の再訪問" : "Visited before and in range" },
+                ].map(metric => <div key={metric.label} className="rounded-lg border p-2.5" style={{ borderColor: th.border2, background: th.bgCard }}><p className="text-[10px] font-bold" style={{ color: th.textMuted }}>{metric.label}</p><p className="mt-1 text-xl font-bold font-mono" style={{ color: th.text }}>{metric.value}</p><p className="mt-0.5 text-[9px]" style={{ color: th.textMuted }}>{metric.detail}</p></div>)}
+              </div>}
+            </section>}
 
             {periodOverviewQuery.isError && (
               <div className="mb-6 flex flex-col items-start justify-between gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center" role="alert" style={{ background: "oklch(0.65 0.20 25 / 0.08)", borderColor: "oklch(0.65 0.20 25 / 0.45)", color: th.textMuted }}>

@@ -77,6 +77,22 @@ export const visitorStats = mysqlTable("visitor_stats", {
 
 export type VisitorStat = typeof visitorStats.$inferSelect;
 
+// 대회용 제품 사용 지표: 사용자 ID, 이벤트 유형, UTC 일자와 시각만 저장한다.
+// IP·기기 정보·입력 내용은 수집하지 않으며, 화면에는 집계값만 표시한다.
+export const productActivityEvents = mysqlTable("product_activity_events", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  eventType: mysqlEnum("event_type", ["visit", "analysis_started", "analysis_viewed"]).notNull(),
+  eventDate: date("event_date").notNull(),
+  occurredAt: timestamp("occurred_at").defaultNow().notNull(),
+}, (table) => ({
+  userEventDateUnique: uniqueIndex("product_activity_user_event_date_unique").on(table.userId, table.eventType, table.eventDate),
+  eventDateIndex: index("product_activity_event_date_idx").on(table.eventDate, table.eventType),
+}));
+
+export type ProductActivityEvent = typeof productActivityEvents.$inferSelect;
+export type ProductActivityEventType = "visit" | "analysis_started" | "analysis_viewed";
+
 // 전체 샘플 카운터 (정상 포함 모든 측정값 집계용)
 export const sampleStats = mysqlTable("sample_stats", {
   id: int("id").autoincrement().primaryKey(),
