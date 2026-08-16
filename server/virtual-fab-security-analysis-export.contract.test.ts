@@ -15,7 +15,8 @@ describe("virtual fab demo, security status, and analysis export contract", () =
 
   it("makes virtual and read-only data status explicit in the analysis header", () => {
     expect(dashboardSource).toContain('role="status"');
-    expect(dashboardSource).toContain("가상 데이터 · 읽기 전용");
+    expect(dashboardSource).toContain("가상 · 승인 전 · 읽기 전용");
+    expect(dashboardSource).toContain("파일럿과 보안 승인 전");
     expect(dashboardSource).toContain("읽기 전용 분석");
     expect(dashboardSource).toContain("설비 제어 없음");
   });
