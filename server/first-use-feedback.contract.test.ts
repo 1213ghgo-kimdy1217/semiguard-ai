@@ -42,4 +42,12 @@ describe("first-use feedback privacy and metrics contract", () => {
     expect(dashboardSource).toContain("feedbackResponseCount");
     expect(dashboardSource).toContain("difficultStepCounts");
   });
+
+  it("moves keyboard focus into the dialog and returns it safely after closing", () => {
+    expect(dashboardSource).toContain("const firstUseFeedbackTriggerRef = useRef<HTMLButtonElement>(null)");
+    expect(dashboardSource).toContain("const firstUseFeedbackCloseButtonRef = useRef<HTMLButtonElement>(null)");
+    expect(dashboardSource).toContain("firstUseFeedbackCloseButtonRef.current?.focus()");
+    expect(dashboardSource).toContain('event.key === "Escape"');
+    expect(dashboardSource).toContain("firstUseFeedbackTriggerRef.current?.focus()");
+  });
 });
