@@ -6,6 +6,6 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("sensor card score trend Japanese locale contract", () => {
   it("localizes the score trend caption when Japanese is selected", () => {
-    expect(dashboardSource).toContain('lang === "ko" ? "점수 추이" : lang === "ja" ? "スコア推移" : "Score trend"');
+    expect(dashboardSource).toContain('lang === "ko" ? `점수 추이 · ${selectedPeriodLabel}` : lang === "ja" ? `スコア推移・${selectedPeriodLabel}` : `Score trend · ${selectedPeriodLabel}`');
   });
 });

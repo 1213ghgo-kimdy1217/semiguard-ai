@@ -81,6 +81,7 @@ export function Login() {
   const oauthProvider = oauthParts[0];
   const oauthReason = oauthParts.slice(1).join("_");
   const oauthProviderLabel = oauthProvider === "google" ? "Google" : oauthProvider === "naver" ? "Naver" : oauthProvider === "kakao" ? "Kakao" : loginLanguage === "ja" ? "ソーシャルログイン" : loginLanguage === "en" ? "Social login" : "소셜 로그인";
+  const [showOauthError, setShowOauthError] = useState(() => Boolean(oauthError));
   const oauthPolicyMessage = (() => {
     if (oauthReason === "unlinked") {
       if (loginLanguage === "ja") return `${oauthProviderLabel}アカウントはまだ連携されていません。先に社員証番号とパスワードで登録・ログインし、ダッシュボードメニューから連携してください。`;
@@ -208,6 +209,23 @@ export function Login() {
     }
     start();
   };
+  const dismissOauthError = () => {
+    setShowOauthError(false);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("oauth_error");
+    window.history.replaceState({}, document.title, `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+  };
+  const retryOauthLogin = () => {
+    dismissOauthError();
+    if (oauthProvider === "google") handleSocialLogin(startGoogleLogin);
+    if (oauthProvider === "naver") handleSocialLogin(startNaverLogin);
+    if (oauthProvider === "kakao") handleSocialLogin(startKakaoLogin);
+  };
+  const oauthDialogUi = loginLanguage === "ja"
+    ? { title: "ソーシャルログインを完了できませんでした", retry: "もう一度試す", close: "閉じる", hint: "アカウント連携と提供元の設定を確認した後、もう一度安全に接続できます。" }
+    : loginLanguage === "en"
+      ? { title: "Social sign-in could not be completed", retry: "Try again", close: "Close", hint: "After checking the linked account and provider settings, you can reconnect safely." }
+      : { title: "소셜 로그인을 완료하지 못했습니다", retry: "다시 시도", close: "닫기", hint: "연결된 계정과 제공자 설정을 확인한 뒤 안전하게 다시 연결할 수 있습니다." };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,9 +307,23 @@ export function Login() {
             </div>
           </div>
 
-          {oauthError && (
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="alert">
-              {oauthPolicyMessage}
+          {showOauthError && oauthError && (
+            <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/70 p-4 backdrop-blur-sm sm:items-center" role="presentation">
+              <section className="w-full max-w-md rounded-2xl border border-amber-400/45 bg-slate-900 p-5 text-slate-100 shadow-2xl shadow-black/50 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95" role="alertdialog" aria-modal="true" aria-labelledby="oauth-error-title" aria-describedby="oauth-error-message">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-400/10 text-lg" aria-hidden="true">!</span>
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-amber-300">{oauthProviderLabel}</p>
+                    <h3 id="oauth-error-title" className="text-base font-bold">{oauthDialogUi.title}</h3>
+                  </div>
+                </div>
+                <p id="oauth-error-message" className="mt-4 text-sm leading-6 text-slate-300">{oauthPolicyMessage}</p>
+                <p className="mt-3 rounded-lg border border-slate-700 bg-slate-950/55 px-3 py-2 text-xs leading-5 text-slate-400">{oauthDialogUi.hint}</p>
+                <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <Button type="button" variant="outline" onClick={dismissOauthError} className="border-slate-600 text-slate-200 hover:bg-slate-800">{oauthDialogUi.close}</Button>
+                  <Button type="button" onClick={retryOauthLogin} disabled={!isOauthEnabled || !["google", "naver", "kakao"].includes(oauthProvider)} autoFocus className="bg-amber-400 font-bold text-slate-950 hover:bg-amber-300 disabled:opacity-50">{oauthDialogUi.retry}</Button>
+                </div>
+              </section>
             </div>
           )}
 
@@ -390,7 +422,7 @@ export function Login() {
           )}
 
           {/* Social Login Buttons */}
-          <div className="space-y-2.5">
+          <div className="space-y-2.5" aria-label={loginUi.linkedSocialLogin}>
             {/* Google Login */}
             <Button
               type="button"
@@ -398,7 +430,7 @@ export function Login() {
               disabled={!isOauthEnabled}
               aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
-              className={`w-full h-12 justify-start gap-3 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
+              className={`group h-[3.25rem] w-full justify-start gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-lg hover:shadow-slate-950/20 focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -406,7 +438,7 @@ export function Login() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              <span className="flex-1 text-left">{loginUi.googleLogin}</span>
+              <span className="flex-1 text-left">{loginUi.googleLogin}</span><span className="text-[10px] font-semibold text-slate-400">OAuth</span>
             </Button>
 
             {/* Naver Login */}
@@ -416,12 +448,12 @@ export function Login() {
               disabled={!isOauthEnabled}
               aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
-              className={`w-full h-12 justify-start gap-3 px-4 bg-[#03C75A] hover:bg-[#02B350] text-white font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
+              className={`group h-[3.25rem] w-full justify-start gap-3 rounded-xl border border-emerald-300/50 bg-[#03C75A] px-4 text-sm font-bold text-white shadow-sm shadow-emerald-950/20 transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:bg-[#02B350] hover:shadow-lg hover:shadow-emerald-950/30 focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-white text-[13px] font-black leading-none text-[#03C75A]" aria-hidden="true">
                 N
               </span>
-              <span className="flex-1 text-left">{loginUi.naverLogin}</span>
+              <span className="flex-1 text-left">{loginUi.naverLogin}</span><span className="text-[10px] font-semibold text-white/70">OAuth</span>
             </Button>
 
             {/* Kakao Login */}
@@ -431,12 +463,12 @@ export function Login() {
               disabled={!isOauthEnabled}
               aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
-              className={`w-full h-12 justify-start gap-3 px-4 bg-[#FEE500] hover:bg-[#F2DA00] text-[#191600] font-semibold text-sm transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
+              className={`group h-[3.25rem] w-full justify-start gap-3 rounded-xl border border-[#ffe95c] bg-[#FEE500] px-4 text-sm font-bold text-[#191600] shadow-sm shadow-amber-950/20 transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:bg-[#F2DA00] hover:shadow-lg hover:shadow-amber-950/30 focus-visible:ring-2 focus-visible:ring-yellow-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
             >
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 3C6.9 3 2.8 6.2 2.8 10.2c0 2.5 1.7 4.7 4.2 6L6.1 20c-.1.4.3.7.6.5l4.2-2.8c.4 0 .7.1 1.1.1 5.1 0 9.2-3.2 9.2-7.6C21.2 6.2 17.1 3 12 3z" />
               </svg>
-              <span className="flex-1 text-left">{loginUi.kakaoLogin}</span>
+              <span className="flex-1 text-left">{loginUi.kakaoLogin}</span><span className="text-[10px] font-semibold text-[#191600]/60">OAuth</span>
             </Button>
           </div>
 

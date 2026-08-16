@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getLastInsertedLogId, getLlmHistory } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
 import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
@@ -378,6 +378,19 @@ export const appRouter = router({
           score: r.score,
           riskLevel: r.riskLevel,
         }));
+      }),
+    getPeriodOverview: publicProcedure
+      .input(z.object({ period: z.enum(["day", "week", "month"]) }))
+      .query(async ({ input }) => {
+        const overview = await getPeriodDashboardOverview(input.period);
+        return {
+          ...overview,
+          startAt: overview.startAt.toISOString(),
+          scoreHistory: overview.scoreHistory.map(point => ({
+            ...point,
+            timestamp: point.timestamp.toISOString(),
+          })),
+        };
       }),
     getSensorThresholds: publicProcedure.query(async () => {
       return await getSensorThresholds();

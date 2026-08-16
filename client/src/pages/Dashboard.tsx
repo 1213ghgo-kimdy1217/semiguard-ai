@@ -8,6 +8,7 @@ import { MANUAL_CHUNK_LIMIT, MANUAL_CHUNK_WARNING_THRESHOLD, splitManualTextInto
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { toast } from "sonner";
 import { startGoogleLink, startNaverLink, startKakaoLink } from "@/const";
+import { Tooltip as AppTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const FALLBACK_DIAGNOSTIC_MARKERS = ["[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;
 
@@ -312,36 +313,44 @@ function RiskGauge({ score, riskLevel, t }: { score: number; riskLevel: RiskLeve
   const animatedScore = useAnimatedScore(score);
   const circumference = 2 * Math.PI * 48;
   const offset = circumference * (1 - animatedScore / 100);
+  const detail = `${t.riskScore}: ${animatedScore}/100 · ${t[riskLevel]}`;
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full">
-      <div className="relative w-40 h-40">
-        <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90" aria-hidden="true">
-          <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
-          <circle cx="60" cy="60" r="48" fill="none"
-            stroke={color} strokeWidth="8" strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 0.7s cubic-bezier(0.23,1,0.32,1), stroke 0.4s ease" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-          <span className="text-4xl font-bold font-mono leading-none" style={{ color, transition: "color 0.4s" }}>{animatedScore}</span>
-          <span className="text-[10px] text-muted-foreground tracking-wide">{t.riskScore}</span>
+    <AppTooltip delayDuration={160}>
+      <TooltipTrigger asChild>
+        <div tabIndex={0} className="flex w-full cursor-default flex-col items-center gap-3 rounded-2xl p-2 transition-[transform,box-shadow,background-color] duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/[0.025] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80 motion-reduce:transform-none motion-reduce:transition-none">
+          <div className="relative w-40 h-40">
+            <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90" aria-hidden="true">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+              <circle cx="60" cy="60" r="48" fill="none"
+                stroke={color} strokeWidth="8" strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                style={{ transition: "stroke-dashoffset 0.7s cubic-bezier(0.23,1,0.32,1), stroke 0.4s ease" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+              <span className="text-4xl font-bold font-mono leading-none" style={{ color, transition: "color 0.4s" }}>{animatedScore}</span>
+              <span className="text-[10px] text-muted-foreground tracking-wide">{t.riskScore}</span>
+            </div>
+          </div>
+          <div className="px-5 py-1.5 rounded-full text-sm font-bold tracking-widest border transition-all duration-400"
+            style={{ color, background: RISK_BG[riskLevel], borderColor: RISK_BORDER[riskLevel] }}>
+            {t[riskLevel]}
+          </div>
+          {/* 4단계 인디케이터 바 */}
+          <div className="flex gap-1.5 w-full px-1" aria-hidden="true">
+            {(["normal","caution","warning","danger"] as RiskLevel[]).map(lvl => (
+              <div key={lvl} className="flex-1 h-1.5 rounded-full transition-all duration-300"
+                style={{ background: riskLevel === lvl ? RISK_COLORS[lvl] : "rgba(255,255,255,0.05)" }} />
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="px-5 py-1.5 rounded-full text-sm font-bold tracking-widest border transition-all duration-400"
-        style={{ color, background: RISK_BG[riskLevel], borderColor: RISK_BORDER[riskLevel] }}>
-        {t[riskLevel]}
-      </div>
-      {/* 4단계 인디케이터 바 */}
-      <div className="flex gap-1.5 w-full px-1">
-        {(["normal","caution","warning","danger"] as RiskLevel[]).map(lvl => (
-          <div key={lvl} className="flex-1 h-1.5 rounded-full transition-all duration-300"
-            style={{ background: riskLevel === lvl ? RISK_COLORS[lvl] : "rgba(255,255,255,0.05)" }} />
-        ))}
-      </div>
-    </div>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[17rem] border-cyan-400/30 bg-slate-950 px-3 py-2 text-xs text-slate-100 shadow-xl">
+        {detail}
+      </TooltipContent>
+    </AppTooltip>
   );
 }
 
@@ -426,24 +435,32 @@ function CustomTooltip(props: any) {
 }
 
 // ─── 임팩트 통계 카드 ────────────────────────────────────────────────────────
-function ImpactCard({ label, value, unit, icon, color, isLoading = false, loadingLabel }: {
-  label: string; value: string | number; unit?: string; icon: string; color: string; isLoading?: boolean; loadingLabel?: string;
+function ImpactCard({ label, value, unit, icon, color, isLoading = false, loadingLabel, detail }: {
+  label: string; value: string | number; unit?: string; icon: string; color: string; isLoading?: boolean; loadingLabel?: string; detail?: string;
 }) {
+  const accessibleDetail = detail ?? `${label}: ${isLoading ? loadingLabel ?? "—" : `${typeof value === "number" ? value.toLocaleString() : value}${unit ? ` ${unit}` : ""}`}`;
   return (
-    <div className="rounded-xl p-4 border flex flex-col gap-2" aria-busy={isLoading || undefined}
-      style={{ background: "rgba(255,255,255,0.025)", borderColor: `${color}35` }}>
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{label}</span>
-        <span className="text-lg" aria-hidden="true">{icon}</span>
-      </div>
-      <div className="flex items-end gap-1.5">
-        <span className="text-2xl font-bold font-mono leading-none" style={{ color }}>
-          {isLoading ? "—" : (typeof value === "number" ? value.toLocaleString() : value)}
-        </span>
-        {unit && <span className="text-xs text-muted-foreground mb-0.5">{unit}</span>}
-      </div>
-      {isLoading && loadingLabel && <span className="text-[10px] text-muted-foreground">{loadingLabel}</span>}
-    </div>
+    <AppTooltip delayDuration={160}>
+      <TooltipTrigger asChild>
+        <div tabIndex={0} className="flex cursor-default flex-col gap-2 rounded-xl border p-4 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80 motion-reduce:transform-none motion-reduce:transition-none" aria-busy={isLoading || undefined}
+          style={{ background: "rgba(255,255,255,0.025)", borderColor: `${color}35` }}>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{label}</span>
+            <span className="text-lg" aria-hidden="true">{icon}</span>
+          </div>
+          <div className="flex items-end gap-1.5">
+            <span className="text-2xl font-bold font-mono leading-none" style={{ color }}>
+              {isLoading ? "—" : (typeof value === "number" ? value.toLocaleString() : value)}
+            </span>
+            {unit && <span className="text-xs text-muted-foreground mb-0.5">{unit}</span>}
+          </div>
+          {isLoading && loadingLabel && <span className="text-[10px] text-muted-foreground">{loadingLabel}</span>}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[17rem] border-slate-600 bg-slate-950 px-3 py-2 text-xs text-slate-100 shadow-xl">
+        {accessibleDetail}
+      </TooltipContent>
+    </AppTooltip>
   );
 }
 
@@ -2123,19 +2140,23 @@ export default function Dashboard() {
   const autoFetch = trpc.semiguard.autoFetch.useMutation();
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const analyzeAnomalyMutation = trpc.semiguard.analyzeAnomaly.useMutation();
+  const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month">("day");
+  const dashboardPeriodInput = useMemo(() => ({ period: dashboardPeriod }), [dashboardPeriod]);
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
+  const periodOverviewQuery = trpc.semiguard.getPeriodOverview.useQuery(dashboardPeriodInput, { refetchInterval: 5000 });
   const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 200 }, { refetchInterval: 5000 });
   const getDailyMaxRisk = trpc.semiguard.getDailyMaxRisk.useQuery(undefined, { refetchInterval: 10000 });
   const utils = trpc.useUtils();
   const getRecentScoresQuery = trpc.semiguard.getRecentScores.useQuery({ limit: 50 }, { refetchInterval: 5000 });
   const { data: logsData, isLoading: logsLoading } = getLogs;
-  const safetyMonitoringHasError = getStats.isError || getLogs.isError || getDailyMaxRisk.isError || getRecentScoresQuery.isError;
-  const safetyMonitoringInitializing = getStats.isLoading || getLogs.isLoading || getDailyMaxRisk.isLoading || getRecentScoresQuery.isLoading;
-  const safetyMonitoringRetrying = getStats.isFetching || getLogs.isFetching || getDailyMaxRisk.isFetching || getRecentScoresQuery.isFetching;
-  const statsInitialLoading = getStats.isLoading && !getStats.data;
+  const safetyMonitoringHasError = getStats.isError || periodOverviewQuery.isError || getLogs.isError || getDailyMaxRisk.isError || getRecentScoresQuery.isError;
+  const safetyMonitoringInitializing = getStats.isLoading || periodOverviewQuery.isLoading || getLogs.isLoading || getDailyMaxRisk.isLoading || getRecentScoresQuery.isLoading;
+  const safetyMonitoringRetrying = getStats.isFetching || periodOverviewQuery.isFetching || getLogs.isFetching || getDailyMaxRisk.isFetching || getRecentScoresQuery.isFetching;
+  const statsInitialLoading = periodOverviewQuery.isLoading && !periodOverviewQuery.data;
   const statsLoadingLabel = lang === "ko" ? "통계를 불러오는 중..." : lang === "ja" ? "統計を読み込み中..." : "Loading statistics...";
   const retrySafetyMonitoring = () => {
     void getStats.refetch();
+    void periodOverviewQuery.refetch();
     void getLogs.refetch();
     void getDailyMaxRisk.refetch();
     void getRecentScoresQuery.refetch();
@@ -2156,7 +2177,22 @@ export default function Dashboard() {
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoSpeed, setDemoSpeed] = useState(3); // 1~10초
   const [pdfExporting, setPdfExporting] = useState(false);
-  const displayedSavedCost = useCountUp(getStats.data?.savedCost ?? 0, 1000);
+  const selectedPeriodStats = periodOverviewQuery.data;
+  const displayedSavedCost = useCountUp(selectedPeriodStats?.savedCost ?? 0, 1000);
+  const selectedPeriodLabel = dashboardPeriod === "day"
+    ? (lang === "ko" ? "최근 24시간" : lang === "ja" ? "直近24時間" : "Last 24 hours")
+    : dashboardPeriod === "week"
+      ? (lang === "ko" ? "최근 7일" : lang === "ja" ? "直近7日間" : "Last 7 days")
+      : (lang === "ko" ? "최근 30일" : lang === "ja" ? "直近30日間" : "Last 30 days");
+  const periodChartData = useMemo<ChartPoint[]>(() => (selectedPeriodStats?.scoreHistory ?? []).map(point => ({
+    timestamp: new Date(point.timestamp).getTime(),
+    label: new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(point.timestamp)),
+    current: point.current,
+    temperature: point.temperature,
+    vibration: point.vibration,
+    noise: point.noise,
+  })), [lang, selectedPeriodStats?.scoreHistory]);
+  const displayedSensorChartData = periodChartData.length > 0 ? periodChartData : chartData;
   const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ─── 센서별 임계값 tRPC 훅 ──────────────────────────────────────────────────
@@ -5204,19 +5240,33 @@ export default function Dashboard() {
         <div id={`dashboard-panel-${activeTab}`} role="tabpanel" aria-labelledby={`dashboard-tab-${activeTab}`}>
         {activeTab === "dashboard" ? (
           <>
+            <div className="mb-4 flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between" style={{ background: th.bgCard, borderColor: th.border }}>
+              <div className="min-w-0">
+                <p className="text-xs font-bold" style={{ color: th.text }}>{lang === "ko" ? "기간별 운영 분석" : lang === "ja" ? "期間別の運用分析" : "Period-based operations analysis"}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">{lang === "ko" ? "선택한 기간의 센서 이력, 탐지·위험 통계와 예상 절감 비용을 표시합니다." : lang === "ja" ? "選択した期間のセンサー履歴、検知・危険統計、予想削減コストを表示します。" : "Shows sensor history, detection and risk statistics, and expected savings for the selected period."}</p>
+              </div>
+              <label className="flex shrink-0 items-center gap-2 text-xs font-semibold" style={{ color: th.text }}>
+                <span>{lang === "ko" ? "분석 기간" : lang === "ja" ? "分析期間" : "Analysis period"}</span>
+                <select value={dashboardPeriod} onChange={event => setDashboardPeriod(event.target.value as "day" | "week" | "month")} className="h-9 rounded-lg border px-2 text-xs font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text, background: th.bgCard2, borderColor: th.border2 }}>
+                  <option value="day">{lang === "ko" ? "일간 · 최근 24시간" : lang === "ja" ? "日間・直近24時間" : "Daily · Last 24 hours"}</option>
+                  <option value="week">{lang === "ko" ? "주간 · 최근 7일" : lang === "ja" ? "週間・直近7日間" : "Weekly · Last 7 days"}</option>
+                  <option value="month">{lang === "ko" ? "월간 · 최근 30일" : lang === "ja" ? "月間・直近30日間" : "Monthly · Last 30 days"}</option>
+                </select>
+              </label>
+            </div>
             {/* 임팩트 통계 섹션 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <ImpactCard label={t.totalVisitors} value={getStats.isError ? "—" : (getStats.data?.totalVisitors ?? 0)} icon="👥" color="#38bdf8" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} />
-              <ImpactCard label={t.totalDetections} value={getStats.isError ? "—" : (getStats.data?.totalDetections ?? 0)} icon="📊" color="#a78bfa" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} />
-              <ImpactCard label={t.dangerCount} value={getStats.isError ? "—" : (getStats.data?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} />
-              <ImpactCard label={t.uptimePct} value={getStats.isError ? "—" : `${getStats.data?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} />
+              <ImpactCard label={t.totalVisitors} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.totalVisitors ?? 0)} icon="👥" color="#38bdf8" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.totalVisitors}: ${(selectedPeriodStats?.totalVisitors ?? 0).toLocaleString()}`} />
+              <ImpactCard label={t.totalDetections} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.totalDetections ?? 0)} icon="📊" color="#a78bfa" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.totalDetections}: ${(selectedPeriodStats?.totalDetections ?? 0).toLocaleString()} · ${lang === "ko" ? "이상" : lang === "ja" ? "異常" : "Anomalies"}: ${(selectedPeriodStats?.anomalyCount ?? 0).toLocaleString()}`} />
+              <ImpactCard label={t.dangerCount} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.dangerCount}: ${(selectedPeriodStats?.dangerCount ?? 0).toLocaleString()}`} />
+              <ImpactCard label={t.uptimePct} value={periodOverviewQuery.isError ? "—" : `${selectedPeriodStats?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.uptimePct}: ${selectedPeriodStats?.uptimePct ?? 100}%`} />
             </div>
 
-            {getStats.isError && (
+            {periodOverviewQuery.isError && (
               <div className="mb-6 flex flex-col items-start justify-between gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center" role="alert" style={{ background: "oklch(0.65 0.20 25 / 0.08)", borderColor: "oklch(0.65 0.20 25 / 0.45)", color: th.textMuted }}>
                 <p>⚠️ {lang === "ko" ? "운영 통계를 불러오지 못했습니다. KPI와 예상 절감 비용은 최신 값이 아닐 수 있습니다." : lang === "ja" ? "運用統計を読み込めませんでした。KPIと予想削減コストは最新値ではない可能性があります。" : "Could not load operational statistics. KPI values and expected savings may not be current."}</p>
-                <button type="button" onClick={() => void getStats.refetch()} disabled={getStats.isFetching} className="shrink-0 rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
-                  ↻ {getStats.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
+                <button type="button" onClick={() => void periodOverviewQuery.refetch()} disabled={periodOverviewQuery.isFetching} className="shrink-0 rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
+                  ↻ {periodOverviewQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                 </button>
               </div>
             )}
@@ -5224,13 +5274,13 @@ export default function Dashboard() {
             {/* 절감 비용 카드 */}
             <div className="rounded-xl border p-4 sm:p-5 mb-6 flex flex-col gap-2"
               style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.10), rgba(34,197,94,0.05))", borderColor: "rgba(34,197,94,0.30)" }}>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t.savedCost}</p>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t.savedCost} · {selectedPeriodLabel}</p>
               <div className="flex items-end gap-2">
                 <span className="text-3xl font-bold font-mono" style={{ color: "#22c55e" }}>
-                  {getStats.isError || statsInitialLoading ? "—" : `₩${displayedSavedCost.toLocaleString()}`}
+                  {periodOverviewQuery.isError || statsInitialLoading ? "—" : `₩${displayedSavedCost.toLocaleString()}`}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">{statsInitialLoading ? statsLoadingLabel : t.impactDesc}</p>
+              <p className="text-xs text-muted-foreground mt-2">{statsInitialLoading ? statsLoadingLabel : (lang === "ko" ? `${selectedPeriodLabel} 위험 탐지 기준 예상 절감 비용` : lang === "ja" ? `${selectedPeriodLabel}の危険検知に基づく予想削減コスト` : `Expected savings from danger detections during ${selectedPeriodLabel.toLowerCase()}`)}</p>
             </div>
 
             {/* 메인 대시보드 그리드 */}
@@ -5465,6 +5515,9 @@ export default function Dashboard() {
                   const currentScore = scoreHistory.at(-1) ?? 0;
                   const minScore = Math.min(...scoreHistory);
                   const maxScore = Math.max(...scoreHistory);
+                  const overviewSensorKey = card.sensorKey === "temp" ? "temperature" : card.sensorKey === "vib" ? "vibration" : card.sensorKey === "noise" ? "noise" : "current";
+                  const periodAverage = selectedPeriodStats?.sensors.average[overviewSensorKey];
+                  const periodPeak = selectedPeriodStats?.sensors.peak[overviewSensorKey];
                   const scoreTrendSummary = lang === "ko"
                     ? `${card.label} 점수 추이. 현재 ${currentScore}, 최저 ${minScore}, 최고 ${maxScore}`
                     : lang === "ja"
@@ -5482,9 +5535,10 @@ export default function Dashboard() {
                       <span className="text-xs text-muted-foreground mb-0.5">{card.unit}</span>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[9px] text-muted-foreground opacity-60">{lang === "ko" ? "점수 추이" : lang === "ja" ? "スコア推移" : "Score trend"}</span>
+                      <span className="text-[9px] text-muted-foreground opacity-60">{lang === "ko" ? `점수 추이 · ${selectedPeriodLabel}` : lang === "ja" ? `スコア推移・${selectedPeriodLabel}` : `Score trend · ${selectedPeriodLabel}`}</span>
                       <Sparkline data={scoreHistory} color={card.color} label={scoreTrendSummary} />
                     </div>
+                    {periodAverage !== undefined && periodPeak !== undefined && <p className="text-[9px] text-muted-foreground">{lang === "ko" ? `${selectedPeriodLabel} 평균 ${periodAverage.toFixed(1)} · 최고 ${periodPeak.toFixed(1)}` : lang === "ja" ? `${selectedPeriodLabel} 平均 ${periodAverage.toFixed(1)} · 最大 ${periodPeak.toFixed(1)}` : `${selectedPeriodLabel} avg ${periodAverage.toFixed(1)} · peak ${periodPeak.toFixed(1)}`}</p>}
                   </div>
                   );
                 })}
@@ -5499,7 +5553,7 @@ export default function Dashboard() {
                     {t.current} <span className="text-[#38bdf8]">●</span> / {t.temperature} <span className="text-[#fb923c]">●</span>
                   </p>
                   <ResponsiveContainer width="100%" height={150}>
-                    <LineChart data={chartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
+                    <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                       <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#4b5563" }} interval="preserveStartEnd" />
                       <YAxis tick={{ fontSize: 9, fill: "#4b5563" }} />
@@ -5515,7 +5569,7 @@ export default function Dashboard() {
                     {t.vibration} <span className="text-[#a78bfa]">●</span> / {t.noise} <span className="text-[#34d399]">●</span>
                   </p>
                   <ResponsiveContainer width="100%" height={150}>
-                    <LineChart data={chartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
+                    <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                       <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#4b5563" }} interval="preserveStartEnd" />
                       <YAxis tick={{ fontSize: 9, fill: "#4b5563" }} />
@@ -5622,7 +5676,7 @@ export default function Dashboard() {
                     </button>
                   </div>
                 ) : (
-                  <ScoreLineChart data={getRecentScoresQuery.data ?? []} lang={lang} isDark={isDark} />
+                  <ScoreLineChart data={selectedPeriodStats?.scoreHistory ?? getRecentScoresQuery.data ?? []} lang={lang} isDark={isDark} />
                 )}
               </div>
               {getDailyMaxRisk.isError ? (

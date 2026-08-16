@@ -1,4 +1,4 @@
-import { desc, eq, sql, count as drizzleCount } from "drizzle-orm";
+import { desc, eq, gte, sql, count as drizzleCount } from "drizzle-orm";
 import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, type InsertAnomalyLog } from "../drizzle/schema";
 import { getDb } from "./db";
 
@@ -172,6 +172,98 @@ export async function getRecentScores(limit = 50): Promise<{ timestamp: Date; sc
     riskLevel: anomalyLogs.riskLevel,
   }).from(anomalyLogs).orderBy(desc(anomalyLogs.timestamp)).limit(limit);
   return rows.reverse(); // 시간 오름차순으로 반환
+}
+
+export type DashboardPeriod = "day" | "week" | "month";
+
+const DASHBOARD_PERIOD_MS: Record<DashboardPeriod, number> = {
+  day: 24 * 60 * 60 * 1000,
+  week: 7 * 24 * 60 * 60 * 1000,
+  month: 30 * 24 * 60 * 60 * 1000,
+};
+
+export async function getPeriodDashboardOverview(period: DashboardPeriod) {
+  const db = await getDb();
+  const startAt = new Date(Date.now() - DASHBOARD_PERIOD_MS[period]);
+  const startDate = startAt.toISOString().slice(0, 10);
+  const emptySensors = {
+    average: { current: 0, temperature: 0, vibration: 0, noise: 0 },
+    peak: { current: 0, temperature: 0, vibration: 0, noise: 0 },
+  };
+  if (!db) {
+    return {
+      period,
+      startAt,
+      totalDetections: 0,
+      dangerCount: 0,
+      anomalyCount: 0,
+      uptimePct: 100,
+      savedCost: 0,
+      totalVisitors: 0,
+      sensors: emptySensors,
+      scoreHistory: [] as { timestamp: Date; score: number; riskLevel: string; current: number; temperature: number; vibration: number; noise: number }[],
+    };
+  }
+
+  const [periodLogs, visitorRows] = await Promise.all([
+    db.select({
+      timestamp: anomalyLogs.timestamp,
+      current: anomalyLogs.current,
+      temperature: anomalyLogs.temperature,
+      vibration: anomalyLogs.vibration,
+      noise: anomalyLogs.noise,
+      score: anomalyLogs.anomalyScore,
+      riskLevel: anomalyLogs.riskLevel,
+      isAnomaly: anomalyLogs.isAnomaly,
+    }).from(anomalyLogs).where(gte(anomalyLogs.timestamp, startAt)).orderBy(desc(anomalyLogs.timestamp)).limit(300),
+    db.select({ total: sql<number>`COALESCE(SUM(${visitorStats.count}), 0)` }).from(visitorStats).where(gte(visitorStats.date, startDate)),
+  ]);
+
+  const logs = periodLogs.reverse();
+  const totalDetections = logs.length;
+  const dangerCount = logs.filter(log => log.riskLevel === "danger").length;
+  const anomalyCount = logs.filter(log => log.isAnomaly === 1).length;
+  const sum = logs.reduce((acc, log) => ({
+    current: acc.current + Number(log.current),
+    temperature: acc.temperature + Number(log.temperature),
+    vibration: acc.vibration + Number(log.vibration),
+    noise: acc.noise + Number(log.noise),
+  }), { current: 0, temperature: 0, vibration: 0, noise: 0 });
+  const peak = logs.reduce((acc, log) => ({
+    current: Math.max(acc.current, Number(log.current)),
+    temperature: Math.max(acc.temperature, Number(log.temperature)),
+    vibration: Math.max(acc.vibration, Number(log.vibration)),
+    noise: Math.max(acc.noise, Number(log.noise)),
+  }), { current: 0, temperature: 0, vibration: 0, noise: 0 });
+  const average = totalDetections > 0
+    ? {
+        current: sum.current / totalDetections,
+        temperature: sum.temperature / totalDetections,
+        vibration: sum.vibration / totalDetections,
+        noise: sum.noise / totalDetections,
+      }
+    : emptySensors.average;
+
+  return {
+    period,
+    startAt,
+    totalDetections,
+    dangerCount,
+    anomalyCount,
+    uptimePct: totalDetections > 0 ? Math.round(((totalDetections - anomalyCount) / totalDetections) * 100) : 100,
+    savedCost: dangerCount * 50_000_000,
+    totalVisitors: Number(visitorRows[0]?.total ?? 0),
+    sensors: { average, peak },
+    scoreHistory: logs.slice(-180).map(log => ({
+      timestamp: log.timestamp,
+      score: Number(log.score),
+      riskLevel: log.riskLevel,
+      current: Number(log.current),
+      temperature: Number(log.temperature),
+      vibration: Number(log.vibration),
+      noise: Number(log.noise),
+    })),
+  };
 }
 
 // 이상 탐지 통계
