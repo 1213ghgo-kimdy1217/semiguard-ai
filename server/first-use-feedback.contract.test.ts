@@ -50,4 +50,12 @@ describe("first-use feedback privacy and metrics contract", () => {
     expect(dashboardSource).toContain('event.key === "Escape"');
     expect(dashboardSource).toContain("firstUseFeedbackTriggerRef.current?.focus()");
   });
+
+  it("keeps Tab navigation inside the open feedback dialog", () => {
+    expect(dashboardSource).toContain("const firstUseFeedbackDialogRef = useRef<HTMLElement>(null)");
+    expect(dashboardSource).toContain('event.key !== "Tab"');
+    expect(dashboardSource).toContain('querySelectorAll<HTMLButtonElement>("button:not([disabled])")');
+    expect(dashboardSource).toContain("event.shiftKey && document.activeElement === firstControl");
+    expect(dashboardSource).toContain("document.activeElement === lastControl");
+  });
 });
