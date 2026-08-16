@@ -380,12 +380,29 @@ export const appRouter = router({
         }));
       }),
     getPeriodOverview: publicProcedure
-      .input(z.object({ period: z.enum(["day", "week", "month"]) }))
+      .input(z.discriminatedUnion("period", [
+        z.object({ period: z.enum(["day", "week", "month"]) }),
+        z.object({
+          period: z.literal("custom"),
+          startAt: z.string().datetime({ offset: true }),
+          endAt: z.string().datetime({ offset: true }),
+        }).refine(({ startAt, endAt }) => new Date(startAt).getTime() <= new Date(endAt).getTime(), {
+          message: "Custom period start must not be after its end.",
+          path: ["endAt"],
+        }).refine(({ startAt, endAt }) => new Date(endAt).getTime() - new Date(startAt).getTime() <= 366 * 24 * 60 * 60 * 1000, {
+          message: "Custom period must be 366 days or shorter.",
+          path: ["endAt"],
+        }),
+      ]))
       .query(async ({ input }) => {
-        const overview = await getPeriodDashboardOverview(input.period);
+        const overview = await getPeriodDashboardOverview(
+          input.period,
+          input.period === "custom" ? { startAt: new Date(input.startAt), endAt: new Date(input.endAt) } : undefined,
+        );
         return {
           ...overview,
           startAt: overview.startAt.toISOString(),
+          endAt: overview.endAt.toISOString(),
           scoreHistory: overview.scoreHistory.map(point => ({
             ...point,
             timestamp: point.timestamp.toISOString(),

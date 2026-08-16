@@ -1,4 +1,4 @@
-import { desc, eq, gte, sql, count as drizzleCount } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql, count as drizzleCount } from "drizzle-orm";
 import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, type InsertAnomalyLog } from "../drizzle/schema";
 import { getDb } from "./db";
 
@@ -174,18 +174,25 @@ export async function getRecentScores(limit = 50): Promise<{ timestamp: Date; sc
   return rows.reverse(); // 시간 오름차순으로 반환
 }
 
-export type DashboardPeriod = "day" | "week" | "month";
+export type DashboardPeriod = "day" | "week" | "month" | "custom";
+type PresetDashboardPeriod = Exclude<DashboardPeriod, "custom">;
 
-const DASHBOARD_PERIOD_MS: Record<DashboardPeriod, number> = {
+const DASHBOARD_PERIOD_MS: Record<PresetDashboardPeriod, number> = {
   day: 24 * 60 * 60 * 1000,
   week: 7 * 24 * 60 * 60 * 1000,
   month: 30 * 24 * 60 * 60 * 1000,
 };
 
-export async function getPeriodDashboardOverview(period: DashboardPeriod) {
+export async function getPeriodDashboardOverview(period: DashboardPeriod, customRange?: { startAt: Date; endAt: Date }) {
   const db = await getDb();
-  const startAt = new Date(Date.now() - DASHBOARD_PERIOD_MS[period]);
+  const now = new Date();
+  const startAt = period === "custom" ? customRange?.startAt : new Date(now.getTime() - DASHBOARD_PERIOD_MS[period]);
+  const endAt = period === "custom" ? customRange?.endAt : now;
+  if (!startAt || !endAt || startAt > endAt) {
+    throw new Error("A valid custom dashboard date range is required.");
+  }
   const startDate = startAt.toISOString().slice(0, 10);
+  const endDate = endAt.toISOString().slice(0, 10);
   const emptySensors = {
     average: { current: 0, temperature: 0, vibration: 0, noise: 0 },
     peak: { current: 0, temperature: 0, vibration: 0, noise: 0 },
@@ -194,6 +201,7 @@ export async function getPeriodDashboardOverview(period: DashboardPeriod) {
     return {
       period,
       startAt,
+      endAt,
       totalDetections: 0,
       dangerCount: 0,
       anomalyCount: 0,
@@ -215,8 +223,8 @@ export async function getPeriodDashboardOverview(period: DashboardPeriod) {
       score: anomalyLogs.anomalyScore,
       riskLevel: anomalyLogs.riskLevel,
       isAnomaly: anomalyLogs.isAnomaly,
-    }).from(anomalyLogs).where(gte(anomalyLogs.timestamp, startAt)).orderBy(desc(anomalyLogs.timestamp)).limit(300),
-    db.select({ total: sql<number>`COALESCE(SUM(${visitorStats.count}), 0)` }).from(visitorStats).where(gte(visitorStats.date, startDate)),
+    }).from(anomalyLogs).where(and(gte(anomalyLogs.timestamp, startAt), lte(anomalyLogs.timestamp, endAt))).orderBy(desc(anomalyLogs.timestamp)).limit(300),
+    db.select({ total: sql<number>`COALESCE(SUM(${visitorStats.count}), 0)` }).from(visitorStats).where(and(gte(visitorStats.date, startDate), lte(visitorStats.date, endDate))),
   ]);
 
   const logs = periodLogs.reverse();
@@ -247,6 +255,7 @@ export async function getPeriodDashboardOverview(period: DashboardPeriod) {
   return {
     period,
     startAt,
+    endAt,
     totalDetections,
     dangerCount,
     anomalyCount,

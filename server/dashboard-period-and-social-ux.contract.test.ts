@@ -9,7 +9,7 @@ const dbSource = readFileSync(resolve(process.cwd(), "server/semiguardDb.ts"), "
 
 describe("dashboard period analysis and social UX contract", () => {
   it("offers day, week, and month analysis periods and connects charts to period data", () => {
-    expect(dashboardSource).toContain('const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month">("day")');
+    expect(dashboardSource).toContain('const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month" | "custom">("day")');
     expect(dashboardSource).toContain('option value="day"');
     expect(dashboardSource).toContain('option value="week"');
     expect(dashboardSource).toContain('option value="month"');
@@ -20,7 +20,7 @@ describe("dashboard period analysis and social UX contract", () => {
   it("provides a typed server contract for period-scoped sensor and KPI data", () => {
     expect(routerSource).toContain('getPeriodOverview: publicProcedure');
     expect(routerSource).toContain('z.enum(["day", "week", "month"])');
-    expect(dbSource).toContain('export async function getPeriodDashboardOverview(period: DashboardPeriod)');
+    expect(dbSource).toContain('export async function getPeriodDashboardOverview(period: DashboardPeriod, customRange?');
     expect(dbSource).toContain('DASHBOARD_PERIOD_MS');
     expect(dbSource).toContain('sensors: { average, peak }');
   });

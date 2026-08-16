@@ -89,8 +89,9 @@ function exportLogsToCSV(logs: AnomalyLogEntry[], lang: Lang) {
 }
 
 type PeriodOverviewData = {
-  period: "day" | "week" | "month";
+  period: "day" | "week" | "month" | "custom";
   startAt: string;
+  endAt: string;
   totalDetections: number;
   dangerCount: number;
   anomalyCount: number;
@@ -116,6 +117,48 @@ function localizeRiskLevel(level: string, lang: Lang) {
       ? { normal: "正常", caution: "注意", warning: "警告", danger: "危険" }
       : { normal: "Normal", caution: "Caution", warning: "Warning", danger: "Danger" };
   return labels[level as keyof typeof labels] ?? level;
+}
+
+function toLocalDateBoundaryIso(dateValue: string, isEndOfDay = false) {
+  const [year, month, day] = dateValue.split("-").map(Number);
+  return new Date(year, month - 1, day, isEndOfDay ? 23 : 0, isEndOfDay ? 59 : 0, isEndOfDay ? 59 : 0, isEndOfDay ? 999 : 0).toISOString();
+}
+
+function buildSensorTrendChartImage(history: PeriodOverviewData["scoreHistory"], lang: Lang) {
+  if (history.length === 0) return null;
+  const copy = lang === "ko"
+    ? { title: "센서 데이터 추이", noData: "표시할 센서 데이터가 없습니다.", current: "전류", temperature: "온도", vibration: "진동", noise: "소음" }
+    : lang === "ja"
+      ? { title: "センサーデータ推移", noData: "表示するセンサーデータがありません。", current: "電流", temperature: "温度", vibration: "振動", noise: "騒音" }
+      : { title: "Sensor data trends", noData: "No sensor data is available.", current: "Current", temperature: "Temperature", vibration: "Vibration", noise: "Noise" };
+  const points = history.slice(-120);
+  const dimensions = { width: 740, height: 270, left: 42, right: 22, top: 42, bottom: 36 };
+  const plotWidth = dimensions.width - dimensions.left - dimensions.right;
+  const plotHeight = dimensions.height - dimensions.top - dimensions.bottom;
+  const series = [
+    { key: "current" as const, label: copy.current, color: "#1d9bf0" },
+    { key: "temperature" as const, label: copy.temperature, color: "#f97316" },
+    { key: "vibration" as const, label: copy.vibration, color: "#a855f7" },
+    { key: "noise" as const, label: copy.noise, color: "#16a34a" },
+  ];
+  const x = (index: number) => dimensions.left + (points.length <= 1 ? plotWidth / 2 : (index / (points.length - 1)) * plotWidth);
+  const grid = Array.from({ length: 5 }, (_, index) => {
+    const y = dimensions.top + (index / 4) * plotHeight;
+    return `<line x1="${dimensions.left}" y1="${y.toFixed(1)}" x2="${dimensions.width - dimensions.right}" y2="${y.toFixed(1)}" stroke="#d9e2ec" stroke-width="1"/>`;
+  }).join("");
+  const lines = series.map(({ key, label, color }) => {
+    const values = points.map(point => Number(point[key]));
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+    const polyline = values.map((value, index) => `${x(index).toFixed(1)},${(dimensions.top + plotHeight - ((value - min) / range) * plotHeight).toFixed(1)}`).join(" ");
+    return `<polyline points="${polyline}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><text x="${dimensions.left}" y="${dimensions.top + 15 + series.findIndex(item => item.key === key) * 15}" fill="${color}" font-size="11" font-weight="700">${escapeReportHtml(label)} ${escapeReportHtml(min.toFixed(1))}–${escapeReportHtml(max.toFixed(1))}</text>`;
+  }).join("");
+  const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
+  const startLabel = new Date(points[0].timestamp).toLocaleString(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+  const endLabel = new Date(points[points.length - 1].timestamp).toLocaleString(locale, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" viewBox="0 0 ${dimensions.width} ${dimensions.height}" role="img" aria-label="${escapeReportHtml(copy.title)}"><rect width="100%" height="100%" rx="12" fill="#f8fafc"/><text x="${dimensions.left}" y="24" fill="#102a43" font-family="Arial, sans-serif" font-size="15" font-weight="700">${escapeReportHtml(copy.title)}</text>${grid}${lines}<line x1="${dimensions.left}" y1="${dimensions.top + plotHeight}" x2="${dimensions.width - dimensions.right}" y2="${dimensions.top + plotHeight}" stroke="#9fb3c8" stroke-width="1"/><text x="${dimensions.left}" y="${dimensions.height - 13}" fill="#627d98" font-family="Arial, sans-serif" font-size="10">${escapeReportHtml(startLabel)}</text><text x="${dimensions.width - dimensions.right}" y="${dimensions.height - 13}" text-anchor="end" fill="#627d98" font-family="Arial, sans-serif" font-size="10">${escapeReportHtml(endLabel)}</text></svg>`;
+  return { src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, alt: copy.title };
 }
 
 function exportPeriodOverviewToCsv(overview: PeriodOverviewData, lang: Lang, periodLabel: string) {
@@ -179,8 +222,9 @@ function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, pe
     [lang === "ko" ? "진동 (mm/s)" : lang === "ja" ? "振動 (mm/s)" : "Vibration (mm/s)", overview.sensors.average.vibration, overview.sensors.peak.vibration],
     [lang === "ko" ? "소음 (dB)" : lang === "ja" ? "騒音 (dB)" : "Noise (dB)", overview.sensors.average.noise, overview.sensors.peak.noise],
   ];
+  const sensorTrendChart = buildSensorTrendChartImage(overview.scoreHistory, lang);
   const scoreRows = overview.scoreHistory.slice(-24).map(point => `<tr><td>${escapeReportHtml(new Date(point.timestamp).toLocaleString(locale, { hour12: false }))}</td><td>${escapeReportHtml(point.score)}</td><td><span class="risk" style="color:${riskColor(point.riskLevel)}">${escapeReportHtml(localizeRiskLevel(point.riskLevel, lang))}</span></td></tr>`).join("");
-  reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${escapeReportHtml(copy.title)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Inter,"Noto Sans KR","Noto Sans JP",Arial,sans-serif;font-size:11px;line-height:1.45}.report{max-width:780px;margin:0 auto}.hero{padding:20px 22px;background:linear-gradient(135deg,#0f2c4c,#0b7a91);color:#fff;border-radius:14px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.78}.hero h1{font-size:23px;line-height:1.2;margin:6px 0}.hero p{margin:0;opacity:.9}.metadata{display:flex;gap:20px;margin-top:15px;font-size:10px;flex-wrap:wrap}.metadata strong{display:block;color:#0b7a91}.section{margin-top:22px}.section h2{font-size:14px;margin:0 0 9px;color:#102a43}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{border:1px solid #d9e2ec;border-radius:9px;padding:10px;background:#f8fafc}.metric span{display:block;color:#627d98;font-size:10px}.metric strong{display:block;font-size:17px;margin-top:2px;color:#102a43}table{width:100%;border-collapse:collapse;border:1px solid #d9e2ec;border-radius:8px;overflow:hidden}th{background:#eaf4f7;color:#102a43;text-align:left;font-size:10px}th,td{padding:7px 9px;border-bottom:1px solid #e6edf3}tr:last-child td{border-bottom:0}.risk{font-weight:700;text-transform:capitalize}.footer{margin-top:20px;padding-top:10px;border-top:1px solid #d9e2ec;color:#627d98;font-size:9px}@media print{.report{max-width:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="report"><header class="hero"><div class="eyebrow">SemiGuard AI</div><h1>${escapeReportHtml(copy.title)}</h1><p>${escapeReportHtml(copy.subtitle)}</p></header><div class="metadata"><div><strong>${escapeReportHtml(copy.period)}</strong>${escapeReportHtml(periodLabel)}</div><div><strong>${escapeReportHtml(copy.generated)}</strong>${escapeReportHtml(new Date().toLocaleString(locale, { hour12: false }))}</div></div><section class="section"><h2>${escapeReportHtml(copy.metrics)}</h2><div class="metrics">${metricRows.map(([label, value]) => `<article class="metric"><span>${escapeReportHtml(label)}</span><strong>${escapeReportHtml(value)}</strong></article>`).join("")}</div></section><section class="section"><h2>${escapeReportHtml(copy.sensors)}</h2><table><thead><tr><th>${lang === "ko" ? "센서" : lang === "ja" ? "センサー" : "Sensor"}</th><th>${escapeReportHtml(copy.average)}</th><th>${escapeReportHtml(copy.peak)}</th></tr></thead><tbody>${sensorRows.map(([sensor, average, peak]) => `<tr><td>${escapeReportHtml(sensor)}</td><td>${escapeReportHtml(Number(average).toFixed(2))}</td><td>${escapeReportHtml(Number(peak).toFixed(2))}</td></tr>`).join("")}</tbody></table></section><section class="section"><h2>${escapeReportHtml(copy.trend)}</h2><table><thead><tr><th>${escapeReportHtml(copy.time)}</th><th>${escapeReportHtml(copy.score)}</th><th>${escapeReportHtml(copy.level)}</th></tr></thead><tbody>${scoreRows || `<tr><td colspan="3">—</td></tr>`}</tbody></table></section><footer class="footer">${escapeReportHtml(copy.printHint)}</footer></main></body></html>`);
+  reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${escapeReportHtml(copy.title)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Inter,"Noto Sans KR","Noto Sans JP",Arial,sans-serif;font-size:11px;line-height:1.45}.report{max-width:780px;margin:0 auto}.hero{padding:20px 22px;background:linear-gradient(135deg,#0f2c4c,#0b7a91);color:#fff;border-radius:14px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.78}.hero h1{font-size:23px;line-height:1.2;margin:6px 0}.hero p{margin:0;opacity:.9}.metadata{display:flex;gap:20px;margin-top:15px;font-size:10px;flex-wrap:wrap}.metadata strong{display:block;color:#0b7a91}.section{margin-top:22px}.section h2{font-size:14px;margin:0 0 9px;color:#102a43}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{border:1px solid #d9e2ec;border-radius:9px;padding:10px;background:#f8fafc}.metric span{display:block;color:#627d98;font-size:10px}.metric strong{display:block;font-size:17px;margin-top:2px;color:#102a43}table{width:100%;border-collapse:collapse;border:1px solid #d9e2ec;border-radius:8px;overflow:hidden}th{background:#eaf4f7;color:#102a43;text-align:left;font-size:10px}th,td{padding:7px 9px;border-bottom:1px solid #e6edf3}tr:last-child td{border-bottom:0}.risk{font-weight:700;text-transform:capitalize}.chart-image{display:block;width:100%;border:1px solid #d9e2ec;border-radius:10px}.footer{margin-top:20px;padding-top:10px;border-top:1px solid #d9e2ec;color:#627d98;font-size:9px}@media print{.report{max-width:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="report"><header class="hero"><div class="eyebrow">SemiGuard AI</div><h1>${escapeReportHtml(copy.title)}</h1><p>${escapeReportHtml(copy.subtitle)}</p></header><div class="metadata"><div><strong>${escapeReportHtml(copy.period)}</strong>${escapeReportHtml(periodLabel)}</div><div><strong>${escapeReportHtml(copy.generated)}</strong>${escapeReportHtml(new Date().toLocaleString(locale, { hour12: false }))}</div></div><section class="section"><h2>${escapeReportHtml(copy.metrics)}</h2><div class="metrics">${metricRows.map(([label, value]) => `<article class="metric"><span>${escapeReportHtml(label)}</span><strong>${escapeReportHtml(value)}</strong></article>`).join("")}</div></section><section class="section"><h2>${escapeReportHtml(copy.sensors)}</h2><table><thead><tr><th>${lang === "ko" ? "센서" : lang === "ja" ? "センサー" : "Sensor"}</th><th>${escapeReportHtml(copy.average)}</th><th>${escapeReportHtml(copy.peak)}</th></tr></thead><tbody>${sensorRows.map(([sensor, average, peak]) => `<tr><td>${escapeReportHtml(sensor)}</td><td>${escapeReportHtml(Number(average).toFixed(2))}</td><td>${escapeReportHtml(Number(peak).toFixed(2))}</td></tr>`).join("")}</tbody></table></section>${sensorTrendChart ? `<section class="section"><h2>${escapeReportHtml(sensorTrendChart.alt)}</h2><img class="chart-image" src="${sensorTrendChart.src}" alt="${escapeReportHtml(sensorTrendChart.alt)}"/></section>` : ""}<section class="section"><h2>${escapeReportHtml(copy.trend)}</h2><table><thead><tr><th>${escapeReportHtml(copy.time)}</th><th>${escapeReportHtml(copy.score)}</th><th>${escapeReportHtml(copy.level)}</th></tr></thead><tbody>${scoreRows || `<tr><td colspan="3">—</td></tr>`}</tbody></table></section><footer class="footer">${escapeReportHtml(copy.printHint)}</footer></main></body></html>`);
   reportWindow.document.close();
   window.setTimeout(() => { reportWindow.focus(); reportWindow.print(); }, 250);
 }
@@ -2242,9 +2286,19 @@ export default function Dashboard() {
   const autoFetch = trpc.semiguard.autoFetch.useMutation();
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const analyzeAnomalyMutation = trpc.semiguard.analyzeAnomaly.useMutation();
-  const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month">("day");
+  const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month" | "custom">("day");
+  const todayDateValue = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const start = new Date();
+    start.setDate(start.getDate() - 6);
+    return start.toISOString().slice(0, 10);
+  });
+  const [customEndDate, setCustomEndDate] = useState(todayDateValue);
+  const [appliedCustomRange, setAppliedCustomRange] = useState(() => ({ startDate: customStartDate, endDate: todayDateValue }));
   const [isPeriodChanging, setIsPeriodChanging] = useState(false);
-  const dashboardPeriodInput = useMemo(() => ({ period: dashboardPeriod }), [dashboardPeriod]);
+  const dashboardPeriodInput = useMemo(() => dashboardPeriod === "custom"
+    ? { period: "custom" as const, startAt: toLocalDateBoundaryIso(appliedCustomRange.startDate), endAt: toLocalDateBoundaryIso(appliedCustomRange.endDate, true) }
+    : { period: dashboardPeriod }, [appliedCustomRange, dashboardPeriod]);
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
   const periodOverviewQuery = trpc.semiguard.getPeriodOverview.useQuery(dashboardPeriodInput, { refetchInterval: 5000 });
   const getLogs = trpc.semiguard.getLogs.useQuery({ limit: 200 }, { refetchInterval: 5000 });
@@ -2283,14 +2337,25 @@ export default function Dashboard() {
   const selectedPeriodStats = periodOverviewQuery.data;
   const showPeriodSkeleton = isPeriodChanging || (periodOverviewQuery.isLoading && !selectedPeriodStats);
   useEffect(() => {
-    if (isPeriodChanging && !periodOverviewQuery.isFetching && selectedPeriodStats?.period === dashboardPeriod) {
+    const responseMatchesSelectedPeriod = selectedPeriodStats?.period === dashboardPeriod
+      && (dashboardPeriod !== "custom" || selectedPeriodStats?.startAt === dashboardPeriodInput.startAt);
+    if (isPeriodChanging && !periodOverviewQuery.isFetching && responseMatchesSelectedPeriod) {
       setIsPeriodChanging(false);
     }
-  }, [dashboardPeriod, isPeriodChanging, periodOverviewQuery.isFetching, selectedPeriodStats?.period]);
-  const handleDashboardPeriodChange = (nextPeriod: "day" | "week" | "month") => {
+  }, [dashboardPeriod, dashboardPeriodInput, isPeriodChanging, periodOverviewQuery.isFetching, selectedPeriodStats?.period, selectedPeriodStats?.startAt]);
+  const handleDashboardPeriodChange = (nextPeriod: "day" | "week" | "month" | "custom") => {
     if (nextPeriod === dashboardPeriod) return;
     setIsPeriodChanging(true);
     setDashboardPeriod(nextPeriod);
+  };
+  const applyCustomPeriod = () => {
+    if (!customStartDate || !customEndDate || customStartDate > customEndDate) {
+      toast.error(lang === "ko" ? "시작일은 종료일보다 늦을 수 없습니다." : lang === "ja" ? "開始日は終了日より後にできません。" : "The start date cannot be after the end date.");
+      return;
+    }
+    setIsPeriodChanging(true);
+    setAppliedCustomRange({ startDate: customStartDate, endDate: customEndDate });
+    setDashboardPeriod("custom");
   };
   const exportSelectedPeriodCsv = () => {
     if (!selectedPeriodStats) {
@@ -2317,7 +2382,9 @@ export default function Dashboard() {
     }
   };
   const displayedSavedCost = useCountUp(selectedPeriodStats?.savedCost ?? 0, 1000);
-  const selectedPeriodLabel = dashboardPeriod === "day"
+  const selectedPeriodLabel = dashboardPeriod === "custom"
+    ? `${new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(`${appliedCustomRange.startDate}T00:00:00`))} – ${new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(`${appliedCustomRange.endDate}T00:00:00`))}`
+    : dashboardPeriod === "day"
     ? (lang === "ko" ? "최근 24시간" : lang === "ja" ? "直近24時間" : "Last 24 hours")
     : dashboardPeriod === "week"
       ? (lang === "ko" ? "최근 7일" : lang === "ja" ? "直近7日間" : "Last 7 days")
@@ -5341,12 +5408,27 @@ export default function Dashboard() {
               <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs font-semibold" style={{ color: th.text }}>
                 <label className="flex items-center gap-2">
                   <span>{lang === "ko" ? "분석 기간" : lang === "ja" ? "分析期間" : "Analysis period"}</span>
-                  <select value={dashboardPeriod} onChange={event => handleDashboardPeriodChange(event.target.value as "day" | "week" | "month")} disabled={periodOverviewQuery.isFetching} aria-busy={showPeriodSkeleton} className="h-9 rounded-lg border px-2 text-xs font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-wait disabled:opacity-60" style={{ color: th.text, background: th.bgCard2, borderColor: th.border2 }}>
+                  <select value={dashboardPeriod} onChange={event => handleDashboardPeriodChange(event.target.value as "day" | "week" | "month" | "custom")} disabled={periodOverviewQuery.isFetching} aria-busy={showPeriodSkeleton} className="h-9 rounded-lg border px-2 text-xs font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-wait disabled:opacity-60" style={{ color: th.text, background: th.bgCard2, borderColor: th.border2 }}>
                     <option value="day">{lang === "ko" ? "일간 · 최근 24시간" : lang === "ja" ? "日間・直近24時間" : "Daily · Last 24 hours"}</option>
                     <option value="week">{lang === "ko" ? "주간 · 최근 7일" : lang === "ja" ? "週間・直近7日間" : "Weekly · Last 7 days"}</option>
                     <option value="month">{lang === "ko" ? "월간 · 최근 30일" : lang === "ja" ? "月間・直近30日間" : "Monthly · Last 30 days"}</option>
+                    <option value="custom">{lang === "ko" ? "사용자 지정 기간" : lang === "ja" ? "カスタム期間" : "Custom range"}</option>
                   </select>
                 </label>
+                {dashboardPeriod === "custom" && <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border p-2 sm:w-auto" style={{ borderColor: th.border2, background: th.bgCard2 }}>
+                  <label className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: th.textMuted }}>
+                    <span>{lang === "ko" ? "시작" : lang === "ja" ? "開始" : "Start"}</span>
+                    <input type="date" value={customStartDate} max={customEndDate || todayDateValue} onChange={event => setCustomStartDate(event.target.value)} className="h-8 rounded border px-1.5 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text, background: th.bgCard, borderColor: th.border2, colorScheme: isDark ? "dark" : "light" }} />
+                  </label>
+                  <span aria-hidden="true" style={{ color: th.textMuted }}>–</span>
+                  <label className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: th.textMuted }}>
+                    <span>{lang === "ko" ? "종료" : lang === "ja" ? "終了" : "End"}</span>
+                    <input type="date" value={customEndDate} min={customStartDate} max={todayDateValue} onChange={event => setCustomEndDate(event.target.value)} className="h-8 rounded border px-1.5 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text, background: th.bgCard, borderColor: th.border2, colorScheme: isDark ? "dark" : "light" }} />
+                  </label>
+                  <button type="button" onClick={applyCustomPeriod} disabled={periodOverviewQuery.isFetching || !customStartDate || !customEndDate || customStartDate > customEndDate} className="h-8 rounded border px-2 text-[10px] font-bold transition-all hover:opacity-85 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.38 0.16 220)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
+                    {lang === "ko" ? "적용" : lang === "ja" ? "適用" : "Apply"}
+                  </button>
+                </div>}
                 <button type="button" onClick={exportSelectedPeriodCsv} disabled={!selectedPeriodStats || periodOverviewQuery.isFetching} className="h-9 rounded-lg border px-2.5 text-[11px] font-bold transition-all hover:-translate-y-0.5 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.38 0.16 220)", background: isDark ? "oklch(0.65 0.18 200 / 0.09)" : "oklch(0.65 0.18 200 / 0.06)" }}>
                   ↓ CSV
                 </button>

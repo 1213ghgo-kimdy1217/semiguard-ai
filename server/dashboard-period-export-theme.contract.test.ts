@@ -15,6 +15,13 @@ describe("dashboard period export, loading, and theme contract", () => {
     expect(dashboardSource).toContain("onClick={exportSelectedPeriodPdf}");
   });
 
+  it("includes a generated sensor trend chart image in the structured PDF report", () => {
+    expect(dashboardSource).toContain("function buildSensorTrendChartImage(history: PeriodOverviewData");
+    expect(dashboardSource).toContain("data:image/svg+xml;charset=utf-8");
+    expect(dashboardSource).toContain("const sensorTrendChart = buildSensorTrendChartImage");
+    expect(dashboardSource).toContain('class="chart-image"');
+  });
+
   it("localizes report risk stages instead of exposing raw storage values", () => {
     expect(dashboardSource).toContain("function localizeRiskLevel(level: string, lang: Lang)");
     expect(dashboardSource).toContain('normal: "정상"');
@@ -28,6 +35,14 @@ describe("dashboard period export, loading, and theme contract", () => {
     expect(dashboardSource).toContain('role="status" aria-live="polite"');
     expect(dashboardSource).toContain("animate-pulse");
     expect(dashboardSource).toContain("handleDashboardPeriodChange");
+  });
+
+  it("supports a validated custom start and end date range", () => {
+    expect(dashboardSource).toContain('const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month" | "custom">');
+    expect(dashboardSource).toContain("const applyCustomPeriod = () => {");
+    expect(dashboardSource).toContain('value="custom"');
+    expect(dashboardSource).toContain("type=\"date\" value={customStartDate}");
+    expect(dashboardSource).toContain("type=\"date\" value={customEndDate}");
   });
 
   it("keeps a visible, persistent, keyboard-labelled header theme switch", () => {
