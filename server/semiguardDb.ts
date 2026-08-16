@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, lte, sql, count as drizzleCount } from "drizzle-orm";
-import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, productActivityEvents, userOnboardingProgress, type InsertAnomalyLog, type ProductActivityEventType } from "../drizzle/schema";
+import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, productActivityEvents, userOnboardingProgress, firstUseFeedback, type FirstUseFeedbackDifficultStep, type InsertAnomalyLog, type ProductActivityEventType } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
@@ -116,7 +116,7 @@ export async function recordProductActivity(userId: number, eventType: ProductAc
 
 export async function getProductUsageMetrics(startAt: Date, endAt: Date) {
   const db = await getDb();
-  const empty = { activeUsers: 0, analysisStartedUsers: 0, analysisViewedUsers: 0, returningUsers: 0, completionRate: 0, onboardingCompletedUsers: 0, onboardingCompletionRate: 0 };
+  const empty = { activeUsers: 0, analysisStartedUsers: 0, analysisViewedUsers: 0, returningUsers: 0, completionRate: 0, onboardingCompletedUsers: 0, onboardingCompletionRate: 0, feedbackResponseCount: 0, averageEaseRating: 0, difficultStepCounts: { none: 0, orientation: 0, risk_review: 0, analysis_review: 0 } };
   if (!db) return empty;
   const startDate = new Date(`${startAt.toISOString().slice(0, 10)}T00:00:00.000Z`);
   const endDate = new Date(`${endAt.toISOString().slice(0, 10)}T00:00:00.000Z`);
@@ -126,7 +126,7 @@ export async function getProductUsageMetrics(startAt: Date, endAt: Date) {
     const rows = await db.select({ total: sql<number>`COUNT(DISTINCT ${productActivityEvents.userId})` }).from(productActivityEvents).where(condition);
     return Number(rows[0]?.total ?? 0);
   };
-  const [activeUsers, analysisStartedUsers, analysisViewedUsers, visitEvents, onboardingCompletionRows] = await Promise.all([
+  const [activeUsers, analysisStartedUsers, analysisViewedUsers, visitEvents, onboardingCompletionRows, feedbackMetrics] = await Promise.all([
     countDistinctUsers("visit"),
     countDistinctUsers("analysis_started"),
     countDistinctUsers("analysis_viewed"),
@@ -136,6 +136,7 @@ export async function getProductUsageMetrics(startAt: Date, endAt: Date) {
     db.select({ total: sql<number>`COUNT(DISTINCT ${userOnboardingProgress.userId})` })
       .from(userOnboardingProgress)
       .where(and(gte(userOnboardingProgress.completedAt, startAt), lte(userOnboardingProgress.completedAt, endAt))),
+    getFirstUseFeedbackMetrics(startAt, endAt),
   ]);
   const activeUserIds = new Set(visitEvents.filter(event => event.eventDate >= startDate).map(event => event.userId));
   const priorUserIds = new Set(visitEvents.filter(event => event.eventDate < startDate).map(event => event.userId));
@@ -149,6 +150,7 @@ export async function getProductUsageMetrics(startAt: Date, endAt: Date) {
     completionRate: analysisStartedUsers > 0 ? Math.round((analysisViewedUsers / analysisStartedUsers) * 100) : 0,
     onboardingCompletedUsers,
     onboardingCompletionRate: activeUsers > 0 ? Math.round((onboardingCompletedUsers / activeUsers) * 100) : 0,
+    ...feedbackMetrics,
   };
 }
 
@@ -184,6 +186,55 @@ export async function saveOnboardingProgress(userId: number, currentStep: number
       },
     });
   return getOnboardingProgress(userId);
+}
+
+export type FirstUseFeedbackInput = {
+  easeRating: number;
+  difficultStep: FirstUseFeedbackDifficultStep;
+};
+
+export async function getFirstUseFeedback(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({
+    easeRating: firstUseFeedback.easeRating,
+    difficultStep: firstUseFeedback.difficultStep,
+    submittedAt: firstUseFeedback.submittedAt,
+  }).from(firstUseFeedback).where(eq(firstUseFeedback.userId, userId)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function saveFirstUseFeedback(userId: number, input: FirstUseFeedbackInput) {
+  const db = await getDb();
+  const now = new Date();
+  if (!db) return { ...input, submittedAt: now };
+  await db.insert(firstUseFeedback).values({ userId, ...input, submittedAt: now })
+    .onDuplicateKeyUpdate({
+      set: { easeRating: input.easeRating, difficultStep: input.difficultStep, submittedAt: now, updatedAt: now },
+    });
+  return getFirstUseFeedback(userId);
+}
+
+export async function getFirstUseFeedbackMetrics(startAt: Date, endAt: Date) {
+  const db = await getDb();
+  const empty = { feedbackResponseCount: 0, averageEaseRating: 0, difficultStepCounts: { none: 0, orientation: 0, risk_review: 0, analysis_review: 0 } };
+  if (!db) return empty;
+  const withinRange = and(gte(firstUseFeedback.submittedAt, startAt), lte(firstUseFeedback.submittedAt, endAt));
+  const [summaryRows, stepRows] = await Promise.all([
+    db.select({
+      responseCount: sql<number>`COUNT(*)`,
+      averageEaseRating: sql<number>`COALESCE(AVG(${firstUseFeedback.easeRating}), 0)`,
+    }).from(firstUseFeedback).where(withinRange),
+    db.select({ difficultStep: firstUseFeedback.difficultStep, total: sql<number>`COUNT(*)` })
+      .from(firstUseFeedback).where(withinRange).groupBy(firstUseFeedback.difficultStep),
+  ]);
+  const difficultStepCounts = { ...empty.difficultStepCounts };
+  stepRows.forEach((row) => { difficultStepCounts[row.difficultStep] = Number(row.total ?? 0); });
+  return {
+    feedbackResponseCount: Number(summaryRows[0]?.responseCount ?? 0),
+    averageEaseRating: Math.round(Number(summaryRows[0]?.averageEaseRating ?? 0) * 10) / 10,
+    difficultStepCounts,
+  };
 }
 
 // 날짜별 최고 위험도 집계 (히트맵용)

@@ -1072,14 +1072,25 @@ export default function Dashboard() {
   const isUsageMetricsAdmin = authMeQuery.data?.role === "admin";
   const onboardingProgressQuery = trpc.semiguard.getOnboardingProgress.useQuery(undefined, { staleTime: 60_000 });
   const saveOnboardingProgressMutation = trpc.semiguard.saveOnboardingProgress.useMutation();
+  const firstUseFeedbackQuery = trpc.semiguard.getFirstUseFeedback.useQuery(undefined, { staleTime: 60_000 });
+  const saveFirstUseFeedbackMutation = trpc.semiguard.saveFirstUseFeedback.useMutation();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3>(1);
+  const [isFirstUseFeedbackOpen, setIsFirstUseFeedbackOpen] = useState(false);
+  const [firstUseEaseRating, setFirstUseEaseRating] = useState(0);
+  const [firstUseDifficultStep, setFirstUseDifficultStep] = useState<"none" | "orientation" | "risk_review" | "analysis_review">("none");
   const onboardingInitializedRef = useRef(false);
+  const feedbackPromptedRef = useRef(false);
   const onboardingCopy = lang === "ko"
     ? { title: "첫 안전 분석 안내", subtitle: "3단계로 위험 신호부터 점검 순서까지 확인해 보세요.", steps: ["위험 신호", "AI 근거", "점검 순서"], risk: "대시보드 상단의 위험도 점수와 센서 카드에서 먼저 주의가 필요한 신호를 확인합니다.", evidence: "AI 분석 결과에서는 수치 편차와 확인이 필요한 근거를 함께 읽습니다. AI 판단만으로 고장을 단정하지 않습니다.", action: "권장 점검 순서를 확인하고, 실제 설비 작업은 승인된 현장 안전 절차에 따라 담당자가 진행합니다.", later: "나중에", previous: "이전", next: "다음", finish: "안내 완료", review: "첫 분석 안내 다시 보기", progress: "진행" }
     : lang === "ja"
       ? { title: "初回安全分析ガイド", subtitle: "3段階で危険信号から点検順序まで確認できます。", steps: ["危険信号", "AI根拠", "点検順序"], risk: "ダッシュボード上部のリスクスコアとセンサーカードから、注意が必要な信号を確認します。", evidence: "AI分析結果では数値の偏差と確認すべき根拠を併せて読みます。AIの判断だけで故障を断定しません。", action: "推奨点検順序を確認し、実際の設備作業は承認された現場安全手順に従って担当者が進めます。", later: "後で", previous: "前へ", next: "次へ", finish: "ガイド完了", review: "初回分析ガイドを再表示", progress: "進行" }
       : { title: "First safety analysis guide", subtitle: "Use three steps to move from a risk signal to an inspection sequence.", steps: ["Risk signal", "AI evidence", "Inspection order"], risk: "Start with the risk score and sensor cards at the top of the dashboard to see which signal needs attention.", evidence: "Read measured deviations and evidence in the AI analysis. An AI assessment alone does not confirm a failure.", action: "Review the recommended inspection order. A responsible operator performs real equipment work under approved on-site safety procedures.", later: "Later", previous: "Previous", next: "Next", finish: "Finish guide", review: "Review first analysis guide", progress: "Progress" };
+  const firstUseFeedbackCopy = lang === "ko"
+    ? { title: "첫 사용 경험", subtitle: "선택 항목만 저장합니다. 이름·연락처·설비 데이터·자유 입력은 수집하지 않습니다.", ease: "첫 분석 안내를 사용하기 쉬웠나요?", difficult: "가장 확인하기 어려웠던 단계는 무엇이었나요?", ratings: ["매우 어려움", "어려움", "보통", "쉬움", "매우 쉬움"], steps: { none: "없음", orientation: "위험 신호 확인", risk_review: "위험도·센서 읽기", analysis_review: "AI 근거·점검 순서" }, later: "나중에", submit: "선택 응답 저장", saved: "첫 사용 피드백을 저장했습니다. 최신 응답으로 언제든 바꿀 수 있습니다.", edit: "첫 사용 경험 수정", response: "응답", average: "평균 편의" }
+    : lang === "ja"
+      ? { title: "初回利用の体験", subtitle: "選択項目のみを保存します。氏名・連絡先・設備データ・自由記述は収集しません。", ease: "初回分析ガイドは使いやすかったですか？", difficult: "最も確認しにくかった段階は何ですか？", ratings: ["とても難しい", "難しい", "普通", "簡単", "とても簡単"], steps: { none: "なし", orientation: "リスク信号の確認", risk_review: "リスク・センサーの確認", analysis_review: "AI根拠・点検順序" }, later: "後で", submit: "選択回答を保存", saved: "初回利用フィードバックを保存しました。いつでも最新の回答に更新できます。", edit: "初回利用の体験を編集", response: "回答", average: "平均の使いやすさ" }
+      : { title: "First-use experience", subtitle: "Only selected answers are stored. No name, contact details, equipment data, or free text is collected.", ease: "How easy was the first analysis guide to use?", difficult: "Which step was the hardest to review?", ratings: ["Very difficult", "Difficult", "Neutral", "Easy", "Very easy"], steps: { none: "None", orientation: "Finding risk signals", risk_review: "Reading risk and sensors", analysis_review: "AI evidence and inspection order" }, later: "Later", submit: "Save selected response", saved: "Saved your first-use feedback. You can update your latest response at any time.", edit: "Edit first-use experience", response: "Responses", average: "Average ease" };
   useEffect(() => {
     if (!onboardingProgressQuery.data || onboardingInitializedRef.current) return;
     onboardingInitializedRef.current = true;
@@ -1087,6 +1098,11 @@ export default function Dashboard() {
     setOnboardingStep(currentStep);
     if (!onboardingProgressQuery.data.completedAt) setIsOnboardingOpen(true);
   }, [onboardingProgressQuery.data]);
+  useEffect(() => {
+    if (!onboardingProgressQuery.data?.completedAt || firstUseFeedbackQuery.isLoading || firstUseFeedbackQuery.data || feedbackPromptedRef.current) return;
+    feedbackPromptedRef.current = true;
+    setIsFirstUseFeedbackOpen(true);
+  }, [firstUseFeedbackQuery.data, firstUseFeedbackQuery.isLoading, onboardingProgressQuery.data?.completedAt]);
   const persistOnboardingStep = async (nextStep: 1 | 2 | 3, completed = false) => {
     setOnboardingStep(nextStep);
     try {
@@ -1095,6 +1111,18 @@ export default function Dashboard() {
       if (completed) toast.success(lang === "ko" ? "첫 분석 안내를 완료했습니다." : lang === "ja" ? "初回分析ガイドを完了しました。" : "First analysis guide completed.");
     } catch {
       toast.error(lang === "ko" ? "안내 진행 상태를 저장하지 못했습니다." : lang === "ja" ? "ガイドの進行状況を保存できませんでした。" : "Could not save guide progress.");
+    }
+  };
+  const submitFirstUseFeedback = async () => {
+    if (firstUseEaseRating < 1) return;
+    try {
+      await saveFirstUseFeedbackMutation.mutateAsync({ easeRating: firstUseEaseRating, difficultStep: firstUseDifficultStep });
+      await firstUseFeedbackQuery.refetch();
+      await trpcUtils.semiguard.getProductUsageMetrics.invalidate();
+      setIsFirstUseFeedbackOpen(false);
+      toast.success(firstUseFeedbackCopy.saved);
+    } catch {
+      toast.error(lang === "ko" ? "첫 사용 피드백을 저장하지 못했습니다." : lang === "ja" ? "初回利用フィードバックを保存できませんでした。" : "Could not save first-use feedback.");
     }
   };
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -5858,19 +5886,21 @@ export default function Dashboard() {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 id="product-usage-metrics-title" className="text-xs font-bold" style={{ color: th.text }}>{lang === "ko" ? "대회용 제품 사용 지표" : lang === "ja" ? "大会向けプロダクト利用指標" : "Competition product usage metrics"}</h2>
-                  <p className="mt-0.5 text-[10px]" style={{ color: th.textMuted }}>{lang === "ko" ? `${selectedPeriodLabel} · 사용자 식별자·이벤트·날짜만 집계` : lang === "ja" ? `${selectedPeriodLabel}・ユーザーID・イベント・日付のみを集計` : `${selectedPeriodLabel} · aggregates only user ID, event type, and date`}</p>
+                  <p className="mt-0.5 text-[10px]" style={{ color: th.textMuted }}>{lang === "ko" ? `${selectedPeriodLabel} · 사용자 ID·선택 이벤트·날짜만 집계, 자유 입력 없음` : lang === "ja" ? `${selectedPeriodLabel}・ユーザーID・選択イベント・日付のみを集計、自由記述なし` : `${selectedPeriodLabel} · aggregates only user ID, selected events, and date; no free text`}</p>
                 </div>
                 <span className="rounded-full border px-2 py-1 text-[9px] font-bold" style={{ borderColor: "oklch(0.64 0.15 285 / 0.45)", color: isDark ? "oklch(0.82 0.12 285)" : "oklch(0.45 0.16 285)" }}>{lang === "ko" ? "관리자 전용" : lang === "ja" ? "管理者専用" : "Admin only"}</span>
               </div>
-              {productUsageMetricsQuery.isLoading ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="status" aria-label={lang === "ko" ? "제품 사용 지표를 불러오는 중" : lang === "ja" ? "プロダクト利用指標を読み込み中" : "Loading product usage metrics"}>{Array.from({ length: 5 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg border" style={{ borderColor: th.border, background: th.bgCard }} />)}</div> : productUsageMetricsQuery.isError ? <p className="rounded-lg border p-2 text-[10px]" role="alert" style={{ borderColor: "oklch(0.65 0.20 25 / 0.42)", color: th.textMuted }}>{lang === "ko" ? "제품 사용 지표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : lang === "ja" ? "プロダクト利用指標を読み込めませんでした。しばらくしてから再試行してください。" : "Could not load product usage metrics. Please try again shortly."}</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {productUsageMetricsQuery.isLoading ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-6" role="status" aria-label={lang === "ko" ? "제품 사용 지표를 불러오는 중" : lang === "ja" ? "プロダクト利用指標を読み込み中" : "Loading product usage metrics"}>{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg border" style={{ borderColor: th.border, background: th.bgCard }} />)}</div> : productUsageMetricsQuery.isError ? <p className="rounded-lg border p-2 text-[10px]" role="alert" style={{ borderColor: "oklch(0.65 0.20 25 / 0.42)", color: th.textMuted }}>{lang === "ko" ? "제품 사용 지표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : lang === "ja" ? "プロダクト利用指標を読み込めませんでした。しばらくしてから再試行してください。" : "Could not load product usage metrics. Please try again shortly."}</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
                 {[
                   { label: lang === "ko" ? "활성 사용자" : lang === "ja" ? "アクティブユーザー" : "Active users", value: productUsageMetricsQuery.data?.activeUsers ?? 0, detail: lang === "ko" ? "기간 내 방문" : lang === "ja" ? "期間内の訪問" : "Visited in range" },
                   { label: lang === "ko" ? "분석 시작" : lang === "ja" ? "分析開始" : "Analysis started", value: productUsageMetricsQuery.data?.analysisStartedUsers ?? 0, detail: lang === "ko" ? "AI 분석 요청" : lang === "ja" ? "AI分析リクエスト" : "AI analysis requested" },
                   { label: lang === "ko" ? "분석 완료율" : lang === "ja" ? "分析完了率" : "Analysis completion", value: `${productUsageMetricsQuery.data?.completionRate ?? 0}%`, detail: lang === "ko" ? "시작 대비 결과 확인" : lang === "ja" ? "開始に対する結果確認" : "Viewed after start" },
                   { label: lang === "ko" ? "재방문 사용자" : lang === "ja" ? "再訪問ユーザー" : "Returning users", value: productUsageMetricsQuery.data?.returningUsers ?? 0, detail: lang === "ko" ? "이전 방문 뒤 재방문" : lang === "ja" ? "以前の訪問後の再訪問" : "Visited before and in range" },
                   { label: lang === "ko" ? "안내 완료율" : lang === "ja" ? "ガイド完了率" : "Guide completion", value: `${productUsageMetricsQuery.data?.onboardingCompletionRate ?? 0}%`, detail: lang === "ko" ? `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0}명 완료` : lang === "ja" ? `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0}人が完了` : `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0} completed` },
+                  { label: firstUseFeedbackCopy.response, value: productUsageMetricsQuery.data?.feedbackResponseCount ?? 0, detail: (productUsageMetricsQuery.data?.feedbackResponseCount ?? 0) > 0 ? `${firstUseFeedbackCopy.average} ${productUsageMetricsQuery.data?.averageEaseRating ?? 0}/5` : (lang === "ko" ? "선택 응답 없음" : lang === "ja" ? "選択回答なし" : "No selected response") },
                 ].map(metric => <div key={metric.label} className="rounded-lg border p-2.5" style={{ borderColor: th.border2, background: th.bgCard }}><p className="text-[10px] font-bold" style={{ color: th.textMuted }}>{metric.label}</p><p className="mt-1 text-xl font-bold font-mono" style={{ color: th.text }}>{metric.value}</p><p className="mt-0.5 text-[9px]" style={{ color: th.textMuted }}>{metric.detail}</p></div>)}
               </div>}
+              {!productUsageMetricsQuery.isLoading && !productUsageMetricsQuery.isError && (productUsageMetricsQuery.data?.feedbackResponseCount ?? 0) > 0 && <div className="mt-3 rounded-lg border p-2.5" role="note" style={{ borderColor: th.border2, background: th.bgCard }}><p className="text-[9px] font-bold" style={{ color: th.text }}>{lang === "ko" ? "선택 응답의 단계별 어려움 신호" : lang === "ja" ? "選択回答の段階別の難しさシグナル" : "Step-level difficulty signals from selected responses"}</p><div className="mt-2 flex flex-wrap gap-1.5">{(["orientation", "risk_review", "analysis_review"] as const).map(step => <span key={step} className="rounded-full border px-2 py-1 text-[9px]" style={{ borderColor: th.border2, color: th.textMuted }}>{firstUseFeedbackCopy.steps[step]} {productUsageMetricsQuery.data?.difficultStepCounts?.[step] ?? 0}</span>)}</div></div>}
               {!productUsageMetricsQuery.isLoading && !productUsageMetricsQuery.isError && currentUsageMetrics && previousUsageMetrics && <div className="mt-3 rounded-lg border p-3" style={{ borderColor: th.border2, background: isDark ? "oklch(0.16 0.02 240 / 0.70)" : "oklch(0.99 0.005 240)" }}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="text-[10px] font-bold" style={{ color: th.text }}>{lang === "ko" ? "개선 전후 비교" : lang === "ja" ? "改善前後の比較" : "Before/after comparison"}</p><p className="text-[9px]" style={{ color: th.textMuted }}>{lang === "ko" ? "선택 기간과 길이가 같은 직전 기간" : lang === "ja" ? "選択期間と同じ長さの直前期間" : "Previous period of equal length"}</p></div>
                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -6621,6 +6651,7 @@ export default function Dashboard() {
       {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && (
         <button type="button" onClick={() => setIsOnboardingOpen(true)} className="fixed bottom-5 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.65 0.18 200 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.16 220)" }} aria-label={onboardingCopy.review}>ⓘ {onboardingCopy.review}</button>
       )}
+      {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && <button type="button" onClick={() => { const current = firstUseFeedbackQuery.data; setFirstUseEaseRating(current?.easeRating ?? 0); setFirstUseDifficultStep(current?.difficultStep ?? "none"); setIsFirstUseFeedbackOpen(true); }} className="fixed bottom-16 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.70 0.15 85 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.86 0.13 85)" : "oklch(0.46 0.13 62)" }} aria-label={firstUseFeedbackCopy.edit}>★ {firstUseFeedbackCopy.edit}</button>}
 
       {isOnboardingOpen && (
         <div className="fixed inset-0 z-[650] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-analysis-onboarding-title">
@@ -6632,6 +6663,8 @@ export default function Dashboard() {
           </section>
         </div>
       )}
+
+      {isFirstUseFeedbackOpen && <div className="fixed inset-0 z-[660] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-use-feedback-title"><section className="w-full max-w-lg rounded-2xl border p-5 shadow-2xl sm:p-6" style={{ borderColor: "oklch(0.70 0.15 85 / 0.45)", background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.005 240)", color: th.text }}><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: "oklch(0.78 0.14 85)" }}>{firstUseFeedbackCopy.response}</p><h2 id="first-use-feedback-title" className="mt-1 text-lg font-black">{firstUseFeedbackCopy.title}</h2><p className="mt-2 text-xs leading-5" style={{ color: th.textMuted }}>{firstUseFeedbackCopy.subtitle}</p></div><button type="button" onClick={() => setIsFirstUseFeedbackOpen(false)} className="rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.textMuted }}>{firstUseFeedbackCopy.later}</button></div><div className="mt-5"><p className="text-xs font-bold">{firstUseFeedbackCopy.ease}</p><div className="mt-2 grid grid-cols-5 gap-1.5" role="radiogroup" aria-label={firstUseFeedbackCopy.ease}>{firstUseFeedbackCopy.ratings.map((label, index) => { const rating = index + 1; const selected = firstUseEaseRating === rating; return <button key={label} type="button" role="radio" aria-checked={selected} aria-label={`${rating}/5, ${label}`} onClick={() => setFirstUseEaseRating(rating)} className="min-h-12 rounded-lg border px-1 text-center text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: selected ? "oklch(0.76 0.16 85 / 0.8)" : th.border2, background: selected ? "oklch(0.76 0.16 85 / 0.15)" : th.bgCard2, color: selected ? (isDark ? "oklch(0.90 0.13 85)" : "oklch(0.42 0.13 62)") : th.textMuted }}><span className="block text-base">{rating}</span><span className="sr-only">{label}</span></button>; })}</div></div><div className="mt-5"><p className="text-xs font-bold">{firstUseFeedbackCopy.difficult}</p><div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label={firstUseFeedbackCopy.difficult}>{(["none", "orientation", "risk_review", "analysis_review"] as const).map(step => { const selected = firstUseDifficultStep === step; return <button key={step} type="button" role="radio" aria-checked={selected} onClick={() => setFirstUseDifficultStep(step)} className="min-h-10 rounded-lg border px-3 py-2 text-left text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: selected ? "oklch(0.65 0.18 200 / 0.72)" : th.border2, background: selected ? "oklch(0.65 0.18 200 / 0.12)" : th.bgCard2, color: selected ? (isDark ? "oklch(0.82 0.14 200)" : "oklch(0.38 0.16 220)") : th.textMuted }}>{firstUseFeedbackCopy.steps[step]}</button>; })}</div></div><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setIsFirstUseFeedbackOpen(false)} className="rounded-lg border px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.text }}>{firstUseFeedbackCopy.later}</button><button type="button" disabled={firstUseEaseRating < 1 || saveFirstUseFeedbackMutation.isPending} onClick={() => void submitFirstUseFeedback()} className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-45">{saveFirstUseFeedbackMutation.isPending ? "…" : firstUseFeedbackCopy.submit}</button></div></section></div>}
 
       <style>{`
         @keyframes spin {

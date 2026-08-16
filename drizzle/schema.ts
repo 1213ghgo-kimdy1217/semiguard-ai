@@ -105,6 +105,22 @@ export const userOnboardingProgress = mysqlTable("user_onboarding_progress", {
 
 export type UserOnboardingProgress = typeof userOnboardingProgress.$inferSelect;
 
+// 선택형 첫 사용 피드백: 개인정보·자유 입력·센서값은 저장하지 않는다.
+// 사용자별 최신 응답 1건의 편의 평점, 어려웠던 단계, 제출 시각만 보관한다.
+export const firstUseFeedback = mysqlTable("first_use_feedback", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().unique(),
+  easeRating: int("ease_rating").notNull(),
+  difficultStep: mysqlEnum("difficult_step", ["none", "orientation", "risk_review", "analysis_review"]).notNull().default("none"),
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  submittedAtIndex: index("first_use_feedback_submitted_at_idx").on(table.submittedAt),
+}));
+
+export type FirstUseFeedback = typeof firstUseFeedback.$inferSelect;
+export type FirstUseFeedbackDifficultStep = "none" | "orientation" | "risk_review" | "analysis_review";
+
 // 전체 샘플 카운터 (정상 포함 모든 측정값 집계용)
 export const sampleStats = mysqlTable("sample_stats", {
   id: int("id").autoincrement().primaryKey(),
