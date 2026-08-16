@@ -296,7 +296,7 @@ function SensorCard({ label, value, unit, color, icon }: {
       style={{ background: "rgba(255,255,255,0.025)", borderColor: `${color}35` }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{label}</span>
-        <span className="text-base opacity-70">{icon}</span>
+        <span className="text-base opacity-70" aria-hidden="true">{icon}</span>
       </div>
       <div className="flex items-end gap-1.5">
         <span className="text-3xl font-bold font-mono leading-none" style={{ color }}>{value.toFixed(1)}</span>
@@ -434,7 +434,7 @@ function ImpactCard({ label, value, unit, icon, color, isLoading = false, loadin
       style={{ background: "rgba(255,255,255,0.025)", borderColor: `${color}35` }}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{label}</span>
-        <span className="text-lg">{icon}</span>
+        <span className="text-lg" aria-hidden="true">{icon}</span>
       </div>
       <div className="flex items-end gap-1.5">
         <span className="text-2xl font-bold font-mono leading-none" style={{ color }}>
