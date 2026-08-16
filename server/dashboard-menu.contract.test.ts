@@ -124,12 +124,15 @@ describe("dashboard slide menu interaction contract", () => {
 
   it("declares AI analysis panel close controls as non-submitting buttons", () => {
     expect(dashboardSource).toContain('<button\n                type="button"\n                onClick={() => setLlmAnalysis(null)}');
-    expect(dashboardSource).toContain('<button type="button" onClick={() => setShowAiHistory(false)}');
+    expect(dashboardSource).toContain('<button type="button" onClick={closeAiHistory}');
+    expect(dashboardSource).toContain("const aiHistoryTriggerRef = useRef<HTMLButtonElement>(null)");
+    expect(dashboardSource).toContain("requestAnimationFrame(() => aiHistoryTriggerRef.current?.focus())");
   });
 
   it("connects the AI analysis history trigger to its expandable region", () => {
     expect(dashboardSource).toContain('aria-controls="ai-analysis-history-panel"');
     expect(dashboardSource).toContain('aria-expanded={showAiHistory}');
+    expect(dashboardSource).toContain("ref={aiHistoryTriggerRef}");
     expect(dashboardSource).toContain('id="ai-analysis-history-panel" role="region" aria-labelledby="ai-analysis-history-title"');
   });
 
