@@ -1038,6 +1038,10 @@
 - [x] 호환성이 확인되는 소규모 보안 업데이트만 적용하고 회귀 검증 (AWS SDK 3.1111.0, tRPC 11.18.0, Axios 1.19.0, Drizzle ORM 0.45.2)
 - [x] 잔여 취약점과 변경 근거를 README에 기록 (critical 1건 제거, high 21건→4건; 잔여 4건은 Express 4·Recharts 2·Streamdown 1·Nano ID 메이저 업그레이드 검토 필요)
 
+## 운영 의존성 보안 감사 후속 패치 (진행 중)
+- [x] DOMPurify 보안 패치 버전과 Nano ID 5.1.16을 호환 범위 내에서 적용하고 잠금 파일 갱신
+- [x] 운영 의존성 감사·개발 서버·TypeScript·Vitest·프로덕션 빌드 검증 및 README·작업 기록 갱신 (critical 0건·high 3건, Vitest 368개·빌드 통과)
+
 ## 로그인 제출 상태 접근성 (진행 중)
 - [x] 로그인 양식의 제출 중 상태를 보조기기에 명확히 전달
 - [x] KO·EN·JA·TypeScript·Vitest·프로덕션 빌드 검증 및 README 문서화 (285개 테스트·빌드 통과)
