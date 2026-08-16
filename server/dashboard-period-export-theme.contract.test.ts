@@ -15,6 +15,13 @@ describe("dashboard period export, loading, and theme contract", () => {
     expect(dashboardSource).toContain("onClick={exportSelectedPeriodPdf}");
   });
 
+  it("localizes report risk stages instead of exposing raw storage values", () => {
+    expect(dashboardSource).toContain("function localizeRiskLevel(level: string, lang: Lang)");
+    expect(dashboardSource).toContain('normal: "정상"');
+    expect(dashboardSource).toContain('normal: "正常"');
+    expect(dashboardSource).toContain("localizeRiskLevel(point.riskLevel, lang)");
+  });
+
   it("shows an accessible skeleton while the selected period changes", () => {
     expect(dashboardSource).toContain("const [isPeriodChanging, setIsPeriodChanging] = useState(false)");
     expect(dashboardSource).toContain("const showPeriodSkeleton = isPeriodChanging");

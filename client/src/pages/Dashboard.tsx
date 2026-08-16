@@ -109,6 +109,15 @@ function escapeCsvCell(value: string | number) {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+function localizeRiskLevel(level: string, lang: Lang) {
+  const labels = lang === "ko"
+    ? { normal: "정상", caution: "주의", warning: "경고", danger: "위험" }
+    : lang === "ja"
+      ? { normal: "正常", caution: "注意", warning: "警告", danger: "危険" }
+      : { normal: "Normal", caution: "Caution", warning: "Warning", danger: "Danger" };
+  return labels[level as keyof typeof labels] ?? level;
+}
+
 function exportPeriodOverviewToCsv(overview: PeriodOverviewData, lang: Lang, periodLabel: string) {
   const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
   const labels = lang === "ko"
@@ -134,7 +143,7 @@ function exportPeriodOverviewToCsv(overview: PeriodOverviewData, lang: Lang, per
     ...sensors.map(([sensor, average, peak]) => [sensor, Number(average).toFixed(2), Number(peak).toFixed(2)]),
     [],
     [labels.time, labels.score, labels.level, lang === "ko" ? "전류(A)" : lang === "ja" ? "電流(A)" : "Current(A)", lang === "ko" ? "온도(°C)" : lang === "ja" ? "温度(°C)" : "Temp(°C)", lang === "ko" ? "진동(mm/s)" : lang === "ja" ? "振動(mm/s)" : "Vibration(mm/s)", lang === "ko" ? "소음(dB)" : lang === "ja" ? "騒音(dB)" : "Noise(dB)"],
-    ...overview.scoreHistory.map(point => [new Date(point.timestamp).toLocaleString(locale, { hour12: false }), point.score, point.riskLevel, point.current.toFixed(2), point.temperature.toFixed(1), point.vibration.toFixed(2), point.noise.toFixed(1)]),
+    ...overview.scoreHistory.map(point => [new Date(point.timestamp).toLocaleString(locale, { hour12: false }), point.score, localizeRiskLevel(point.riskLevel, lang), point.current.toFixed(2), point.temperature.toFixed(1), point.vibration.toFixed(2), point.noise.toFixed(1)]),
   ];
   const csv = rows.map(row => row.map(escapeCsvCell).join(",")).join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -170,7 +179,7 @@ function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, pe
     [lang === "ko" ? "진동 (mm/s)" : lang === "ja" ? "振動 (mm/s)" : "Vibration (mm/s)", overview.sensors.average.vibration, overview.sensors.peak.vibration],
     [lang === "ko" ? "소음 (dB)" : lang === "ja" ? "騒音 (dB)" : "Noise (dB)", overview.sensors.average.noise, overview.sensors.peak.noise],
   ];
-  const scoreRows = overview.scoreHistory.slice(-24).map(point => `<tr><td>${escapeReportHtml(new Date(point.timestamp).toLocaleString(locale, { hour12: false }))}</td><td>${escapeReportHtml(point.score)}</td><td><span class="risk" style="color:${riskColor(point.riskLevel)}">${escapeReportHtml(point.riskLevel)}</span></td></tr>`).join("");
+  const scoreRows = overview.scoreHistory.slice(-24).map(point => `<tr><td>${escapeReportHtml(new Date(point.timestamp).toLocaleString(locale, { hour12: false }))}</td><td>${escapeReportHtml(point.score)}</td><td><span class="risk" style="color:${riskColor(point.riskLevel)}">${escapeReportHtml(localizeRiskLevel(point.riskLevel, lang))}</span></td></tr>`).join("");
   reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${escapeReportHtml(copy.title)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Inter,"Noto Sans KR","Noto Sans JP",Arial,sans-serif;font-size:11px;line-height:1.45}.report{max-width:780px;margin:0 auto}.hero{padding:20px 22px;background:linear-gradient(135deg,#0f2c4c,#0b7a91);color:#fff;border-radius:14px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.78}.hero h1{font-size:23px;line-height:1.2;margin:6px 0}.hero p{margin:0;opacity:.9}.metadata{display:flex;gap:20px;margin-top:15px;font-size:10px;flex-wrap:wrap}.metadata strong{display:block;color:#0b7a91}.section{margin-top:22px}.section h2{font-size:14px;margin:0 0 9px;color:#102a43}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{border:1px solid #d9e2ec;border-radius:9px;padding:10px;background:#f8fafc}.metric span{display:block;color:#627d98;font-size:10px}.metric strong{display:block;font-size:17px;margin-top:2px;color:#102a43}table{width:100%;border-collapse:collapse;border:1px solid #d9e2ec;border-radius:8px;overflow:hidden}th{background:#eaf4f7;color:#102a43;text-align:left;font-size:10px}th,td{padding:7px 9px;border-bottom:1px solid #e6edf3}tr:last-child td{border-bottom:0}.risk{font-weight:700;text-transform:capitalize}.footer{margin-top:20px;padding-top:10px;border-top:1px solid #d9e2ec;color:#627d98;font-size:9px}@media print{.report{max-width:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="report"><header class="hero"><div class="eyebrow">SemiGuard AI</div><h1>${escapeReportHtml(copy.title)}</h1><p>${escapeReportHtml(copy.subtitle)}</p></header><div class="metadata"><div><strong>${escapeReportHtml(copy.period)}</strong>${escapeReportHtml(periodLabel)}</div><div><strong>${escapeReportHtml(copy.generated)}</strong>${escapeReportHtml(new Date().toLocaleString(locale, { hour12: false }))}</div></div><section class="section"><h2>${escapeReportHtml(copy.metrics)}</h2><div class="metrics">${metricRows.map(([label, value]) => `<article class="metric"><span>${escapeReportHtml(label)}</span><strong>${escapeReportHtml(value)}</strong></article>`).join("")}</div></section><section class="section"><h2>${escapeReportHtml(copy.sensors)}</h2><table><thead><tr><th>${lang === "ko" ? "센서" : lang === "ja" ? "センサー" : "Sensor"}</th><th>${escapeReportHtml(copy.average)}</th><th>${escapeReportHtml(copy.peak)}</th></tr></thead><tbody>${sensorRows.map(([sensor, average, peak]) => `<tr><td>${escapeReportHtml(sensor)}</td><td>${escapeReportHtml(Number(average).toFixed(2))}</td><td>${escapeReportHtml(Number(peak).toFixed(2))}</td></tr>`).join("")}</tbody></table></section><section class="section"><h2>${escapeReportHtml(copy.trend)}</h2><table><thead><tr><th>${escapeReportHtml(copy.time)}</th><th>${escapeReportHtml(copy.score)}</th><th>${escapeReportHtml(copy.level)}</th></tr></thead><tbody>${scoreRows || `<tr><td colspan="3">—</td></tr>`}</tbody></table></section><footer class="footer">${escapeReportHtml(copy.printHint)}</footer></main></body></html>`);
   reportWindow.document.close();
   window.setTimeout(() => { reportWindow.focus(); reportWindow.print(); }, 250);
