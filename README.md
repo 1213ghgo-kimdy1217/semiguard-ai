@@ -11,7 +11,7 @@
 
 - [프로젝트 개요](#프로젝트-개요) · [심사 빠른 확인](#심사-빠른-확인) · [문제와 해결 방식](#문제와-해결-방식) · [핵심 기능](#핵심-기능)
 - [시스템 구조](#시스템-구조) · [AI 활용과 안전 원칙](#ai-활용과-안전-원칙) · [실행 방법](#실행-방법) · [테스트](#테스트)
-- [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [MIT 라이선스](LICENSE)
+- [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
 
 ## 프로젝트 개요
 
@@ -34,6 +34,7 @@ SemiGuard AI는 전류·온도·진동·소음 데이터에서 위험 신호를 
 | 심사위원 데모 | [읽기 전용 30초 데모](https://semiguardai-jifnzsvd.manus.space/demo) | 로그인 없이 가상 위험 신호, 센서 근거, 권장 점검 순서를 확인합니다. |
 | AI 활용 문서 | [AI_USAGE.md](AI_USAGE.md) | AI의 역할, 데이터 경계, 대체 경로와 한계를 설명합니다. |
 | 기술 참고 문서 | [TECHNICAL_REFERENCE.md](TECHNICAL_REFERENCE.md) | RAG, 피드백, 보고서, 접근성 등 상세 구현을 정리합니다. |
+| 작업 기록 | [todo.md](todo.md) | 기능 구현, 검증, 보류 항목의 누적 작업 기록을 확인합니다. |
 
 > 읽기 전용 데모에는 실제 사용자·설비·상담·매뉴얼 데이터가 포함되지 않으며, 설정 변경·데이터 주입·내보내기·기록 저장 기능을 제공하지 않습니다. 실제 사용자 지표는 누적 전이므로 검증되지 않은 사용자 수나 성과를 제출 자료에 기재하지 않습니다.
 
@@ -114,6 +115,7 @@ server/                 tRPC 라우터, 데이터 접근, AI·인증 처리
 drizzle/                스키마와 마이그레이션
 AI_USAGE.md             AI 활용·데이터 경계·안전 한계
 TECHNICAL_REFERENCE.md  상세 기능·복구·접근성 구현 참고
+todo.md                 기능·검증·보류 항목의 누적 작업 기록
 ```
 
 ## 팀
@@ -134,5 +136,3 @@ TECHNICAL_REFERENCE.md  상세 기능·복구·접근성 구현 참고
 이 프로젝트는 [MIT License](LICENSE)를 따릅니다. React, tRPC, Drizzle ORM, Recharts, Tailwind CSS, shadcn/ui, Vitest, jsPDF 등 공개 라이선스 패키지를 사용합니다. 센서 기준 설정에는 충남반도체마이스터고등학교 장비과 담당 교사의 도메인 자문을 참고했습니다.
 
 ---
-
-제출용 저장소에서는 서비스 실행과 무관한 NotebookLM 안내서·코드 덤프 PDF/Markdown 중간 산출물을 제외했습니다. 소스 코드, 데이터베이스 마이그레이션, 테스트, 라이선스, 실행·AI 사용 문서는 유지합니다.
