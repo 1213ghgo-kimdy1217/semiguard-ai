@@ -10,6 +10,7 @@ import { useAuth } from "./_core/hooks/useAuth";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));
 
 type LoadingLanguage = "ko" | "en" | "ja";
 type LoadingCopy = { title: string; description: string; slowDescription: string; retry: string; context: string };
@@ -141,6 +142,11 @@ function Router() {
     <Switch>
       <Route path={"/signup"} component={Signup} />
       <Route path={"/login"} component={Login} />
+      <Route path={"/demo"}>
+        <Suspense fallback={<DashboardModuleLoading />}>
+          <JudgeDemo />
+        </Suspense>
+      </Route>
       <Route path={"/"}>
         <ProtectedRoute>
           <Suspense fallback={<DashboardModuleLoading />}>
