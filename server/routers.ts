@@ -525,7 +525,86 @@ export const appRouter = router({
         // 현재 요청 언어에 맞는 결과 반환
         return lang === "ko" ? koData : lang === "ja" ? jaData : enData;
       }),
-        getLlmHistory: publicProcedure.query(async () => {
+    summarizePeriodForReport: publicProcedure
+      .input(z.object({
+        lang: z.enum(["ko", "en", "ja"]).default("ko"),
+        periodLabel: z.string().min(1).max(120),
+        totalDetections: z.number().int().min(0).max(300),
+        anomalyCount: z.number().int().min(0).max(300),
+        dangerCount: z.number().int().min(0).max(300),
+        uptimePct: z.number().min(0).max(100),
+        sensors: z.object({
+          average: z.object({ current: z.number(), temperature: z.number(), vibration: z.number(), noise: z.number() }),
+          peak: z.object({ current: z.number(), temperature: z.number(), vibration: z.number(), noise: z.number() }),
+        }),
+        scoreHistory: z.array(z.object({ score: z.number().min(0).max(100), riskLevel: z.enum(["normal", "caution", "warning", "danger"]) })).max(180),
+      }))
+      .mutation(async ({ input }) => {
+        const { lang, periodLabel, totalDetections, anomalyCount, dangerCount, uptimePct, sensors, scoreHistory } = input;
+        const copy = lang === "ko"
+          ? { headline: "기간 데이터 안전 요약", fallback: "AI 분석을 사용할 수 없어 수집된 기간 통계에 기반한 요약입니다.", recommendation: "관련 설비 매뉴얼과 최근 점검 이력을 함께 검토하세요.", normal: "정상", caution: "주의", warning: "경고", danger: "위험" }
+          : lang === "ja"
+            ? { headline: "期間データの安全サマリー", fallback: "AI分析を利用できないため、収集した期間統計に基づく要約です。", recommendation: "関連設備マニュアルと直近の点検履歴を併せて確認してください。", normal: "正常", caution: "注意", warning: "警告", danger: "危険" }
+            : { headline: "Period data safety summary", fallback: "AI analysis is unavailable, so this is based on collected period statistics.", recommendation: "Review the relevant equipment manual and recent inspection history together.", normal: "Normal", caution: "Caution", warning: "Warning", danger: "Danger" };
+        const riskLabel = (level: "normal" | "caution" | "warning" | "danger") => copy[level];
+        const peakRisk = scoreHistory.reduce<"normal" | "caution" | "warning" | "danger">((current, point) => {
+          const order = { normal: 0, caution: 1, warning: 2, danger: 3 } as const;
+          return order[point.riskLevel] > order[current] ? point.riskLevel : current;
+        }, "normal");
+        const fallbackSummary = lang === "ko"
+          ? `${copy.fallback} ${periodLabel} 동안 기록 ${totalDetections}건, 이상 ${anomalyCount}건, 위험 ${dangerCount}건, 정상 가동률 ${uptimePct.toFixed(0)}%가 확인되었습니다. 관측된 최고 위험 단계는 ${riskLabel(peakRisk)}입니다.`
+          : lang === "ja"
+            ? `${copy.fallback} ${periodLabel}の記録${totalDetections}件、異常${anomalyCount}件、危険${dangerCount}件、稼働率${uptimePct.toFixed(0)}%が確認されました。観測された最高リスクは${riskLabel(peakRisk)}です。`
+            : `${copy.fallback} During ${periodLabel}, ${totalDetections} records, ${anomalyCount} anomalies, ${dangerCount} danger detections, and ${uptimePct.toFixed(0)}% uptime were recorded. Highest observed risk level was ${riskLabel(peakRisk)}.`;
+        const fallback = {
+          headline: copy.headline,
+          summary: fallbackSummary,
+          recommendation: copy.recommendation,
+          source: "fallback" as const,
+        };
+        const schema = {
+          type: "json_schema" as const,
+          json_schema: {
+            name: "period_sensor_summary",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                headline: { type: "string" },
+                summary: { type: "string" },
+                recommendation: { type: "string" },
+              },
+              required: ["headline", "summary", "recommendation"],
+              additionalProperties: false,
+            },
+          },
+        };
+        const average = sensors.average;
+        const peak = sensors.peak;
+        const prompt = lang === "ko"
+          ? `분석 기간: ${periodLabel}. 기록 ${totalDetections}건, 이상 ${anomalyCount}건, 위험 ${dangerCount}건, 가동률 ${uptimePct.toFixed(0)}%. 센서 평균: 전류 ${average.current.toFixed(2)}A, 온도 ${average.temperature.toFixed(1)}°C, 진동 ${average.vibration.toFixed(2)}mm/s, 소음 ${average.noise.toFixed(1)}dB. 센서 최고값: 전류 ${peak.current.toFixed(2)}A, 온도 ${peak.temperature.toFixed(1)}°C, 진동 ${peak.vibration.toFixed(2)}mm/s, 소음 ${peak.noise.toFixed(1)}dB. 최고 위험도: ${riskLabel(peakRisk)}. 데이터에 근거한 2~3문장 요약과 권장 조치를 JSON으로 반환하세요.`
+          : lang === "ja"
+            ? `分析期間: ${periodLabel}。記録${totalDetections}件、異常${anomalyCount}件、危険${dangerCount}件、稼働率${uptimePct.toFixed(0)}%。センサー平均: 電流${average.current.toFixed(2)}A、温度${average.temperature.toFixed(1)}°C、振動${average.vibration.toFixed(2)}mm/s、騒音${average.noise.toFixed(1)}dB。最大値: 電流${peak.current.toFixed(2)}A、温度${peak.temperature.toFixed(1)}°C、振動${peak.vibration.toFixed(2)}mm/s、騒音${peak.noise.toFixed(1)}dB。最高リスク: ${riskLabel(peakRisk)}。データに基づく2〜3文の要約と推奨措置をJSONで返してください。`
+            : `Analysis period: ${periodLabel}. ${totalDetections} records, ${anomalyCount} anomalies, ${dangerCount} danger detections, and ${uptimePct.toFixed(0)}% uptime. Sensor averages: current ${average.current.toFixed(2)}A, temperature ${average.temperature.toFixed(1)}°C, vibration ${average.vibration.toFixed(2)}mm/s, noise ${average.noise.toFixed(1)}dB. Peaks: current ${peak.current.toFixed(2)}A, temperature ${peak.temperature.toFixed(1)}°C, vibration ${peak.vibration.toFixed(2)}mm/s, noise ${peak.noise.toFixed(1)}dB. Highest risk: ${riskLabel(peakRisk)}. Return a data-grounded 2–3 sentence summary and recommendation as JSON.`;
+        try {
+          const response = await invokeLLM({
+            model: "gpt-5-mini",
+            messages: [
+              { role: "system", content: lang === "ko" ? "당신은 반도체 설비 안전 보고서 분석 AI입니다. 제공된 숫자만 근거로 하고, 특정 고장 원인을 단정하지 마세요. JSON만 반환하세요." : lang === "ja" ? "あなたは半導体設備安全レポートの分析AIです。与えられた数値だけを根拠にし、特定の故障原因を断定しないでください。JSONのみを返してください。" : "You analyze semiconductor equipment safety reports. Use only supplied numbers and do not diagnose a specific hardware failure. Return JSON only." },
+              { role: "user", content: prompt },
+            ],
+            response_format: schema,
+          });
+          const content = response.choices[0]?.message?.content;
+          if (typeof content !== "string") throw new Error("No report summary content");
+          const parsed = JSON.parse(content) as { headline: string; summary: string; recommendation: string };
+          return { ...parsed, source: "ai" as const };
+        } catch (error) {
+          console.error("Period report AI summary failed:", error);
+          return fallback;
+        }
+      }),
+    getLlmHistory: publicProcedure.query(async () => {
       return getLlmHistory(5);
     }),
 

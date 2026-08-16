@@ -1,16 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
 import type { RiskLevel, SensorData, AnomalyResult, AnomalyLogEntry } from "../../../shared/semiguard";
 import { MANUAL_CHUNK_LIMIT, MANUAL_CHUNK_WARNING_THRESHOLD, splitManualTextIntoChunks } from "../../../shared/ragManual";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
+import { Brush, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { toast } from "sonner";
 import { startGoogleLink, startNaverLink, startKakaoLink } from "@/const";
 import { Tooltip as AppTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const FALLBACK_DIAGNOSTIC_MARKERS = ["[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;
+const CUSTOM_PERIOD_PRESETS_KEY = "semiguard_custom_period_presets";
+const MAX_CUSTOM_PERIOD_PRESETS = 8;
+
+type CustomPeriodPreset = {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+};
 
 function readDashboardPreference(key: string) {
   try {
@@ -26,6 +35,21 @@ function persistDashboardPreference(key: string, value: string) {
   } catch {
     // 저장소가 제한된 경우에도 현재 세션의 대시보드 상태는 계속 유지합니다.
   }
+}
+
+function readCustomPeriodPresets(): CustomPeriodPreset[] {
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_PERIOD_PRESETS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((preset): preset is CustomPeriodPreset => typeof preset?.id === "string" && typeof preset?.name === "string" && /^\d{4}-\d{2}-\d{2}$/.test(preset?.startDate ?? "") && /^\d{4}-\d{2}-\d{2}$/.test(preset?.endDate ?? "")).slice(0, MAX_CUSTOM_PERIOD_PRESETS);
+  } catch {
+    return [];
+  }
+}
+
+function persistCustomPeriodPresets(presets: CustomPeriodPreset[]) {
+  persistDashboardPreference(CUSTOM_PERIOD_PRESETS_KEY, JSON.stringify(presets.slice(0, MAX_CUSTOM_PERIOD_PRESETS)));
 }
 
 // ─── 위험도 색상 매핑 ────────────────────────────────────────────────────────
@@ -103,6 +127,13 @@ type PeriodOverviewData = {
     peak: { current: number; temperature: number; vibration: number; noise: number };
   };
   scoreHistory: Array<{ timestamp: string; score: number; riskLevel: string; current: number; temperature: number; vibration: number; noise: number }>;
+};
+
+type PeriodReportAiSummary = {
+  headline: string;
+  summary: string;
+  recommendation: string;
+  source: "ai" | "fallback";
 };
 
 function escapeCsvCell(value: string | number) {
@@ -202,14 +233,14 @@ function escapeReportHtml(value: string | number) {
   return String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] ?? character);
 }
 
-function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, periodLabel: string) {
+function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, periodLabel: string, aiSummary?: PeriodReportAiSummary, preparedWindow?: Window | null) {
   const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
   const copy = lang === "ko"
-    ? { title: "SemiGuard AI 기간별 안전 운영 보고서", subtitle: "반도체 장비 예지안전 분석", generated: "생성 시각", period: "분석 기간", metrics: "핵심 운영 통계", sensors: "센서 요약", trend: "최근 위험도 추이", visitors: "방문 수", detections: "총 탐지", anomalies: "이상 탐지", danger: "위험 탐지", uptime: "정상 가동률", savings: "예상 절감 비용", average: "평균", peak: "최고", time: "시각", score: "점수", level: "단계", printHint: "브라우저 인쇄 창에서 ‘PDF로 저장’을 선택하면 구조화된 보고서를 파일로 저장할 수 있습니다." }
+    ? { title: "SemiGuard AI 기간별 안전 운영 보고서", subtitle: "반도체 장비 예지안전 분석", generated: "생성 시각", period: "분석 기간", metrics: "핵심 운영 통계", sensors: "센서 요약", trend: "최근 위험도 추이", aiSummary: "AI 센서 추세 요약", aiFallback: "근거 기반 대체 요약", recommendation: "권장 조치", visitors: "방문 수", detections: "총 탐지", anomalies: "이상 탐지", danger: "위험 탐지", uptime: "정상 가동률", savings: "예상 절감 비용", average: "평균", peak: "최고", time: "시각", score: "점수", level: "단계", printHint: "브라우저 인쇄 창에서 ‘PDF로 저장’을 선택하면 구조화된 보고서를 파일로 저장할 수 있습니다." }
     : lang === "ja"
-      ? { title: "SemiGuard AI 期間別安全運用レポート", subtitle: "半導体装置の予知安全分析", generated: "作成時刻", period: "分析期間", metrics: "主要運用統計", sensors: "センサー要約", trend: "直近のリスクスコア推移", visitors: "訪問数", detections: "総検知", anomalies: "異常検知", danger: "危険検知", uptime: "稼働率", savings: "予想削減コスト", average: "平均", peak: "最大", time: "時刻", score: "スコア", level: "レベル", printHint: "ブラウザーの印刷画面で「PDFに保存」を選択すると、構造化されたレポートを保存できます。" }
-      : { title: "SemiGuard AI Period Safety Operations Report", subtitle: "Semiconductor equipment predictive safety analysis", generated: "Generated", period: "Analysis period", metrics: "Key operating statistics", sensors: "Sensor summary", trend: "Recent risk score trend", visitors: "Visitors", detections: "Total detections", anomalies: "Anomalies", danger: "Danger detections", uptime: "Uptime", savings: "Expected savings", average: "Average", peak: "Peak", time: "Time", score: "Score", level: "Level", printHint: "Choose ‘Save as PDF’ in the browser print dialog to save this structured report." };
-  const reportWindow = window.open("", "_blank", "width=1000,height=800");
+      ? { title: "SemiGuard AI 期間別安全運用レポート", subtitle: "半導体装置の予知安全分析", generated: "作成時刻", period: "分析期間", metrics: "主要運用統計", sensors: "センサー要約", trend: "直近のリスクスコア推移", aiSummary: "AIセンサー傾向サマリー", aiFallback: "根拠ベースの代替サマリー", recommendation: "推奨措置", visitors: "訪問数", detections: "総検知", anomalies: "異常検知", danger: "危険検知", uptime: "稼働率", savings: "予想削減コスト", average: "平均", peak: "最大", time: "時刻", score: "スコア", level: "レベル", printHint: "ブラウザーの印刷画面で「PDFに保存」を選択すると、構造化されたレポートを保存できます。" }
+      : { title: "SemiGuard AI Period Safety Operations Report", subtitle: "Semiconductor equipment predictive safety analysis", generated: "Generated", period: "Analysis period", metrics: "Key operating statistics", sensors: "Sensor summary", trend: "Recent risk score trend", aiSummary: "AI sensor trend summary", aiFallback: "Evidence-based fallback summary", recommendation: "Recommended action", visitors: "Visitors", detections: "Total detections", anomalies: "Anomalies", danger: "Danger detections", uptime: "Uptime", savings: "Expected savings", average: "Average", peak: "Peak", time: "Time", score: "Score", level: "Level", printHint: "Choose ‘Save as PDF’ in the browser print dialog to save this structured report." };
+  const reportWindow = preparedWindow ?? window.open("", "_blank", "width=1000,height=800");
   if (!reportWindow) throw new Error(copy.printHint);
   const riskColor = (level: string) => level === "danger" ? "#b91c1c" : level === "warning" ? "#c2410c" : level === "caution" ? "#a16207" : "#15803d";
   const metricRows = [
@@ -224,7 +255,8 @@ function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, pe
   ];
   const sensorTrendChart = buildSensorTrendChartImage(overview.scoreHistory, lang);
   const scoreRows = overview.scoreHistory.slice(-24).map(point => `<tr><td>${escapeReportHtml(new Date(point.timestamp).toLocaleString(locale, { hour12: false }))}</td><td>${escapeReportHtml(point.score)}</td><td><span class="risk" style="color:${riskColor(point.riskLevel)}">${escapeReportHtml(localizeRiskLevel(point.riskLevel, lang))}</span></td></tr>`).join("");
-  reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${escapeReportHtml(copy.title)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Inter,"Noto Sans KR","Noto Sans JP",Arial,sans-serif;font-size:11px;line-height:1.45}.report{max-width:780px;margin:0 auto}.hero{padding:20px 22px;background:linear-gradient(135deg,#0f2c4c,#0b7a91);color:#fff;border-radius:14px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.78}.hero h1{font-size:23px;line-height:1.2;margin:6px 0}.hero p{margin:0;opacity:.9}.metadata{display:flex;gap:20px;margin-top:15px;font-size:10px;flex-wrap:wrap}.metadata strong{display:block;color:#0b7a91}.section{margin-top:22px}.section h2{font-size:14px;margin:0 0 9px;color:#102a43}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{border:1px solid #d9e2ec;border-radius:9px;padding:10px;background:#f8fafc}.metric span{display:block;color:#627d98;font-size:10px}.metric strong{display:block;font-size:17px;margin-top:2px;color:#102a43}table{width:100%;border-collapse:collapse;border:1px solid #d9e2ec;border-radius:8px;overflow:hidden}th{background:#eaf4f7;color:#102a43;text-align:left;font-size:10px}th,td{padding:7px 9px;border-bottom:1px solid #e6edf3}tr:last-child td{border-bottom:0}.risk{font-weight:700;text-transform:capitalize}.chart-image{display:block;width:100%;border:1px solid #d9e2ec;border-radius:10px}.footer{margin-top:20px;padding-top:10px;border-top:1px solid #d9e2ec;color:#627d98;font-size:9px}@media print{.report{max-width:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="report"><header class="hero"><div class="eyebrow">SemiGuard AI</div><h1>${escapeReportHtml(copy.title)}</h1><p>${escapeReportHtml(copy.subtitle)}</p></header><div class="metadata"><div><strong>${escapeReportHtml(copy.period)}</strong>${escapeReportHtml(periodLabel)}</div><div><strong>${escapeReportHtml(copy.generated)}</strong>${escapeReportHtml(new Date().toLocaleString(locale, { hour12: false }))}</div></div><section class="section"><h2>${escapeReportHtml(copy.metrics)}</h2><div class="metrics">${metricRows.map(([label, value]) => `<article class="metric"><span>${escapeReportHtml(label)}</span><strong>${escapeReportHtml(value)}</strong></article>`).join("")}</div></section><section class="section"><h2>${escapeReportHtml(copy.sensors)}</h2><table><thead><tr><th>${lang === "ko" ? "센서" : lang === "ja" ? "センサー" : "Sensor"}</th><th>${escapeReportHtml(copy.average)}</th><th>${escapeReportHtml(copy.peak)}</th></tr></thead><tbody>${sensorRows.map(([sensor, average, peak]) => `<tr><td>${escapeReportHtml(sensor)}</td><td>${escapeReportHtml(Number(average).toFixed(2))}</td><td>${escapeReportHtml(Number(peak).toFixed(2))}</td></tr>`).join("")}</tbody></table></section>${sensorTrendChart ? `<section class="section"><h2>${escapeReportHtml(sensorTrendChart.alt)}</h2><img class="chart-image" src="${sensorTrendChart.src}" alt="${escapeReportHtml(sensorTrendChart.alt)}"/></section>` : ""}<section class="section"><h2>${escapeReportHtml(copy.trend)}</h2><table><thead><tr><th>${escapeReportHtml(copy.time)}</th><th>${escapeReportHtml(copy.score)}</th><th>${escapeReportHtml(copy.level)}</th></tr></thead><tbody>${scoreRows || `<tr><td colspan="3">—</td></tr>`}</tbody></table></section><footer class="footer">${escapeReportHtml(copy.printHint)}</footer></main></body></html>`);
+  const aiSection = aiSummary ? `<section class="section"><h2>${escapeReportHtml(aiSummary.source === "ai" ? copy.aiSummary : copy.aiFallback)}</h2><article class="analysis-card"><strong>${escapeReportHtml(aiSummary.headline)}</strong><p>${escapeReportHtml(aiSummary.summary)}</p><p><b>${escapeReportHtml(copy.recommendation)}:</b> ${escapeReportHtml(aiSummary.recommendation)}</p></article></section>` : "";
+  reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${escapeReportHtml(copy.title)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Inter,"Noto Sans KR","Noto Sans JP",Arial,sans-serif;font-size:11px;line-height:1.45}.report{max-width:780px;margin:0 auto}.hero{padding:20px 22px;background:linear-gradient(135deg,#0f2c4c,#0b7a91);color:#fff;border-radius:14px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.78}.hero h1{font-size:23px;line-height:1.2;margin:6px 0}.hero p{margin:0;opacity:.9}.metadata{display:flex;gap:20px;margin-top:15px;font-size:10px;flex-wrap:wrap}.metadata strong{display:block;color:#0b7a91}.section{margin-top:22px}.section h2{font-size:14px;margin:0 0 9px;color:#102a43}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{border:1px solid #d9e2ec;border-radius:9px;padding:10px;background:#f8fafc}.metric span{display:block;color:#627d98;font-size:10px}.metric strong{display:block;font-size:17px;margin-top:2px;color:#102a43}table{width:100%;border-collapse:collapse;border:1px solid #d9e2ec;border-radius:8px;overflow:hidden}th{background:#eaf4f7;color:#102a43;text-align:left;font-size:10px}th,td{padding:7px 9px;border-bottom:1px solid #e6edf3}tr:last-child td{border-bottom:0}.risk{font-weight:700;text-transform:capitalize}.chart-image{display:block;width:100%;border:1px solid #d9e2ec;border-radius:10px}.analysis-card{border:1px solid #b7d7df;border-radius:10px;background:#f1fbfd;padding:12px}.analysis-card strong{color:#0b7a91}.analysis-card p{margin:7px 0 0}.footer{margin-top:20px;padding-top:10px;border-top:1px solid #d9e2ec;color:#627d98;font-size:9px}@media print{.report{max-width:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="report"><header class="hero"><div class="eyebrow">SemiGuard AI</div><h1>${escapeReportHtml(copy.title)}</h1><p>${escapeReportHtml(copy.subtitle)}</p></header><div class="metadata"><div><strong>${escapeReportHtml(copy.period)}</strong>${escapeReportHtml(periodLabel)}</div><div><strong>${escapeReportHtml(copy.generated)}</strong>${escapeReportHtml(new Date().toLocaleString(locale, { hour12: false }))}</div></div><section class="section"><h2>${escapeReportHtml(copy.metrics)}</h2><div class="metrics">${metricRows.map(([label, value]) => `<article class="metric"><span>${escapeReportHtml(label)}</span><strong>${escapeReportHtml(value)}</strong></article>`).join("")}</div></section>${aiSection}<section class="section"><h2>${escapeReportHtml(copy.sensors)}</h2><table><thead><tr><th>${lang === "ko" ? "센서" : lang === "ja" ? "センサー" : "Sensor"}</th><th>${escapeReportHtml(copy.average)}</th><th>${escapeReportHtml(copy.peak)}</th></tr></thead><tbody>${sensorRows.map(([sensor, average, peak]) => `<tr><td>${escapeReportHtml(sensor)}</td><td>${escapeReportHtml(Number(average).toFixed(2))}</td><td>${escapeReportHtml(Number(peak).toFixed(2))}</td></tr>`).join("")}</tbody></table></section>${sensorTrendChart ? `<section class="section"><h2>${escapeReportHtml(sensorTrendChart.alt)}</h2><img class="chart-image" src="${sensorTrendChart.src}" alt="${escapeReportHtml(sensorTrendChart.alt)}"/></section>` : ""}<section class="section"><h2>${escapeReportHtml(copy.trend)}</h2><table><thead><tr><th>${escapeReportHtml(copy.time)}</th><th>${escapeReportHtml(copy.score)}</th><th>${escapeReportHtml(copy.level)}</th></tr></thead><tbody>${scoreRows || `<tr><td colspan="3">—</td></tr>`}</tbody></table></section><footer class="footer">${escapeReportHtml(copy.printHint)}</footer></main></body></html>`);
   reportWindow.document.close();
   window.setTimeout(() => { reportWindow.focus(); reportWindow.print(); }, 250);
 }
@@ -2286,6 +2318,7 @@ export default function Dashboard() {
   const autoFetch = trpc.semiguard.autoFetch.useMutation();
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const analyzeAnomalyMutation = trpc.semiguard.analyzeAnomaly.useMutation();
+  const summarizePeriodForReportMutation = trpc.semiguard.summarizePeriodForReport.useMutation();
   const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month" | "custom">("day");
   const todayDateValue = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [customStartDate, setCustomStartDate] = useState(() => {
@@ -2295,6 +2328,8 @@ export default function Dashboard() {
   });
   const [customEndDate, setCustomEndDate] = useState(todayDateValue);
   const [appliedCustomRange, setAppliedCustomRange] = useState(() => ({ startDate: customStartDate, endDate: todayDateValue }));
+  const [customPeriodPresets, setCustomPeriodPresets] = useState<CustomPeriodPreset[]>(readCustomPeriodPresets);
+  const [customPeriodPresetName, setCustomPeriodPresetName] = useState("");
   const [isPeriodChanging, setIsPeriodChanging] = useState(false);
   const dashboardPeriodInput = useMemo(() => dashboardPeriod === "custom"
     ? { period: "custom" as const, startAt: toLocalDateBoundaryIso(appliedCustomRange.startDate), endAt: toLocalDateBoundaryIso(appliedCustomRange.endDate, true) }
@@ -2357,6 +2392,33 @@ export default function Dashboard() {
     setAppliedCustomRange({ startDate: customStartDate, endDate: customEndDate });
     setDashboardPeriod("custom");
   };
+  const saveCustomPeriodPreset = () => {
+    const name = customPeriodPresetName.trim().slice(0, 40);
+    if (!name || !customStartDate || !customEndDate || customStartDate > customEndDate) {
+      toast.error(lang === "ko" ? "저장할 기간 이름과 올바른 날짜 범위를 입력하세요." : lang === "ja" ? "保存する期間名と正しい日付範囲を入力してください。" : "Enter a preset name and a valid date range.");
+      return;
+    }
+    const preset: CustomPeriodPreset = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name, startDate: customStartDate, endDate: customEndDate };
+    const next = [preset, ...customPeriodPresets.filter(item => item.name.toLocaleLowerCase() !== name.toLocaleLowerCase())].slice(0, MAX_CUSTOM_PERIOD_PRESETS);
+    setCustomPeriodPresets(next);
+    persistCustomPeriodPresets(next);
+    setCustomPeriodPresetName("");
+    toast.success(lang === "ko" ? "기간 프리셋을 저장했습니다." : lang === "ja" ? "期間プリセットを保存しました。" : "Period preset saved.");
+  };
+  const applyCustomPeriodPreset = (preset: CustomPeriodPreset) => {
+    setCustomStartDate(preset.startDate);
+    setCustomEndDate(preset.endDate);
+    setAppliedCustomRange({ startDate: preset.startDate, endDate: preset.endDate });
+    setIsPeriodChanging(true);
+    setDashboardPeriod("custom");
+    toast.success(lang === "ko" ? `‘${preset.name}’ 기간을 적용했습니다.` : lang === "ja" ? `「${preset.name}」の期間を適用しました。` : `Applied “${preset.name}”.`);
+  };
+  const deleteCustomPeriodPreset = (presetId: string) => {
+    const next = customPeriodPresets.filter(preset => preset.id !== presetId);
+    setCustomPeriodPresets(next);
+    persistCustomPeriodPresets(next);
+    toast.success(lang === "ko" ? "기간 프리셋을 삭제했습니다." : lang === "ja" ? "期間プリセットを削除しました。" : "Period preset deleted.");
+  };
   const exportSelectedPeriodCsv = () => {
     if (!selectedPeriodStats) {
       toast.error(lang === "ko" ? "기간 통계를 준비한 뒤 CSV를 내보낼 수 있습니다." : lang === "ja" ? "期間統計を読み込んだ後にCSVを出力できます。" : "Load period statistics before exporting CSV.");
@@ -2365,18 +2427,50 @@ export default function Dashboard() {
     exportPeriodOverviewToCsv(selectedPeriodStats, lang, selectedPeriodLabel);
     toast.success(lang === "ko" ? "기간별 통계를 CSV로 저장했습니다." : lang === "ja" ? "期間別統計をCSVで保存しました。" : "Period statistics saved as CSV.");
   };
-  const exportSelectedPeriodPdf = () => {
+  const exportSelectedPeriodPdf = async () => {
     if (!selectedPeriodStats) {
       toast.error(lang === "ko" ? "기간 통계를 준비한 뒤 PDF 보고서를 만들 수 있습니다." : lang === "ja" ? "期間統計を読み込んだ後にPDFレポートを作成できます。" : "Load period statistics before creating the PDF report.");
       return;
     }
+    const reportWindow = window.open("", "_blank", "width=1000,height=800");
+    if (!reportWindow) {
+      toast.error(lang === "ko" ? "보고서 창을 열지 못했습니다. 팝업 차단을 확인해주세요." : lang === "ja" ? "レポートウィンドウを開けませんでした。ポップアップブロックを確認してください。" : "Could not open the report window. Check popup blocking.");
+      return;
+    }
     setPdfExporting(true);
+    const loadingToast = toast.loading(lang === "ko" ? "AI가 센서 추세를 분석해 보고서를 준비하고 있습니다." : lang === "ja" ? "AIがセンサー傾向を分析し、レポートを準備しています。" : "AI is analyzing sensor trends and preparing the report.");
     try {
-      openStructuredPeriodReport(selectedPeriodStats, lang, selectedPeriodLabel);
-      toast.success(lang === "ko" ? "구조화된 보고서를 새 창에 열었습니다. 인쇄 창에서 PDF로 저장하세요." : lang === "ja" ? "構造化レポートを新しいウィンドウで開きました。印刷画面でPDFとして保存してください。" : "Structured report opened. Save it as PDF from the print dialog.");
+      const aiSummary = await summarizePeriodForReportMutation.mutateAsync({
+        lang,
+        periodLabel: selectedPeriodLabel,
+        totalDetections: selectedPeriodStats.totalDetections,
+        anomalyCount: selectedPeriodStats.anomalyCount,
+        dangerCount: selectedPeriodStats.dangerCount,
+        uptimePct: selectedPeriodStats.uptimePct,
+        sensors: selectedPeriodStats.sensors,
+        scoreHistory: selectedPeriodStats.scoreHistory.map(point => ({
+          score: point.score,
+          riskLevel: (["normal", "caution", "warning", "danger"].includes(point.riskLevel) ? point.riskLevel : "normal") as "normal" | "caution" | "warning" | "danger",
+        })),
+      });
+      openStructuredPeriodReport(selectedPeriodStats, lang, selectedPeriodLabel, aiSummary, reportWindow);
+      toast.success(aiSummary.source === "ai"
+        ? (lang === "ko" ? "AI 센서 추세 요약을 포함한 보고서를 준비했습니다. 인쇄 창에서 PDF로 저장하세요." : lang === "ja" ? "AIセンサー傾向サマリーを含むレポートを準備しました。印刷画面でPDFとして保存してください。" : "Report with AI sensor trend summary is ready. Save it as PDF from the print dialog.")
+        : (lang === "ko" ? "AI 요약 대신 근거 기반 요약을 포함한 보고서를 준비했습니다." : lang === "ja" ? "AI要約の代わりに根拠ベースの要約を含むレポートを準備しました。" : "Report with an evidence-based fallback summary is ready."), { id: loadingToast });
     } catch (error) {
       console.error("Structured PDF report error:", error);
-      toast.error(lang === "ko" ? "보고서 창을 열지 못했습니다. 팝업 차단을 확인해주세요." : lang === "ja" ? "レポートウィンドウを開けませんでした。ポップアップブロックを確認してください。" : "Could not open the report window. Check popup blocking.");
+      const fallback: PeriodReportAiSummary = lang === "ko"
+        ? { headline: "기간 데이터 안전 요약", summary: `AI 분석 서비스를 연결하지 못해 기간 통계로 대체했습니다. 기록 ${selectedPeriodStats.totalDetections}건 중 이상 ${selectedPeriodStats.anomalyCount}건, 위험 ${selectedPeriodStats.dangerCount}건이 확인되었습니다.`, recommendation: "관련 설비 매뉴얼과 최근 점검 이력을 함께 검토하세요.", source: "fallback" }
+        : lang === "ja"
+          ? { headline: "期間データの安全サマリー", summary: `AI分析サービスに接続できないため、期間統計で代替しました。記録${selectedPeriodStats.totalDetections}件のうち、異常${selectedPeriodStats.anomalyCount}件、危険${selectedPeriodStats.dangerCount}件が確認されました。`, recommendation: "関連設備マニュアルと直近の点検履歴を併せて確認してください。", source: "fallback" }
+          : { headline: "Period data safety summary", summary: `The AI analysis service could not be reached, so this uses period statistics. ${selectedPeriodStats.anomalyCount} anomalies and ${selectedPeriodStats.dangerCount} danger detections were observed across ${selectedPeriodStats.totalDetections} records.`, recommendation: "Review the relevant equipment manual and recent inspection history together.", source: "fallback" };
+      try {
+        openStructuredPeriodReport(selectedPeriodStats, lang, selectedPeriodLabel, fallback, reportWindow);
+        toast.warning(lang === "ko" ? "AI 요약 대신 근거 기반 요약으로 보고서를 준비했습니다." : lang === "ja" ? "AI要約の代わりに根拠ベースの要約でレポートを準備しました。" : "The report uses an evidence-based fallback summary.", { id: loadingToast });
+      } catch {
+        reportWindow.close();
+        toast.error(lang === "ko" ? "보고서 창을 열지 못했습니다. 팝업 차단을 확인해주세요." : lang === "ja" ? "レポートウィンドウを開けませんでした。ポップアップブロックを確認してください。" : "Could not open the report window. Check popup blocking.", { id: loadingToast });
+      }
     } finally {
       setPdfExporting(false);
     }
@@ -2398,6 +2492,46 @@ export default function Dashboard() {
     noise: point.noise,
   })), [lang, selectedPeriodStats?.scoreHistory]);
   const displayedSensorChartData = periodChartData.length > 0 ? periodChartData : chartData;
+  const [sensorChartRange, setSensorChartRange] = useState<{ startIndex: number; endIndex: number } | null>(null);
+  const resolvedSensorChartRange = useMemo(() => {
+    const maxIndex = Math.max(0, displayedSensorChartData.length - 1);
+    if (!sensorChartRange) return { startIndex: 0, endIndex: maxIndex };
+    const startIndex = Math.min(Math.max(0, sensorChartRange.startIndex), maxIndex);
+    const endIndex = Math.min(Math.max(startIndex, sensorChartRange.endIndex), maxIndex);
+    return { startIndex, endIndex };
+  }, [displayedSensorChartData.length, sensorChartRange]);
+  const setSensorChartWindow = (startIndex: number, endIndex: number) => {
+    const maxIndex = Math.max(0, displayedSensorChartData.length - 1);
+    setSensorChartRange({ startIndex: Math.min(Math.max(0, startIndex), maxIndex), endIndex: Math.min(Math.max(0, endIndex), maxIndex) });
+  };
+  const zoomSensorChart = (direction: "in" | "out") => {
+    const total = displayedSensorChartData.length;
+    if (total < 3) return;
+    const { startIndex, endIndex } = resolvedSensorChartRange;
+    const size = endIndex - startIndex + 1;
+    const nextSize = direction === "in" ? Math.max(2, Math.floor(size * 0.72)) : Math.min(total, Math.ceil(size / 0.72));
+    const midpoint = (startIndex + endIndex) / 2;
+    let nextStart = Math.round(midpoint - (nextSize - 1) / 2);
+    nextStart = Math.min(Math.max(0, nextStart), total - nextSize);
+    setSensorChartWindow(nextStart, nextStart + nextSize - 1);
+  };
+  const panSensorChart = (direction: "back" | "forward") => {
+    const total = displayedSensorChartData.length;
+    if (total < 3) return;
+    const { startIndex, endIndex } = resolvedSensorChartRange;
+    const size = endIndex - startIndex + 1;
+    const step = Math.max(1, Math.round(size * 0.25));
+    const nextStart = direction === "back" ? Math.max(0, startIndex - step) : Math.min(total - size, startIndex + step);
+    setSensorChartWindow(nextStart, nextStart + size - 1);
+  };
+  const resetSensorChartZoom = () => setSensorChartRange(null);
+  const handleSensorChartKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "+" || event.key === "=") { event.preventDefault(); zoomSensorChart("in"); }
+    if (event.key === "-") { event.preventDefault(); zoomSensorChart("out"); }
+    if (event.key === "ArrowLeft") { event.preventDefault(); panSensorChart("back"); }
+    if (event.key === "ArrowRight") { event.preventDefault(); panSensorChart("forward"); }
+    if (event.key.toLowerCase() === "r") { event.preventDefault(); resetSensorChartZoom(); }
+  };
   const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ─── 센서별 임계값 tRPC 훅 ──────────────────────────────────────────────────
@@ -5428,6 +5562,21 @@ export default function Dashboard() {
                   <button type="button" onClick={applyCustomPeriod} disabled={periodOverviewQuery.isFetching || !customStartDate || !customEndDate || customStartDate > customEndDate} className="h-8 rounded border px-2 text-[10px] font-bold transition-all hover:opacity-85 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.38 0.16 220)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
                     {lang === "ko" ? "적용" : lang === "ja" ? "適用" : "Apply"}
                   </button>
+                  <span className="h-5 w-px" aria-hidden="true" style={{ background: th.border2 }} />
+                  <label className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: th.textMuted }}>
+                    <span className="sr-only">{lang === "ko" ? "기간 프리셋 이름" : lang === "ja" ? "期間プリセット名" : "Period preset name"}</span>
+                    <input value={customPeriodPresetName} maxLength={40} onChange={event => setCustomPeriodPresetName(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCustomPeriodPreset(); } }} placeholder={lang === "ko" ? "프리셋 이름" : lang === "ja" ? "プリセット名" : "Preset name"} className="h-8 w-24 rounded border px-1.5 text-[11px] outline-none placeholder:opacity-60 focus-visible:ring-2 focus-visible:ring-cyan-300 sm:w-28" style={{ color: th.text, background: th.bgCard, borderColor: th.border2 }} />
+                  </label>
+                  <button type="button" onClick={saveCustomPeriodPreset} disabled={!customPeriodPresetName.trim() || !customStartDate || !customEndDate || customStartDate > customEndDate} className="h-8 rounded border px-2 text-[10px] font-bold transition-all hover:opacity-85 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: th.border2, color: th.text, background: th.bgCard }}>
+                    {lang === "ko" ? "저장" : lang === "ja" ? "保存" : "Save"}
+                  </button>
+                  {customPeriodPresets.length > 0 && <div className="flex w-full flex-wrap items-center gap-1.5 border-t pt-2" style={{ borderColor: th.border2 }} role="group" aria-label={lang === "ko" ? "저장된 기간 프리셋" : lang === "ja" ? "保存済みの期間プリセット" : "Saved period presets"}>
+                    <span className="mr-0.5 text-[10px] font-bold" style={{ color: th.textMuted }}>{lang === "ko" ? "빠른 적용" : lang === "ja" ? "クイック適用" : "Quick apply"}</span>
+                    {customPeriodPresets.map(preset => <div key={preset.id} className="flex items-center overflow-hidden rounded border" style={{ borderColor: th.border2, background: th.bgCard }}>
+                      <button type="button" onClick={() => applyCustomPeriodPreset(preset)} className="h-7 px-2 text-[10px] font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text }} title={`${preset.startDate} – ${preset.endDate}`}>{preset.name}</button>
+                      <button type="button" onClick={() => deleteCustomPeriodPreset(preset.id)} className="h-7 border-l px-1.5 text-[11px] font-bold transition-colors hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ borderColor: th.border2, color: isDark ? "oklch(0.76 0.18 25)" : "oklch(0.52 0.19 25)" }} aria-label={lang === "ko" ? `${preset.name} 프리셋 삭제` : lang === "ja" ? `${preset.name} プリセットを削除` : `Delete ${preset.name} preset`}>×</button>
+                    </div>)}
+                  </div>}
                 </div>}
                 <button type="button" onClick={exportSelectedPeriodCsv} disabled={!selectedPeriodStats || periodOverviewQuery.isFetching} className="h-9 rounded-lg border px-2.5 text-[11px] font-bold transition-all hover:-translate-y-0.5 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.38 0.16 220)", background: isDark ? "oklch(0.65 0.18 200 / 0.09)" : "oklch(0.65 0.18 200 / 0.06)" }}>
                   ↓ CSV
@@ -5734,7 +5883,17 @@ export default function Dashboard() {
               </div>
 
               {/* ── 가운데: 차트 ── */}
-              <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
+              <div className="col-span-12 lg:col-span-6 flex flex-col gap-4" tabIndex={0} role="group" aria-label={lang === "ko" ? "센서 추이 차트 확대와 이동" : lang === "ja" ? "センサー推移チャートの拡大と移動" : "Sensor trend chart zoom and pan"} onKeyDown={handleSensorChartKeyDown} onWheel={event => { if (displayedSensorChartData.length > 2) { event.preventDefault(); zoomSensorChart(event.deltaY < 0 ? "in" : "out"); } }}>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2" style={{ background: th.bgCard, borderColor: th.border }}>
+                  <p className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "차트: 드래그로 구간 선택 · 휠로 확대 · ← →로 이동" : lang === "ja" ? "チャート: ドラッグで範囲選択 · ホイールで拡大 · ← →で移動" : "Chart: drag to select · wheel to zoom · ← → to pan"}</p>
+                  <div className="flex items-center gap-1" role="group" aria-label={lang === "ko" ? "차트 확대 제어" : lang === "ja" ? "チャートの拡大操作" : "Chart zoom controls"}>
+                    <button type="button" onClick={() => panSensorChart("back")} disabled={resolvedSensorChartRange.startIndex === 0} className="h-7 min-w-7 rounded border text-xs font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "차트 이전 구간으로 이동" : lang === "ja" ? "チャートを前の範囲へ移動" : "Pan chart backward"}>←</button>
+                    <button type="button" onClick={() => zoomSensorChart("out")} disabled={displayedSensorChartData.length < 3 || (resolvedSensorChartRange.startIndex === 0 && resolvedSensorChartRange.endIndex === displayedSensorChartData.length - 1)} className="h-7 min-w-7 rounded border text-xs font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "차트 축소" : lang === "ja" ? "チャートを縮小" : "Zoom out chart"}>−</button>
+                    <button type="button" onClick={() => zoomSensorChart("in")} disabled={displayedSensorChartData.length < 3 || resolvedSensorChartRange.endIndex - resolvedSensorChartRange.startIndex < 2} className="h-7 min-w-7 rounded border text-xs font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "차트 확대" : lang === "ja" ? "チャートを拡大" : "Zoom in chart"}>+</button>
+                    <button type="button" onClick={resetSensorChartZoom} disabled={resolvedSensorChartRange.startIndex === 0 && resolvedSensorChartRange.endIndex === displayedSensorChartData.length - 1} className="h-7 rounded border px-2 text-[10px] font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }}>{lang === "ko" ? "초기화" : lang === "ja" ? "リセット" : "Reset"}</button>
+                    <button type="button" onClick={() => panSensorChart("forward")} disabled={resolvedSensorChartRange.endIndex >= displayedSensorChartData.length - 1} className="h-7 min-w-7 rounded border text-xs font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "차트 다음 구간으로 이동" : lang === "ja" ? "チャートを次の範囲へ移動" : "Pan chart forward"}>→</button>
+                  </div>
+                </div>
                 {/* 전류 + 온도 */}
                 <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
@@ -5748,6 +5907,7 @@ export default function Dashboard() {
                       <Tooltip content={<CustomTooltip />} />
                       <Line type="monotone" dataKey="current"     stroke="#38bdf8" strokeWidth={2} dot={false} isAnimationActive={false} name={t.current} />
                       <Line type="monotone" dataKey="temperature" stroke="#fb923c" strokeWidth={2} dot={false} isAnimationActive={false} name={t.temperature} />
+                      <Brush dataKey="label" height={22} stroke={isDark ? "#38bdf8" : "#0284c7"} fill={isDark ? "#102a43" : "#eaf4f7"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -5764,6 +5924,7 @@ export default function Dashboard() {
                       <Tooltip content={<CustomTooltip />} />
                       <Line type="monotone" dataKey="vibration" stroke="#a78bfa" strokeWidth={2} dot={false} isAnimationActive={false} name={t.vibration} />
                       <Line type="monotone" dataKey="noise"     stroke="#34d399" strokeWidth={2} dot={false} isAnimationActive={false} name={t.noise} />
+                      <Brush dataKey="label" height={22} stroke={isDark ? "#38bdf8" : "#0284c7"} fill={isDark ? "#102a43" : "#eaf4f7"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
