@@ -3411,8 +3411,8 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => exportCurrentLlmAnalysis("text")} className="min-h-9 rounded-lg border text-[11px] font-bold transition-opacity hover:opacity-80" style={{ borderColor: th.border2, color: th.text, background: th.bgCard2 }}>TXT</button>
-              <button type="button" onClick={() => exportCurrentLlmAnalysis("pdf")} className="min-h-9 rounded-lg border text-[11px] font-bold transition-opacity hover:opacity-80" style={{ borderColor: "rgba(56,189,248,0.4)", color: th.accent, background: "rgba(56,189,248,0.08)" }}>PDF</button>
+              <button type="button" aria-label={lang === "ko" ? "현재 AI 이상 분석 결과를 TXT 파일로 저장" : lang === "ja" ? "現在のAI異常分析結果をTXTファイルで保存" : "Save current AI anomaly analysis as a TXT file"} title={lang === "ko" ? "TXT 파일로 저장" : lang === "ja" ? "TXTファイルで保存" : "Save as TXT"} onClick={() => exportCurrentLlmAnalysis("text")} className="min-h-9 rounded-lg border text-[11px] font-bold transition-opacity hover:opacity-80" style={{ borderColor: th.border2, color: th.text, background: th.bgCard2 }}>TXT</button>
+              <button type="button" aria-label={lang === "ko" ? "현재 AI 이상 분석 결과를 PDF로 저장" : lang === "ja" ? "現在のAI異常分析結果をPDFで保存" : "Save current AI anomaly analysis as a PDF"} title={lang === "ko" ? "PDF로 저장" : lang === "ja" ? "PDFで保存" : "Save as PDF"} onClick={() => exportCurrentLlmAnalysis("pdf")} className="min-h-9 rounded-lg border text-[11px] font-bold transition-opacity hover:opacity-80" style={{ borderColor: "rgba(56,189,248,0.4)", color: th.accent, background: "rgba(56,189,248,0.08)" }}>PDF</button>
             </div>
           </div>
         </div>
