@@ -35,7 +35,7 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('type="button"\n            id="btn-export-pdf"');
     expect(dashboardSource).toContain('type="button"\n            id="btn-logout"');
     expect(dashboardSource).toContain('type="button" onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")}');
-    expect(dashboardSource).toContain('type="button"\n            onClick={() => setIsDark(d => {');
+    expect(dashboardSource).toContain('type="button"\n            onClick={toggleDashboardTheme}');
   });
 
   it("provides localized names and values for header range controls", () => {

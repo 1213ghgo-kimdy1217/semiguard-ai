@@ -88,6 +88,94 @@ function exportLogsToCSV(logs: AnomalyLogEntry[], lang: Lang) {
   URL.revokeObjectURL(url);
 }
 
+type PeriodOverviewData = {
+  period: "day" | "week" | "month";
+  startAt: string;
+  totalDetections: number;
+  dangerCount: number;
+  anomalyCount: number;
+  uptimePct: number;
+  savedCost: number;
+  totalVisitors: number;
+  sensors: {
+    average: { current: number; temperature: number; vibration: number; noise: number };
+    peak: { current: number; temperature: number; vibration: number; noise: number };
+  };
+  scoreHistory: Array<{ timestamp: string; score: number; riskLevel: string; current: number; temperature: number; vibration: number; noise: number }>;
+};
+
+function escapeCsvCell(value: string | number) {
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportPeriodOverviewToCsv(overview: PeriodOverviewData, lang: Lang, periodLabel: string) {
+  const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
+  const labels = lang === "ko"
+    ? { metric: "지표", value: "값", period: "분석 기간", visitors: "방문 수", detections: "총 탐지", anomalies: "이상 탐지", danger: "위험 탐지", uptime: "정상 가동률", savings: "예상 절감 비용", sensor: "센서", average: "평균", peak: "최고", time: "시각", score: "위험도 점수", level: "위험 단계" }
+    : lang === "ja"
+      ? { metric: "指標", value: "値", period: "分析期間", visitors: "訪問数", detections: "総検知", anomalies: "異常検知", danger: "危険検知", uptime: "稼働率", savings: "予想削減コスト", sensor: "センサー", average: "平均", peak: "最大", time: "時刻", score: "リスクスコア", level: "リスクレベル" }
+      : { metric: "Metric", value: "Value", period: "Analysis period", visitors: "Visitors", detections: "Total detections", anomalies: "Anomalies", danger: "Danger detections", uptime: "Uptime", savings: "Expected savings", sensor: "Sensor", average: "Average", peak: "Peak", time: "Time", score: "Risk score", level: "Risk level" };
+  const metrics = [
+    [labels.period, periodLabel], [labels.visitors, overview.totalVisitors], [labels.detections, overview.totalDetections],
+    [labels.anomalies, overview.anomalyCount], [labels.danger, overview.dangerCount], [labels.uptime, `${overview.uptimePct}%`], [labels.savings, `₩${overview.savedCost.toLocaleString(locale)}`],
+  ];
+  const sensors = [
+    [lang === "ko" ? "전류 (A)" : lang === "ja" ? "電流 (A)" : "Current (A)", overview.sensors.average.current, overview.sensors.peak.current],
+    [lang === "ko" ? "온도 (°C)" : lang === "ja" ? "温度 (°C)" : "Temperature (°C)", overview.sensors.average.temperature, overview.sensors.peak.temperature],
+    [lang === "ko" ? "진동 (mm/s)" : lang === "ja" ? "振動 (mm/s)" : "Vibration (mm/s)", overview.sensors.average.vibration, overview.sensors.peak.vibration],
+    [lang === "ko" ? "소음 (dB)" : lang === "ja" ? "騒音 (dB)" : "Noise (dB)", overview.sensors.average.noise, overview.sensors.peak.noise],
+  ];
+  const rows: Array<Array<string | number>> = [
+    [labels.metric, labels.value],
+    ...metrics,
+    [],
+    [labels.sensor, labels.average, labels.peak],
+    ...sensors.map(([sensor, average, peak]) => [sensor, Number(average).toFixed(2), Number(peak).toFixed(2)]),
+    [],
+    [labels.time, labels.score, labels.level, lang === "ko" ? "전류(A)" : lang === "ja" ? "電流(A)" : "Current(A)", lang === "ko" ? "온도(°C)" : lang === "ja" ? "温度(°C)" : "Temp(°C)", lang === "ko" ? "진동(mm/s)" : lang === "ja" ? "振動(mm/s)" : "Vibration(mm/s)", lang === "ko" ? "소음(dB)" : lang === "ja" ? "騒音(dB)" : "Noise(dB)"],
+    ...overview.scoreHistory.map(point => [new Date(point.timestamp).toLocaleString(locale, { hour12: false }), point.score, point.riskLevel, point.current.toFixed(2), point.temperature.toFixed(1), point.vibration.toFixed(2), point.noise.toFixed(1)]),
+  ];
+  const csv = rows.map(row => row.map(escapeCsvCell).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `semiguard_period_${overview.period}_${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function escapeReportHtml(value: string | number) {
+  return String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] ?? character);
+}
+
+function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, periodLabel: string) {
+  const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
+  const copy = lang === "ko"
+    ? { title: "SemiGuard AI 기간별 안전 운영 보고서", subtitle: "반도체 장비 예지안전 분석", generated: "생성 시각", period: "분석 기간", metrics: "핵심 운영 통계", sensors: "센서 요약", trend: "최근 위험도 추이", visitors: "방문 수", detections: "총 탐지", anomalies: "이상 탐지", danger: "위험 탐지", uptime: "정상 가동률", savings: "예상 절감 비용", average: "평균", peak: "최고", time: "시각", score: "점수", level: "단계", printHint: "브라우저 인쇄 창에서 ‘PDF로 저장’을 선택하면 구조화된 보고서를 파일로 저장할 수 있습니다." }
+    : lang === "ja"
+      ? { title: "SemiGuard AI 期間別安全運用レポート", subtitle: "半導体装置の予知安全分析", generated: "作成時刻", period: "分析期間", metrics: "主要運用統計", sensors: "センサー要約", trend: "直近のリスクスコア推移", visitors: "訪問数", detections: "総検知", anomalies: "異常検知", danger: "危険検知", uptime: "稼働率", savings: "予想削減コスト", average: "平均", peak: "最大", time: "時刻", score: "スコア", level: "レベル", printHint: "ブラウザーの印刷画面で「PDFに保存」を選択すると、構造化されたレポートを保存できます。" }
+      : { title: "SemiGuard AI Period Safety Operations Report", subtitle: "Semiconductor equipment predictive safety analysis", generated: "Generated", period: "Analysis period", metrics: "Key operating statistics", sensors: "Sensor summary", trend: "Recent risk score trend", visitors: "Visitors", detections: "Total detections", anomalies: "Anomalies", danger: "Danger detections", uptime: "Uptime", savings: "Expected savings", average: "Average", peak: "Peak", time: "Time", score: "Score", level: "Level", printHint: "Choose ‘Save as PDF’ in the browser print dialog to save this structured report." };
+  const reportWindow = window.open("", "_blank", "width=1000,height=800");
+  if (!reportWindow) throw new Error(copy.printHint);
+  const riskColor = (level: string) => level === "danger" ? "#b91c1c" : level === "warning" ? "#c2410c" : level === "caution" ? "#a16207" : "#15803d";
+  const metricRows = [
+    [copy.visitors, overview.totalVisitors.toLocaleString(locale)], [copy.detections, overview.totalDetections.toLocaleString(locale)], [copy.anomalies, overview.anomalyCount.toLocaleString(locale)],
+    [copy.danger, overview.dangerCount.toLocaleString(locale)], [copy.uptime, `${overview.uptimePct}%`], [copy.savings, `₩${overview.savedCost.toLocaleString(locale)}`],
+  ];
+  const sensorRows = [
+    [lang === "ko" ? "전류 (A)" : lang === "ja" ? "電流 (A)" : "Current (A)", overview.sensors.average.current, overview.sensors.peak.current],
+    [lang === "ko" ? "온도 (°C)" : lang === "ja" ? "温度 (°C)" : "Temperature (°C)", overview.sensors.average.temperature, overview.sensors.peak.temperature],
+    [lang === "ko" ? "진동 (mm/s)" : lang === "ja" ? "振動 (mm/s)" : "Vibration (mm/s)", overview.sensors.average.vibration, overview.sensors.peak.vibration],
+    [lang === "ko" ? "소음 (dB)" : lang === "ja" ? "騒音 (dB)" : "Noise (dB)", overview.sensors.average.noise, overview.sensors.peak.noise],
+  ];
+  const scoreRows = overview.scoreHistory.slice(-24).map(point => `<tr><td>${escapeReportHtml(new Date(point.timestamp).toLocaleString(locale, { hour12: false }))}</td><td>${escapeReportHtml(point.score)}</td><td><span class="risk" style="color:${riskColor(point.riskLevel)}">${escapeReportHtml(point.riskLevel)}</span></td></tr>`).join("");
+  reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${escapeReportHtml(copy.title)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Inter,"Noto Sans KR","Noto Sans JP",Arial,sans-serif;font-size:11px;line-height:1.45}.report{max-width:780px;margin:0 auto}.hero{padding:20px 22px;background:linear-gradient(135deg,#0f2c4c,#0b7a91);color:#fff;border-radius:14px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.78}.hero h1{font-size:23px;line-height:1.2;margin:6px 0}.hero p{margin:0;opacity:.9}.metadata{display:flex;gap:20px;margin-top:15px;font-size:10px;flex-wrap:wrap}.metadata strong{display:block;color:#0b7a91}.section{margin-top:22px}.section h2{font-size:14px;margin:0 0 9px;color:#102a43}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{border:1px solid #d9e2ec;border-radius:9px;padding:10px;background:#f8fafc}.metric span{display:block;color:#627d98;font-size:10px}.metric strong{display:block;font-size:17px;margin-top:2px;color:#102a43}table{width:100%;border-collapse:collapse;border:1px solid #d9e2ec;border-radius:8px;overflow:hidden}th{background:#eaf4f7;color:#102a43;text-align:left;font-size:10px}th,td{padding:7px 9px;border-bottom:1px solid #e6edf3}tr:last-child td{border-bottom:0}.risk{font-weight:700;text-transform:capitalize}.footer{margin-top:20px;padding-top:10px;border-top:1px solid #d9e2ec;color:#627d98;font-size:9px}@media print{.report{max-width:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="report"><header class="hero"><div class="eyebrow">SemiGuard AI</div><h1>${escapeReportHtml(copy.title)}</h1><p>${escapeReportHtml(copy.subtitle)}</p></header><div class="metadata"><div><strong>${escapeReportHtml(copy.period)}</strong>${escapeReportHtml(periodLabel)}</div><div><strong>${escapeReportHtml(copy.generated)}</strong>${escapeReportHtml(new Date().toLocaleString(locale, { hour12: false }))}</div></div><section class="section"><h2>${escapeReportHtml(copy.metrics)}</h2><div class="metrics">${metricRows.map(([label, value]) => `<article class="metric"><span>${escapeReportHtml(label)}</span><strong>${escapeReportHtml(value)}</strong></article>`).join("")}</div></section><section class="section"><h2>${escapeReportHtml(copy.sensors)}</h2><table><thead><tr><th>${lang === "ko" ? "센서" : lang === "ja" ? "センサー" : "Sensor"}</th><th>${escapeReportHtml(copy.average)}</th><th>${escapeReportHtml(copy.peak)}</th></tr></thead><tbody>${sensorRows.map(([sensor, average, peak]) => `<tr><td>${escapeReportHtml(sensor)}</td><td>${escapeReportHtml(Number(average).toFixed(2))}</td><td>${escapeReportHtml(Number(peak).toFixed(2))}</td></tr>`).join("")}</tbody></table></section><section class="section"><h2>${escapeReportHtml(copy.trend)}</h2><table><thead><tr><th>${escapeReportHtml(copy.time)}</th><th>${escapeReportHtml(copy.score)}</th><th>${escapeReportHtml(copy.level)}</th></tr></thead><tbody>${scoreRows || `<tr><td colspan="3">—</td></tr>`}</tbody></table></section><footer class="footer">${escapeReportHtml(copy.printHint)}</footer></main></body></html>`);
+  reportWindow.document.close();
+  window.setTimeout(() => { reportWindow.focus(); reportWindow.print(); }, 250);
+}
+
 // ─── Web Audio 경고음 ────────────────────────────────────────────────────────
 // AudioContext를 모듈 수준에서 지연 생성하여 재사용 (autoplay 정책 대응)
 let _audioCtx: AudioContext | null = null;
@@ -831,6 +919,11 @@ export default function Dashboard() {
   });
   const [isDark, setIsDark] = useState<boolean>(() => {
     try { return localStorage.getItem("semiguard_theme") !== "light"; } catch { return true; }
+  });
+  const toggleDashboardTheme = () => setIsDark(current => {
+    const next = !current;
+    try { localStorage.setItem("semiguard_theme", next ? "dark" : "light"); } catch {}
+    return next;
   });
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(() =>
@@ -2141,6 +2234,7 @@ export default function Dashboard() {
   const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const analyzeAnomalyMutation = trpc.semiguard.analyzeAnomaly.useMutation();
   const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month">("day");
+  const [isPeriodChanging, setIsPeriodChanging] = useState(false);
   const dashboardPeriodInput = useMemo(() => ({ period: dashboardPeriod }), [dashboardPeriod]);
   const getStats = trpc.semiguard.getStats.useQuery(undefined, { refetchInterval: 5000 });
   const periodOverviewQuery = trpc.semiguard.getPeriodOverview.useQuery(dashboardPeriodInput, { refetchInterval: 5000 });
@@ -2178,6 +2272,41 @@ export default function Dashboard() {
   const [demoSpeed, setDemoSpeed] = useState(3); // 1~10초
   const [pdfExporting, setPdfExporting] = useState(false);
   const selectedPeriodStats = periodOverviewQuery.data;
+  const showPeriodSkeleton = isPeriodChanging || (periodOverviewQuery.isLoading && !selectedPeriodStats);
+  useEffect(() => {
+    if (isPeriodChanging && !periodOverviewQuery.isFetching && selectedPeriodStats?.period === dashboardPeriod) {
+      setIsPeriodChanging(false);
+    }
+  }, [dashboardPeriod, isPeriodChanging, periodOverviewQuery.isFetching, selectedPeriodStats?.period]);
+  const handleDashboardPeriodChange = (nextPeriod: "day" | "week" | "month") => {
+    if (nextPeriod === dashboardPeriod) return;
+    setIsPeriodChanging(true);
+    setDashboardPeriod(nextPeriod);
+  };
+  const exportSelectedPeriodCsv = () => {
+    if (!selectedPeriodStats) {
+      toast.error(lang === "ko" ? "기간 통계를 준비한 뒤 CSV를 내보낼 수 있습니다." : lang === "ja" ? "期間統計を読み込んだ後にCSVを出力できます。" : "Load period statistics before exporting CSV.");
+      return;
+    }
+    exportPeriodOverviewToCsv(selectedPeriodStats, lang, selectedPeriodLabel);
+    toast.success(lang === "ko" ? "기간별 통계를 CSV로 저장했습니다." : lang === "ja" ? "期間別統計をCSVで保存しました。" : "Period statistics saved as CSV.");
+  };
+  const exportSelectedPeriodPdf = () => {
+    if (!selectedPeriodStats) {
+      toast.error(lang === "ko" ? "기간 통계를 준비한 뒤 PDF 보고서를 만들 수 있습니다." : lang === "ja" ? "期間統計を読み込んだ後にPDFレポートを作成できます。" : "Load period statistics before creating the PDF report.");
+      return;
+    }
+    setPdfExporting(true);
+    try {
+      openStructuredPeriodReport(selectedPeriodStats, lang, selectedPeriodLabel);
+      toast.success(lang === "ko" ? "구조화된 보고서를 새 창에 열었습니다. 인쇄 창에서 PDF로 저장하세요." : lang === "ja" ? "構造化レポートを新しいウィンドウで開きました。印刷画面でPDFとして保存してください。" : "Structured report opened. Save it as PDF from the print dialog.");
+    } catch (error) {
+      console.error("Structured PDF report error:", error);
+      toast.error(lang === "ko" ? "보고서 창을 열지 못했습니다. 팝업 차단을 확인해주세요." : lang === "ja" ? "レポートウィンドウを開けませんでした。ポップアップブロックを確認してください。" : "Could not open the report window. Check popup blocking.");
+    } finally {
+      setPdfExporting(false);
+    }
+  };
   const displayedSavedCost = useCountUp(selectedPeriodStats?.savedCost ?? 0, 1000);
   const selectedPeriodLabel = dashboardPeriod === "day"
     ? (lang === "ko" ? "최근 24시간" : lang === "ja" ? "直近24時間" : "Last 24 hours")
@@ -3067,13 +3196,11 @@ export default function Dashboard() {
           {/* 다크/라이트 모드 전환 */}
           <button
             type="button"
-            onClick={() => setIsDark(d => {
-              const next = !d;
-              try { localStorage.setItem("semiguard_theme", next ? "dark" : "light"); } catch {}
-              return next;
-            })}
+            onClick={toggleDashboardTheme}
             title={isDark ? (lang === "ko" ? "라이트 모드" : lang === "ja" ? "ライトモード" : "Light Mode") : (lang === "ko" ? "다크 모드" : lang === "ja" ? "ダークモード" : "Dark Mode")}
-            className="hidden w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base"
+            aria-label={isDark ? (lang === "ko" ? "라이트 모드로 전환" : lang === "ja" ? "ライトモードに切替" : "Switch to light mode") : (lang === "ko" ? "다크 모드로 전환" : lang === "ja" ? "ダークモードに切替" : "Switch to dark mode")}
+            aria-pressed={isDark}
+            className="flex w-8 h-8 items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
             style={{
               borderColor: isDark ? "oklch(0.35 0.01 240)" : "oklch(0.75 0.08 80 / 0.5)",
               color: isDark ? "oklch(0.65 0.15 60)" : "oklch(0.40 0.08 80)",
@@ -3168,54 +3295,11 @@ export default function Dashboard() {
             type="button"
             id="btn-export-pdf"
             disabled={pdfExporting}
-            onClick={async () => {
-              // PDF 전용: 헤더/버튼 숨기고 센서+차트 영역만 캡처
-              const captureEl = document.getElementById('pdf-capture-area');
-              if (!captureEl) { toast.error(lang === "ko" ? "캡처 영역을 찾을 수 없습니다." : lang === "ja" ? "キャプチャ領域が見つかりません。" : "Capture area not found."); return; }
-              const el = captureEl;
-              setPdfExporting(true);
-              try {
-                // html-to-image: oklch 포함 모든 CSS 색상 지원, html2canvas 대체
-                const { toJpeg } = await import('html-to-image');
-                const { jsPDF } = await import('jspdf');
-                const dataUrl = await toJpeg(el, {
-                  quality: 0.92,
-                  backgroundColor: isDark ? '#0d1117' : '#f5f7fa',
-                  width: el.scrollWidth,
-                  height: el.scrollHeight,
-                  style: { transform: 'none' },
-                  skipFonts: false,
-                  pixelRatio: 1,
-                });
-                // dataUrl에서 실제 이미지 크기 추출
-                const img = new Image();
-                await new Promise<void>((resolve, reject) => {
-                  img.onload = () => resolve();
-                  img.onerror = reject;
-                  img.src = dataUrl;
-                });
-                const pdfW = img.naturalWidth;
-                const pdfH = img.naturalHeight;
-                const pdf = new jsPDF({
-                  orientation: pdfW > pdfH ? 'landscape' : 'portrait',
-                  unit: 'px',
-                  format: [pdfW, pdfH],
-                  hotfixes: ['px_scaling'],
-                });
-                pdf.addImage(dataUrl, 'JPEG', 0, 0, pdfW, pdfH);
-                pdf.save(`semiguard_report_${new Date().toISOString().slice(0,10)}.pdf`);
-                toast.success(lang === "ko" ? "PDF가 저장되었습니다." : lang === "ja" ? "PDFを保存しました。" : "PDF saved successfully.");
-              } catch (e) {
-                console.error('PDF export error:', e);
-                toast.error(lang === "ko" ? "PDF 내보내기 실패: " + String(e) : lang === "ja" ? "PDF出力に失敗しました: " + String(e) : "PDF export failed: " + String(e));
-              } finally {
-                setPdfExporting(false);
-              }
-            }}
-            title={lang === "ko" ? "PDF 내보내기" : lang === "ja" ? "PDFを出力" : "Export PDF"}
+            onClick={exportSelectedPeriodPdf}
+            title={lang === "ko" ? "구조화 PDF 보고서 내보내기" : lang === "ja" ? "構造化PDFレポートを出力" : "Export structured PDF report"}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
             style={{ borderColor: th.border2, color: "oklch(0.65 0.18 200)", background: th.bgCard }}>
-            {pdfExporting ? <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid oklch(0.65 0.18 200)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "📄"} {lang === "ko" ? "PDF" : "PDF"}
+            {pdfExporting ? <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid oklch(0.65 0.18 200)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "📄"} {lang === "ko" ? "보고서" : lang === "ja" ? "レポート" : "Report"}
           </button>
           {/* 로그아웃 버튼 */}
           <button
@@ -5245,22 +5329,35 @@ export default function Dashboard() {
                 <p className="text-xs font-bold" style={{ color: th.text }}>{lang === "ko" ? "기간별 운영 분석" : lang === "ja" ? "期間別の運用分析" : "Period-based operations analysis"}</p>
                 <p className="mt-0.5 text-[10px] text-muted-foreground">{lang === "ko" ? "선택한 기간의 센서 이력, 탐지·위험 통계와 예상 절감 비용을 표시합니다." : lang === "ja" ? "選択した期間のセンサー履歴、検知・危険統計、予想削減コストを表示します。" : "Shows sensor history, detection and risk statistics, and expected savings for the selected period."}</p>
               </div>
-              <label className="flex shrink-0 items-center gap-2 text-xs font-semibold" style={{ color: th.text }}>
-                <span>{lang === "ko" ? "분석 기간" : lang === "ja" ? "分析期間" : "Analysis period"}</span>
-                <select value={dashboardPeriod} onChange={event => setDashboardPeriod(event.target.value as "day" | "week" | "month")} className="h-9 rounded-lg border px-2 text-xs font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text, background: th.bgCard2, borderColor: th.border2 }}>
-                  <option value="day">{lang === "ko" ? "일간 · 최근 24시간" : lang === "ja" ? "日間・直近24時間" : "Daily · Last 24 hours"}</option>
-                  <option value="week">{lang === "ko" ? "주간 · 최근 7일" : lang === "ja" ? "週間・直近7日間" : "Weekly · Last 7 days"}</option>
-                  <option value="month">{lang === "ko" ? "월간 · 최근 30일" : lang === "ja" ? "月間・直近30日間" : "Monthly · Last 30 days"}</option>
-                </select>
-              </label>
+              <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs font-semibold" style={{ color: th.text }}>
+                <label className="flex items-center gap-2">
+                  <span>{lang === "ko" ? "분석 기간" : lang === "ja" ? "分析期間" : "Analysis period"}</span>
+                  <select value={dashboardPeriod} onChange={event => handleDashboardPeriodChange(event.target.value as "day" | "week" | "month")} disabled={periodOverviewQuery.isFetching} aria-busy={showPeriodSkeleton} className="h-9 rounded-lg border px-2 text-xs font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-wait disabled:opacity-60" style={{ color: th.text, background: th.bgCard2, borderColor: th.border2 }}>
+                    <option value="day">{lang === "ko" ? "일간 · 최근 24시간" : lang === "ja" ? "日間・直近24時間" : "Daily · Last 24 hours"}</option>
+                    <option value="week">{lang === "ko" ? "주간 · 최근 7일" : lang === "ja" ? "週間・直近7日間" : "Weekly · Last 7 days"}</option>
+                    <option value="month">{lang === "ko" ? "월간 · 최근 30일" : lang === "ja" ? "月間・直近30日間" : "Monthly · Last 30 days"}</option>
+                  </select>
+                </label>
+                <button type="button" onClick={exportSelectedPeriodCsv} disabled={!selectedPeriodStats || periodOverviewQuery.isFetching} className="h-9 rounded-lg border px-2.5 text-[11px] font-bold transition-all hover:-translate-y-0.5 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.38 0.16 220)", background: isDark ? "oklch(0.65 0.18 200 / 0.09)" : "oklch(0.65 0.18 200 / 0.06)" }}>
+                  ↓ CSV
+                </button>
+                <button type="button" onClick={exportSelectedPeriodPdf} disabled={!selectedPeriodStats || periodOverviewQuery.isFetching || pdfExporting} aria-busy={pdfExporting || undefined} className="h-9 rounded-lg border px-2.5 text-[11px] font-bold transition-all hover:-translate-y-0.5 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: "oklch(0.68 0.16 155 / 0.45)", color: isDark ? "oklch(0.78 0.15 155)" : "oklch(0.35 0.14 155)", background: isDark ? "oklch(0.68 0.16 155 / 0.09)" : "oklch(0.68 0.16 155 / 0.06)" }}>
+                  {pdfExporting ? (lang === "ko" ? "준비 중" : lang === "ja" ? "準備中" : "Preparing") : (lang === "ko" ? "PDF 보고서" : lang === "ja" ? "PDFレポート" : "PDF report")}
+                </button>
+              </div>
             </div>
             {/* 임팩트 통계 섹션 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {showPeriodSkeleton ? (
+              <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" role="status" aria-live="polite" aria-label={lang === "ko" ? "선택한 기간의 통계를 불러오는 중" : lang === "ja" ? "選択した期間の統計を読み込み中" : "Loading statistics for the selected period"}>
+                {Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-[102px] animate-pulse rounded-xl border p-4" style={{ borderColor: th.border, background: th.bgCard }}><div className="h-2.5 w-16 rounded-full" style={{ background: th.border2 }} /><div className="mt-5 h-7 w-20 rounded-md" style={{ background: th.border2 }} /><div className="mt-3 h-2 w-24 rounded-full" style={{ background: th.border }} /></div>)}
+                <span className="sr-only">{lang === "ko" ? "기간별 통계를 불러오는 중입니다." : lang === "ja" ? "期間別統計を読み込んでいます。" : "Loading period statistics."}</span>
+              </div>
+            ) : <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               <ImpactCard label={t.totalVisitors} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.totalVisitors ?? 0)} icon="👥" color="#38bdf8" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.totalVisitors}: ${(selectedPeriodStats?.totalVisitors ?? 0).toLocaleString()}`} />
               <ImpactCard label={t.totalDetections} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.totalDetections ?? 0)} icon="📊" color="#a78bfa" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.totalDetections}: ${(selectedPeriodStats?.totalDetections ?? 0).toLocaleString()} · ${lang === "ko" ? "이상" : lang === "ja" ? "異常" : "Anomalies"}: ${(selectedPeriodStats?.anomalyCount ?? 0).toLocaleString()}`} />
               <ImpactCard label={t.dangerCount} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.dangerCount}: ${(selectedPeriodStats?.dangerCount ?? 0).toLocaleString()}`} />
               <ImpactCard label={t.uptimePct} value={periodOverviewQuery.isError ? "—" : `${selectedPeriodStats?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.uptimePct}: ${selectedPeriodStats?.uptimePct ?? 100}%`} />
-            </div>
+            </div>}
 
             {periodOverviewQuery.isError && (
               <div className="mb-6 flex flex-col items-start justify-between gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center" role="alert" style={{ background: "oklch(0.65 0.20 25 / 0.08)", borderColor: "oklch(0.65 0.20 25 / 0.45)", color: th.textMuted }}>

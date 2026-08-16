@@ -18,7 +18,7 @@ describe("dashboard menu Japanese controls contract", () => {
     expect(dashboardSource).toContain('lang === "ja" ? "ライトモード"');
     expect(dashboardSource).toContain('lang === "ja" ? "音声をオン"');
     expect(dashboardSource).toContain('lang === "ja" ? "デモ実行中"');
-    expect(dashboardSource).toContain('lang === "ja" ? "PDFを保存しました。"');
+    expect(dashboardSource).toContain('lang === "ja" ? "構造化レポートを新しいウィンドウで開きました。印刷画面でPDFとして保存してください。"');
     expect(dashboardSource).toContain('lang === "ja" ? "ログアウトに失敗しました"');
   });
 });
