@@ -556,10 +556,22 @@ export const appRouter = router({
           : lang === "ja"
             ? `${copy.fallback} ${periodLabel}の記録${totalDetections}件、異常${anomalyCount}件、危険${dangerCount}件、稼働率${uptimePct.toFixed(0)}%が確認されました。観測された最高リスクは${riskLabel(peakRisk)}です。`
             : `${copy.fallback} During ${periodLabel}, ${totalDetections} records, ${anomalyCount} anomalies, ${dangerCount} danger detections, and ${uptimePct.toFixed(0)}% uptime were recorded. Highest observed risk level was ${riskLabel(peakRisk)}.`;
+        const recentScores = scoreHistory.slice(-8).map(point => point.score);
+        const scoreTrend = recentScores.length >= 2 ? recentScores[recentScores.length - 1] - recentScores[0] : 0;
+        const forecastLevel: "normal" | "caution" | "warning" | "danger" = peakRisk === "danger" || dangerCount > 0 ? "danger" : peakRisk === "warning" || scoreTrend >= 18 ? "warning" : peakRisk === "caution" || scoreTrend >= 8 ? "caution" : "normal";
+        const fallbackEvidence = lang === "ko"
+          ? `최근 점수 변화 ${scoreTrend >= 0 ? "+" : ""}${scoreTrend.toFixed(0)}점, 관측 최고 단계 ${riskLabel(peakRisk)}, 위험 탐지 ${dangerCount}건을 기준으로 했습니다.`
+          : lang === "ja"
+            ? `直近のスコア変化${scoreTrend >= 0 ? "+" : ""}${scoreTrend.toFixed(0)}点、観測最高レベル${riskLabel(peakRisk)}、危険検知${dangerCount}件を基準にしました。`
+            : `Based on a recent score change of ${scoreTrend >= 0 ? "+" : ""}${scoreTrend.toFixed(0)}, observed peak level ${riskLabel(peakRisk)}, and ${dangerCount} danger detections.`;
         const fallback = {
           headline: copy.headline,
           summary: fallbackSummary,
           recommendation: copy.recommendation,
+          forecastLevel,
+          confidence: recentScores.length >= 4 ? ("medium" as const) : ("low" as const),
+          evidence: fallbackEvidence,
+          alert: forecastLevel === "warning" || forecastLevel === "danger",
           source: "fallback" as const,
         };
         const schema = {
@@ -573,8 +585,12 @@ export const appRouter = router({
                 headline: { type: "string" },
                 summary: { type: "string" },
                 recommendation: { type: "string" },
+                forecastLevel: { type: "string", enum: ["normal", "caution", "warning", "danger"] },
+                confidence: { type: "string", enum: ["low", "medium", "high"] },
+                evidence: { type: "string" },
+                alert: { type: "boolean" },
               },
-              required: ["headline", "summary", "recommendation"],
+              required: ["headline", "summary", "recommendation", "forecastLevel", "confidence", "evidence", "alert"],
               additionalProperties: false,
             },
           },
@@ -582,10 +598,10 @@ export const appRouter = router({
         const average = sensors.average;
         const peak = sensors.peak;
         const prompt = lang === "ko"
-          ? `분석 기간: ${periodLabel}. 기록 ${totalDetections}건, 이상 ${anomalyCount}건, 위험 ${dangerCount}건, 가동률 ${uptimePct.toFixed(0)}%. 센서 평균: 전류 ${average.current.toFixed(2)}A, 온도 ${average.temperature.toFixed(1)}°C, 진동 ${average.vibration.toFixed(2)}mm/s, 소음 ${average.noise.toFixed(1)}dB. 센서 최고값: 전류 ${peak.current.toFixed(2)}A, 온도 ${peak.temperature.toFixed(1)}°C, 진동 ${peak.vibration.toFixed(2)}mm/s, 소음 ${peak.noise.toFixed(1)}dB. 최고 위험도: ${riskLabel(peakRisk)}. 데이터에 근거한 2~3문장 요약과 권장 조치를 JSON으로 반환하세요.`
+          ? `분석 기간: ${periodLabel}. 기록 ${totalDetections}건, 이상 ${anomalyCount}건, 위험 ${dangerCount}건, 가동률 ${uptimePct.toFixed(0)}%. 센서 평균: 전류 ${average.current.toFixed(2)}A, 온도 ${average.temperature.toFixed(1)}°C, 진동 ${average.vibration.toFixed(2)}mm/s, 소음 ${average.noise.toFixed(1)}dB. 센서 최고값: 전류 ${peak.current.toFixed(2)}A, 온도 ${peak.temperature.toFixed(1)}°C, 진동 ${peak.vibration.toFixed(2)}mm/s, 소음 ${peak.noise.toFixed(1)}dB. 최고 위험도: ${riskLabel(peakRisk)}, 최근 점수 변화 ${scoreTrend.toFixed(0)}점. 데이터에 근거한 2~3문장 요약, 권장 조치, 다음 기간 위험 전망(forecastLevel), 신뢰도(confidence), 근거(evidence), 경고 필요 여부(alert)를 JSON으로 반환하세요. 특정 고장 원인을 단정하거나 안전을 보장하지 마세요.`
           : lang === "ja"
-            ? `分析期間: ${periodLabel}。記録${totalDetections}件、異常${anomalyCount}件、危険${dangerCount}件、稼働率${uptimePct.toFixed(0)}%。センサー平均: 電流${average.current.toFixed(2)}A、温度${average.temperature.toFixed(1)}°C、振動${average.vibration.toFixed(2)}mm/s、騒音${average.noise.toFixed(1)}dB。最大値: 電流${peak.current.toFixed(2)}A、温度${peak.temperature.toFixed(1)}°C、振動${peak.vibration.toFixed(2)}mm/s、騒音${peak.noise.toFixed(1)}dB。最高リスク: ${riskLabel(peakRisk)}。データに基づく2〜3文の要約と推奨措置をJSONで返してください。`
-            : `Analysis period: ${periodLabel}. ${totalDetections} records, ${anomalyCount} anomalies, ${dangerCount} danger detections, and ${uptimePct.toFixed(0)}% uptime. Sensor averages: current ${average.current.toFixed(2)}A, temperature ${average.temperature.toFixed(1)}°C, vibration ${average.vibration.toFixed(2)}mm/s, noise ${average.noise.toFixed(1)}dB. Peaks: current ${peak.current.toFixed(2)}A, temperature ${peak.temperature.toFixed(1)}°C, vibration ${peak.vibration.toFixed(2)}mm/s, noise ${peak.noise.toFixed(1)}dB. Highest risk: ${riskLabel(peakRisk)}. Return a data-grounded 2–3 sentence summary and recommendation as JSON.`;
+            ? `分析期間: ${periodLabel}。記録${totalDetections}件、異常${anomalyCount}件、危険${dangerCount}件、稼働率${uptimePct.toFixed(0)}%。センサー平均: 電流${average.current.toFixed(2)}A、温度${average.temperature.toFixed(1)}°C、振動${average.vibration.toFixed(2)}mm/s、騒音${average.noise.toFixed(1)}dB。最大値: 電流${peak.current.toFixed(2)}A、温度${peak.temperature.toFixed(1)}°C、振動${peak.vibration.toFixed(2)}mm/s、騒音${peak.noise.toFixed(1)}dB。最高リスク: ${riskLabel(peakRisk)}、直近のスコア変化${scoreTrend.toFixed(0)}点。データに基づく2〜3文の要約、推奨措置、次期間のリスク見通し(forecastLevel)、信頼度(confidence)、根拠(evidence)、警告の必要性(alert)をJSONで返してください。特定の故障原因を断定したり、安全を保証したりしないでください。`
+            : `Analysis period: ${periodLabel}. ${totalDetections} records, ${anomalyCount} anomalies, ${dangerCount} danger detections, and ${uptimePct.toFixed(0)}% uptime. Sensor averages: current ${average.current.toFixed(2)}A, temperature ${average.temperature.toFixed(1)}°C, vibration ${average.vibration.toFixed(2)}mm/s, noise ${average.noise.toFixed(1)}dB. Peaks: current ${peak.current.toFixed(2)}A, temperature ${peak.temperature.toFixed(1)}°C, vibration ${peak.vibration.toFixed(2)}mm/s, noise ${peak.noise.toFixed(1)}dB. Highest risk: ${riskLabel(peakRisk)} and recent score change ${scoreTrend.toFixed(0)}. Return a data-grounded 2–3 sentence summary, recommendation, next-period risk outlook (forecastLevel), confidence, evidence, and whether an alert is warranted (alert) as JSON. Do not diagnose a specific failure or guarantee safety.`;
         try {
           const response = await invokeLLM({
             model: "gpt-5-mini",
@@ -597,7 +613,7 @@ export const appRouter = router({
           });
           const content = response.choices[0]?.message?.content;
           if (typeof content !== "string") throw new Error("No report summary content");
-          const parsed = JSON.parse(content) as { headline: string; summary: string; recommendation: string };
+          const parsed = JSON.parse(content) as { headline: string; summary: string; recommendation: string; forecastLevel: "normal" | "caution" | "warning" | "danger"; confidence: "low" | "medium" | "high"; evidence: string; alert: boolean };
           return { ...parsed, source: "ai" as const };
         } catch (error) {
           console.error("Period report AI summary failed:", error);

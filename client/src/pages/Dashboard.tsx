@@ -133,6 +133,10 @@ type PeriodReportAiSummary = {
   headline: string;
   summary: string;
   recommendation: string;
+  forecastLevel: "normal" | "caution" | "warning" | "danger";
+  confidence: "low" | "medium" | "high";
+  evidence: string;
+  alert: boolean;
   source: "ai" | "fallback";
 };
 
@@ -192,6 +196,36 @@ function buildSensorTrendChartImage(history: PeriodOverviewData["scoreHistory"],
   return { src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, alt: copy.title };
 }
 
+async function downloadSensorTrendChartImage(history: PeriodOverviewData["scoreHistory"], lang: Lang, format: "png" | "jpeg") {
+  const chart = buildSensorTrendChartImage(history, lang);
+  if (!chart) throw new Error("No sensor points are available for image export.");
+  const image = new Image();
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("Could not render the sensor chart image."));
+    image.src = chart.src;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = 1480;
+  canvas.height = 540;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas rendering is unavailable.");
+  if (format === "jpeg") {
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const mimeType = format === "png" ? "image/png" : "image/jpeg";
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, mimeType, 0.94));
+  if (!blob) throw new Error("Could not create the sensor chart image file.");
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `semiguard_sensor_range_${new Date().toISOString().slice(0, 10)}.${format === "jpeg" ? "jpg" : "png"}`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 function exportPeriodOverviewToCsv(overview: PeriodOverviewData, lang: Lang, periodLabel: string) {
   const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
   const labels = lang === "ko"
@@ -236,10 +270,10 @@ function escapeReportHtml(value: string | number) {
 function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, periodLabel: string, aiSummary?: PeriodReportAiSummary, preparedWindow?: Window | null) {
   const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
   const copy = lang === "ko"
-    ? { title: "SemiGuard AI 기간별 안전 운영 보고서", subtitle: "반도체 장비 예지안전 분석", generated: "생성 시각", period: "분석 기간", metrics: "핵심 운영 통계", sensors: "센서 요약", trend: "최근 위험도 추이", aiSummary: "AI 센서 추세 요약", aiFallback: "근거 기반 대체 요약", recommendation: "권장 조치", visitors: "방문 수", detections: "총 탐지", anomalies: "이상 탐지", danger: "위험 탐지", uptime: "정상 가동률", savings: "예상 절감 비용", average: "평균", peak: "최고", time: "시각", score: "점수", level: "단계", printHint: "브라우저 인쇄 창에서 ‘PDF로 저장’을 선택하면 구조화된 보고서를 파일로 저장할 수 있습니다." }
+    ? { title: "SemiGuard AI 기간별 안전 운영 보고서", subtitle: "반도체 장비 예지안전 분석", generated: "생성 시각", period: "분석 기간", metrics: "핵심 운영 통계", sensors: "센서 요약", trend: "최근 위험도 추이", aiSummary: "AI 센서 추세 요약", aiFallback: "근거 기반 대체 요약", outlook: "다음 기간 위험 전망", confidence: "신뢰도", evidence: "판단 근거", alert: "주의 알림", recommendation: "권장 조치", visitors: "방문 수", detections: "총 탐지", anomalies: "이상 탐지", danger: "위험 탐지", uptime: "정상 가동률", savings: "예상 절감 비용", average: "평균", peak: "최고", time: "시각", score: "점수", level: "단계", printHint: "브라우저 인쇄 창에서 ‘PDF로 저장’을 선택하면 구조화된 보고서를 파일로 저장할 수 있습니다." }
     : lang === "ja"
-      ? { title: "SemiGuard AI 期間別安全運用レポート", subtitle: "半導体装置の予知安全分析", generated: "作成時刻", period: "分析期間", metrics: "主要運用統計", sensors: "センサー要約", trend: "直近のリスクスコア推移", aiSummary: "AIセンサー傾向サマリー", aiFallback: "根拠ベースの代替サマリー", recommendation: "推奨措置", visitors: "訪問数", detections: "総検知", anomalies: "異常検知", danger: "危険検知", uptime: "稼働率", savings: "予想削減コスト", average: "平均", peak: "最大", time: "時刻", score: "スコア", level: "レベル", printHint: "ブラウザーの印刷画面で「PDFに保存」を選択すると、構造化されたレポートを保存できます。" }
-      : { title: "SemiGuard AI Period Safety Operations Report", subtitle: "Semiconductor equipment predictive safety analysis", generated: "Generated", period: "Analysis period", metrics: "Key operating statistics", sensors: "Sensor summary", trend: "Recent risk score trend", aiSummary: "AI sensor trend summary", aiFallback: "Evidence-based fallback summary", recommendation: "Recommended action", visitors: "Visitors", detections: "Total detections", anomalies: "Anomalies", danger: "Danger detections", uptime: "Uptime", savings: "Expected savings", average: "Average", peak: "Peak", time: "Time", score: "Score", level: "Level", printHint: "Choose ‘Save as PDF’ in the browser print dialog to save this structured report." };
+      ? { title: "SemiGuard AI 期間別安全運用レポート", subtitle: "半導体装置の予知安全分析", generated: "作成時刻", period: "分析期間", metrics: "主要運用統計", sensors: "センサー要約", trend: "直近のリスクスコア推移", aiSummary: "AIセンサー傾向サマリー", aiFallback: "根拠ベースの代替サマリー", outlook: "次期間のリスク見通し", confidence: "信頼度", evidence: "判断根拠", alert: "注意アラート", recommendation: "推奨措置", visitors: "訪問数", detections: "総検知", anomalies: "異常検知", danger: "危険検知", uptime: "稼働率", savings: "予想削減コスト", average: "平均", peak: "最大", time: "時刻", score: "スコア", level: "レベル", printHint: "ブラウザーの印刷画面で「PDFに保存」を選択すると、構造化されたレポートを保存できます。" }
+      : { title: "SemiGuard AI Period Safety Operations Report", subtitle: "Semiconductor equipment predictive safety analysis", generated: "Generated", period: "Analysis period", metrics: "Key operating statistics", sensors: "Sensor summary", trend: "Recent risk score trend", aiSummary: "AI sensor trend summary", aiFallback: "Evidence-based fallback summary", outlook: "Next-period risk outlook", confidence: "Confidence", evidence: "Evidence", alert: "Caution alert", recommendation: "Recommended action", visitors: "Visitors", detections: "Total detections", anomalies: "Anomalies", danger: "Danger detections", uptime: "Uptime", savings: "Expected savings", average: "Average", peak: "Peak", time: "Time", score: "Score", level: "Level", printHint: "Choose ‘Save as PDF’ in the browser print dialog to save this structured report." };
   const reportWindow = preparedWindow ?? window.open("", "_blank", "width=1000,height=800");
   if (!reportWindow) throw new Error(copy.printHint);
   const riskColor = (level: string) => level === "danger" ? "#b91c1c" : level === "warning" ? "#c2410c" : level === "caution" ? "#a16207" : "#15803d";
@@ -255,8 +289,9 @@ function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, pe
   ];
   const sensorTrendChart = buildSensorTrendChartImage(overview.scoreHistory, lang);
   const scoreRows = overview.scoreHistory.slice(-24).map(point => `<tr><td>${escapeReportHtml(new Date(point.timestamp).toLocaleString(locale, { hour12: false }))}</td><td>${escapeReportHtml(point.score)}</td><td><span class="risk" style="color:${riskColor(point.riskLevel)}">${escapeReportHtml(localizeRiskLevel(point.riskLevel, lang))}</span></td></tr>`).join("");
-  const aiSection = aiSummary ? `<section class="section"><h2>${escapeReportHtml(aiSummary.source === "ai" ? copy.aiSummary : copy.aiFallback)}</h2><article class="analysis-card"><strong>${escapeReportHtml(aiSummary.headline)}</strong><p>${escapeReportHtml(aiSummary.summary)}</p><p><b>${escapeReportHtml(copy.recommendation)}:</b> ${escapeReportHtml(aiSummary.recommendation)}</p></article></section>` : "";
-  reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${escapeReportHtml(copy.title)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Inter,"Noto Sans KR","Noto Sans JP",Arial,sans-serif;font-size:11px;line-height:1.45}.report{max-width:780px;margin:0 auto}.hero{padding:20px 22px;background:linear-gradient(135deg,#0f2c4c,#0b7a91);color:#fff;border-radius:14px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.78}.hero h1{font-size:23px;line-height:1.2;margin:6px 0}.hero p{margin:0;opacity:.9}.metadata{display:flex;gap:20px;margin-top:15px;font-size:10px;flex-wrap:wrap}.metadata strong{display:block;color:#0b7a91}.section{margin-top:22px}.section h2{font-size:14px;margin:0 0 9px;color:#102a43}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{border:1px solid #d9e2ec;border-radius:9px;padding:10px;background:#f8fafc}.metric span{display:block;color:#627d98;font-size:10px}.metric strong{display:block;font-size:17px;margin-top:2px;color:#102a43}table{width:100%;border-collapse:collapse;border:1px solid #d9e2ec;border-radius:8px;overflow:hidden}th{background:#eaf4f7;color:#102a43;text-align:left;font-size:10px}th,td{padding:7px 9px;border-bottom:1px solid #e6edf3}tr:last-child td{border-bottom:0}.risk{font-weight:700;text-transform:capitalize}.chart-image{display:block;width:100%;border:1px solid #d9e2ec;border-radius:10px}.analysis-card{border:1px solid #b7d7df;border-radius:10px;background:#f1fbfd;padding:12px}.analysis-card strong{color:#0b7a91}.analysis-card p{margin:7px 0 0}.footer{margin-top:20px;padding-top:10px;border-top:1px solid #d9e2ec;color:#627d98;font-size:9px}@media print{.report{max-width:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="report"><header class="hero"><div class="eyebrow">SemiGuard AI</div><h1>${escapeReportHtml(copy.title)}</h1><p>${escapeReportHtml(copy.subtitle)}</p></header><div class="metadata"><div><strong>${escapeReportHtml(copy.period)}</strong>${escapeReportHtml(periodLabel)}</div><div><strong>${escapeReportHtml(copy.generated)}</strong>${escapeReportHtml(new Date().toLocaleString(locale, { hour12: false }))}</div></div><section class="section"><h2>${escapeReportHtml(copy.metrics)}</h2><div class="metrics">${metricRows.map(([label, value]) => `<article class="metric"><span>${escapeReportHtml(label)}</span><strong>${escapeReportHtml(value)}</strong></article>`).join("")}</div></section>${aiSection}<section class="section"><h2>${escapeReportHtml(copy.sensors)}</h2><table><thead><tr><th>${lang === "ko" ? "센서" : lang === "ja" ? "センサー" : "Sensor"}</th><th>${escapeReportHtml(copy.average)}</th><th>${escapeReportHtml(copy.peak)}</th></tr></thead><tbody>${sensorRows.map(([sensor, average, peak]) => `<tr><td>${escapeReportHtml(sensor)}</td><td>${escapeReportHtml(Number(average).toFixed(2))}</td><td>${escapeReportHtml(Number(peak).toFixed(2))}</td></tr>`).join("")}</tbody></table></section>${sensorTrendChart ? `<section class="section"><h2>${escapeReportHtml(sensorTrendChart.alt)}</h2><img class="chart-image" src="${sensorTrendChart.src}" alt="${escapeReportHtml(sensorTrendChart.alt)}"/></section>` : ""}<section class="section"><h2>${escapeReportHtml(copy.trend)}</h2><table><thead><tr><th>${escapeReportHtml(copy.time)}</th><th>${escapeReportHtml(copy.score)}</th><th>${escapeReportHtml(copy.level)}</th></tr></thead><tbody>${scoreRows || `<tr><td colspan="3">—</td></tr>`}</tbody></table></section><footer class="footer">${escapeReportHtml(copy.printHint)}</footer></main></body></html>`);
+  const confidenceLabel = aiSummary?.confidence === "high" ? (lang === "ko" ? "높음" : lang === "ja" ? "高" : "High") : aiSummary?.confidence === "medium" ? (lang === "ko" ? "보통" : lang === "ja" ? "中" : "Medium") : (lang === "ko" ? "낮음" : lang === "ja" ? "低" : "Low");
+  const aiSection = aiSummary ? `<section class="section"><h2>${escapeReportHtml(aiSummary.source === "ai" ? copy.aiSummary : copy.aiFallback)}</h2><article class="analysis-card"><strong>${escapeReportHtml(aiSummary.headline)}</strong><p>${escapeReportHtml(aiSummary.summary)}</p><p><b>${escapeReportHtml(copy.outlook)}:</b> ${escapeReportHtml(localizeRiskLevel(aiSummary.forecastLevel, lang))} · <b>${escapeReportHtml(copy.confidence)}:</b> ${escapeReportHtml(confidenceLabel)}</p><p><b>${escapeReportHtml(copy.evidence)}:</b> ${escapeReportHtml(aiSummary.evidence)}</p>${aiSummary.alert ? `<p class="alert-note"><b>${escapeReportHtml(copy.alert)}:</b> ${escapeReportHtml(lang === "ko" ? "상승 위험 징후가 있어 점검 절차를 우선하세요." : lang === "ja" ? "リスク上昇の兆候があるため、点検手順を優先してください。" : "Risk-rise indicators are present; prioritize the inspection procedure.")}</p>` : ""}<p><b>${escapeReportHtml(copy.recommendation)}:</b> ${escapeReportHtml(aiSummary.recommendation)}</p></article></section>` : "";
+  reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${escapeReportHtml(copy.title)}</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{margin:0;color:#172033;background:#fff;font-family:Inter,"Noto Sans KR","Noto Sans JP",Arial,sans-serif;font-size:11px;line-height:1.45}.report{max-width:780px;margin:0 auto}.hero{padding:20px 22px;background:linear-gradient(135deg,#0f2c4c,#0b7a91);color:#fff;border-radius:14px}.eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.78}.hero h1{font-size:23px;line-height:1.2;margin:6px 0}.hero p{margin:0;opacity:.9}.metadata{display:flex;gap:20px;margin-top:15px;font-size:10px;flex-wrap:wrap}.metadata strong{display:block;color:#0b7a91}.section{margin-top:22px}.section h2{font-size:14px;margin:0 0 9px;color:#102a43}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.metric{border:1px solid #d9e2ec;border-radius:9px;padding:10px;background:#f8fafc}.metric span{display:block;color:#627d98;font-size:10px}.metric strong{display:block;font-size:17px;margin-top:2px;color:#102a43}table{width:100%;border-collapse:collapse;border:1px solid #d9e2ec;border-radius:8px;overflow:hidden}th{background:#eaf4f7;color:#102a43;text-align:left;font-size:10px}th,td{padding:7px 9px;border-bottom:1px solid #e6edf3}tr:last-child td{border-bottom:0}.risk{font-weight:700;text-transform:capitalize}.chart-image{display:block;width:100%;border:1px solid #d9e2ec;border-radius:10px}.analysis-card{border:1px solid #b7d7df;border-radius:10px;background:#f1fbfd;padding:12px}.analysis-card strong{color:#0b7a91}.analysis-card p{margin:7px 0 0}.alert-note{color:#9f1239;font-weight:600}.footer{margin-top:20px;padding-top:10px;border-top:1px solid #d9e2ec;color:#627d98;font-size:9px}@media print{.report{max-width:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><main class="report"><header class="hero"><div class="eyebrow">SemiGuard AI</div><h1>${escapeReportHtml(copy.title)}</h1><p>${escapeReportHtml(copy.subtitle)}</p></header><div class="metadata"><div><strong>${escapeReportHtml(copy.period)}</strong>${escapeReportHtml(periodLabel)}</div><div><strong>${escapeReportHtml(copy.generated)}</strong>${escapeReportHtml(new Date().toLocaleString(locale, { hour12: false }))}</div></div><section class="section"><h2>${escapeReportHtml(copy.metrics)}</h2><div class="metrics">${metricRows.map(([label, value]) => `<article class="metric"><span>${escapeReportHtml(label)}</span><strong>${escapeReportHtml(value)}</strong></article>`).join("")}</div></section>${aiSection}<section class="section"><h2>${escapeReportHtml(copy.sensors)}</h2><table><thead><tr><th>${lang === "ko" ? "센서" : lang === "ja" ? "センサー" : "Sensor"}</th><th>${escapeReportHtml(copy.average)}</th><th>${escapeReportHtml(copy.peak)}</th></tr></thead><tbody>${sensorRows.map(([sensor, average, peak]) => `<tr><td>${escapeReportHtml(sensor)}</td><td>${escapeReportHtml(Number(average).toFixed(2))}</td><td>${escapeReportHtml(Number(peak).toFixed(2))}</td></tr>`).join("")}</tbody></table></section>${sensorTrendChart ? `<section class="section"><h2>${escapeReportHtml(sensorTrendChart.alt)}</h2><img class="chart-image" src="${sensorTrendChart.src}" alt="${escapeReportHtml(sensorTrendChart.alt)}"/></section>` : ""}<section class="section"><h2>${escapeReportHtml(copy.trend)}</h2><table><thead><tr><th>${escapeReportHtml(copy.time)}</th><th>${escapeReportHtml(copy.score)}</th><th>${escapeReportHtml(copy.level)}</th></tr></thead><tbody>${scoreRows || `<tr><td colspan="3">—</td></tr>`}</tbody></table></section><footer class="footer">${escapeReportHtml(copy.printHint)}</footer></main></body></html>`);
   reportWindow.document.close();
   window.setTimeout(() => { reportWindow.focus(); reportWindow.print(); }, 250);
 }
@@ -2331,6 +2366,24 @@ export default function Dashboard() {
   const [customPeriodPresets, setCustomPeriodPresets] = useState<CustomPeriodPreset[]>(readCustomPeriodPresets);
   const [customPeriodPresetName, setCustomPeriodPresetName] = useState("");
   const [isPeriodChanging, setIsPeriodChanging] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedPeriod = params.get("period");
+    if (requestedPeriod === "day" || requestedPeriod === "week" || requestedPeriod === "month") {
+      setDashboardPeriod(requestedPeriod);
+      return;
+    }
+    if (requestedPeriod === "custom") {
+      const startDate = params.get("start");
+      const endDate = params.get("end");
+      if (startDate && endDate && startDate <= endDate) {
+        setCustomStartDate(startDate);
+        setCustomEndDate(endDate);
+        setAppliedCustomRange({ startDate, endDate });
+        setDashboardPeriod("custom");
+      }
+    }
+  }, []);
   const dashboardPeriodInput = useMemo(() => dashboardPeriod === "custom"
     ? { period: "custom" as const, startAt: toLocalDateBoundaryIso(appliedCustomRange.startDate), endAt: toLocalDateBoundaryIso(appliedCustomRange.endDate, true) }
     : { period: dashboardPeriod }, [appliedCustomRange, dashboardPeriod]);
@@ -2369,6 +2422,7 @@ export default function Dashboard() {
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoSpeed, setDemoSpeed] = useState(3); // 1~10초
   const [pdfExporting, setPdfExporting] = useState(false);
+  const [sensorImageExporting, setSensorImageExporting] = useState<"png" | "jpeg" | null>(null);
   const selectedPeriodStats = periodOverviewQuery.data;
   const showPeriodSkeleton = isPeriodChanging || (periodOverviewQuery.isLoading && !selectedPeriodStats);
   useEffect(() => {
@@ -2427,6 +2481,33 @@ export default function Dashboard() {
     exportPeriodOverviewToCsv(selectedPeriodStats, lang, selectedPeriodLabel);
     toast.success(lang === "ko" ? "기간별 통계를 CSV로 저장했습니다." : lang === "ja" ? "期間別統計をCSVで保存しました。" : "Period statistics saved as CSV.");
   };
+  const getReportShareUrl = () => {
+    const params = new URLSearchParams({ period: dashboardPeriod });
+    if (dashboardPeriod === "custom") {
+      params.set("start", appliedCustomRange.startDate);
+      params.set("end", appliedCustomRange.endDate);
+    }
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  };
+  const copyReportShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getReportShareUrl());
+      toast.success(lang === "ko" ? "로그인 보호 분석 기간 링크를 복사했습니다." : lang === "ja" ? "ログイン保護された分析期間リンクをコピーしました。" : "Copied the login-protected analysis period link.");
+    } catch (error) {
+      console.error("Report share link copy failed:", error);
+      toast.error(lang === "ko" ? "링크를 복사하지 못했습니다. 브라우저 권한을 확인해주세요." : lang === "ja" ? "リンクをコピーできませんでした。ブラウザーの権限を確認してください。" : "Could not copy the link. Check browser permissions.");
+    }
+  };
+  const composeReportEmail = () => {
+    const subject = lang === "ko" ? `[SemiGuard AI] ${selectedPeriodLabel} 안전 운영 보고서` : lang === "ja" ? `[SemiGuard AI] ${selectedPeriodLabel} 安全運用レポート` : `[SemiGuard AI] ${selectedPeriodLabel} safety operations report`;
+    const body = lang === "ko"
+      ? `SemiGuard AI 분석 기간 링크입니다.\n\n${getReportShareUrl()}\n\n로그인 후 같은 기간의 대시보드와 보고서를 확인할 수 있습니다.`
+      : lang === "ja"
+        ? `SemiGuard AIの分析期間リンクです。\n\n${getReportShareUrl()}\n\nログイン後、同じ期間のダッシュボードとレポートを確認できます。`
+        : `Here is the SemiGuard AI analysis period link.\n\n${getReportShareUrl()}\n\nAfter signing in, you can view the dashboard and report for the same period.`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    toast.success(lang === "ko" ? "이메일 작성 창을 열었습니다. 수신자와 첨부 파일을 확인한 뒤 직접 전송하세요." : lang === "ja" ? "メール作成画面を開きました。宛先と添付ファイルを確認してから直接送信してください。" : "Opened your email draft. Confirm recipients and attachments before sending.");
+  };
   const exportSelectedPeriodPdf = async () => {
     if (!selectedPeriodStats) {
       toast.error(lang === "ko" ? "기간 통계를 준비한 뒤 PDF 보고서를 만들 수 있습니다." : lang === "ja" ? "期間統計を読み込んだ後にPDFレポートを作成できます。" : "Load period statistics before creating the PDF report.");
@@ -2457,16 +2538,24 @@ export default function Dashboard() {
       toast.success(aiSummary.source === "ai"
         ? (lang === "ko" ? "AI 센서 추세 요약을 포함한 보고서를 준비했습니다. 인쇄 창에서 PDF로 저장하세요." : lang === "ja" ? "AIセンサー傾向サマリーを含むレポートを準備しました。印刷画面でPDFとして保存してください。" : "Report with AI sensor trend summary is ready. Save it as PDF from the print dialog.")
         : (lang === "ko" ? "AI 요약 대신 근거 기반 요약을 포함한 보고서를 준비했습니다." : lang === "ja" ? "AI要約の代わりに根拠ベースの要約を含むレポートを準備しました。" : "Report with an evidence-based fallback summary is ready."), { id: loadingToast });
+      if (aiSummary.alert) {
+        toast.warning(lang === "ko" ? `다음 기간 ${localizeRiskLevel(aiSummary.forecastLevel, lang)} 전망입니다. 보고서의 근거와 권장 조치를 우선 검토하세요.` : lang === "ja" ? `次期間は${localizeRiskLevel(aiSummary.forecastLevel, lang)}の見通しです。レポートの根拠と推奨措置を優先して確認してください。` : `Next-period outlook is ${localizeRiskLevel(aiSummary.forecastLevel, lang)}. Prioritize the report evidence and recommended action.`);
+      }
     } catch (error) {
       console.error("Structured PDF report error:", error);
+      const fallbackForecastLevel: PeriodReportAiSummary["forecastLevel"] = selectedPeriodStats.dangerCount > 0 ? "danger" : selectedPeriodStats.anomalyCount > 0 ? "caution" : "normal";
+      const fallbackAlert = fallbackForecastLevel === "danger";
       const fallback: PeriodReportAiSummary = lang === "ko"
-        ? { headline: "기간 데이터 안전 요약", summary: `AI 분석 서비스를 연결하지 못해 기간 통계로 대체했습니다. 기록 ${selectedPeriodStats.totalDetections}건 중 이상 ${selectedPeriodStats.anomalyCount}건, 위험 ${selectedPeriodStats.dangerCount}건이 확인되었습니다.`, recommendation: "관련 설비 매뉴얼과 최근 점검 이력을 함께 검토하세요.", source: "fallback" }
+        ? { headline: "기간 데이터 안전 요약", summary: `AI 분석 서비스를 연결하지 못해 기간 통계로 대체했습니다. 기록 ${selectedPeriodStats.totalDetections}건 중 이상 ${selectedPeriodStats.anomalyCount}건, 위험 ${selectedPeriodStats.dangerCount}건이 확인되었습니다.`, recommendation: "관련 설비 매뉴얼과 최근 점검 이력을 함께 검토하세요.", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "AI 연결 실패 시점의 이상·위험 탐지 수를 기준으로 했습니다.", alert: fallbackAlert, source: "fallback" }
         : lang === "ja"
-          ? { headline: "期間データの安全サマリー", summary: `AI分析サービスに接続できないため、期間統計で代替しました。記録${selectedPeriodStats.totalDetections}件のうち、異常${selectedPeriodStats.anomalyCount}件、危険${selectedPeriodStats.dangerCount}件が確認されました。`, recommendation: "関連設備マニュアルと直近の点検履歴を併せて確認してください。", source: "fallback" }
-          : { headline: "Period data safety summary", summary: `The AI analysis service could not be reached, so this uses period statistics. ${selectedPeriodStats.anomalyCount} anomalies and ${selectedPeriodStats.dangerCount} danger detections were observed across ${selectedPeriodStats.totalDetections} records.`, recommendation: "Review the relevant equipment manual and recent inspection history together.", source: "fallback" };
+          ? { headline: "期間データの安全サマリー", summary: `AI分析サービスに接続できないため、期間統計で代替しました。記録${selectedPeriodStats.totalDetections}件のうち、異常${selectedPeriodStats.anomalyCount}件、危険${selectedPeriodStats.dangerCount}件が確認されました。`, recommendation: "関連設備マニュアルと直近の点検履歴を併せて確認してください。", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "AI接続失敗時点の異常・危険検知数を基準にしました。", alert: fallbackAlert, source: "fallback" }
+          : { headline: "Period data safety summary", summary: `The AI analysis service could not be reached, so this uses period statistics. ${selectedPeriodStats.anomalyCount} anomalies and ${selectedPeriodStats.dangerCount} danger detections were observed across ${selectedPeriodStats.totalDetections} records.`, recommendation: "Review the relevant equipment manual and recent inspection history together.", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "Based on anomaly and danger detections when the AI connection failed.", alert: fallbackAlert, source: "fallback" };
       try {
         openStructuredPeriodReport(selectedPeriodStats, lang, selectedPeriodLabel, fallback, reportWindow);
         toast.warning(lang === "ko" ? "AI 요약 대신 근거 기반 요약으로 보고서를 준비했습니다." : lang === "ja" ? "AI要約の代わりに根拠ベースの要約でレポートを準備しました。" : "The report uses an evidence-based fallback summary.", { id: loadingToast });
+        if (fallback.alert) {
+          toast.warning(lang === "ko" ? `다음 기간 ${localizeRiskLevel(fallback.forecastLevel, lang)} 전망입니다. 보고서의 근거와 권장 조치를 우선 검토하세요.` : lang === "ja" ? `次期間は${localizeRiskLevel(fallback.forecastLevel, lang)}の見通しです。レポートの根拠と推奨措置を優先して確認してください。` : `Next-period outlook is ${localizeRiskLevel(fallback.forecastLevel, lang)}. Prioritize the report evidence and recommended action.`);
+        }
       } catch {
         reportWindow.close();
         toast.error(lang === "ko" ? "보고서 창을 열지 못했습니다. 팝업 차단을 확인해주세요." : lang === "ja" ? "レポートウィンドウを開けませんでした。ポップアップブロックを確認してください。" : "Could not open the report window. Check popup blocking.", { id: loadingToast });
@@ -2525,6 +2614,32 @@ export default function Dashboard() {
     setSensorChartWindow(nextStart, nextStart + size - 1);
   };
   const resetSensorChartZoom = () => setSensorChartRange(null);
+  const exportCurrentSensorRangeImage = async (format: "png" | "jpeg") => {
+    const { startIndex, endIndex } = resolvedSensorChartRange;
+    const rangeHistory = displayedSensorChartData.slice(startIndex, endIndex + 1).map(point => ({
+      timestamp: new Date(point.timestamp).toISOString(),
+      score: 0,
+      riskLevel: "normal",
+      current: point.current,
+      temperature: point.temperature,
+      vibration: point.vibration,
+      noise: point.noise,
+    })) as PeriodOverviewData["scoreHistory"];
+    if (rangeHistory.length === 0) {
+      toast.error(lang === "ko" ? "저장할 센서 구간 데이터가 없습니다." : lang === "ja" ? "保存するセンサー範囲データがありません。" : "There is no sensor range data to save.");
+      return;
+    }
+    setSensorImageExporting(format);
+    try {
+      await downloadSensorTrendChartImage(rangeHistory, lang, format);
+      toast.success(lang === "ko" ? `확대 구간 차트를 ${format.toUpperCase()}로 저장했습니다.` : lang === "ja" ? `拡大範囲のチャートを${format.toUpperCase()}で保存しました。` : `Saved the zoomed chart as ${format.toUpperCase()}.`);
+    } catch (error) {
+      console.error("Sensor chart image export failed:", error);
+      toast.error(lang === "ko" ? "차트 이미지를 만들지 못했습니다." : lang === "ja" ? "チャート画像を作成できませんでした。" : "Could not create the chart image.");
+    } finally {
+      setSensorImageExporting(null);
+    }
+  };
   const handleSensorChartKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key === "+" || event.key === "=") { event.preventDefault(); zoomSensorChart("in"); }
     if (event.key === "-") { event.preventDefault(); zoomSensorChart("out"); }
@@ -5584,6 +5699,12 @@ export default function Dashboard() {
                 <button type="button" onClick={exportSelectedPeriodPdf} disabled={!selectedPeriodStats || periodOverviewQuery.isFetching || pdfExporting} aria-busy={pdfExporting || undefined} className="h-9 rounded-lg border px-2.5 text-[11px] font-bold transition-all hover:-translate-y-0.5 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: "oklch(0.68 0.16 155 / 0.45)", color: isDark ? "oklch(0.78 0.15 155)" : "oklch(0.35 0.14 155)", background: isDark ? "oklch(0.68 0.16 155 / 0.09)" : "oklch(0.68 0.16 155 / 0.06)" }}>
                   {pdfExporting ? (lang === "ko" ? "준비 중" : lang === "ja" ? "準備中" : "Preparing") : (lang === "ko" ? "PDF 보고서" : lang === "ja" ? "PDFレポート" : "PDF report")}
                 </button>
+                <button type="button" onClick={() => void copyReportShareLink()} className="h-9 rounded-lg border px-2.5 text-[11px] font-bold transition-all hover:-translate-y-0.5 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ borderColor: th.border2, color: th.text, background: th.bgCard }} aria-label={lang === "ko" ? "로그인 보호 분석 기간 링크 복사" : lang === "ja" ? "ログイン保護された分析期間リンクをコピー" : "Copy login-protected analysis period link"}>
+                  {lang === "ko" ? "링크 복사" : lang === "ja" ? "リンクをコピー" : "Copy link"}
+                </button>
+                <button type="button" onClick={composeReportEmail} className="h-9 rounded-lg border px-2.5 text-[11px] font-bold transition-all hover:-translate-y-0.5 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ borderColor: th.border2, color: th.text, background: th.bgCard }} aria-label={lang === "ko" ? "분석 기간 링크가 포함된 이메일 작성" : lang === "ja" ? "分析期間リンクを含むメールを作成" : "Compose email with analysis period link"}>
+                  {lang === "ko" ? "이메일" : lang === "ja" ? "メール" : "Email"}
+                </button>
               </div>
             </div>
             {/* 임팩트 통계 섹션 */}
@@ -5892,6 +6013,9 @@ export default function Dashboard() {
                     <button type="button" onClick={() => zoomSensorChart("in")} disabled={displayedSensorChartData.length < 3 || resolvedSensorChartRange.endIndex - resolvedSensorChartRange.startIndex < 2} className="h-7 min-w-7 rounded border text-xs font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "차트 확대" : lang === "ja" ? "チャートを拡大" : "Zoom in chart"}>+</button>
                     <button type="button" onClick={resetSensorChartZoom} disabled={resolvedSensorChartRange.startIndex === 0 && resolvedSensorChartRange.endIndex === displayedSensorChartData.length - 1} className="h-7 rounded border px-2 text-[10px] font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }}>{lang === "ko" ? "초기화" : lang === "ja" ? "リセット" : "Reset"}</button>
                     <button type="button" onClick={() => panSensorChart("forward")} disabled={resolvedSensorChartRange.endIndex >= displayedSensorChartData.length - 1} className="h-7 min-w-7 rounded border text-xs font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "차트 다음 구간으로 이동" : lang === "ja" ? "チャートを次の範囲へ移動" : "Pan chart forward"}>→</button>
+                    <span className="mx-0.5 h-4 w-px" aria-hidden="true" style={{ background: th.border2 }} />
+                    <button type="button" onClick={() => void exportCurrentSensorRangeImage("png")} disabled={sensorImageExporting !== null || displayedSensorChartData.length === 0} aria-busy={sensorImageExporting === "png" || undefined} className="h-7 rounded border px-1.5 text-[9px] font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "현재 확대 구간을 PNG 이미지로 저장" : lang === "ja" ? "現在の拡大範囲をPNG画像で保存" : "Save current zoom range as PNG"}>{sensorImageExporting === "png" ? "…" : "PNG"}</button>
+                    <button type="button" onClick={() => void exportCurrentSensorRangeImage("jpeg")} disabled={sensorImageExporting !== null || displayedSensorChartData.length === 0} aria-busy={sensorImageExporting === "jpeg" || undefined} className="h-7 rounded border px-1.5 text-[9px] font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "현재 확대 구간을 JPEG 이미지로 저장" : lang === "ja" ? "現在の拡大範囲をJPEG画像で保存" : "Save current zoom range as JPEG"}>{sensorImageExporting === "jpeg" ? "…" : "JPEG"}</button>
                   </div>
                 </div>
                 {/* 전류 + 온도 */}
