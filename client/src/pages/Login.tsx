@@ -152,6 +152,8 @@ export function Login() {
         naverLogin: "Naverでログイン",
         kakaoLogin: "Kakaoでログイン",
         socialLinkHint: "ソーシャルログインは、新規登録後にダッシュボードメニューからアカウントを連携して利用できます。",
+        judgeDemo: "審査用デモを見る",
+        judgeDemoHint: "ログイン不要・読み取り専用・サンプルデータ",
         terms: "ログインすると利用規約に同意したものとみなされます。",
       }
     : loginLanguage === "en"
@@ -176,6 +178,8 @@ export function Login() {
           naverLogin: "Continue with Naver",
           kakaoLogin: "Continue with Kakao",
           socialLinkHint: "After signing up, link a social account from the dashboard menu to use social login.",
+          judgeDemo: "View judge demo",
+          judgeDemoHint: "No sign-in · Read-only · Sample data",
           terms: "By signing in, you agree to the Terms of Service.",
         }
       : {
@@ -199,6 +203,8 @@ export function Login() {
           naverLogin: "네이버로 로그인",
           kakaoLogin: "카카오로 로그인",
           socialLinkHint: "소셜 로그인은 회원가입 후 대시보드 메뉴에서 계정을 연결한 뒤 사용할 수 있습니다.",
+          judgeDemo: "심사위원 데모 바로가기",
+          judgeDemoHint: "로그인 없이 · 읽기 전용 · 가상 데이터",
           terms: "로그인하면 서비스 이용약관에 동의하는 것입니다.",
         };
   const isOauthEnabled = !import.meta.env.DEV;
@@ -403,6 +409,15 @@ export function Login() {
                 {loginUi.signUp}
               </button>
             </p>
+            <button
+              type="button"
+              onClick={() => setLocation("/demo")}
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/45 bg-cyan-400/10 px-3 py-1.5 text-xs font-bold text-cyan-200 transition-colors hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
+            >
+              <span aria-hidden="true">▸</span>
+              {loginUi.judgeDemo}
+              <span className="font-medium text-cyan-100/70">{loginUi.judgeDemoHint}</span>
+            </button>
           </div>
 
           {/* Divider - Social Login */}
