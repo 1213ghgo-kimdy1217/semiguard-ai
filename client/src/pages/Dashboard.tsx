@@ -316,7 +316,7 @@ function RiskGauge({ score, riskLevel, t }: { score: number; riskLevel: RiskLeve
   return (
     <div className="flex flex-col items-center gap-3 w-full">
       <div className="relative w-40 h-40">
-        <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+        <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90" aria-hidden="true">
           <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
           <circle cx="60" cy="60" r="48" fill="none"
             stroke={color} strokeWidth="8" strokeLinecap="round"
