@@ -1,0 +1,31 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Dashboard.tsx"), "utf8");
+
+describe("virtual fab demo, security status, and analysis export contract", () => {
+  it("loads a client-side, read-only virtual fab risk scenario without equipment control", () => {
+    expect(dashboardSource).toContain("const [virtualFabDemoActive, setVirtualFabDemoActive] = useState(false)");
+    expect(dashboardSource).toContain("const loadVirtualFabDemo = () => {");
+    expect(dashboardSource).toContain('riskLevel: "danger", isAnomaly: true');
+    expect(dashboardSource).toContain("가상 팹 위험 시나리오");
+    expect(dashboardSource).toContain("실제 설비 제어는 수행하지 않습니다.");
+  });
+
+  it("makes virtual and read-only data status explicit in the analysis header", () => {
+    expect(dashboardSource).toContain('role="status"');
+    expect(dashboardSource).toContain("가상 데이터 · 읽기 전용");
+    expect(dashboardSource).toContain("읽기 전용 분석");
+    expect(dashboardSource).toContain("설비 제어 없음");
+  });
+
+  it("exports the visible LLM anomaly analysis as text or a print-to-PDF report", () => {
+    expect(dashboardSource).toContain("function downloadLlmAnalysisText");
+    expect(dashboardSource).toContain("function openLlmAnalysisPdf");
+    expect(dashboardSource).toContain('exportCurrentLlmAnalysis("text")');
+    expect(dashboardSource).toContain('exportCurrentLlmAnalysis("pdf")');
+    expect(dashboardSource).toContain("AI 분석 결과를 텍스트 파일로 저장했습니다.");
+    expect(dashboardSource).toContain("AI 분석 보고서를 준비했습니다. 인쇄 창에서 PDF로 저장하세요.");
+  });
+});

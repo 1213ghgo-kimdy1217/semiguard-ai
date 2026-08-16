@@ -112,6 +112,44 @@ function exportLogsToCSV(logs: AnomalyLogEntry[], lang: Lang) {
   URL.revokeObjectURL(url);
 }
 
+type DownloadableLlmAnalysis = {
+  primaryCause: string;
+  details: string;
+  recommendation: string;
+  score: number;
+  riskLevel: string;
+};
+
+function buildLlmAnalysisText(analysis: DownloadableLlmAnalysis, lang: Lang) {
+  const title = lang === "ko" ? "SemiGuard AI 이상 분석 결과" : lang === "ja" ? "SemiGuard AI 異常分析結果" : "SemiGuard AI Anomaly Analysis";
+  const labels = lang === "ko"
+    ? { risk: "위험 단계", score: "위험도 점수", cause: "주요 원인", evidence: "분석 근거", action: "권장 점검 순서", note: "본 결과는 점검 판단을 돕는 참고 자료이며 설비 제어 명령이 아닙니다." }
+    : lang === "ja"
+      ? { risk: "リスクレベル", score: "リスクスコア", cause: "主な原因", evidence: "分析根拠", action: "推奨点検順序", note: "本結果は点検判断を支援する参考情報であり、設備制御命令ではありません。" }
+      : { risk: "Risk level", score: "Risk score", cause: "Primary cause", evidence: "Analysis evidence", action: "Recommended inspection order", note: "This result supports inspection judgment and is not an equipment control command." };
+  return `${title}\n${"=".repeat(title.length)}\n\n${labels.risk}: ${localizeRiskLevel(analysis.riskLevel, lang)}\n${labels.score}: ${analysis.score.toFixed(0)}\n${labels.cause}: ${analysis.primaryCause}\n\n${labels.evidence}\n${analysis.details}\n\n${labels.action}\n${analysis.recommendation}\n\n${labels.note}\n`;
+}
+
+function downloadLlmAnalysisText(analysis: DownloadableLlmAnalysis, lang: Lang) {
+  const blob = new Blob(["\uFEFF", buildLlmAnalysisText(analysis, lang)], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `semiguard_ai_analysis_${new Date().toISOString().slice(0, 10)}.txt`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function openLlmAnalysisPdf(analysis: DownloadableLlmAnalysis, lang: Lang) {
+  const reportWindow = window.open("", "_blank", "width=900,height=760");
+  if (!reportWindow) throw new Error("Could not open the analysis report window.");
+  const title = lang === "ko" ? "SemiGuard AI 이상 분석 결과" : lang === "ja" ? "SemiGuard AI 異常分析結果" : "SemiGuard AI Anomaly Analysis";
+  const text = buildLlmAnalysisText(analysis, lang);
+  reportWindow.document.open();
+  reportWindow.document.write(`<!doctype html><html lang="${lang}"><head><meta charset="utf-8"/><title>${title}</title><style>body{font-family:Arial,sans-serif;color:#102a43;max-width:760px;margin:48px auto;padding:0 24px;line-height:1.65}h1{font-size:24px}pre{white-space:pre-wrap;font:14px/1.7 Arial,sans-serif;border:1px solid #d9e2ec;border-radius:12px;padding:22px;background:#f8fafc}@media print{body{margin:0 auto}}</style></head><body><h1>${title}</h1><pre>${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre><script>setTimeout(() => window.print(), 250)</script></body></html>`);
+  reportWindow.document.close();
+}
+
 type PeriodOverviewData = {
   period: "day" | "week" | "month" | "custom";
   startAt: string;
@@ -2468,6 +2506,7 @@ export default function Dashboard() {
   // ─── 데모 자동 실행 state ────────────────────────────────────────────────────
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoSpeed, setDemoSpeed] = useState(3); // 1~10초
+  const [virtualFabDemoActive, setVirtualFabDemoActive] = useState(false);
   const [pdfExporting, setPdfExporting] = useState(false);
   const [sensorImageExporting, setSensorImageExporting] = useState<"png" | "jpeg" | null>(null);
   const selectedPeriodStats = periodOverviewQuery.data;
@@ -2519,6 +2558,42 @@ export default function Dashboard() {
     setCustomPeriodPresets(next);
     persistCustomPeriodPresets(next);
     toast.success(lang === "ko" ? "기간 프리셋을 삭제했습니다." : lang === "ja" ? "期間プリセットを削除しました。" : "Period preset deleted.");
+  };
+  const loadVirtualFabDemo = () => {
+    const timestamp = Date.now();
+    const sensorData: SensorData = { current: 11.8, temperature: 88.4, vibration: 3.24, noise: 87.1, timestamp };
+    const result: AnomalyResult = { sensorData, anomalyScore: 86, riskLevel: "danger", isAnomaly: true };
+    const sampleSeries = Array.from({ length: 16 }, (_, index) => ({
+      current: 7.1 + index * 0.30, temperature: 57 + index * 2.05, vibration: 2.15 + index * 0.07, noise: 66 + index * 1.4, timestamp: timestamp - (15 - index) * 60_000,
+    }));
+    setDemoRunning(false);
+    setVirtualFabDemoActive(true);
+    setCurrent(result);
+    setScoreHistory(sampleSeries.map((_, index) => Math.min(86, 28 + index * 4)));
+    setChartData(sampleSeries.map((point, index) => ({ ...point, label: `VF-${index + 1}` })));
+    const analysis = lang === "ko"
+      ? { primaryCause: "가상 진공 펌프의 온도·진동 동시 상승", details: "가상 팹 시나리오에서 온도 88.4°C, 진동 3.24 mm/s, 소음 87.1 dB가 기준 범위를 함께 초과했습니다. 실제 설비 데이터가 아닌 읽기 전용 시연 값입니다.", recommendation: "실제 파일럿에서는 장비 담당자가 냉각·베어링·진공 라인 점검 절차를 현장 안전 기준에 따라 확인하세요." }
+      : lang === "ja"
+        ? { primaryCause: "仮想真空ポンプの温度・振動の同時上昇", details: "仮想ファブシナリオでは、温度88.4°C、振動3.24 mm/s、騒音87.1 dBが同時に基準範囲を超えています。実設備データではなく、読み取り専用のデモ値です。", recommendation: "実際のパイロットでは、担当者が現場安全基準に従って冷却・ベアリング・真空ラインの点検手順を確認してください。" }
+        : { primaryCause: "Concurrent temperature and vibration rise in the virtual vacuum pump", details: "In this virtual fab scenario, temperature 88.4°C, vibration 3.24 mm/s, and noise 87.1 dB exceed their reference ranges together. These are read-only simulated values, not real equipment data.", recommendation: "For an actual pilot, the responsible operator should review cooling, bearing, and vacuum-line checks under approved on-site safety procedures." };
+    setLlmAnalysis({ ...analysis, score: result.anomalyScore, riskLevel: result.riskLevel });
+    toast.success(lang === "ko" ? "가상 팹 위험 시나리오를 불러왔습니다. 실제 설비 제어는 수행하지 않습니다." : lang === "ja" ? "仮想ファブのリスクシナリオを読み込みました。実設備の制御は行いません。" : "Loaded the virtual fab risk scenario. No real equipment is controlled.");
+  };
+  const exportCurrentLlmAnalysis = (format: "text" | "pdf") => {
+    if (!llmAnalysis) {
+      toast.error(lang === "ko" ? "먼저 AI 이상 분석 결과를 확인하세요." : lang === "ja" ? "先にAI異常分析結果を確認してください。" : "Review an AI anomaly analysis first.");
+      return;
+    }
+    try {
+      if (format === "text") downloadLlmAnalysisText(llmAnalysis, lang);
+      else openLlmAnalysisPdf(llmAnalysis, lang);
+      toast.success(format === "text"
+        ? (lang === "ko" ? "AI 분석 결과를 텍스트 파일로 저장했습니다." : lang === "ja" ? "AI分析結果をテキストファイルで保存しました。" : "Saved AI analysis as a text file.")
+        : (lang === "ko" ? "AI 분석 보고서를 준비했습니다. 인쇄 창에서 PDF로 저장하세요." : lang === "ja" ? "AI分析レポートを準備しました。印刷画面でPDFとして保存してください。" : "Prepared the AI analysis report. Save it as PDF from the print dialog."));
+    } catch (error) {
+      console.error("AI analysis export failed:", error);
+      toast.error(lang === "ko" ? "AI 분석 결과를 내보내지 못했습니다." : lang === "ja" ? "AI分析結果を出力できませんでした。" : "Could not export the AI analysis.");
+    }
   };
   const exportSelectedPeriodCsv = () => {
     if (!selectedPeriodStats) {
@@ -2877,7 +2952,7 @@ export default function Dashboard() {
       stopAutoPolling();
       document.removeEventListener("visibilitychange", handlePollingVisibilityChange);
     };
-  }, [initialized]);
+  }, [initialized, virtualFabDemoActive]);
 
   // LLM 이상 원인 분석 트리거 (30초 throttle)
   const lastLlmCallRef = useRef<number>(0);
@@ -3335,6 +3410,10 @@ export default function Dashboard() {
                 {llmAnalysis.recommendation}
               </p>
             </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => exportCurrentLlmAnalysis("text")} className="min-h-9 rounded-lg border text-[11px] font-bold transition-opacity hover:opacity-80" style={{ borderColor: th.border2, color: th.text, background: th.bgCard2 }}>TXT</button>
+              <button type="button" onClick={() => exportCurrentLlmAnalysis("pdf")} className="min-h-9 rounded-lg border text-[11px] font-bold transition-opacity hover:opacity-80" style={{ borderColor: "rgba(56,189,248,0.4)", color: th.accent, background: "rgba(56,189,248,0.08)" }}>PDF</button>
+            </div>
           </div>
         </div>
       )}
@@ -3500,7 +3579,10 @@ export default function Dashboard() {
               </div>
             )}
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 mt-5">{lang === "ko" ? "시연 및 보고서" : lang === "ja" ? "デモとレポート" : "Demo & report"}</p>
-            <button type="button" onClick={() => setDemoRunning(r => !r)} className="w-full min-h-11 flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: demoRunning ? "oklch(0.65 0.20 30 / 0.6)" : th.border2, color: demoRunning ? "oklch(0.75 0.20 30)" : th.textMuted, background: demoRunning ? "oklch(0.65 0.20 30 / 0.12)" : th.bgCard2 }}>
+            <button type="button" onClick={loadVirtualFabDemo} className="w-full min-h-11 mb-2 flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: virtualFabDemoActive ? "rgba(34,197,94,0.55)" : th.border2, color: virtualFabDemoActive ? "rgb(34,197,94)" : th.accent, background: virtualFabDemoActive ? "rgba(34,197,94,0.10)" : th.bgCard2 }}>
+              <span>🏭 {lang === "ko" ? "가상 팹 위험 시나리오" : lang === "ja" ? "仮想ファブ危険シナリオ" : "Virtual fab risk scenario"}</span><span className="text-[10px]">{virtualFabDemoActive ? (lang === "ko" ? "불러옴" : lang === "ja" ? "読込済み" : "Loaded") : "▶"}</span>
+            </button>
+            <button type="button" onClick={() => { setVirtualFabDemoActive(false); setDemoRunning(r => !r); }} className="w-full min-h-11 flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: demoRunning ? "oklch(0.65 0.20 30 / 0.6)" : th.border2, color: demoRunning ? "oklch(0.75 0.20 30)" : th.textMuted, background: demoRunning ? "oklch(0.65 0.20 30 / 0.12)" : th.bgCard2 }}>
               <span>{demoRunning ? "■" : "▶"} {demoRunning ? (lang === "ko" ? "데모 중지" : lang === "ja" ? "デモを停止" : "Stop demo") : (lang === "ko" ? "데모 자동 실행" : lang === "ja" ? "デモ自動実行" : "Auto demo")}</span><span className="text-[10px]">{demoRunning ? `${demoSpeed}s` : ""}</span>
             </button>
             {demoRunning && <div className="rounded-xl border p-3 mt-2" style={{ borderColor: th.border2, background: th.bgCard2 }}><div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold">{lang === "ko" ? "데모 간격" : lang === "ja" ? "デモ間隔" : "Demo interval"}</span><span className="text-xs font-mono" style={{ color: "oklch(0.75 0.20 30)" }}>{demoSpeed}s</span></div><input type="range" min={1} max={10} step={1} value={demoSpeed} onChange={e => setDemoSpeed(Number(e.target.value))} aria-label={lang === "ko" ? "데모 간격" : lang === "ja" ? "デモ間隔" : "Demo interval"} aria-valuetext={lang === "ko" ? `${demoSpeed}초` : lang === "ja" ? `${demoSpeed}秒` : `${demoSpeed} seconds`} className="w-full accent-orange-400 cursor-pointer" /></div>}
@@ -3526,6 +3608,9 @@ export default function Dashboard() {
           {!isMobile && <HeartbeatIndicator alive={heartbeatAlive} t={t} />}
           {!isMobile && <div className="w-px h-5 bg-border" />}
           <SensorFreshnessIndicator timestamp={sensorData?.timestamp} lang={lang} />
+          <span role="status" className="hidden sm:inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold" style={{ borderColor: virtualFabDemoActive ? "rgba(34,197,94,0.5)" : "rgba(56,189,248,0.45)", color: virtualFabDemoActive ? "rgb(34,197,94)" : "oklch(0.65 0.18 200)", background: virtualFabDemoActive ? "rgba(34,197,94,0.08)" : "rgba(56,189,248,0.08)" }} aria-label={virtualFabDemoActive ? (lang === "ko" ? "가상 팹 데이터, 읽기 전용, 설비 제어 없음" : lang === "ja" ? "仮想ファブデータ、読み取り専用、設備制御なし" : "Virtual fab data, read-only, no equipment control") : (lang === "ko" ? "읽기 전용 분석 상태, 설비 제어 없음" : lang === "ja" ? "読み取り専用分析状態、設備制御なし" : "Read-only analysis state, no equipment control")}>
+            {virtualFabDemoActive ? (lang === "ko" ? "가상 데이터 · 읽기 전용" : lang === "ja" ? "仮想データ・読み取り専用" : "Virtual · read-only") : (lang === "ko" ? "읽기 전용 분석" : lang === "ja" ? "読み取り専用分析" : "Read-only analysis")}
+          </span>
           {autoPollingRetryPending && (
             <>
               <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold" role="status" aria-live="polite" title={lang === "ko" ? "자동 폴링 전송이 일시 지연되어 다음 주기에 다시 시도합니다." : lang === "ja" ? "自動ポーリングの送信が一時的に遅延しているため、次の周期に再試行します。" : "Automatic polling is temporarily delayed and will retry on the next interval."} style={{ color: "oklch(0.75 0.18 200)" }}>
@@ -3634,7 +3719,7 @@ export default function Dashboard() {
           {/* 데모 자동 실행 토글 */}
           <button
             type="button"
-            onClick={() => setDemoRunning(r => !r)}
+            onClick={() => { setVirtualFabDemoActive(false); setDemoRunning(r => !r); }}
             title={demoRunning ? (lang === "ko" ? "데모 중지" : lang === "ja" ? "デモを停止" : "Stop Demo") : (lang === "ko" ? "데모 자동 실행" : lang === "ja" ? "デモ自動実行" : "Auto Demo")}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95"
             style={{

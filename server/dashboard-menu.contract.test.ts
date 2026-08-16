@@ -31,7 +31,7 @@ describe("dashboard slide menu interaction contract", () => {
 
   it("declares header actions as non-submitting buttons", () => {
     expect(dashboardSource).toContain('type="button"\n            onClick={() => {');
-    expect(dashboardSource).toContain('type="button"\n            onClick={() => setDemoRunning(r => !r)}');
+    expect(dashboardSource).toContain('type="button"\n            onClick={() => { setVirtualFabDemoActive(false); setDemoRunning(r => !r); }}');
     expect(dashboardSource).toContain('type="button"\n            id="btn-export-pdf"');
     expect(dashboardSource).toContain('type="button"\n            id="btn-logout"');
     expect(dashboardSource).toContain('type="button" onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")}');
