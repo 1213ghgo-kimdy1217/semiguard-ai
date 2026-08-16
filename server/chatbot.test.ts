@@ -31,6 +31,8 @@ describe("SemiGuard AI Chatbot Procedure", () => {
     expect(appRouter.semiguard.saveChatMessage).toBeDefined();
     // @ts-ignore
     expect(appRouter.semiguard.deleteChatSession).toBeDefined();
+    // @ts-ignore
+    expect(appRouter.semiguard.deleteAllChatSessions).toBeDefined();
   });
 
   it("defines feedback history and regenerated answer linking procedures", () => {

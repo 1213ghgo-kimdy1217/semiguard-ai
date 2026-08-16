@@ -1581,6 +1581,7 @@ export default function Dashboard() {
   }, [normalizedManualSearch]);
   const deleteSessionMutation = trpc.semiguard.deleteChatSession.useMutation();
   const deleteAllSessionsMutation = trpc.semiguard.deleteAllChatSessions.useMutation();
+  const isClearingAllSessions = deleteAllSessionsMutation.isPending || createSessionMutation.isPending;
   const updateSessionTitleMutation = trpc.semiguard.updateChatSessionTitle.useMutation();
   const setChatSessionPinnedMutation = trpc.semiguard.setChatSessionPinned.useMutation();
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
@@ -4581,17 +4582,23 @@ export default function Dashboard() {
                               ? "すべての相談履歴が初期化されました。新しい相談を開始します。"
                               : "All consultation history has been cleared. Starting a new consultation.";
                             setChatMessages([{ role: "assistant", content: initialMsg, timestamp: Date.now() }]);
-                            await saveMessageMutation.mutateAsync({ sessionId: res.sessionId, role: "assistant", content: initialMsg });
-
                             chatUtils.semiguard.getChatSessions.invalidate();
                             setShowDeleteAllConfirm(false);
                             setShowHistoryPanel(false);
                           } catch (e) {
                             console.error("Failed to delete all sessions:", e);
+                            toast.error(lang === "ko"
+                              ? "상담 기록을 초기화하지 못했습니다. 로그인 상태를 확인한 뒤 다시 시도해 주세요."
+                              : lang === "ja"
+                                ? "相談履歴を初期化できませんでした。ログイン状態を確認してから再試行してください。"
+                                : "Could not clear consultation history. Check your sign-in status and try again.");
                           }
                         }}
-                        className="px-3 py-1 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition-all">
-                        {lang === "ko" ? "전체 삭제" : lang === "ja" ? "すべて削除" : "Delete All"}
+                        disabled={isClearingAllSessions}
+                        className="px-3 py-1 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition-all disabled:cursor-wait disabled:opacity-60">
+                        {isClearingAllSessions
+                          ? (lang === "ko" ? "초기화 중..." : lang === "ja" ? "初期化中..." : "Clearing...")
+                          : (lang === "ko" ? "전체 삭제" : lang === "ja" ? "すべて削除" : "Delete All")}
                       </button>
                     </div>
                   </div>
