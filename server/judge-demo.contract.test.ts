@@ -39,11 +39,23 @@ describe("read-only judge demo contract", () => {
   });
 
   it("keeps the demo mode visible and lets judges reset the flow to the first step", () => {
-    expect(demoSource).toContain("const resetDemo = () => setStep(1)");
+    expect(demoSource).toContain("const resetDemo = () => {");
+    expect(demoSource).toContain("setStep(1);");
     expect(demoSource).toContain("text.demoMode");
     expect(demoSource).toContain("text.demoModeDescription");
     expect(demoSource).toContain("text.reset");
     expect(demoSource).toContain('disabled aria-disabled="true"');
+  });
+
+  it("gives reset feedback, a closeable demo mode banner, and a soft accessible future-pilot tooltip", () => {
+    expect(demoSource).toContain("const [showDemoBanner, setShowDemoBanner] = useState(true)");
+    expect(demoSource).toContain("const [showResetToast, setShowResetToast] = useState(false)");
+    expect(demoSource).toContain("setShowResetToast(true)");
+    expect(demoSource).toContain("text.resetComplete");
+    expect(demoSource).toContain("text.closeDemoMode");
+    expect(demoSource).toContain("text.showDemoMode");
+    expect(demoSource).toContain('role="tooltip"');
+    expect(demoSource).toContain("judge-demo-future-pilot-tooltip");
   });
 
   it("keeps the public demo localized in Korean, English, and Japanese", () => {
