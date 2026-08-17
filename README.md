@@ -11,7 +11,7 @@
 
 - [프로젝트 개요](#프로젝트-개요) · [빠른 안내](#빠른-안내) · [문제와 해결 방식](#문제와-해결-방식) · [핵심 기능](#핵심-기능)
 - [시스템 구조](#시스템-구조) · [AI 활용과 안전 원칙](#ai-활용과-안전-원칙) · [실제 팹 도입 경로](#실제-팹-도입-경로) · [실행 방법](#실행-방법) · [테스트](#테스트)
-- [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
+- [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [발표 시연 스크립트](PRESENTATION_DEMO_SCRIPT.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
 
 ## 프로젝트 개요
 
@@ -32,6 +32,7 @@ SemiGuard AI는 전류·온도·진동·소음 데이터에서 위험 신호를 
 |---|---|---|
 | 프로덕트 URL | [운영 대시보드](https://semiguardai-jifnzsvd.manus.space) | 로그인 후 센서 모니터링, 위험 이력, AI 분석, 기간 보고서 기능을 확인합니다. |
 | 심사위원 데모 | [읽기 전용 30초 데모](https://semiguardai-jifnzsvd.manus.space/demo) | 로그인 없이 가상 위험 신호, 센서 근거, 권장 점검 순서를 확인합니다. |
+| 발표 시연 자료 | [PRESENTATION_DEMO_SCRIPT.md](PRESENTATION_DEMO_SCRIPT.md) | 3분 소개 스크립트, 화면 조작 순서, 예상 질문 대응 문장을 확인합니다. |
 | AI 활용 문서 | [AI_USAGE.md](AI_USAGE.md) | AI의 역할, 데이터 경계, 대체 경로와 한계를 설명합니다. |
 | 기술 참고 문서 | [TECHNICAL_REFERENCE.md](TECHNICAL_REFERENCE.md) | RAG, 피드백, 보고서, 접근성 등 상세 구현을 정리합니다. |
 | 작업 기록 | [todo.md](todo.md) | 기능 구현, 검증, 보류 항목의 누적 작업 기록을 확인합니다. |

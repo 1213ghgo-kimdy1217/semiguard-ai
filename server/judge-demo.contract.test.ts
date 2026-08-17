@@ -29,6 +29,15 @@ describe("read-only judge demo contract", () => {
     expect(demoSource).not.toContain("saveThresholds");
   });
 
+  it("shows localized mock sensor observations and labels actual fab pilots as future support", () => {
+    expect(demoSource).toContain("const mockSensorTrace = [");
+    expect(demoSource).toContain("text.mockTrace");
+    expect(demoSource).toContain("12개 관측값");
+    expect(demoSource).toContain("Planned for future support");
+    expect(demoSource).toContain("今後サポート予定");
+    expect(demoSource).toContain("text.futurePilotDescription");
+  });
+
   it("keeps the public demo localized in Korean, English, and Japanese", () => {
     expect(demoSource).toContain('type DemoLanguage = "ko" | "en" | "ja"');
     expect(demoSource).toContain('value="ko"');
