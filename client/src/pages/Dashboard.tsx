@@ -3045,8 +3045,9 @@ export default function Dashboard() {
         riskLevel: result.riskLevel,
         lang: lang,
       });
+      const localizedAnalysis = analysis.translations?.[lang] ?? analysis;
       setLlmAnalysis({
-        ...analysis,
+        ...localizedAnalysis,
         score: result.anomalyScore,
         riskLevel: result.riskLevel,
       });

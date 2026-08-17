@@ -570,8 +570,10 @@ export const appRouter = router({
           await updateAnomalyLogLlm(targetId, JSON.stringify(koData), JSON.stringify(enData), JSON.stringify(jaData));
         }
 
-        // 현재 요청 언어에 맞는 결과 반환
-        return lang === "ko" ? koData : lang === "ja" ? jaData : enData;
+        // 현재 선택 언어 결과와 세 언어 응답을 함께 반환한다. 클라이언트 언어 전환·비동기 렌더링 중에도
+        // 규칙 기반 대체 분석이 다른 언어로 고정되지 않도록 한다.
+        const selectedData = lang === "ko" ? koData : lang === "ja" ? jaData : enData;
+        return { ...selectedData, translations: { ko: koData, en: enData, ja: jaData } };
       }),
     summarizePeriodForReport: publicProcedure
       .input(z.object({

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const routerSource = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Dashboard.tsx"), "utf8");
 
 describe("anomaly analysis safe fallback contract", () => {
   it("builds a sensor-evidence fallback in Korean, English, and Japanese", () => {
@@ -18,5 +19,11 @@ describe("anomaly analysis safe fallback contract", () => {
     expect(routerSource).toContain('const enData = enResult.status === "fulfilled" ? enResult.value : buildFallbackAnalysis("en")');
     expect(routerSource).toContain('const jaData = jaResult.status === "fulfilled" ? jaResult.value : buildFallbackAnalysis("ja")');
     expect(routerSource).toContain("현재 수치만으로 특정 고장 원인을 단정할 수는 없습니다.");
+  });
+
+  it("returns every language fallback and lets the dashboard render the current locale", () => {
+    expect(routerSource).toContain('return { ...selectedData, translations: { ko: koData, en: enData, ja: jaData } };');
+    expect(dashboardSource).toContain('const localizedAnalysis = analysis.translations?.[lang] ?? analysis;');
+    expect(dashboardSource).toContain('...localizedAnalysis,');
   });
 });
