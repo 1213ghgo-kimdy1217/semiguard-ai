@@ -13,6 +13,8 @@ describe("virtual fab demo, security status, and analysis export contract", () =
     expect(dashboardSource).toContain("실제 설비 제어는 수행하지 않습니다.");
     expect(dashboardSource).toContain("파일럿 승인 전 읽기 전용 시연 데이터이며 설비를 제어하지 않습니다.");
     expect(dashboardSource).toContain("실제 팹 파일럿 연동은 추후 지원 예정");
+    expect(dashboardSource).toContain("실제 팹 파일럿 연동, 추후 지원 예정");
+    expect(dashboardSource).toContain("cursor-not-allowed");
   });
 
   it("makes virtual and read-only data status explicit in the analysis header", () => {

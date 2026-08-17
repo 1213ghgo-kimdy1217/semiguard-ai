@@ -38,6 +38,14 @@ describe("read-only judge demo contract", () => {
     expect(demoSource).toContain("text.futurePilotDescription");
   });
 
+  it("keeps the demo mode visible and lets judges reset the flow to the first step", () => {
+    expect(demoSource).toContain("const resetDemo = () => setStep(1)");
+    expect(demoSource).toContain("text.demoMode");
+    expect(demoSource).toContain("text.demoModeDescription");
+    expect(demoSource).toContain("text.reset");
+    expect(demoSource).toContain('disabled aria-disabled="true"');
+  });
+
   it("keeps the public demo localized in Korean, English, and Japanese", () => {
     expect(demoSource).toContain('type DemoLanguage = "ko" | "en" | "ja"');
     expect(demoSource).toContain('value="ko"');
