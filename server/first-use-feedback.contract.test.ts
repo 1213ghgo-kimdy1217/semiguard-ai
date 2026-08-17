@@ -59,6 +59,11 @@ describe("first-use feedback privacy and metrics contract", () => {
     expect(dashboardSource).toContain("document.activeElement === lastControl");
   });
 
+  it("keeps the mobile defer control readable on one line", () => {
+    expect(dashboardSource).toContain('className="min-h-8 min-w-14 shrink-0 whitespace-nowrap rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300"');
+    expect(dashboardSource).toContain('<div className="min-w-0">');
+  });
+
   it("lets a user defer automatic feedback prompts without removing the manual editor", () => {
     expect(dashboardSource).toContain('FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY = "semiguard_first_use_feedback_prompt_dismissed"');
     expect(dashboardSource).toContain("readDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY) === \"true\"");

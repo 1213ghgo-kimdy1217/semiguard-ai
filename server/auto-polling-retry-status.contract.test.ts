@@ -11,9 +11,9 @@ describe("auto polling retry status contract", () => {
     expect(dashboardSource).toContain("setAutoPollingRetryPending(false);");
   });
 
-  it("provides desktop and mobile retry status in Korean, English, and Japanese", () => {
-    expect(dashboardSource).toContain('lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"');
-    expect(dashboardSource).toContain('role="status" aria-live="polite"');
-    expect(dashboardSource).toContain('lg:hidden');
+  it("surfaces a pending retry through the localized, accessible system summary", () => {
+    expect(dashboardSource).toContain('safetyMonitoringInitializing || autoPollingRetryPending ? "syncing" : "healthy"');
+    expect(dashboardSource).toContain('lang === "ko" ? "동기화 중" : lang === "ja" ? "同期中" : "Syncing"');
+    expect(dashboardSource).toContain('role="status" aria-live="polite" title={systemStatusDescription}');
   });
 });

@@ -629,24 +629,11 @@ function useCountUp(target: number, duration = 800) {
   return display;
 }
 
-function HeartbeatIndicator({ alive, t }: { alive: boolean; t: Translation }) {
-  return (
-    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold"
-      style={{ background: alive ? "rgba(34,197,94,0.10)" : "rgba(239,68,68,0.10)" }}>
-      <div className="w-2 h-2 rounded-full" style={{
-        background: alive ? "#22c55e" : "#ef4444",
-        animation: alive ? "pulse 2s infinite" : "none",
-      }} />
-      <span style={{ color: alive ? "#22c55e" : "#ef4444" }}>
-        {alive ? t.heartbeatOk : t.heartbeatFail}
-      </span>
-    </div>
-  );
-}
-
 // ─── 경고 패널 ──────────────────────────────────────────────────────────────
 function AlertPanel({ riskLevel, relayTripped, t }: { riskLevel: RiskLevel; relayTripped: boolean; t: Translation }) {
   const isDanger = riskLevel === "danger";
+  const hasAttention = isDanger || relayTripped;
+  if (!hasAttention) return null;
   const label = `${t.alertLight}: ${isDanger ? t.danger : t.normal}. ${relayTripped ? t.relayActive : t.relayInactive}.`;
   return (
     <div className="flex h-7 shrink-0 items-center gap-1 rounded-full border px-2 whitespace-nowrap sm:h-auto sm:gap-2 sm:border-0 sm:px-0" role="img" aria-label={label} title={label}>
@@ -2545,6 +2532,20 @@ export default function Dashboard() {
   const safetyMonitoringHasError = getStats.isError || periodOverviewQuery.isError || getLogs.isError || getDailyMaxRisk.isError || getRecentScoresQuery.isError;
   const safetyMonitoringInitializing = getStats.isLoading || periodOverviewQuery.isLoading || getLogs.isLoading || getDailyMaxRisk.isLoading || getRecentScoresQuery.isLoading;
   const safetyMonitoringRetrying = getStats.isFetching || periodOverviewQuery.isFetching || getLogs.isFetching || getDailyMaxRisk.isFetching || getRecentScoresQuery.isFetching;
+  const systemStatusKind = safetyMonitoringHasError || !heartbeatAlive ? "attention" : safetyMonitoringInitializing || autoPollingRetryPending ? "syncing" : "healthy";
+  const systemStatusLabel = systemStatusKind === "attention"
+    ? (lang === "ko" ? "점검 필요" : lang === "ja" ? "確認が必要" : "Needs attention")
+    : systemStatusKind === "syncing"
+      ? (lang === "ko" ? "동기화 중" : lang === "ja" ? "同期中" : "Syncing")
+      : (lang === "ko" ? "정상 운영" : lang === "ja" ? "正常運用" : "Operational");
+  const systemStatusDescription = systemStatusKind === "attention"
+    ? (lang === "ko" ? "하트비트 또는 핵심 안전 데이터에 점검이 필요합니다." : lang === "ja" ? "ハートビートまたは主要な安全データの確認が必要です。" : "Heartbeat or core safety data needs attention.")
+    : systemStatusKind === "syncing"
+      ? (lang === "ko" ? "핵심 안전 데이터를 동기화하거나 자동 재시도 중입니다." : lang === "ja" ? "主要な安全データを同期中、または自動再試行中です。" : "Core safety data is syncing or retrying automatically.")
+      : (lang === "ko" ? "하트비트와 핵심 안전 데이터가 정상입니다." : lang === "ja" ? "ハートビートと主要な安全データは正常です。" : "Heartbeat and core safety data are healthy.");
+  const systemStatusColor = systemStatusKind === "attention" ? "oklch(0.72 0.18 30)" : systemStatusKind === "syncing" ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)";
+  const systemStatusBorder = systemStatusKind === "attention" ? "oklch(0.72 0.18 30 / 0.55)" : systemStatusKind === "syncing" ? "oklch(0.75 0.18 200 / 0.55)" : "oklch(0.70 0.18 145 / 0.55)";
+  const systemStatusBackground = systemStatusKind === "attention" ? "oklch(0.72 0.18 30 / 0.10)" : systemStatusKind === "syncing" ? "oklch(0.75 0.18 200 / 0.10)" : "oklch(0.70 0.18 145 / 0.10)";
   const statsInitialLoading = periodOverviewQuery.isLoading && !periodOverviewQuery.data;
   const statsLoadingLabel = lang === "ko" ? "통계를 불러오는 중..." : lang === "ja" ? "統計を読み込み中..." : "Loading statistics...";
   const activityVisitRecordedForUserRef = useRef<number | null>(null);
@@ -3678,28 +3679,15 @@ export default function Dashboard() {
             <h2 className="text-[10px] text-muted-foreground leading-tight m-0 font-normal">{t.appSubtitle}</h2>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          {!isMobile && <HeartbeatIndicator alive={heartbeatAlive} t={t} />}
-          {!isMobile && <div className="w-px h-5 bg-border" />}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span role="status" aria-live="polite" title={systemStatusDescription} aria-label={systemStatusDescription} className={`h-7 items-center gap-1.5 rounded-full border px-2.5 text-[10px] font-bold shadow-sm ${systemStatusKind === "healthy" ? "hidden sm:inline-flex" : "inline-flex"}`} style={{ borderColor: systemStatusBorder, color: systemStatusColor, background: systemStatusBackground }}>
+            <span aria-hidden="true" className={`h-2 w-2 rounded-full ${systemStatusKind === "syncing" ? "animate-pulse" : ""}`} style={{ background: systemStatusColor }} />
+            {systemStatusLabel}
+          </span>
           <SensorFreshnessIndicator timestamp={sensorData?.timestamp} lang={lang} />
-          <span role="status" title={virtualFabDemoActive ? (lang === "ko" ? "실제 파일럿·보안 승인 전 시연 데이터" : lang === "ja" ? "実際のパイロット・セキュリティ承認前のデモデータ" : "Demo data before actual pilot and security approval") : undefined} className="hidden sm:inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold" style={{ borderColor: virtualFabDemoActive ? "rgba(34,197,94,0.5)" : "rgba(56,189,248,0.45)", color: virtualFabDemoActive ? "rgb(34,197,94)" : "oklch(0.65 0.18 200)", background: virtualFabDemoActive ? "rgba(34,197,94,0.08)" : "rgba(56,189,248,0.08)" }} aria-label={virtualFabDemoActive ? (lang === "ko" ? "가상 팹 시연 데이터, 파일럿과 보안 승인 전, 읽기 전용, 설비 제어 없음" : lang === "ja" ? "仮想ファブのデモデータ、パイロットとセキュリティ承認前、読み取り専用、設備制御なし" : "Virtual fab demo data before pilot and security approval, read-only, no equipment control") : (lang === "ko" ? "읽기 전용 분석 상태, 설비 제어 없음" : lang === "ja" ? "読み取り専用分析状態、設備制御なし" : "Read-only analysis state, no equipment control")}>
+          <span role="status" title={virtualFabDemoActive ? (lang === "ko" ? "실제 파일럿·보안 승인 전 시연 데이터" : lang === "ja" ? "実際のパイロット・セキュリティ承認前のデモデータ" : "Demo data before actual pilot and security approval") : undefined} className="hidden md:inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold" style={{ borderColor: virtualFabDemoActive ? "rgba(34,197,94,0.5)" : "rgba(56,189,248,0.45)", color: virtualFabDemoActive ? "rgb(34,197,94)" : "oklch(0.65 0.18 200)", background: virtualFabDemoActive ? "rgba(34,197,94,0.08)" : "rgba(56,189,248,0.08)" }} aria-label={virtualFabDemoActive ? (lang === "ko" ? "가상 팹 시연 데이터, 파일럿과 보안 승인 전, 읽기 전용, 설비 제어 없음" : lang === "ja" ? "仮想ファブのデモデータ、パイロットとセキュリティ承認前、読み取り専用、設備制御なし" : "Virtual fab demo data before pilot and security approval, read-only, no equipment control") : (lang === "ko" ? "읽기 전용 분석 상태, 설비 제어 없음" : lang === "ja" ? "読み取り専用分析状態、設備制御なし" : "Read-only analysis state, no equipment control")}>
             {virtualFabDemoActive ? (lang === "ko" ? "가상 · 승인 전 · 읽기 전용" : lang === "ja" ? "仮想・承認前・読み取り専用" : "Virtual · pre-approval · read-only") : (lang === "ko" ? "읽기 전용 분석" : lang === "ja" ? "読み取り専用分析" : "Read-only analysis")}
           </span>
-          {autoPollingRetryPending && (
-            <>
-              <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold" role="status" aria-live="polite" title={lang === "ko" ? "자동 폴링 전송이 일시 지연되어 다음 주기에 다시 시도합니다." : lang === "ja" ? "自動ポーリングの送信が一時的に遅延しているため、次の周期に再試行します。" : "Automatic polling is temporarily delayed and will retry on the next interval."} style={{ color: "oklch(0.75 0.18 200)" }}>
-                <span aria-hidden="true" className="h-2 w-2 animate-pulse rounded-full" style={{ background: "oklch(0.75 0.18 200)" }} />
-                {lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"}
-              </div>
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border lg:hidden" role="status" aria-live="polite" aria-label={lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"} title={lang === "ko" ? "자동 재시도 대기" : lang === "ja" ? "自動再試行待機" : "Auto retry pending"} style={{ borderColor: "oklch(0.75 0.18 200 / 0.55)", color: "oklch(0.75 0.18 200)", background: "oklch(0.75 0.18 200 / 0.12)" }}>
-                <span aria-hidden="true" className="text-sm font-bold animate-pulse">↻</span>
-              </div>
-            </>
-          )}
-          <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-semibold" title={safetyMonitoringHasError ? (lang === "ko" ? "일부 안전 데이터 조회를 복구해야 합니다." : lang === "ja" ? "一部の安全データの復旧が必要です。" : "Some safety data needs recovery.") : safetyMonitoringInitializing ? (lang === "ko" ? "안전 데이터를 동기화하는 중입니다." : lang === "ja" ? "安全データを同期中です。" : "Synchronizing safety data.") : (lang === "ko" ? "핵심 안전 데이터가 연결되었습니다." : lang === "ja" ? "主要な安全データに接続されています。" : "Core safety data is connected.") } style={{ color: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }}>
-            <span className={`h-2 w-2 rounded-full ${safetyMonitoringInitializing && !safetyMonitoringHasError ? "animate-pulse" : ""}`} style={{ background: safetyMonitoringHasError ? "oklch(0.72 0.18 30)" : safetyMonitoringInitializing ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)" }} />
-            {safetyMonitoringHasError ? (lang === "ko" ? "복구 필요" : lang === "ja" ? "復旧が必要" : "Recovery needed") : safetyMonitoringInitializing ? (lang === "ko" ? "동기화 중" : lang === "ja" ? "同期中" : "Syncing") : (lang === "ko" ? "데이터 연결" : lang === "ja" ? "データ接続" : "Data connected")}
-          </div>
           {safetyMonitoringHasError && (
             <button type="button" onClick={retrySafetyMonitoring} disabled={safetyMonitoringRetrying} className="flex h-8 items-center justify-center rounded-lg border px-2 text-[10px] font-bold transition-opacity hover:opacity-80 disabled:opacity-45" style={{ borderColor: "oklch(0.72 0.18 30 / 0.55)", color: "oklch(0.78 0.18 30)", background: "oklch(0.72 0.18 30 / 0.10)" }} aria-label={lang === "ko" ? "안전 모니터링 데이터 다시 연결" : lang === "ja" ? "安全モニタリングデータに再接続" : "Reconnect safety monitoring data"} title={lang === "ko" ? "안전 데이터 다시 연결" : lang === "ja" ? "安全データを再接続" : "Reconnect safety data"}>
               ↻ <span className="hidden sm:inline ml-1">{safetyMonitoringRetrying ? (lang === "ko" ? "연결 중" : lang === "ja" ? "接続中" : "Connecting") : (lang === "ko" ? "재연결" : lang === "ja" ? "再接続" : "Reconnect")}</span>
@@ -6716,7 +6704,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {isFirstUseFeedbackOpen && <div className="fixed inset-0 z-[660] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-use-feedback-title"><section ref={firstUseFeedbackDialogRef} className="w-full max-w-lg rounded-2xl border p-5 shadow-2xl sm:p-6" style={{ borderColor: "oklch(0.70 0.15 85 / 0.45)", background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.005 240)", color: th.text }}><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: "oklch(0.78 0.14 85)" }}>{firstUseFeedbackCopy.response}</p><h2 id="first-use-feedback-title" className="mt-1 text-lg font-black">{firstUseFeedbackCopy.title}</h2><p className="mt-2 text-xs leading-5" style={{ color: th.textMuted }}>{firstUseFeedbackCopy.subtitle}</p></div><button ref={firstUseFeedbackCloseButtonRef} type="button" onClick={closeFirstUseFeedback} className="rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.textMuted }}>{firstUseFeedbackCopy.later}</button></div><div className="mt-5"><p className="text-xs font-bold">{firstUseFeedbackCopy.ease}</p><div className="mt-2 grid grid-cols-5 gap-1.5" role="radiogroup" aria-label={firstUseFeedbackCopy.ease}>{firstUseFeedbackCopy.ratings.map((label, index) => { const rating = index + 1; const selected = firstUseEaseRating === rating; return <button key={label} type="button" role="radio" aria-checked={selected} aria-label={`${rating}/5, ${label}`} onClick={() => setFirstUseEaseRating(rating)} className="min-h-12 rounded-lg border px-1 text-center text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: selected ? "oklch(0.76 0.16 85 / 0.8)" : th.border2, background: selected ? "oklch(0.76 0.16 85 / 0.15)" : th.bgCard2, color: selected ? (isDark ? "oklch(0.90 0.13 85)" : "oklch(0.42 0.13 62)") : th.textMuted }}><span className="block text-base">{rating}</span><span className="sr-only">{label}</span></button>; })}</div></div><div className="mt-5"><p className="text-xs font-bold">{firstUseFeedbackCopy.difficult}</p><div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label={firstUseFeedbackCopy.difficult}>{(["none", "orientation", "risk_review", "analysis_review"] as const).map(step => { const selected = firstUseDifficultStep === step; return <button key={step} type="button" role="radio" aria-checked={selected} onClick={() => setFirstUseDifficultStep(step)} className="min-h-10 rounded-lg border px-3 py-2 text-left text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: selected ? "oklch(0.65 0.18 200 / 0.72)" : th.border2, background: selected ? "oklch(0.65 0.18 200 / 0.12)" : th.bgCard2, color: selected ? (isDark ? "oklch(0.82 0.14 200)" : "oklch(0.38 0.16 220)") : th.textMuted }}>{firstUseFeedbackCopy.steps[step]}</button>; })}</div></div><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={closeFirstUseFeedback} className="rounded-lg border px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.text }}>{firstUseFeedbackCopy.later}</button><button type="button" disabled={firstUseEaseRating < 1 || saveFirstUseFeedbackMutation.isPending} onClick={() => void submitFirstUseFeedback()} className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-45">{saveFirstUseFeedbackMutation.isPending ? "…" : firstUseFeedbackCopy.submit}</button></div></section></div>}
+      {isFirstUseFeedbackOpen && <div className="fixed inset-0 z-[660] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-use-feedback-title"><section ref={firstUseFeedbackDialogRef} className="w-full max-w-lg rounded-2xl border p-5 shadow-2xl sm:p-6" style={{ borderColor: "oklch(0.70 0.15 85 / 0.45)", background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.005 240)", color: th.text }}><div className="flex items-start justify-between gap-2 sm:gap-3"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: "oklch(0.78 0.14 85)" }}>{firstUseFeedbackCopy.response}</p><h2 id="first-use-feedback-title" className="mt-1 text-lg font-black">{firstUseFeedbackCopy.title}</h2><p className="mt-2 text-xs leading-5" style={{ color: th.textMuted }}>{firstUseFeedbackCopy.subtitle}</p></div><button ref={firstUseFeedbackCloseButtonRef} type="button" onClick={closeFirstUseFeedback} className="min-h-8 min-w-14 shrink-0 whitespace-nowrap rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.textMuted }}>{firstUseFeedbackCopy.later}</button></div><div className="mt-5"><p className="text-xs font-bold">{firstUseFeedbackCopy.ease}</p><div className="mt-2 grid grid-cols-5 gap-1.5" role="radiogroup" aria-label={firstUseFeedbackCopy.ease}>{firstUseFeedbackCopy.ratings.map((label, index) => { const rating = index + 1; const selected = firstUseEaseRating === rating; return <button key={label} type="button" role="radio" aria-checked={selected} aria-label={`${rating}/5, ${label}`} onClick={() => setFirstUseEaseRating(rating)} className="min-h-12 rounded-lg border px-1 text-center text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: selected ? "oklch(0.76 0.16 85 / 0.8)" : th.border2, background: selected ? "oklch(0.76 0.16 85 / 0.15)" : th.bgCard2, color: selected ? (isDark ? "oklch(0.90 0.13 85)" : "oklch(0.42 0.13 62)") : th.textMuted }}><span className="block text-base">{rating}</span><span className="sr-only">{label}</span></button>; })}</div></div><div className="mt-5"><p className="text-xs font-bold">{firstUseFeedbackCopy.difficult}</p><div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label={firstUseFeedbackCopy.difficult}>{(["none", "orientation", "risk_review", "analysis_review"] as const).map(step => { const selected = firstUseDifficultStep === step; return <button key={step} type="button" role="radio" aria-checked={selected} onClick={() => setFirstUseDifficultStep(step)} className="min-h-10 rounded-lg border px-3 py-2 text-left text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: selected ? "oklch(0.65 0.18 200 / 0.72)" : th.border2, background: selected ? "oklch(0.65 0.18 200 / 0.12)" : th.bgCard2, color: selected ? (isDark ? "oklch(0.82 0.14 200)" : "oklch(0.38 0.16 220)") : th.textMuted }}>{firstUseFeedbackCopy.steps[step]}</button>; })}</div></div><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={closeFirstUseFeedback} className="rounded-lg border px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.text }}>{firstUseFeedbackCopy.later}</button><button type="button" disabled={firstUseEaseRating < 1 || saveFirstUseFeedbackMutation.isPending} onClick={() => void submitFirstUseFeedback()} className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-45">{saveFirstUseFeedbackMutation.isPending ? "…" : firstUseFeedbackCopy.submit}</button></div></section></div>}
 
       <style>{`
         @keyframes spin {

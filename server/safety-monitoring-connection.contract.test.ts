@@ -8,8 +8,9 @@ describe("safety monitoring connection status contract", () => {
   it("derives header connection status from all core safety data queries", () => {
     expect(dashboardSource).toContain("const safetyMonitoringHasError = getStats.isError || periodOverviewQuery.isError || getLogs.isError || getDailyMaxRisk.isError || getRecentScoresQuery.isError");
     expect(dashboardSource).toContain("const safetyMonitoringInitializing = getStats.isLoading || periodOverviewQuery.isLoading || getLogs.isLoading || getDailyMaxRisk.isLoading || getRecentScoresQuery.isLoading");
-    expect(dashboardSource).toContain("복구 필요");
-    expect(dashboardSource).toContain("데이터 연결");
+    expect(dashboardSource).toContain("점검 필요");
+    expect(dashboardSource).toContain("정상 운영");
+    expect(dashboardSource).toContain("const systemStatusKind = safetyMonitoringHasError || !heartbeatAlive ? \"attention\"");
   });
 
   it("retries every failed safety data source from one guarded recovery control", () => {
