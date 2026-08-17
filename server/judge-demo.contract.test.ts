@@ -63,5 +63,9 @@ describe("read-only judge demo contract", () => {
     expect(demoSource).toContain('value="ko"');
     expect(demoSource).toContain('value="en"');
     expect(demoSource).toContain('value="ja"');
+    expect(demoSource).toContain('evidenceLabel: "센서 근거"');
+    expect(demoSource).toContain('evidenceLabel: "Sensor evidence"');
+    expect(demoSource).toContain('evidenceLabel: "センサー根拠"');
+    expect(demoSource).toContain('{text.evidenceLabel}');
   });
 });
