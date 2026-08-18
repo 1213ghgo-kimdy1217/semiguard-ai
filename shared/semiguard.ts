@@ -15,6 +15,8 @@ export interface AnomalyResult {
   anomalyScore: number;   // 0~100
   riskLevel: RiskLevel;
   isAnomaly: boolean;
+  /** 서버가 이 관측값을 저장한 이상 이력 ID. AI 분석을 같은 관측값에만 연결할 때 사용합니다. */
+  logId?: number;
 }
 
 export interface AnomalyLogEntry {

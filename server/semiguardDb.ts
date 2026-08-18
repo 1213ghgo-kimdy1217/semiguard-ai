@@ -5,7 +5,8 @@ import { getDb } from "./db";
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
   const db = await getDb();
   if (!db) return null;
-  await db.insert(anomalyLogs).values(entry);
+  const inserted = await db.insert(anomalyLogs).values(entry).$returningId();
+  return inserted[0]?.id ?? null;
 }
 
 // 특정 로그에 LLM 분석 결과 업데이트 (3개 언어)
@@ -21,6 +22,13 @@ export async function getLastInsertedLogId(): Promise<number | null> {
   if (!db) return null;
   const rows = await db.select({ id: anomalyLogs.id }).from(anomalyLogs).orderBy(desc(anomalyLogs.id)).limit(1);
   return rows[0]?.id ?? null;
+}
+
+export async function getAnomalyLogById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(anomalyLogs).where(eq(anomalyLogs.id, id)).limit(1);
+  return rows[0] ?? null;
 }
 
 // LLM 분석 결과가 있는 최근 로그 N건 조회 (히스토리 패널용) - 3개 언어
