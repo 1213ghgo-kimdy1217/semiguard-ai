@@ -1,18 +1,19 @@
-// SemiGuard AI - Isolation Forest 기반 이상탐지 엔진
+// SemiGuard AI - z-score 기반 규칙형 위험 점수 엔진
 import { getRiskLevel, type RiskLevel, type SensorData } from "../shared/semiguard";
 
-// ─── 정상 데이터 기준값 (학습된 기준) ───────────────────────────────────────
-const NORMAL_BASELINE = {
+// ─── 현재 시뮬레이션 기준값 (실제 설비 학습값 아님) ───────────────────────────
+export const NORMAL_BASELINE = {
   current:     { mean: 5.0,  std: 0.5 },
   temperature: { mean: 45.0, std: 3.0 },
   vibration:   { mean: 2.0,  std: 0.3 },
   noise:       { mean: 55.0, std: 4.0 },
 };
 
-// ─── Isolation Forest 간소화 구현 (서버 사이드) ──────────────────────────────
-// 실제 Isolation Forest의 핵심 아이디어: 이상값일수록 더 적은 분기로 고립됨
-// 여기서는 Mahalanobis 거리 기반 근사 구현 (라이브러리 없이 동작)
-function computeAnomalyScore(data: SensorData): number {
+// ─── 독립 z-score 합산 방식 (서버 사이드) ─────────────────────────────────────
+// 각 센서의 정상 기준에서 벗어난 정도를 표준편차 단위(|z|)로 계산합니다.
+// 센서별 기여도는 |z| × 8, 최대 25점이며 4개 센서 기여도를 100점으로 제한합니다.
+// 현재 구현은 Isolation Forest 라이브러리·학습 모델·공분산 기반 Mahalanobis 거리를 사용하지 않습니다.
+export function computeAnomalyScore(data: SensorData): number {
   const fields: (keyof typeof NORMAL_BASELINE)[] = ["current", "temperature", "vibration", "noise"];
   let totalScore = 0;
 
