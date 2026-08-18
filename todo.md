@@ -1188,7 +1188,8 @@
 
 ## 안전 점검: Express path-to-regexp 보안 패치 (진행 중)
 - [ ] Express 4 전이 `path-to-regexp`를 공식 권고된 0.1.13으로 고정해 ReDoS high 취약점 제거 (현재 Express 4.21.2의 고정 전이 버전이 pnpm 재정의·대상 업데이트로 변경되지 않아, Express 호환 패치 또는 상위 버전 검토 후 진행)
-- [ ] 동결 설치·TypeScript·Vitest·프로덕션 빌드·운영 의존성 감사 검증 및 README 문서화
+- [x] 동결 설치·운영 의존성 감사·TypeScript·Vitest·프로덕션 빌드와 README 문서화 (2026-08-18: `pnpm install --frozen-lockfile --ignore-scripts` 통과, 감사 결과 critical 0·high 3·moderate 16·low 3 / 총 22건, TypeScript·Vitest 383개·프로덕션 빌드 통과; 고위험 전이 의존성은 호환성 검토 전 자동 변경 보류)
+- [ ] `path-to-regexp`·Streamdown·Recharts 계열의 호환성 영향 분석 후 최소 패치 후보별 TypeScript·Vitest·빌드·공개 흐름 검증
 
 ## 안전 점검: 320px 모바일 헤더 상태 레이아웃 (완료)
 - [x] 센서 최신성·경고 상태 텍스트가 좁은 화면에서 세로로 줄바꿈되지 않도록 모바일 헤더 밀도·줄바꿈 보완
