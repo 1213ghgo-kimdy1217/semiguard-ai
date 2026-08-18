@@ -16,14 +16,6 @@ export async function updateAnomalyLogLlm(id: number, ko: string, en: string, ja
   await db.update(anomalyLogs).set({ llmAnalysisKo: ko, llmAnalysisEn: en, llmAnalysisJa: ja }).where(eq(anomalyLogs.id, id));
 }
 
-// 가장 최근 삽입된 로그 ID 조회
-export async function getLastInsertedLogId(): Promise<number | null> {
-  const db = await getDb();
-  if (!db) return null;
-  const rows = await db.select({ id: anomalyLogs.id }).from(anomalyLogs).orderBy(desc(anomalyLogs.id)).limit(1);
-  return rows[0]?.id ?? null;
-}
-
 export async function getAnomalyLogById(id: number) {
   const db = await getDb();
   if (!db) return null;

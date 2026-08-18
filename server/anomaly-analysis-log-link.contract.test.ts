@@ -23,5 +23,7 @@ describe("anomaly analysis log link contract", () => {
     expect(routerSource).toContain("const matchesTargetLog = targetLog");
     expect(routerSource).toContain("if (matchesTargetLog && logId)");
     expect(routerSource).not.toContain("logId ?? await getLastInsertedLogId()");
+    expect(routerSource).not.toContain("getLastInsertedLogId");
+    expect(dbSource).not.toContain("getLastInsertedLogId");
   });
 });
