@@ -26,5 +26,9 @@ describe("product-scope copy contract", () => {
     expect(loginSource).toContain("z-score risk signals");
     expect(loginSource).toContain("z-scoreベースの危険信号");
     expect(loginSource).not.toContain("Isolation Forest AI");
+    expect(dashboardSource).toContain("위험 탐지 건수를 기준으로 산정한 참고값이며, 실제 절감액은 아직 검증되지 않았습니다.");
+    expect(dashboardSource).toContain("actual savings have not yet been validated");
+    expect(dashboardSource).toContain("実際の削減額は未検証です");
+    expect(dashboardSource).toContain("Expected savings (demo assumption; unvalidated)");
   });
 });
