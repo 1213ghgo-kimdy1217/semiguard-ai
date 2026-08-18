@@ -2436,7 +2436,7 @@ export default function Dashboard() {
       metaDesc.setAttribute('name', 'description');
       document.head.appendChild(metaDesc);
     }
-    metaDesc.setAttribute('content', 'SemiGuard AI는 반도체 제조 장비의 전류, 온도, 진동, 소음 센서 데이터를 Isolation Forest AI로 실시간 분석하여 고장 징후를 조기에 탐지하고 LLM으로 원인을 진단하는 스마트 예지안전 솔루션입니다.');
+    metaDesc.setAttribute('content', 'SemiGuard AI는 반도체 장비의 전류·온도·진동·소음 편차를 z-score 기반 위험 점수로 정리하고, 센서 근거와 AI 보조 점검 설명을 제공하는 읽기 전용 예지안전 시스템입니다.');
 
     let metaKw = document.querySelector('meta[name="keywords"]');
     if (!metaKw) {

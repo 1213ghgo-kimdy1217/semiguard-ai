@@ -35,20 +35,20 @@ export function Login() {
       ? {
           locale: "ja-JP",
           title: "SemiGuard AI | 半導体装置の予知安全モニタリング",
-          description: "SemiGuard AIは、半導体製造装置の電流・温度・振動・騒音センサーデータをリアルタイム分析し、故障の兆候を早期に検知してLLMで原因を診断する予知安全ソリューションです。",
+          description: "SemiGuard AIは、半導体装置の電流・温度・振動・騒音の偏差をz-scoreベースの危険信号として整理し、読み取り専用でLLM補助の点検説明を提供します。",
           keywords: "SemiGuard AI, 半導体予知保全, 異常検知, センサーモニタリング, 予知安全システム",
         }
       : loginLanguage === "en"
         ? {
             locale: "en-US",
             title: "SemiGuard AI | Semiconductor Predictive Safety Monitoring",
-            description: "SemiGuard AI analyzes current, temperature, vibration, and noise sensor data from semiconductor equipment in real time to detect early fault signals and diagnose causes with LLM assistance.",
+            description: "SemiGuard AI organizes current, temperature, vibration, and noise deviations into z-score risk signals, with LLM-assisted inspection explanations in a read-only workflow.",
             keywords: "SemiGuard AI, semiconductor predictive maintenance, anomaly detection, sensor monitoring, predictive safety",
           }
         : {
             locale: "ko-KR",
             title: "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템",
-            description: "SemiGuard AI는 반도체 제조 장비의 전류, 온도, 진동, 소음 센서 데이터를 Isolation Forest AI로 실시간 분석하여 고장 징후를 조기에 탐지하고 LLM으로 원인을 진단하는 스마트 예지안전 솔루션입니다.",
+            description: "SemiGuard AI는 반도체 장비의 전류·온도·진동·소음 편차를 z-score 기반 위험 신호로 정리하고, 읽기 전용 환경에서 LLM 보조 점검 설명을 제공하는 예지안전 시스템입니다.",
             keywords: "SemiGuard AI, 반도체 예지보전, 이상탐지, 센서 모니터링, 예지안전 시스템",
           };
 
