@@ -9,6 +9,7 @@ const readme = readProjectDocument("README.md");
 const aiUsage = readProjectDocument("AI_USAGE.md");
 const validationPlan = readProjectDocument("VALIDATION_PLAN.md");
 const pitchStoryboard = readProjectDocument("PITCH_VIDEO_STORYBOARD.md");
+const tenMinuteScript = readProjectDocument("PRESENTATION_10_MIN_SCRIPT.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -17,6 +18,7 @@ describe("submission documentation contract", () => {
       "VALIDATION_PLAN.md",
       "PITCH_VIDEO_STORYBOARD.md",
       "PRESENTATION_DEMO_SCRIPT.md",
+      "PRESENTATION_10_MIN_SCRIPT.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -41,5 +43,15 @@ describe("submission documentation contract", () => {
     expect(aiUsage).toContain("실제 팹에서 검증된 경제적 성과가 아닙니다.");
     expect(validationPlan).toContain("정확도·오탐·미탐·사전 경고 시간을 측정한 결과는 아직 없습니다.");
     expect(pitchStoryboard).toContain("실제 정확도·비용 절감·설비 제어 성과를 이미 달성한 것처럼 말하지 않습니다.");
+  });
+
+  it("keeps the ten-minute script timed, two-person, and transparent about validation status", () => {
+    expect(tenMinuteScript).toContain("0:00–0:40");
+    expect(tenMinuteScript).toContain("9:40–10:00");
+    expect(tenMinuteScript).toContain("김대영");
+    expect(tenMinuteScript).toContain("김승현");
+    expect(tenMinuteScript).toContain("z-score 편차를 합산하는 규칙형 계산");
+    expect(tenMinuteScript).toContain("실제 팹 데이터에서의 정확도는 아직 검증 전입니다.");
+    expect(tenMinuteScript).toContain("설비를 자동으로 멈출 수 있나요?");
   });
 });
