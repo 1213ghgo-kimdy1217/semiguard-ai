@@ -8,16 +8,16 @@ describe("login required-field accessibility contract", () => {
   it("marks the missing badge number as invalid, explains the error, and restores focus", () => {
     expect(loginSource).toContain('setFieldError("badge")');
     expect(loginSource).toContain('document.getElementById("badgeNumber")?.focus()');
-    expect(loginSource).toContain('aria-invalid={fieldError === "badge"}');
-    expect(loginSource).toContain('aria-describedby={fieldError === "badge" ? "badgeNumber-error" : undefined}');
+    expect(loginSource).toContain('aria-invalid={fieldError === "badge" || Boolean(authError)}');
+    expect(loginSource).toContain('aria-describedby={fieldError === "badge" ? "badgeNumber-error" : authError ? "login-auth-error" : undefined}');
     expect(loginSource).toContain('id="badgeNumber-error"');
   });
 
   it("marks the missing password as invalid, explains the error, and restores focus", () => {
     expect(loginSource).toContain('setFieldError("password")');
     expect(loginSource).toContain('document.getElementById("password")?.focus()');
-    expect(loginSource).toContain('aria-invalid={fieldError === "password"}');
-    expect(loginSource).toContain('aria-describedby={fieldError === "password" ? "password-error" : undefined}');
+    expect(loginSource).toContain('aria-invalid={fieldError === "password" || Boolean(authError)}');
+    expect(loginSource).toContain('aria-describedby={fieldError === "password" ? "password-error" : authError ? "login-auth-error" : undefined}');
     expect(loginSource).toContain('id="password-error"');
   });
 

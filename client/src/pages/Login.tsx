@@ -74,6 +74,7 @@ export function Login() {
   const [badgeNumber, setBadgeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [fieldError, setFieldError] = useState<"badge" | "password" | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -236,6 +237,7 @@ export function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError(null);
 
     if (!badgeNumber.trim()) {
       setFieldError("badge");
@@ -279,7 +281,9 @@ export function Login() {
       window.location.href = "/";
     } catch (error) {
       console.error("Login error:", error);
+      setAuthError(loginMessages.failed);
       toast.error(loginMessages.failed);
+      window.requestAnimationFrame(() => document.getElementById("password")?.focus());
     } finally {
       setIsLoading(false);
     }
@@ -342,6 +346,7 @@ export function Login() {
 
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-4" aria-busy={isLoading}>
+            {authError && <p id="login-auth-error" className="rounded-lg border border-rose-400/45 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-200" role="alert">{authError}</p>}
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{loginUi.employeeLogin}</p>
             {/* Badge Number */}
             <div className="space-y-2">
@@ -356,11 +361,12 @@ export function Login() {
                 onChange={(e) => {
                   setBadgeNumber(e.target.value);
                   if (fieldError === "badge") setFieldError(null);
+                  if (authError) setAuthError(null);
                 }}
                 autoComplete="username"
                 inputMode="text"
-                aria-invalid={fieldError === "badge"}
-                aria-describedby={fieldError === "badge" ? "badgeNumber-error" : undefined}
+                aria-invalid={fieldError === "badge" || Boolean(authError)}
+                aria-describedby={fieldError === "badge" ? "badgeNumber-error" : authError ? "login-auth-error" : undefined}
                 className="h-12 bg-slate-700/70 border-slate-600 text-white placeholder-slate-500 text-base"
                 disabled={isLoading}
               />
@@ -379,15 +385,16 @@ export function Login() {
                   placeholder={loginUi.passwordPlaceholder}
                   value={password}
                   onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (fieldError === "password") setFieldError(null);
-                  }}
+                  setPassword(e.target.value);
+                  if (fieldError === "password") setFieldError(null);
+                  if (authError) setAuthError(null);
+                }}
                   onKeyDown={(event) => setCapsLockOn(event.getModifierState("CapsLock"))}
                   onKeyUp={(event) => setCapsLockOn(event.getModifierState("CapsLock"))}
                   onBlur={() => setCapsLockOn(false)}
                   autoComplete="current-password"
-                  aria-invalid={fieldError === "password"}
-                  aria-describedby={fieldError === "password" ? "password-error" : undefined}
+                  aria-invalid={fieldError === "password" || Boolean(authError)}
+                  aria-describedby={fieldError === "password" ? "password-error" : authError ? "login-auth-error" : undefined}
                   className="h-12 bg-slate-700/70 border-slate-600 pr-24 text-white placeholder-slate-500 text-base"
                   disabled={isLoading}
                 />
