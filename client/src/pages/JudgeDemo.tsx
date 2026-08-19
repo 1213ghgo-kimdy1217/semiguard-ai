@@ -54,6 +54,8 @@ const mockSensorTrace = [
 
 function getInitialLanguage(): DemoLanguage {
   try {
+    const requested = new URLSearchParams(window.location.search).get("lang");
+    if (requested === "en" || requested === "ja" || requested === "ko") return requested;
     const saved = localStorage.getItem("semiguard_lang");
     return saved === "en" || saved === "ja" || saved === "ko" ? saved : "ko";
   } catch {

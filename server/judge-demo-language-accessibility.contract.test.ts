@@ -15,4 +15,10 @@ describe("JudgeDemo 언어 선택 접근성 계약", () => {
     expect(source).toContain('role="group" aria-label={text.languageLabel}');
     expect(source).toContain('<label className="sr-only" htmlFor="judge-demo-language">{text.languageLabel}</label>');
   });
+
+  it("유효한 언어 URL 매개변수는 저장된 언어보다 먼저 적용해 직접 공유 링크를 지원합니다", () => {
+    expect(source).toContain('new URLSearchParams(window.location.search).get("lang")');
+    expect(source).toContain('if (requested === "en" || requested === "ja" || requested === "ko") return requested;');
+    expect(source).toContain('const saved = localStorage.getItem("semiguard_lang")');
+  });
 });
