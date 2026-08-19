@@ -3974,7 +3974,7 @@ export default function Dashboard() {
               {lang === "ko" ? "화면 및 알림" : lang === "ja" ? "画面と通知" : "Display & alerts"}
             </p>
             <div className="grid grid-cols-2 gap-2 mb-5">
-              <button type="button" onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")} className="min-h-11 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
+              <button type="button" onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")} aria-label={lang === "ko" ? "현재 언어: 한국어. 영어로 전환" : lang === "en" ? "Current language: English. Switch to Japanese" : "現在の言語: 日本語。韓国語に切替"} title={lang === "ko" ? "영어로 전환" : lang === "en" ? "Switch to Japanese" : "한국어로 전환"} className="min-h-11 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
                 {lang === "ko" ? "EN" : lang === "en" ? "日本語" : "한국어"}
               </button>
               <button type="button" onClick={() => setIsDark(d => { const next = !d; try { localStorage.setItem("semiguard_theme", next ? "dark" : "light"); } catch {} return next; })} className="min-h-11 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: isDark ? "oklch(0.35 0.01 240)" : "oklch(0.75 0.08 80 / 0.5)", color: isDark ? "oklch(0.65 0.15 60)" : "oklch(0.40 0.08 80)", background: isDark ? "oklch(0.15 0.01 240)" : "oklch(0.92 0.04 80 / 0.3)" }}>
@@ -4049,6 +4049,7 @@ export default function Dashboard() {
           </button>
           {!isMobile && <div className="w-px h-5 bg-border" />}
           <button type="button" onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")}
+            aria-label={lang === "ko" ? "현재 언어: 한국어. 영어로 전환" : lang === "en" ? "Current language: English. Switch to Japanese" : "現在の言語: 日本語。韓国語に切替"}
             className="hidden px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-200 hover:opacity-80 active:scale-95"
             style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}
             title={lang === "ko" ? "영어로 전환" : lang === "en" ? "日本語に切替" : "한국어로 전환"}>

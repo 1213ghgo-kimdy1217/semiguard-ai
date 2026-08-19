@@ -1587,6 +1587,7 @@
 - [x] 미리보기 네트워크 단절 시 대시보드가 무한 스켈레톤 대신 KO/EN/JA 연결 복구·재시도 안내를 제공하고 회귀 테스트 추가 (기존 핵심 조회 오류 감지·상태 배지·재연결 제어가 모든 핵심 쿼리를 refetch하고 KO/EN/JA aria-label을 제공함을 확인, TypeScript·Vitest 503개·프로덕션 빌드 상태 유지)
 - [x] 로그인 소셜 계정 연결 제어 묶음에 KO/EN/JA group 역할·이름을 제공하고 회귀 테스트 추가 (Google·Naver·Kakao 제어 묶음을 명명된 group으로 노출, TypeScript·Vitest 504개·프로덕션 빌드 통과)
 - [x] 로그인·회원가입 언어 선택 제어의 Arrow·Home·End 키 조작과 KO/EN/JA 회귀 테스트 추가 (Arrow·Home·End로 언어 선택·초점을 함께 이동하고 localStorage 언어 저장을 유지, TypeScript·Vitest 506개·프로덕션 빌드 통과)
+- [x] 대시보드 언어 전환 제어의 다음 언어·현재 언어 안내를 KO/EN/JA 보조기기에 명확히 제공하고 회귀 테스트 추가 (메뉴·헤더 제어가 현재 언어와 다음 전환 언어를 명시적으로 안내, TypeScript·Vitest 507개·프로덕션 빌드 통과)
 - [x] 대시보드 Recharts 별도 캐시 청크 후보를 검증했으나 기존 번들 계약이 수동 `manualChunks`를 금지해 즉시 되돌림; Vite 의존성 그래프·기존 지연 로딩을 유지하고 TypeScript·Vitest 425개·프로덕션 빌드 재확인
 - [x] README 최신 회귀 테스트 수치를 425개 결과와 일치시키고 제출 문서 계약 테스트 확인 (TypeScript·Vitest 425개·프로덕션 빌드 통과)
 - [x] LLM 사용량 소진 시 실시간 수치 기반 기본 안전 진단 배지·재시도·KO/EN/JA·저장 이력 경계를 확인하는 계약 테스트 4개 파일·8개 항목 통과 (기존 안전 안내 구현 확인, 코드 변경 없음)
