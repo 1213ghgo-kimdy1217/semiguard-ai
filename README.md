@@ -11,7 +11,7 @@
 
 - [프로젝트 개요](#프로젝트-개요) · [1주차 팀 목표](#1주차-팀-목표) · [빠른 안내](#빠른-안내) · [문제와 해결 방식](#문제와-해결-방식) · [핵심 기능](#핵심-기능)
 - [시스템 구조](#시스템-구조) · [탐지 방식과 검증 상태](#탐지-방식과-검증-상태) · [AI 활용과 안전 원칙](#ai-활용과-안전-원칙) · [실제 팹 도입 경로](#실제-팹-도입-경로) · [실행 방법](#실행-방법) · [테스트](#테스트)
-- [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [실증 검증 계획](VALIDATION_PLAN.md) · [의존성 보안 검토](DEPENDENCY_SECURITY_REVIEW.md) · [모바일 소셜 로그인 검증](MOBILE_SOCIAL_LOGIN_VALIDATION.md) · [발표 시연 스크립트](PRESENTATION_DEMO_SCRIPT.md) · [10분 발표 대본](PRESENTATION_10_MIN_SCRIPT.md) · [3분 피치 영상 스토리보드](PITCH_VIDEO_STORYBOARD.md) · [3분 영상 녹화 체크리스트](DEMO_RECORDING_CHECKLIST.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
+- [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [실증 검증 계획](VALIDATION_PLAN.md) · [과거 로그 파일럿 검증 템플릿](PILOT_LOG_VALIDATION_TEMPLATE.md) · [의존성 보안 검토](DEPENDENCY_SECURITY_REVIEW.md) · [모바일 소셜 로그인 검증](MOBILE_SOCIAL_LOGIN_VALIDATION.md) · [발표 시연 스크립트](PRESENTATION_DEMO_SCRIPT.md) · [10분 발표 대본](PRESENTATION_10_MIN_SCRIPT.md) · [3분 피치 영상 스토리보드](PITCH_VIDEO_STORYBOARD.md) · [3분 영상 녹화 체크리스트](DEMO_RECORDING_CHECKLIST.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
 
 ## 프로젝트 개요
 

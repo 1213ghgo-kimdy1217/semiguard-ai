@@ -12,6 +12,7 @@ const pitchStoryboard = readProjectDocument("PITCH_VIDEO_STORYBOARD.md");
 const tenMinuteScript = readProjectDocument("PRESENTATION_10_MIN_SCRIPT.md");
 const recordingChecklist = readProjectDocument("DEMO_RECORDING_CHECKLIST.md");
 const mobileSocialLoginValidation = readProjectDocument("MOBILE_SOCIAL_LOGIN_VALIDATION.md");
+const pilotLogValidationTemplate = readProjectDocument("PILOT_LOG_VALIDATION_TEMPLATE.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -23,6 +24,7 @@ describe("submission documentation contract", () => {
       "PRESENTATION_10_MIN_SCRIPT.md",
       "DEMO_RECORDING_CHECKLIST.md",
       "MOBILE_SOCIAL_LOGIN_VALIDATION.md",
+      "PILOT_LOG_VALIDATION_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -71,5 +73,12 @@ describe("submission documentation contract", () => {
     expect(mobileSocialLoginValidation).toContain("신규 계정을 만드는 경로가 아닙니다");
     expect(mobileSocialLoginValidation).toContain("클라이언트 시크릿, 인증 코드, 액세스 토큰, 쿠키 값은");
     expect(mobileSocialLoginValidation).toContain("대시보드 진입 → 새로고침 후 유지 → 로그아웃 후 로그인 화면 복귀");
+  });
+
+  it("keeps the pilot log template empty, approval-gated, and read-only before real data is supplied", () => {
+    expect(pilotLogValidationTemplate).toContain("현재는 데이터를 수령하거나 업로드하지 않았으며");
+    expect(pilotLogValidationTemplate).toContain("승인한 과거 센서 로그의 읽기 전용 복제본");
+    expect(pilotLogValidationTemplate).toContain("오탐과 미탐은 삭제하거나 예외로 숨기지 않습니다");
+    expect(pilotLogValidationTemplate).toContain("설비 제어 기능을 추가하지 않습니다");
   });
 });
