@@ -283,7 +283,7 @@ export function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-md border-slate-700 bg-slate-800 shadow-2xl">
         <div className="p-6 sm:p-8">
           <div className="mb-6 flex justify-end" role="group" aria-label={copy.languageLabel}>
@@ -386,7 +386,7 @@ export function Signup() {
           </div>
         </div>
       </Card>
-    </div>
+    </main>
   );
 }
 

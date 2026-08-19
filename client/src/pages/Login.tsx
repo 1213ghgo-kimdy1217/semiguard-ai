@@ -326,7 +326,7 @@ export function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-4 py-8 sm:py-12">
+    <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-4 py-8 sm:py-12">
       <Card className="w-full max-w-md p-6 sm:p-8 bg-slate-800/90 border-slate-700 shadow-2xl">
         <div className="space-y-6">
           <div className="flex justify-end" role="group" aria-label={loginLanguage === "ja" ? "表示言語" : loginLanguage === "en" ? "Display language" : "표시 언어"}>
@@ -579,6 +579,6 @@ export function Login() {
           </p>
         </div>
       </Card>
-    </div>
+    </main>
   );
 }
