@@ -19,4 +19,11 @@ describe("signup password strength contract", () => {
     expect(signupSource).toContain('aria-live="polite"');
     expect(signupSource).toContain("copy.passwordStrength[passwordStrength.level]");
   });
+
+  it("associates the password field with its localized live strength status", () => {
+    expect(signupSource).toContain('"password-strength-status"');
+    expect(signupSource).toContain('id="password-strength-status"');
+    expect(signupSource).toContain('role="status"');
+    expect(signupSource).toContain('aria-describedby={[fieldError === "password" ? "password-error" : null, "password-strength-status"].filter(Boolean).join(" ")}');
+  });
 });

@@ -321,7 +321,7 @@ export function Signup() {
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
               <div className="relative">
-                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} aria-invalid={fieldError === "password"} aria-describedby={fieldError === "password" ? "password-error" : undefined} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} aria-invalid={fieldError === "password"} aria-describedby={[fieldError === "password" ? "password-error" : null, "password-strength-status"].filter(Boolean).join(" ")} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
                 <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
@@ -333,7 +333,7 @@ export function Signup() {
                   <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 2 ? "bg-amber-400" : "bg-slate-600"}`} />
                   <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 3 ? "bg-emerald-400" : "bg-slate-600"}`} />
                 </div>
-                <p className="text-xs text-slate-400">
+                <p id="password-strength-status" role="status" aria-live="polite" aria-atomic="true" className="text-xs text-slate-400">
                   {copy.passwordStrengthLabel}: <span className="font-semibold text-slate-200">{copy.passwordStrength[passwordStrength.level]}</span>
                 </p>
               </div>
