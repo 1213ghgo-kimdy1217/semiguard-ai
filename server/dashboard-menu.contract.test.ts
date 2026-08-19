@@ -124,16 +124,16 @@ describe("dashboard slide menu interaction contract", () => {
 
   it("declares AI analysis panel close controls as non-submitting buttons", () => {
     expect(dashboardSource).toContain('<button\n                type="button"\n                onClick={() => setLlmAnalysis(null)}');
-    expect(dashboardSource).toContain('<button type="button" onClick={closeAiHistory}');
+    expect(dashboardSource).toContain('<button type="button" ref={aiHistoryCloseRef} onClick={closeAiHistory}');
     expect(dashboardSource).toContain("const aiHistoryTriggerRef = useRef<HTMLButtonElement>(null)");
     expect(dashboardSource).toContain("requestAnimationFrame(() => aiHistoryTriggerRef.current?.focus())");
   });
 
-  it("connects the AI analysis history trigger to its expandable region", () => {
+  it("connects the AI analysis history trigger to its named dialog", () => {
     expect(dashboardSource).toContain('aria-controls="ai-analysis-history-panel"');
     expect(dashboardSource).toContain('aria-expanded={showAiHistory}');
     expect(dashboardSource).toContain("ref={aiHistoryTriggerRef}");
-    expect(dashboardSource).toContain('id="ai-analysis-history-panel" role="region" aria-labelledby="ai-analysis-history-title"');
+    expect(dashboardSource).toContain('id="ai-analysis-history-panel" role="dialog" aria-modal="true" aria-labelledby="ai-analysis-history-title"');
   });
 
   it("exposes the floating AI analysis result as a named live assistive-technology region", () => {

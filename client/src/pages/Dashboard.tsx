@@ -1302,6 +1302,7 @@ export default function Dashboard() {
     setShowResetConfirmModal(false);
     setActiveDislikeIdx(null);
     setOtherReasonIdx(null);
+    setShowAiHistory(false);
     setDangerAlert(true);
   }, []);
   const acknowledgeDangerAlert = useCallback(() => {
@@ -1389,11 +1390,46 @@ export default function Dashboard() {
   const [llmLoading, setLlmLoading] = useState(false);
   const [showAiHistory, setShowAiHistory] = useState(false);
   const aiHistoryTriggerRef = useRef<HTMLButtonElement>(null);
+  const aiHistoryCloseRef = useRef<HTMLButtonElement>(null);
+  const aiHistoryDialogRef = useRef<HTMLDivElement>(null);
   const llmHistoryQuery = trpc.semiguard.getLlmHistory.useQuery(undefined, { refetchInterval: 10000 });
   const closeAiHistory = () => {
     setShowAiHistory(false);
     requestAnimationFrame(() => aiHistoryTriggerRef.current?.focus());
   };
+
+  useEffect(() => {
+    if (!showAiHistory) return;
+
+    const focusTimer = window.setTimeout(() => aiHistoryCloseRef.current?.focus(), 0);
+    const handleHistoryKeys = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeAiHistory();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const dialog = aiHistoryDialogRef.current;
+      const focusable = dialog
+        ? Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter((element) => element.offsetParent !== null)
+        : [];
+      if (focusable.length === 0) return;
+
+      const currentIndex = focusable.indexOf(document.activeElement as HTMLElement);
+      const nextIndex = event.shiftKey
+        ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+        : (currentIndex === -1 || currentIndex === focusable.length - 1 ? 0 : currentIndex + 1);
+      event.preventDefault();
+      focusable[nextIndex]?.focus();
+    };
+
+    window.addEventListener("keydown", handleHistoryKeys);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("keydown", handleHistoryKeys);
+    };
+  }, [showAiHistory]);
 
   // 대화형 AI 상담 챗봇 상태 및 세션 보관 관리
   const [isChatOpen, setIsChatOpen] = useState(() =>
@@ -2086,6 +2122,7 @@ export default function Dashboard() {
       if (event.key !== "Escape" || event.defaultPrevented) return;
       event.preventDefault();
 
+      if (showAiHistory) return closeAiHistory();
       if (activeManualSource) return setActiveManualSource(null);
       if (showDeleteAllFeedbackFinalConfirm) return setShowDeleteAllFeedbackFinalConfirm(false);
       if (showDeleteAllFeedbackConfirm) return setShowDeleteAllFeedbackConfirm(false);
@@ -2116,6 +2153,7 @@ export default function Dashboard() {
     showDeleteAllFeedbackFinalConfirm,
     showFeedbackHistoryPanel,
     showHistoryPanel,
+    showAiHistory,
     showManualRagModal,
     showResetConfirmModal,
   ]);
@@ -3697,7 +3735,7 @@ export default function Dashboard() {
 
       {/* ── AI 분석 히스토리 패널 ── */}
       {showAiHistory && (
-        <div id="ai-analysis-history-panel" role="region" aria-labelledby="ai-analysis-history-title" className="fixed bottom-6 left-4 sm:left-6 z-[490] w-[calc(100vw-2rem)] max-w-80 rounded-2xl shadow-2xl overflow-hidden"
+        <div ref={aiHistoryDialogRef} id="ai-analysis-history-panel" role="dialog" aria-modal="true" aria-labelledby="ai-analysis-history-title" aria-describedby="ai-analysis-history-description" className="fixed bottom-6 left-4 sm:left-6 z-[490] w-[calc(100vw-2rem)] max-w-80 rounded-2xl shadow-2xl overflow-hidden"
           style={{
             background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
             border: "1px solid oklch(0.75 0.18 200 / 0.35)",
@@ -3711,13 +3749,13 @@ export default function Dashboard() {
                 {lang === "ko" ? "AI 분석 히스토리 (최근 5건)" : lang === "ja" ? "AI分析履歴（直近5件）" : "AI Analysis History (Last 5)"}
               </span>
             </div>
-            <button type="button" onClick={closeAiHistory}
+            <button type="button" ref={aiHistoryCloseRef} onClick={closeAiHistory}
               className="w-5 h-5 rounded-full flex items-center justify-center text-xs transition-opacity hover:opacity-70"
               style={{ background: "rgba(128,128,128,0.2)", color: th.textMuted }}
               aria-label={lang === "ko" ? "AI 분석 이력 닫기" : lang === "ja" ? "AI分析履歴を閉じる" : "Close AI analysis history"}>✕</button>
           </div>
           <div className="max-h-80 overflow-y-auto">
-            <div className="mx-4 mt-3 rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" style={{ borderColor: "oklch(0.75 0.18 200 / 0.28)", background: isDark ? "oklch(0.16 0.02 240 / 0.62)" : "oklch(0.96 0.025 225 / 0.76)", color: th.textMuted }}>
+            <div id="ai-analysis-history-description" className="mx-4 mt-3 rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" style={{ borderColor: "oklch(0.75 0.18 200 / 0.28)", background: isDark ? "oklch(0.16 0.02 240 / 0.62)" : "oklch(0.96 0.025 225 / 0.76)", color: th.textMuted }}>
               {lang === "ko"
                 ? "새 분석은 동일 관측 로그의 센서값·점수·위험 단계를 확인한 뒤 저장됩니다. 출처 로그 번호를 선택하면 해당 시점의 센서 상세를 확인할 수 있습니다."
                 : lang === "ja"
