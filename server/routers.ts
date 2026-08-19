@@ -352,6 +352,27 @@ export const appRouter = router({
         }));
       }),
 
+    getLogById: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const log = await getAnomalyLogById(input.id);
+        if (!log) return null;
+        return {
+          id: log.id,
+          timestamp: log.timestamp.toISOString(),
+          current: log.current,
+          temperature: log.temperature,
+          vibration: log.vibration,
+          noise: log.noise,
+          anomalyScore: log.anomalyScore,
+          riskLevel: log.riskLevel,
+          isAnomaly: log.isAnomaly === 1,
+          llmAnalysisKo: log.llmAnalysisKo ?? null,
+          llmAnalysisEn: log.llmAnalysisEn ?? null,
+          llmAnalysisJa: log.llmAnalysisJa ?? null,
+        };
+      }),
+
     clearLogs: protectedProcedure.mutation(async () => {
     await clearAnomalyLogs();
     // 로그 초기화 시 danger_reset_offset도 0으로 리셋

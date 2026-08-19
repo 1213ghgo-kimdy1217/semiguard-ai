@@ -1281,6 +1281,7 @@ export default function Dashboard() {
   }, [dangerAlert]);
   const prevLogCountRef = useRef(0);
   const [selectedLog, setSelectedLog] = useState<import("../../../shared/semiguard").AnomalyLogEntry | null>(null);
+  const [openingSourceLogId, setOpeningSourceLogId] = useState<number | null>(null);
   const selectedLogCloseRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!selectedLog) return;
@@ -3546,6 +3547,7 @@ export default function Dashboard() {
               const rawItem = lang === "ko" ? item.llmAnalysisKo : lang === "ja" ? item.llmAnalysisJa : item.llmAnalysisEn;
               const fallbackItem = item.llmAnalysisKo || item.llmAnalysisEn || item.llmAnalysisJa;
               const sourceLog = logs.find((log) => log.id === item.id);
+              const isOpeningSourceLog = openingSourceLogId === item.id;
               try { parsed = JSON.parse(rawItem ?? fallbackItem ?? ""); } catch {}
               const lvlColor = item.riskLevel === "danger" ? "rgb(239,68,68)" : item.riskLevel === "warning" ? "rgb(249,115,22)" : "rgb(234,179,8)";
               return (
@@ -3557,22 +3559,32 @@ export default function Dashboard() {
                       </span>
                       <button
                         type="button"
-                        disabled={!sourceLog}
-                        onClick={() => {
-                          if (!sourceLog) return;
-                          setShowAiHistory(false);
-                          setSelectedLog(sourceLog);
+                        disabled={isOpeningSourceLog}
+                        onClick={async () => {
+                          setOpeningSourceLogId(item.id);
+                          try {
+                            const exactLog = sourceLog ?? await utils.semiguard.getLogById.fetch({ id: item.id });
+                            if (!exactLog) {
+                              toast.error(lang === "ko" ? "출처 관측 로그를 찾을 수 없습니다." : lang === "ja" ? "出典観測ログが見つかりません。" : "The source observation log could not be found.");
+                              return;
+                            }
+                            setShowAiHistory(false);
+                            setSelectedLog(exactLog);
+                          } catch (error) {
+                            console.error("Source observation log lookup failed:", error);
+                            toast.error(lang === "ko" ? "출처 관측 로그를 불러오지 못했습니다." : lang === "ja" ? "出典観測ログを取得できませんでした。" : "Could not load the source observation log.");
+                          } finally {
+                            setOpeningSourceLogId(null);
+                          }
                         }}
                         className="shrink-0 rounded px-1 py-0.5 text-[8px] font-semibold transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-55"
                         style={{ background: isDark ? "oklch(0.23 0.025 240)" : "oklch(0.91 0.018 240)", color: th.textMuted }}
-                        aria-label={sourceLog
-                          ? (lang === "ko" ? `출처 관측 로그 ${item.id} 상세 보기` : lang === "ja" ? `出典観測ログ ${item.id} の詳細を表示` : `View source observation log ${item.id} details`)
-                          : (lang === "ko" ? `출처 관측 로그 ${item.id}가 현재 이력에 없습니다` : lang === "ja" ? `出典観測ログ ${item.id} は現在の履歴にありません` : `Source observation log ${item.id} is not in the current history`) }
-                        title={sourceLog
-                          ? (lang === "ko" ? "센서 상세 보기" : lang === "ja" ? "センサー詳細を表示" : "View sensor details")
-                          : (lang === "ko" ? "현재 불러온 이력에서 찾을 수 없습니다" : lang === "ja" ? "現在読み込まれた履歴では見つかりません" : "Not found in the currently loaded history")}
+                        aria-label={lang === "ko" ? `출처 관측 로그 ${item.id} 상세 보기` : lang === "ja" ? `出典観測ログ ${item.id} の詳細を表示` : `View source observation log ${item.id} details`}
+                        title={isOpeningSourceLog
+                          ? (lang === "ko" ? "센서 상세 불러오는 중" : lang === "ja" ? "センサー詳細を読み込み中" : "Loading sensor details")
+                          : (lang === "ko" ? "센서 상세 보기" : lang === "ja" ? "センサー詳細を表示" : "View sensor details")}
                       >
-                        {lang === "ko" ? `로그 #${item.id}` : lang === "ja" ? `ログ #${item.id}` : `Log #${item.id}`}
+                        {isOpeningSourceLog ? "…" : (lang === "ko" ? `로그 #${item.id}` : lang === "ja" ? `ログ #${item.id}` : `Log #${item.id}`)}
                       </button>
                     </div>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: lvlColor, background: `${lvlColor}18`, border: `1px solid ${lvlColor}30` }}>

@@ -10,7 +10,7 @@ describe("AI analysis history source-log transparency", () => {
     expect(dashboard).toContain("Log #${item.id}");
     expect(dashboard).toContain("ログ #${item.id}");
     expect(dashboard).toContain("출처 관측 로그 ${item.id}");
-    expect(dashboard).toContain("Source observation log ${item.id}");
+    expect(dashboard).toContain("View source observation log ${item.id} details");
     expect(dashboard).toContain("出典観測ログ ${item.id}");
   });
 

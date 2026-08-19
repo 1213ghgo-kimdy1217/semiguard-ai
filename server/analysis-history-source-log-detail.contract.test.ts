@@ -7,13 +7,14 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 describe("AI analysis history source-log detail contract", () => {
   it("maps an analysis item to the same observation log before opening details", () => {
     expect(dashboardSource).toContain("const sourceLog = logs.find((log) => log.id === item.id);");
-    expect(dashboardSource).toContain("setSelectedLog(sourceLog);");
+    expect(dashboardSource).toContain("const exactLog = sourceLog ?? await utils.semiguard.getLogById.fetch({ id: item.id });");
+    expect(dashboardSource).toContain("setSelectedLog(exactLog);");
     expect(dashboardSource).toContain("setShowAiHistory(false);");
   });
 
   it("keeps the source-log control accessible and prevents a missing log from opening an unrelated detail", () => {
-    expect(dashboardSource).toContain("disabled={!sourceLog}");
-    expect(dashboardSource).toContain("if (!sourceLog) return;");
+    expect(dashboardSource).toContain("disabled={isOpeningSourceLog}");
+    expect(dashboardSource).toContain("if (!exactLog)");
     expect(dashboardSource).toContain("View source observation log ${item.id} details");
   });
 });
