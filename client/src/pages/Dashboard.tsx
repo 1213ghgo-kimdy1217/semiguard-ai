@@ -1091,6 +1091,9 @@ export default function Dashboard() {
   const [isFirstUseFeedbackPromptDismissed, setIsFirstUseFeedbackPromptDismissed] = useState(() => readDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY) === "true");
   const onboardingInitializedRef = useRef(false);
   const feedbackPromptedRef = useRef(false);
+  const onboardingTriggerRef = useRef<HTMLButtonElement>(null);
+  const onboardingCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const onboardingDialogRef = useRef<HTMLElement>(null);
   const firstUseFeedbackTriggerRef = useRef<HTMLButtonElement>(null);
   const firstUseFeedbackCloseButtonRef = useRef<HTMLButtonElement>(null);
   const firstUseFeedbackDialogRef = useRef<HTMLElement>(null);
@@ -1116,6 +1119,35 @@ export default function Dashboard() {
     feedbackPromptedRef.current = true;
     setIsFirstUseFeedbackOpen(true);
   }, [firstUseFeedbackQuery.data, firstUseFeedbackQuery.isLoading, isFirstUseFeedbackPromptDismissed, onboardingProgressQuery.data?.completedAt]);
+  const closeOnboarding = () => {
+    setIsOnboardingOpen(false);
+    requestAnimationFrame(() => onboardingTriggerRef.current?.focus());
+  };
+  useEffect(() => {
+    if (!isOnboardingOpen) return;
+    onboardingCloseButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeOnboarding();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusableControls = Array.from(onboardingDialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? []);
+      const firstControl = focusableControls[0];
+      const lastControl = focusableControls.at(-1);
+      if (!firstControl || !lastControl) return;
+      if (event.shiftKey && document.activeElement === firstControl) {
+        event.preventDefault();
+        lastControl.focus();
+      } else if (!event.shiftKey && document.activeElement === lastControl) {
+        event.preventDefault();
+        firstControl.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOnboardingOpen]);
   const closeFirstUseFeedback = () => {
     persistDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY, "true");
     setIsFirstUseFeedbackPromptDismissed(true);
@@ -6803,14 +6835,14 @@ export default function Dashboard() {
       </main>
 
       {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && (
-        <button type="button" onClick={() => setIsOnboardingOpen(true)} className="fixed bottom-5 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.65 0.18 200 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.16 220)" }} aria-label={onboardingCopy.review}>ⓘ {onboardingCopy.review}</button>
+        <button ref={onboardingTriggerRef} type="button" onClick={() => setIsOnboardingOpen(true)} className="fixed bottom-5 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.65 0.18 200 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.16 220)" }} aria-label={onboardingCopy.review}>ⓘ {onboardingCopy.review}</button>
       )}
       {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && <button ref={firstUseFeedbackTriggerRef} type="button" onClick={() => { const current = firstUseFeedbackQuery.data; setFirstUseEaseRating(current?.easeRating ?? 0); setFirstUseDifficultStep(current?.difficultStep ?? "none"); setIsFirstUseFeedbackOpen(true); }} className="fixed bottom-16 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.70 0.15 85 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.86 0.13 85)" : "oklch(0.46 0.13 62)" }} aria-label={firstUseFeedbackCopy.edit}>★ {firstUseFeedbackCopy.edit}</button>}
 
       {isOnboardingOpen && (
         <div className="fixed inset-0 z-[650] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-analysis-onboarding-title">
-          <section className="w-full max-w-lg rounded-2xl border p-5 shadow-2xl sm:p-6" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.005 240)", color: th.text }}>
-            <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: "oklch(0.68 0.15 200)" }}>{onboardingCopy.progress} {onboardingStep}/3</p><h2 id="first-analysis-onboarding-title" className="mt-1 text-lg font-black">{onboardingCopy.title}</h2><p className="mt-2 text-xs leading-5" style={{ color: th.textMuted }}>{onboardingCopy.subtitle}</p></div><button type="button" onClick={() => setIsOnboardingOpen(false)} className="rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.textMuted }}>{onboardingCopy.later}</button></div>
+          <section ref={onboardingDialogRef} className="w-full max-w-lg rounded-2xl border p-5 shadow-2xl sm:p-6" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.005 240)", color: th.text }}>
+            <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: "oklch(0.68 0.15 200)" }}>{onboardingCopy.progress} {onboardingStep}/3</p><h2 id="first-analysis-onboarding-title" className="mt-1 text-lg font-black">{onboardingCopy.title}</h2><p className="mt-2 text-xs leading-5" style={{ color: th.textMuted }}>{onboardingCopy.subtitle}</p></div><button ref={onboardingCloseButtonRef} type="button" onClick={closeOnboarding} className="rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.textMuted }}>{onboardingCopy.later}</button></div>
             <div className="mt-5 flex gap-2" aria-label={`${onboardingCopy.progress} ${onboardingStep}/3`}>{onboardingCopy.steps.map((label, index) => <button key={label} type="button" onClick={() => void persistOnboardingStep((index + 1) as 1 | 2 | 3)} className="flex-1 rounded-lg border px-2 py-2 text-[10px] font-bold transition focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: onboardingStep === index + 1 ? "oklch(0.65 0.18 200 / 0.65)" : th.border2, background: onboardingStep === index + 1 ? "oklch(0.65 0.18 200 / 0.12)" : "transparent", color: onboardingStep === index + 1 ? "oklch(0.75 0.14 200)" : th.textMuted }}>{index + 1}. {label}</button>)}</div>
             <article className="mt-4 rounded-xl border p-4" style={{ borderColor: th.border2, background: isDark ? "oklch(0.18 0.02 240)" : "oklch(0.96 0.01 240)" }}><p className="text-sm leading-6">{onboardingStep === 1 ? onboardingCopy.risk : onboardingStep === 2 ? onboardingCopy.evidence : onboardingCopy.action}</p></article>
             <div className="mt-5 flex items-center justify-between gap-3"><button type="button" disabled={onboardingStep === 1 || saveOnboardingProgressMutation.isPending} onClick={() => void persistOnboardingStep((onboardingStep - 1) as 1 | 2 | 3)} className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.text }}>{onboardingCopy.previous}</button>{onboardingStep < 3 ? <button type="button" disabled={saveOnboardingProgressMutation.isPending} onClick={() => void persistOnboardingStep((onboardingStep + 1) as 1 | 2 | 3)} className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-45">{onboardingCopy.next}</button> : <button type="button" disabled={saveOnboardingProgressMutation.isPending} onClick={() => { void persistOnboardingStep(3, true); setIsOnboardingOpen(false); }} className="rounded-lg border border-emerald-300/60 bg-emerald-300/10 px-3 py-2 text-xs font-bold text-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:opacity-45">{onboardingCopy.finish}</button>}</div>
