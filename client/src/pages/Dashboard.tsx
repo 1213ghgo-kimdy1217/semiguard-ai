@@ -3533,6 +3533,12 @@ export default function Dashboard() {
           { label: lang === "ko" ? "진동" : lang === "ja" ? "振動" : "Vibration",        value: log.vibration.toFixed(2),   unit: "mm/s", icon: "📳", color: "#a78bfa" },
           { label: lang === "ko" ? "소음" : lang === "ja" ? "騒音" : "Noise",            value: log.noise.toFixed(1),       unit: "dB",   icon: "🔊", color: "#34d399" },
         ];
+        const riskLabel = lang === "ko"
+          ? lvl === "danger" ? "위험" : lvl === "warning" ? "경고" : lvl === "caution" ? "주의" : "정상"
+          : lang === "ja"
+            ? lvl === "danger" ? "危険" : lvl === "warning" ? "警告" : lvl === "caution" ? "注意" : "正常"
+            : lvl.charAt(0).toUpperCase() + lvl.slice(1);
+        const recordedAt = new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false });
         return (
           <div className="fixed inset-0 z-[1100] flex items-center justify-center"
             style={{ background: "rgba(0,0,0,0.65)", animation: "fadeIn 0.2s ease-out" }}
@@ -3541,6 +3547,7 @@ export default function Dashboard() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="anomaly-detail-modal-title"
+              aria-describedby="anomaly-detail-modal-context"
               style={{ background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)", border: `1px solid ${color}40` }}
               onClick={e => e.stopPropagation()}>
               {/* 헤더 */}
@@ -3551,17 +3558,16 @@ export default function Dashboard() {
                     {lang === "ko" ? "이상 이력 상세" : lang === "ja" ? "異常履歴詳細" : "Anomaly Detail"}
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: isDark ? "oklch(0.50 0.01 240)" : "oklch(0.45 0.01 240)" }}>
-                    {new Date(log.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false })}
+                    {recordedAt}
+                  </p>
+                  <p id="anomaly-detail-modal-context" className="sr-only">
+                    {lang === "ko" ? `기록 시각 ${recordedAt}, 위험 단계 ${riskLabel}` : lang === "ja" ? `記録時刻 ${recordedAt}、危険段階 ${riskLabel}` : `Recorded at ${recordedAt}, risk level ${riskLabel}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border"
                     style={{ color, background: RISK_BG[lvl], borderColor: RISK_BORDER[lvl] }}>
-                    {lang === "ko"
-                      ? lvl === "danger" ? "위험" : lvl === "warning" ? "경고" : lvl === "caution" ? "주의" : "정상"
-                      : lang === "ja"
-                        ? lvl === "danger" ? "危険" : lvl === "warning" ? "警告" : lvl === "caution" ? "注意" : "正常"
-                        : lvl.charAt(0).toUpperCase() + lvl.slice(1)}
+                    {riskLabel}
                   </span>
                   <button ref={selectedLogCloseRef} type="button" onClick={() => setSelectedLog(null)}
                     className="text-lg leading-none hover:opacity-60 transition-opacity"
