@@ -24,9 +24,12 @@ describe("danger alert accessibility contract", () => {
     expect(dashboardSource).toContain("dangerAlertConfirmRef.current?.focus();");
   });
 
-  it("safely closes the pending new-consultation confirmation before showing a danger alert", () => {
+  it("safely closes pending noncritical popups before showing a danger alert", () => {
     expect(dashboardSource).toContain("const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);");
-    expect(dashboardSource).toContain("setShowResetConfirmModal(false);\n    setDangerAlert(true);");
+    expect(dashboardSource).toContain("setShowResetConfirmModal(false);");
+    expect(dashboardSource).toContain("setActiveDislikeIdx(null);");
+    expect(dashboardSource).toContain("setOtherReasonIdx(null);");
+    expect(dashboardSource).toContain("setDangerAlert(true);");
   });
 
   it("throttles repeated automatic danger modals after acknowledgement without delaying a manual danger injection", () => {

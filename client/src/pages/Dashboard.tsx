@@ -1300,6 +1300,8 @@ export default function Dashboard() {
   const requestDangerAlert = useCallback((force = false) => {
     if (!force && Date.now() < dangerAlertCooldownUntilRef.current) return;
     setShowResetConfirmModal(false);
+    setActiveDislikeIdx(null);
+    setOtherReasonIdx(null);
     setDangerAlert(true);
   }, []);
   const acknowledgeDangerAlert = useCallback(() => {
@@ -1426,6 +1428,9 @@ export default function Dashboard() {
   const manualDeleteTriggerRef = useRef<HTMLButtonElement>(null);
   const manualDeleteCancelRef = useRef<HTMLButtonElement>(null);
   const manualDeleteDialogRef = useRef<HTMLDivElement>(null);
+  const dislikeReasonTriggerRef = useRef<HTMLButtonElement>(null);
+  const dislikeReasonCloseRef = useRef<HTMLButtonElement>(null);
+  const dislikeReasonDialogRef = useRef<HTMLDivElement>(null);
   const manualPanelTriggerRef = useRef<HTMLButtonElement>(null);
   const manualPanelCloseRef = useRef<HTMLButtonElement>(null);
   const manualPanelDialogRef = useRef<HTMLDivElement>(null);
@@ -1439,6 +1444,7 @@ export default function Dashboard() {
   const wasFeedbackDeleteOpenRef = useRef(false);
   const wasFeedbackContextOpenRef = useRef(false);
   const wasManualDeleteOpenRef = useRef(false);
+  const wasDislikeReasonOpenRef = useRef(false);
   const wasManualPanelOpenRef = useRef(false);
   const wasResetConfirmOpenRef = useRef(false);
   const wasDeleteAllConfirmOpenRef = useRef(false);
@@ -2136,15 +2142,17 @@ export default function Dashboard() {
             ? deleteAllFeedbackConfirmDialogRef.current
             : feedbackToDelete !== null
               ? feedbackDeleteDialogRef.current
-              : feedbackContextItem
-                ? feedbackContextDialogRef.current
-                : showManualRagModal
-                  ? manualPanelDialogRef.current
-                  : showResetConfirmModal
-                    ? resetConfirmDialogRef.current
-                    : showDeleteAllConfirm
-                      ? deleteAllConfirmDialogRef.current
-                      : chatDialogRef.current;
+              : activeDislikeIdx !== null
+                ? dislikeReasonDialogRef.current
+                : feedbackContextItem
+                  ? feedbackContextDialogRef.current
+                  : showManualRagModal
+                    ? manualPanelDialogRef.current
+                    : showResetConfirmModal
+                      ? resetConfirmDialogRef.current
+                      : showDeleteAllConfirm
+                        ? deleteAllConfirmDialogRef.current
+                        : chatDialogRef.current;
       if (!dialog) return;
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
@@ -2167,7 +2175,7 @@ export default function Dashboard() {
 
     window.addEventListener("keydown", trapChatFocus);
     return () => window.removeEventListener("keydown", trapChatFocus);
-  }, [feedbackContextItem, feedbackToDelete, isChatOpen, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
+  }, [activeDislikeIdx, feedbackContextItem, feedbackToDelete, isChatOpen, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
 
   useEffect(() => {
     if (!isChatOpen || !isChatNearBottomRef.current) return;
@@ -2265,6 +2273,12 @@ export default function Dashboard() {
       } else if (wasManualDeleteOpenRef.current) {
         (manualDeleteTriggerRef.current?.isConnected ? manualDeleteTriggerRef.current : manualPanelCloseRef.current)?.focus();
         wasManualDeleteOpenRef.current = false;
+      } else if (activeDislikeIdx !== null) {
+        wasDislikeReasonOpenRef.current = true;
+        dislikeReasonCloseRef.current?.focus();
+      } else if (wasDislikeReasonOpenRef.current) {
+        dislikeReasonTriggerRef.current?.focus();
+        wasDislikeReasonOpenRef.current = false;
       } else if (showDeleteAllFeedbackFinalConfirm) {
         wasDeleteAllFeedbackFinalConfirmOpenRef.current = true;
         deleteAllFeedbackFinalCancelRef.current?.focus();
@@ -2323,7 +2337,7 @@ export default function Dashboard() {
     }, 0);
 
     return () => window.clearTimeout(focusTimer);
-  }, [feedbackContextItem, feedbackToDelete, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
+  }, [activeDislikeIdx, feedbackContextItem, feedbackToDelete, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
 
   const handleResetChat = async () => {
     try {
@@ -5758,13 +5772,15 @@ export default function Dashboard() {
                           <div className="relative">
                             <button
                               type="button"
-                              onClick={() => {
+                              ref={activeDislikeIdx === idx ? dislikeReasonTriggerRef : undefined}
+                              onClick={(event) => {
                                 const nextState = messageFeedbacks[idx] === "dislike" ? undefined : "dislike";
                                 setMessageFeedbacks(prev => ({
                                   ...prev,
                                   [idx]: nextState as any,
                                 }));
                                 if (nextState === "dislike") {
+                                  dislikeReasonTriggerRef.current = event.currentTarget;
                                   setActiveDislikeIdx(idx);
                                 } else {
                                   setActiveDislikeIdx(null);
@@ -5786,7 +5802,9 @@ export default function Dashboard() {
                             {/* 싫어요 사유 선택 소형 팝업 */}
                             {activeDislikeIdx === idx && (
                               <div
+                                ref={dislikeReasonDialogRef}
                                 role="dialog"
+                                aria-modal="true"
                                 aria-labelledby={`feedback-reason-title-${idx}`}
                                 className="absolute left-0 bottom-full mb-2 z-50 w-64 p-2.5 rounded-xl shadow-xl border animate-fadeIn"
                                 style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: th.border2 }}>
@@ -5796,6 +5814,7 @@ export default function Dashboard() {
                                   </span>
                                   <button
                                     type="button"
+                                    ref={dislikeReasonCloseRef}
                                     onClick={() => setActiveDislikeIdx(null)}
                                     aria-label={lang === "ko" ? "피드백 사유 선택 닫기" : lang === "ja" ? "フィードバック理由の選択を閉じる" : "Close feedback reason selection"}
                                     className="text-[10px] hover:opacity-70 px-1" style={{ color: th.textMuted }}>
