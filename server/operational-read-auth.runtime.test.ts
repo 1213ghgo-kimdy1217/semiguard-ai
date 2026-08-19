@@ -15,6 +15,7 @@ describe("operational read authorization", () => {
     const caller = appRouter.createCaller(createUnauthenticatedContext());
 
     await expect(caller.semiguard.getLogs({ limit: 10 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(caller.semiguard.getLogById({ id: 1 })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     await expect(caller.semiguard.getStats()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     await expect(caller.semiguard.getPeriodOverview({ period: "day" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
