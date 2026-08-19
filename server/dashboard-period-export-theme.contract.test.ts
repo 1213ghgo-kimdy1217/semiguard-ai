@@ -8,6 +8,9 @@ describe("dashboard period export, loading, and theme contract", () => {
   it("exports the selected period to both UTF-8 CSV and a structured printable report", () => {
     expect(dashboardSource).toContain("function exportPeriodOverviewToCsv(overview: PeriodOverviewData");
     expect(dashboardSource).toContain('type: "text/csv;charset=utf-8;"');
+    expect(dashboardSource).toContain('"세미가드_기간분석"');
+    expect(dashboardSource).toContain('"セミガード_期間分析"');
+    expect(dashboardSource).toContain('"semiguard_period"');
     expect(dashboardSource).toContain("function openStructuredPeriodReport(overview: PeriodOverviewData");
     expect(dashboardSource).toContain('window.open("", "_blank", "width=1000,height=800")');
     expect(dashboardSource).toContain("reportWindow.print()");

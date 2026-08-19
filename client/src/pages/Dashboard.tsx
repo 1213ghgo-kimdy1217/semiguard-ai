@@ -312,7 +312,8 @@ function exportPeriodOverviewToCsv(overview: PeriodOverviewData, lang: Lang, per
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `semiguard_period_${overview.period}_${new Date().toISOString().slice(0, 10)}.csv`;
+  const filenamePrefix = lang === "ko" ? "세미가드_기간분석" : lang === "ja" ? "セミガード_期間分析" : "semiguard_period";
+  anchor.download = `${filenamePrefix}_${overview.period}_${new Date().toISOString().slice(0, 10)}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
