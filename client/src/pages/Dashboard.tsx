@@ -1175,6 +1175,16 @@ export default function Dashboard() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isFirstUseFeedbackOpen]);
+
+  useEffect(() => {
+    if (!isFirstUseFeedbackOpen) return;
+    const dialog = firstUseFeedbackDialogRef.current?.closest<HTMLElement>('[role="dialog"]');
+    const description = dialog?.querySelector<HTMLElement>("h2 + p");
+    if (!dialog || !description) return;
+    description.id = "first-use-feedback-description";
+    dialog.setAttribute("aria-describedby", description.id);
+  }, [isFirstUseFeedbackOpen]);
+
   const persistOnboardingStep = async (nextStep: 1 | 2 | 3, completed = false) => {
     setOnboardingStep(nextStep);
     try {
