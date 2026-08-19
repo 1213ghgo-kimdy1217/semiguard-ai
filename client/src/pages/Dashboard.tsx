@@ -2461,23 +2461,27 @@ export default function Dashboard() {
   useEffect(() => {
     const metadata = lang === "ja"
       ? {
+          locale: "ja-JP",
           title: "SemiGuard AI｜半導体設備の読み取り専用予知安全ダッシュボード",
           description: "SemiGuard AIは半導体設備の電流・温度・振動・騒音の変化をz-scoreベースのリスクスコアで整理し、センサー根拠とAI補助点検説明を提供する読み取り専用の予知安全システムです。",
           keywords: "SemiGuard AI,半導体予知保全,異常検知,センサーモニタリング,予知安全システム",
         }
       : lang === "en"
         ? {
+            locale: "en-US",
             title: "SemiGuard AI | Read-Only Semiconductor Safety Dashboard",
             description: "SemiGuard AI organizes current, temperature, vibration, and noise deviations into z-score risk scores, connecting sensor evidence with AI-assisted inspection guidance in a read-only semiconductor safety dashboard.",
             keywords: "SemiGuard AI, semiconductor predictive maintenance, anomaly detection, sensor monitoring, safety dashboard",
           }
         : {
+            locale: "ko-KR",
             title: "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템",
             description: "SemiGuard AI는 반도체 장비의 전류·온도·진동·소음 편차를 z-score 기반 위험 점수로 정리하고, 센서 근거와 AI 보조 점검 설명을 제공하는 읽기 전용 예지안전 시스템입니다.",
             keywords: "SemiGuard AI, 반도체 예지보전, 이상탐지, 센서 모니터링, 예지안전 시스템",
           };
 
     document.title = metadata.title;
+    document.documentElement.lang = metadata.locale;
     
     let metaDesc = document.querySelector('meta[name="description"]');
     if (!metaDesc) {

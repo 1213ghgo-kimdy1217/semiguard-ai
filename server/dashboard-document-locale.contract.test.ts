@@ -6,11 +6,15 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("dashboard document locale contract", () => {
   it("uses localized dashboard titles, descriptions, and keywords for Korean, English, and Japanese", () => {
+    expect(dashboardSource).toContain('locale: "ko-KR"');
+    expect(dashboardSource).toContain('locale: "en-US"');
+    expect(dashboardSource).toContain('locale: "ja-JP"');
     expect(dashboardSource).toContain('title: "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템"');
     expect(dashboardSource).toContain('title: "SemiGuard AI | Read-Only Semiconductor Safety Dashboard"');
     expect(dashboardSource).toContain('title: "SemiGuard AI｜半導体設備の読み取り専用予知安全ダッシュボード"');
     expect(dashboardSource).toContain("metaDesc.setAttribute('content', metadata.description);");
     expect(dashboardSource).toContain("metaKw.setAttribute('content', metadata.keywords);");
+    expect(dashboardSource).toContain("document.documentElement.lang = metadata.locale;");
   });
 
   it("keeps the social-link success message in the selected language after metadata updates", () => {
