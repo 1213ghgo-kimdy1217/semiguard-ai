@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 type DemoLanguage = "ko" | "en" | "ja";
 type DemoStep = 1 | 2 | 3;
@@ -65,6 +65,7 @@ export default function JudgeDemo() {
   const [step, setStep] = useState<DemoStep>(1);
   const [showDemoBanner, setShowDemoBanner] = useState(true);
   const [showResetToast, setShowResetToast] = useState(false);
+  const stepTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const text = copy[lang];
   const activeTitle = useMemo(() => step === 1 ? text.riskTitle : step === 2 ? text.evidenceTitle : text.actionTitle, [step, text]);
 
@@ -85,6 +86,17 @@ export default function JudgeDemo() {
   const resetDemo = () => {
     setStep(1);
     setShowResetToast(true);
+  };
+  const handleStepTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const nextIndex = event.key === "ArrowRight" ? (index + 1) % 3
+      : event.key === "ArrowLeft" ? (index + 2) % 3
+      : event.key === "Home" ? 0
+      : event.key === "End" ? 2
+      : null;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    setStep((nextIndex + 1) as DemoStep);
+    requestAnimationFrame(() => stepTabRefs.current[nextIndex]?.focus());
   };
 
   return <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(6,182,212,0.22),transparent_38%),linear-gradient(135deg,#07111f,#0f172a_55%,#111827)] px-4 py-5 text-slate-100 sm:px-7 sm:py-8">
@@ -144,11 +156,11 @@ export default function JudgeDemo() {
             <p className="mt-1 text-xs text-slate-400">{text.timing}</p>
           </div>
           <div className="flex gap-1.5" role="tablist" aria-label={text.timing}>
-            {text.steps.map((label, index) => <button key={label} type="button" role="tab" aria-selected={step === index + 1} onClick={() => setStep((index + 1) as DemoStep)} className="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: step === index + 1 ? "rgba(103,232,249,0.75)" : "rgba(71,85,105,0.8)", background: step === index + 1 ? "rgba(34,211,238,0.13)" : "rgba(15,23,42,0.6)", color: step === index + 1 ? "#cffafe" : "#94a3b8" }}><span className="flex h-4 w-4 items-center justify-center rounded-full border border-current text-[9px]">{index + 1}</span>{label}</button>)}
+            {text.steps.map((label, index) => <button key={label} ref={element => { stepTabRefs.current[index] = element; }} id={`judge-demo-step-tab-${index + 1}`} type="button" role="tab" tabIndex={step === index + 1 ? 0 : -1} aria-selected={step === index + 1} aria-controls="judge-demo-step-panel" onKeyDown={event => handleStepTabKeyDown(event, index)} onClick={() => setStep((index + 1) as DemoStep)} className="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-bold transition focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: step === index + 1 ? "rgba(103,232,249,0.75)" : "rgba(71,85,105,0.8)", background: step === index + 1 ? "rgba(34,211,238,0.13)" : "rgba(15,23,42,0.6)", color: step === index + 1 ? "#cffafe" : "#94a3b8" }}><span className="flex h-4 w-4 items-center justify-center rounded-full border border-current text-[9px]">{index + 1}</span>{label}</button>)}
           </div>
         </div>
 
-        <div role="tabpanel" className="min-h-[300px]">
+        <div id="judge-demo-step-panel" role="tabpanel" aria-labelledby={`judge-demo-step-tab-${step}`} className="min-h-[300px]">
           {step === 1 && <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-xl border border-amber-300/40 bg-[linear-gradient(135deg,rgba(245,158,11,0.16),rgba(15,23,42,0.72))] p-5">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">{text.riskLabel}</p>
