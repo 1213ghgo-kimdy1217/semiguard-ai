@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("AI alert panel Japanese contract", () => {
   it("renders the danger-alert confirmation control in Japanese", () => {
-    expect(dashboardSource).toContain('lang === "ja" ? "確認" : "OK"');
+    expect(dashboardSource).toContain('lang === "ja" ? "確認・30秒非表示" : "OK · Hide 30s"');
   });
 
   it("localizes AI panel risk levels and score units for Japanese", () => {

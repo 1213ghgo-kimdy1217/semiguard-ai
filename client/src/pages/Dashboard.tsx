@@ -1263,6 +1263,15 @@ export default function Dashboard() {
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dangerAlert, setDangerAlert] = useState(false);
   const dangerAlertConfirmRef = useRef<HTMLButtonElement>(null);
+  const dangerAlertCooldownUntilRef = useRef(0);
+  const requestDangerAlert = useCallback((force = false) => {
+    if (!force && Date.now() < dangerAlertCooldownUntilRef.current) return;
+    setDangerAlert(true);
+  }, []);
+  const acknowledgeDangerAlert = useCallback(() => {
+    dangerAlertCooldownUntilRef.current = Date.now() + 30_000;
+    setDangerAlert(false);
+  }, []);
   const [muted, setMuted] = useState<boolean>(false);
   const mutedRef = useRef<boolean>(false);
   // localStorage에서 초기값 복원
@@ -1289,7 +1298,7 @@ export default function Dashboard() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        setDangerAlert(false);
+        acknowledgeDangerAlert();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -1298,7 +1307,7 @@ export default function Dashboard() {
       window.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [dangerAlert]);
+  }, [acknowledgeDangerAlert, dangerAlert]);
   const prevLogCountRef = useRef(0);
   const [selectedLog, setSelectedLog] = useState<import("../../../shared/semiguard").AnomalyLogEntry | null>(null);
   const [openingSourceLogId, setOpeningSourceLogId] = useState<number | null>(null);
@@ -2947,7 +2956,7 @@ export default function Dashboard() {
         setChartData(prev => [...prev, { ...result.sensorData, label: `D${step}` }].slice(-MAX_CHART_POINTS));
         if (result.riskLevel === "danger") {
           setRelayTripped(true);
-          setDangerAlert(true);
+          requestDangerAlert();
           setDangerFlash(true);
           setTimeout(() => setDangerFlash(false), 600);
           playAlert();
@@ -3017,7 +3026,7 @@ export default function Dashboard() {
       setHeartbeatAlive(true);
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
-        setDangerAlert(true);
+        requestDangerAlert();
         setDangerFlash(true);
         setTimeout(() => setDangerFlash(false), 600);
         playAlert();
@@ -3115,7 +3124,7 @@ export default function Dashboard() {
       setLastInjectedMode("danger");
       if (result.riskLevel === "danger") {
         setRelayTripped(true);
-        setDangerAlert(true);
+        requestDangerAlert(true);
         setDangerFlash(true);
         setTimeout(() => setDangerFlash(false), 600);
         playAlert();
@@ -3444,14 +3453,14 @@ export default function Dashboard() {
               <button
                 ref={dangerAlertConfirmRef}
                 type="button"
-                onClick={() => { setDangerAlert(false); }}
+                onClick={acknowledgeDangerAlert}
                 className="mt-4 px-6 py-2 rounded-lg font-bold transition-all duration-200 active:scale-95"
                 style={{
                   background: "rgb(239,68,68)",
                   color: "white",
                   boxShadow: "0 0 20px rgba(239,68,68,0.5)"
                 }}>
-                {lang === "ko" ? "확인" : lang === "ja" ? "確認" : "OK"}
+                {lang === "ko" ? "확인 · 30초 숨김" : lang === "ja" ? "確認・30秒非表示" : "OK · Hide 30s"}
               </button>
             </div>
           </div>

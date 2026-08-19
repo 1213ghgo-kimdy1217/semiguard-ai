@@ -15,6 +15,18 @@ describe("danger alert accessibility contract", () => {
     expect(dashboardSource).toContain("const dangerAlertConfirmRef = useRef<HTMLButtonElement>(null);");
     expect(dashboardSource).toContain("requestAnimationFrame(() => dangerAlertConfirmRef.current?.focus())");
     expect(dashboardSource).toContain('if (event.key === "Escape")');
+    expect(dashboardSource).toContain("acknowledgeDangerAlert();");
     expect(dashboardSource).toContain("previouslyFocused?.focus();");
+  });
+
+  it("throttles repeated automatic danger modals after acknowledgement without delaying a manual danger injection", () => {
+    expect(dashboardSource).toContain("const dangerAlertCooldownUntilRef = useRef(0);");
+    expect(dashboardSource).toContain("Date.now() + 30_000");
+    expect(dashboardSource).toContain("const requestDangerAlert = useCallback((force = false)");
+    expect(dashboardSource).toContain("requestDangerAlert();");
+    expect(dashboardSource).toContain("requestDangerAlert(true);");
+    expect(dashboardSource).toContain('"확인 · 30초 숨김"');
+    expect(dashboardSource).toContain('"確認・30秒非表示"');
+    expect(dashboardSource).toContain('"OK · Hide 30s"');
   });
 });
