@@ -498,7 +498,7 @@ export function Login() {
           )}
 
           {/* Social Login Buttons */}
-          <div className="space-y-2.5" aria-label={loginUi.linkedSocialLogin}>
+          <div className="space-y-2.5" role="group" aria-label={loginUi.linkedSocialLogin}>
             {/* Google Login */}
             <Button
               type="button"
