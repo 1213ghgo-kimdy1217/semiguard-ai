@@ -360,7 +360,7 @@ export const appRouter = router({
   }),
 
     // 방문자 카운터 증가 및 조회
-    trackVisit: publicProcedure.mutation(async () => {
+    trackVisit: protectedProcedure.mutation(async () => {
       const todayCount = await incrementVisitor();
       const totalCount = await getTotalVisitors();
       return { todayCount, totalCount };

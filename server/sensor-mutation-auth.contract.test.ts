@@ -44,4 +44,11 @@ describe("sensor mutation authentication boundary contract", () => {
     expect(dashboardSource).toContain("trpc.semiguard.summarizePeriodForReport.useMutation()");
     expect(dashboardSource).toContain("trpc.semiguard.chatWithAi.useMutation()");
   });
+
+  it("protects the dashboard-only legacy visit counter from public metric inflation", () => {
+    expect(routerSource).toContain("trackVisit: protectedProcedure.mutation");
+    expect(routerSource).not.toContain("trackVisit: publicProcedure.mutation");
+    expect(dashboardSource).toContain("trpc.semiguard.trackVisit.useMutation()");
+    expect(judgeDemoSource).not.toContain("semiguard.trackVisit");
+  });
 });
