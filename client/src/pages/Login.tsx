@@ -73,6 +73,7 @@ export function Login() {
   }, [loginLanguage]);
   const [badgeNumber, setBadgeNumber] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldError, setFieldError] = useState<"badge" | "password" | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -237,13 +238,19 @@ export function Login() {
     e.preventDefault();
 
     if (!badgeNumber.trim()) {
+      setFieldError("badge");
       toast.error(loginMessages.badgeRequired);
+      window.requestAnimationFrame(() => document.getElementById("badgeNumber")?.focus());
       return;
     }
     if (!password) {
+      setFieldError("password");
       toast.error(loginMessages.passwordRequired);
+      window.requestAnimationFrame(() => document.getElementById("password")?.focus());
       return;
     }
+
+    setFieldError(null);
 
     setIsLoading(true);
     try {
@@ -346,12 +353,18 @@ export function Login() {
                 type="text"
                 placeholder={loginUi.badgePlaceholder}
                 value={badgeNumber}
-                onChange={(e) => setBadgeNumber(e.target.value)}
+                onChange={(e) => {
+                  setBadgeNumber(e.target.value);
+                  if (fieldError === "badge") setFieldError(null);
+                }}
                 autoComplete="username"
                 inputMode="text"
+                aria-invalid={fieldError === "badge"}
+                aria-describedby={fieldError === "badge" ? "badgeNumber-error" : undefined}
                 className="h-12 bg-slate-700/70 border-slate-600 text-white placeholder-slate-500 text-base"
                 disabled={isLoading}
               />
+              {fieldError === "badge" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert">{loginMessages.badgeRequired}</p>}
             </div>
 
             {/* Password */}
@@ -365,11 +378,16 @@ export function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder={loginUi.passwordPlaceholder}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldError === "password") setFieldError(null);
+                  }}
                   onKeyDown={(event) => setCapsLockOn(event.getModifierState("CapsLock"))}
                   onKeyUp={(event) => setCapsLockOn(event.getModifierState("CapsLock"))}
                   onBlur={() => setCapsLockOn(false)}
                   autoComplete="current-password"
+                  aria-invalid={fieldError === "password"}
+                  aria-describedby={fieldError === "password" ? "password-error" : undefined}
                   className="h-12 bg-slate-700/70 border-slate-600 pr-24 text-white placeholder-slate-500 text-base"
                   disabled={isLoading}
                 />
@@ -384,6 +402,7 @@ export function Login() {
                   {showPassword ? loginUi.hidePassword : loginUi.showPassword}
                 </button>
               </div>
+              {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert">{loginMessages.passwordRequired}</p>}
               {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status">{loginUi.capsLockWarning}</p>}
             </div>
 
