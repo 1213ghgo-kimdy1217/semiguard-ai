@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
@@ -84,6 +84,9 @@ export function Login() {
   const oauthReason = oauthParts.slice(1).join("_");
   const oauthProviderLabel = oauthProvider === "google" ? "Google" : oauthProvider === "naver" ? "Naver" : oauthProvider === "kakao" ? "Kakao" : loginLanguage === "ja" ? "ソーシャルログイン" : loginLanguage === "en" ? "Social login" : "소셜 로그인";
   const [showOauthError, setShowOauthError] = useState(() => Boolean(oauthError));
+  const oauthErrorPreviousFocusRef = useRef<HTMLElement | null>(null);
+  const oauthErrorCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const oauthErrorRetryButtonRef = useRef<HTMLButtonElement | null>(null);
   const oauthPolicyMessage = (() => {
     if (oauthReason === "unlinked") {
       if (loginLanguage === "ja") return `${oauthProviderLabel}アカウントはまだ連携されていません。先に社員証番号とパスワードで登録・ログインし、ダッシュボードメニューから連携してください。`;
@@ -229,6 +232,20 @@ export function Login() {
     if (oauthProvider === "naver") handleSocialLogin(startNaverLogin);
     if (oauthProvider === "kakao") handleSocialLogin(startKakaoLogin);
   };
+  useEffect(() => {
+    if (!showOauthError || !oauthError) return;
+    oauthErrorPreviousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusFrame = window.requestAnimationFrame(() => {
+      const retryButton = oauthErrorRetryButtonRef.current;
+      (retryButton && !retryButton.disabled ? retryButton : oauthErrorCloseButtonRef.current)?.focus();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      const previousFocus = oauthErrorPreviousFocusRef.current;
+      if (previousFocus && document.contains(previousFocus)) previousFocus.focus();
+    };
+  }, [oauthError, showOauthError]);
   const oauthDialogUi = loginLanguage === "ja"
     ? { title: "ソーシャルログインを完了できませんでした", retry: "もう一度試す", close: "閉じる", hint: "アカウント連携と提供元の設定を確認した後、もう一度安全に接続できます。" }
     : loginLanguage === "en"
@@ -326,7 +343,7 @@ export function Login() {
 
           {showOauthError && oauthError && (
             <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/70 p-4 backdrop-blur-sm sm:items-center" role="presentation">
-              <section className="w-full max-w-md rounded-2xl border border-amber-400/45 bg-slate-900 p-5 text-slate-100 shadow-2xl shadow-black/50 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95" role="alertdialog" aria-modal="true" aria-labelledby="oauth-error-title" aria-describedby="oauth-error-message">
+              <section className="w-full max-w-md rounded-2xl border border-amber-400/45 bg-slate-900 p-5 text-slate-100 shadow-2xl shadow-black/50 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95" role="alertdialog" aria-modal="true" aria-labelledby="oauth-error-title" aria-describedby="oauth-error-message" onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); dismissOauthError(); } }}>
                 <div className="flex items-start gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-400/10 text-lg" aria-hidden="true">!</span>
                   <div className="min-w-0 space-y-1">
@@ -337,8 +354,8 @@ export function Login() {
                 <p id="oauth-error-message" className="mt-4 text-sm leading-6 text-slate-300">{oauthPolicyMessage}</p>
                 <p className="mt-3 rounded-lg border border-slate-700 bg-slate-950/55 px-3 py-2 text-xs leading-5 text-slate-400">{oauthDialogUi.hint}</p>
                 <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                  <Button type="button" variant="outline" onClick={dismissOauthError} className="border-slate-600 text-slate-200 hover:bg-slate-800">{oauthDialogUi.close}</Button>
-                  <Button type="button" onClick={retryOauthLogin} disabled={!isOauthEnabled || !["google", "naver", "kakao"].includes(oauthProvider)} autoFocus className="bg-amber-400 font-bold text-slate-950 hover:bg-amber-300 disabled:opacity-50">{oauthDialogUi.retry}</Button>
+                  <Button type="button" ref={oauthErrorCloseButtonRef} variant="outline" onClick={dismissOauthError} className="border-slate-600 text-slate-200 hover:bg-slate-800">{oauthDialogUi.close}</Button>
+                  <Button type="button" ref={oauthErrorRetryButtonRef} onClick={retryOauthLogin} disabled={!isOauthEnabled || !["google", "naver", "kakao"].includes(oauthProvider)} className="bg-amber-400 font-bold text-slate-950 hover:bg-amber-300 disabled:opacity-50">{oauthDialogUi.retry}</Button>
                 </div>
               </section>
             </div>
