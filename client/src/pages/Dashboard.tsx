@@ -246,18 +246,23 @@ function buildSensorTrendChartImage(history: PeriodOverviewData["scoreHistory"],
 
 async function downloadSensorTrendChartImage(history: PeriodOverviewData["scoreHistory"], lang: Lang, format: "png" | "jpeg") {
   const chart = buildSensorTrendChartImage(history, lang);
-  if (!chart) throw new Error("No sensor points are available for image export.");
+  const errorCopy = lang === "ko"
+    ? { noData: "내보낼 센서 데이터가 없습니다.", render: "센서 차트 이미지를 렌더링할 수 없습니다.", canvas: "브라우저에서 차트 이미지를 렌더링할 수 없습니다.", file: "센서 차트 이미지 파일을 만들 수 없습니다." }
+    : lang === "ja"
+      ? { noData: "出力するセンサーデータがありません。", render: "センサーチャート画像を描画できませんでした。", canvas: "ブラウザーでチャート画像を描画できませんでした。", file: "センサーチャート画像ファイルを作成できませんでした。" }
+      : { noData: "No sensor points are available for image export.", render: "Could not render the sensor chart image.", canvas: "Canvas rendering is unavailable.", file: "Could not create the sensor chart image file." };
+  if (!chart) throw new Error(errorCopy.noData);
   const image = new Image();
   await new Promise<void>((resolve, reject) => {
     image.onload = () => resolve();
-    image.onerror = () => reject(new Error("Could not render the sensor chart image."));
+    image.onerror = () => reject(new Error(errorCopy.render));
     image.src = chart.src;
   });
   const canvas = document.createElement("canvas");
   canvas.width = 1480;
   canvas.height = 540;
   const context = canvas.getContext("2d");
-  if (!context) throw new Error("Canvas rendering is unavailable.");
+  if (!context) throw new Error(errorCopy.canvas);
   if (format === "jpeg") {
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, canvas.width, canvas.height);
@@ -265,11 +270,12 @@ async function downloadSensorTrendChartImage(history: PeriodOverviewData["scoreH
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
   const mimeType = format === "png" ? "image/png" : "image/jpeg";
   const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, mimeType, 0.94));
-  if (!blob) throw new Error("Could not create the sensor chart image file.");
+  if (!blob) throw new Error(errorCopy.file);
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `semiguard_sensor_range_${new Date().toISOString().slice(0, 10)}.${format === "jpeg" ? "jpg" : "png"}`;
+  const filenamePrefix = lang === "ko" ? "세미가드_센서구간" : lang === "ja" ? "セミガード_センサー区間" : "semiguard_sensor_range";
+  anchor.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.${format === "jpeg" ? "jpg" : "png"}`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
