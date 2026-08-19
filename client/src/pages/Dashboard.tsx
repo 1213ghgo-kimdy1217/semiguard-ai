@@ -99,7 +99,7 @@ function exportLogsToCSV(logs: AnomalyLogEntry[], lang: Lang) {
     escape(log.vibration.toFixed(2)),
     escape(log.noise.toFixed(1)),
     escape(log.anomalyScore),
-    escape(log.riskLevel),
+    escape(localizeRiskLevel(log.riskLevel, lang)),
     escape(log.isAnomaly ? (lang === "ko" ? "이상" : lang === "ja" ? "異常" : "Anomaly") : (lang === "ko" ? "정상" : lang === "ja" ? "正常" : "Normal")),
   ]);
   const csv = [headers.map(h => escape(h)), ...rows].map(r => r.join(",")).join("\n");
