@@ -16,6 +16,7 @@ const pilotLogValidationTemplate = readProjectDocument("PILOT_LOG_VALIDATION_TEM
 const itOtReadOnlyPilotChecklist = readProjectDocument("IT_OT_READ_ONLY_PILOT_CHECKLIST.md");
 const fieldPilotReviewTemplate = readProjectDocument("FIELD_PILOT_REVIEW_TEMPLATE.md");
 const userInterviewTemplate = readProjectDocument("USER_INTERVIEW_TEMPLATE.md");
+const kpiMeasurementTemplate = readProjectDocument("KPI_MEASUREMENT_TEMPLATE.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -31,6 +32,7 @@ describe("submission documentation contract", () => {
       "IT_OT_READ_ONLY_PILOT_CHECKLIST.md",
       "FIELD_PILOT_REVIEW_TEMPLATE.md",
       "USER_INTERVIEW_TEMPLATE.md",
+      "KPI_MEASUREMENT_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -107,5 +109,12 @@ describe("submission documentation contract", () => {
     expect(userInterviewTemplate).toContain("이름, 학번, 전화번호, 이메일, 소셜 계정");
     expect(userInterviewTemplate).toContain("미성년 참여자는 학교·보호자 정책에 맞는 사전 허용 범위");
     expect(userInterviewTemplate).toContain("최소 5명의 실제 참여자 기록이 쌓이기 전에는 빈도·비율·사용자 수를 주장하지 않습니다");
+  });
+
+  it("keeps the KPI template explicit about actual measurement, denominators, exclusions, and small samples", () => {
+    expect(kpiMeasurementTemplate).toContain("현재 실제 사용자 측정은 시작 전이므로");
+    expect(kpiMeasurementTemplate).toContain("같은 기간·같은 분모·같은 제외 기준");
+    expect(kpiMeasurementTemplate).toContain("분모가 0이면 비율을 0%로 바꾸지 않고 `계산 불가`");
+    expect(kpiMeasurementTemplate).toContain("작은 표본의 변화는 제품 효과의 확정 증거가 아닙니다");
   });
 });
