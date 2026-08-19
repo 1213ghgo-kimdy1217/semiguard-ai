@@ -1346,6 +1346,8 @@ export default function Dashboard() {
     setActiveDislikeIdx(null);
     setOtherReasonIdx(null);
     setShowAiHistory(false);
+    setIsOnboardingOpen(false);
+    setIsFirstUseFeedbackOpen(false);
     setDangerAlert(true);
   }, []);
   const acknowledgeDangerAlert = useCallback(() => {

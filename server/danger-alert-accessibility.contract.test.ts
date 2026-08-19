@@ -30,6 +30,8 @@ describe("danger alert accessibility contract", () => {
     expect(dashboardSource).toContain("setActiveDislikeIdx(null);");
     expect(dashboardSource).toContain("setOtherReasonIdx(null);");
     expect(dashboardSource).toContain("setShowAiHistory(false);");
+    expect(dashboardSource).toContain("setIsOnboardingOpen(false);");
+    expect(dashboardSource).toContain("setIsFirstUseFeedbackOpen(false);");
     expect(dashboardSource).toContain("setDangerAlert(true);");
   });
 
