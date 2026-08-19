@@ -313,7 +313,12 @@ function exportPeriodOverviewToCsv(overview: PeriodOverviewData, lang: Lang, per
   const anchor = document.createElement("a");
   anchor.href = url;
   const filenamePrefix = lang === "ko" ? "세미가드_기간분석" : lang === "ja" ? "セミガード_期間分析" : "semiguard_period";
-  anchor.download = `${filenamePrefix}_${overview.period}_${new Date().toISOString().slice(0, 10)}.csv`;
+  const periodFilenameSegment = lang === "ko"
+    ? { day: "일간", week: "주간", month: "월간", custom: "사용자정의" }[overview.period]
+    : lang === "ja"
+      ? { day: "日次", week: "週次", month: "月次", custom: "任意期間" }[overview.period]
+      : overview.period;
+  anchor.download = `${filenamePrefix}_${periodFilenameSegment}_${new Date().toISOString().slice(0, 10)}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
