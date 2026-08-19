@@ -18,6 +18,7 @@ const fieldPilotReviewTemplate = readProjectDocument("FIELD_PILOT_REVIEW_TEMPLAT
 const userInterviewTemplate = readProjectDocument("USER_INTERVIEW_TEMPLATE.md");
 const kpiMeasurementTemplate = readProjectDocument("KPI_MEASUREMENT_TEMPLATE.md");
 const firstUserObservationTemplate = readProjectDocument("FIRST_USER_OBSERVATION_TEMPLATE.md");
+const evidenceRegisterTemplate = readProjectDocument("EVIDENCE_REGISTER_TEMPLATE.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -35,6 +36,7 @@ describe("submission documentation contract", () => {
       "USER_INTERVIEW_TEMPLATE.md",
       "KPI_MEASUREMENT_TEMPLATE.md",
       "FIRST_USER_OBSERVATION_TEMPLATE.md",
+      "EVIDENCE_REGISTER_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -125,5 +127,12 @@ describe("submission documentation contract", () => {
     expect(firstUserObservationTemplate).toContain("이름, 학번, 연락처, 계정, 실제 설비명은 기록하지 않습니다");
     expect(firstUserObservationTemplate).toContain("개선은 한 번에 하나의 가설로 제한합니다");
     expect(firstUserObservationTemplate).toContain("실제 모집·관찰이 끝나기 전에는");
+  });
+
+  it("keeps the evidence register empty before collection and connects claims to reviewed evidence", () => {
+    expect(evidenceRegisterTemplate).toContain("현재 실제 증거는 수집·등록하지 않았으며");
+    expect(evidenceRegisterTemplate).toContain("개인 식별 정보·실제 설비 식별 정보·인증 정보는 등록부에 넣지 않음");
+    expect(evidenceRegisterTemplate).toContain("대외 문장 하나마다 증거를 최소 하나 연결하고");
+    expect(evidenceRegisterTemplate).toContain("실제 증거가 없거나 검토가 끝나지 않은 항목은 비워 두고");
   });
 });
