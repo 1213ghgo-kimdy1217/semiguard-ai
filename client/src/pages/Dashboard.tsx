@@ -1148,6 +1148,16 @@ export default function Dashboard() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOnboardingOpen]);
+
+  useEffect(() => {
+    if (!isOnboardingOpen) return;
+    const dialog = onboardingDialogRef.current?.closest<HTMLElement>('[role="dialog"]');
+    const description = dialog?.querySelector<HTMLElement>("h2 + p");
+    if (!dialog || !description) return;
+    description.id = "first-analysis-onboarding-description";
+    dialog.setAttribute("aria-describedby", description.id);
+  }, [isOnboardingOpen]);
+
   const closeFirstUseFeedback = () => {
     persistDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY, "true");
     setIsFirstUseFeedbackPromptDismissed(true);
