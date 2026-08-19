@@ -24,6 +24,18 @@ describe("dashboard report sharing, forecast, and chart image export contract", 
     expect(dashboardSource).toContain('exportCurrentSensorRangeImage("jpeg")');
   });
 
+  it("confirms AI analysis, period CSV, and chart image exports in the active language", () => {
+    expect(dashboardSource).toContain("AI 분석 결과를 텍스트 파일로 저장했습니다.");
+    expect(dashboardSource).toContain("AI分析結果をテキストファイルで保存しました。");
+    expect(dashboardSource).toContain("Saved AI analysis as a text file.");
+    expect(dashboardSource).toContain("기간별 통계를 CSV로 저장했습니다.");
+    expect(dashboardSource).toContain("期間別統計をCSVで保存しました。");
+    expect(dashboardSource).toContain("Period statistics saved as CSV.");
+    expect(dashboardSource).toContain("확대 구간 차트를 ${format.toUpperCase()}로 저장했습니다.");
+    expect(dashboardSource).toContain("拡大範囲のチャートを${format.toUpperCase()}で保存しました。");
+    expect(dashboardSource).toContain("Saved the zoomed chart as ${format.toUpperCase()}.");
+  });
+
   it("returns forecast metadata and uses it for an explicit non-automated alert", () => {
     expect(routerSource).toContain("const forecastLevel:");
     expect(routerSource).toContain("const fallbackEvidence = lang === \"ko\"");
