@@ -39,4 +39,11 @@ describe("product usage metrics contract", () => {
     expect(dashboardSource).toContain("isUsageMetricsAdmin && <section");
     expect(dashboardSource).toContain("대회용 제품 사용 지표");
   });
+
+  it("localizes product-usage title and minimum-data description in Korean, English, and Japanese", () => {
+    expect(dashboardSource).toContain('lang === "ko" ? "대회용 제품 사용 지표" : lang === "ja" ? "大会向けプロダクト利用指標" : "Competition product usage metrics"');
+    expect(dashboardSource).toContain('사용자 ID·선택 이벤트·날짜만 집계, 자유 입력 없음');
+    expect(dashboardSource).toContain('ユーザーID・選択イベント・日付のみを集計、自由記述なし');
+    expect(dashboardSource).toContain('aggregates only user ID, selected events, and date; no free text');
+  });
 });
