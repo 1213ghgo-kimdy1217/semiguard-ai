@@ -15,6 +15,7 @@ const mobileSocialLoginValidation = readProjectDocument("MOBILE_SOCIAL_LOGIN_VAL
 const pilotLogValidationTemplate = readProjectDocument("PILOT_LOG_VALIDATION_TEMPLATE.md");
 const itOtReadOnlyPilotChecklist = readProjectDocument("IT_OT_READ_ONLY_PILOT_CHECKLIST.md");
 const fieldPilotReviewTemplate = readProjectDocument("FIELD_PILOT_REVIEW_TEMPLATE.md");
+const userInterviewTemplate = readProjectDocument("USER_INTERVIEW_TEMPLATE.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -29,6 +30,7 @@ describe("submission documentation contract", () => {
       "PILOT_LOG_VALIDATION_TEMPLATE.md",
       "IT_OT_READ_ONLY_PILOT_CHECKLIST.md",
       "FIELD_PILOT_REVIEW_TEMPLATE.md",
+      "USER_INTERVIEW_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -98,5 +100,12 @@ describe("submission documentation contract", () => {
     expect(fieldPilotReviewTemplate).toContain("SemiGuard AI 화면은 읽기 전용 참고 자료이며");
     expect(fieldPilotReviewTemplate).toContain("오탐·미탐이 발견되면 결과를 좋게 보이게 하려고 기준값을 즉시 조정하지 않습니다");
     expect(fieldPilotReviewTemplate).toContain("자동 확대하지 않습니다");
+  });
+
+  it("keeps the user interview template consent-based, privacy-minimizing, and free of fabricated results", () => {
+    expect(userInterviewTemplate).toContain("현재 인터뷰 결과, 참여자 수, 반복 문제는 **아직 기록하지 않습니다.**");
+    expect(userInterviewTemplate).toContain("이름, 학번, 전화번호, 이메일, 소셜 계정");
+    expect(userInterviewTemplate).toContain("미성년 참여자는 학교·보호자 정책에 맞는 사전 허용 범위");
+    expect(userInterviewTemplate).toContain("최소 5명의 실제 참여자 기록이 쌓이기 전에는 빈도·비율·사용자 수를 주장하지 않습니다");
   });
 });
