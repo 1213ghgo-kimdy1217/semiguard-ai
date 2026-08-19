@@ -19,6 +19,7 @@ const userInterviewTemplate = readProjectDocument("USER_INTERVIEW_TEMPLATE.md");
 const kpiMeasurementTemplate = readProjectDocument("KPI_MEASUREMENT_TEMPLATE.md");
 const firstUserObservationTemplate = readProjectDocument("FIRST_USER_OBSERVATION_TEMPLATE.md");
 const evidenceRegisterTemplate = readProjectDocument("EVIDENCE_REGISTER_TEMPLATE.md");
+const externalAdvisorReviewTemplate = readProjectDocument("EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -37,6 +38,7 @@ describe("submission documentation contract", () => {
       "KPI_MEASUREMENT_TEMPLATE.md",
       "FIRST_USER_OBSERVATION_TEMPLATE.md",
       "EVIDENCE_REGISTER_TEMPLATE.md",
+      "EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -134,5 +136,12 @@ describe("submission documentation contract", () => {
     expect(evidenceRegisterTemplate).toContain("개인 식별 정보·실제 설비 식별 정보·인증 정보는 등록부에 넣지 않음");
     expect(evidenceRegisterTemplate).toContain("대외 문장 하나마다 증거를 최소 하나 연결하고");
     expect(evidenceRegisterTemplate).toContain("실제 증거가 없거나 검토가 끝나지 않은 항목은 비워 두고");
+  });
+
+  it("keeps external-advisor records empty until an actual, consented review occurs", () => {
+    expect(externalAdvisorReviewTemplate).toContain("외부 멘토·교사·현장 전문가의 실제 의견을 받은 뒤에만");
+    expect(externalAdvisorReviewTemplate).toContain("자문을 받은 것처럼 쓰거나 자문 의견을 임의로 만들지 않습니다");
+    expect(externalAdvisorReviewTemplate).toContain("개인 연락처·소속의 비공개 정보·설비 기밀은 적지 않습니다");
+    expect(externalAdvisorReviewTemplate).toContain("준비 완료");
   });
 });
