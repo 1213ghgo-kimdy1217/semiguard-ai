@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Home } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 
@@ -34,6 +34,7 @@ const NOT_FOUND_COPY: Record<NotFoundLanguage, { title: string; description: str
 export default function NotFound() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [language] = useState<NotFoundLanguage>(() => {
     try {
       const saved = window.localStorage.getItem("semiguard_lang");
@@ -47,6 +48,10 @@ export default function NotFound() {
   useEffect(() => {
     document.documentElement.lang = language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US";
   }, [language]);
+
+  useEffect(() => {
+    window.requestAnimationFrame(() => titleRef.current?.focus());
+  }, []);
 
   const handleGoHome = () => {
     setLocation(user ? "/" : "/login");
@@ -63,11 +68,11 @@ export default function NotFound() {
             </div>
           </div>
 
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">404</h1>
+          <p aria-hidden="true" className="text-4xl font-bold text-slate-900 mb-2">404</p>
 
-          <h2 id="not-found-title" className="text-xl font-semibold text-slate-700 mb-4">{copy.title}</h2>
+          <h1 ref={titleRef} id="not-found-title" tabIndex={-1} className="text-xl font-semibold text-slate-700 mb-4 focus:outline-none">{copy.title}</h1>
 
-          <p className="text-slate-600 mb-8 leading-relaxed">
+          <p id="not-found-description" className="text-slate-600 mb-8 leading-relaxed">
             {copy.description}
             <br />
             {copy.moved}
@@ -80,6 +85,7 @@ export default function NotFound() {
             <Button
               type="button"
               onClick={handleGoHome}
+              aria-describedby="not-found-description"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <Home className="w-4 h-4 mr-2" />
