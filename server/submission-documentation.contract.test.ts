@@ -20,6 +20,7 @@ const kpiMeasurementTemplate = readProjectDocument("KPI_MEASUREMENT_TEMPLATE.md"
 const firstUserObservationTemplate = readProjectDocument("FIRST_USER_OBSERVATION_TEMPLATE.md");
 const evidenceRegisterTemplate = readProjectDocument("EVIDENCE_REGISTER_TEMPLATE.md");
 const externalAdvisorReviewTemplate = readProjectDocument("EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md");
+const riskCalibrationChangeControlTemplate = readProjectDocument("RISK_CALIBRATION_CHANGE_CONTROL_TEMPLATE.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -39,6 +40,7 @@ describe("submission documentation contract", () => {
       "FIRST_USER_OBSERVATION_TEMPLATE.md",
       "EVIDENCE_REGISTER_TEMPLATE.md",
       "EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md",
+      "RISK_CALIBRATION_CHANGE_CONTROL_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -143,5 +145,12 @@ describe("submission documentation contract", () => {
     expect(externalAdvisorReviewTemplate).toContain("자문을 받은 것처럼 쓰거나 자문 의견을 임의로 만들지 않습니다");
     expect(externalAdvisorReviewTemplate).toContain("개인 연락처·소속의 비공개 정보·설비 기밀은 적지 않습니다");
     expect(externalAdvisorReviewTemplate).toContain("준비 완료");
+  });
+
+  it("keeps risk calibration evidence-based, approval-gated, and reversible", () => {
+    expect(riskCalibrationChangeControlTemplate).toContain("시뮬레이션·시연 기준");
+    expect(riskCalibrationChangeControlTemplate).toContain("점수가 기대와 다르다는 이유만으로 기준·가중치·단계 경계를 바로 바꾸지 않으며");
+    expect(riskCalibrationChangeControlTemplate).toContain("오탐과 미탐은 결과를 좋게 보이게 하기 위해 삭제·재분류하지 않습니다");
+    expect(riskCalibrationChangeControlTemplate).toContain("변경은 **보류**합니다");
   });
 });
