@@ -1423,6 +1423,9 @@ export default function Dashboard() {
   const feedbackContextTriggerRef = useRef<HTMLButtonElement>(null);
   const feedbackContextCloseRef = useRef<HTMLButtonElement>(null);
   const feedbackContextDialogRef = useRef<HTMLDivElement>(null);
+  const manualDeleteTriggerRef = useRef<HTMLButtonElement>(null);
+  const manualDeleteCancelRef = useRef<HTMLButtonElement>(null);
+  const manualDeleteDialogRef = useRef<HTMLDivElement>(null);
   const manualPanelTriggerRef = useRef<HTMLButtonElement>(null);
   const manualPanelCloseRef = useRef<HTMLButtonElement>(null);
   const manualPanelDialogRef = useRef<HTMLDivElement>(null);
@@ -1435,6 +1438,7 @@ export default function Dashboard() {
   const wasDeleteAllFeedbackFinalConfirmOpenRef = useRef(false);
   const wasFeedbackDeleteOpenRef = useRef(false);
   const wasFeedbackContextOpenRef = useRef(false);
+  const wasManualDeleteOpenRef = useRef(false);
   const wasManualPanelOpenRef = useRef(false);
   const wasResetConfirmOpenRef = useRef(false);
   const wasDeleteAllConfirmOpenRef = useRef(false);
@@ -2124,21 +2128,23 @@ export default function Dashboard() {
 
     const trapChatFocus = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
-      const dialog = showDeleteAllFeedbackFinalConfirm
-        ? deleteAllFeedbackFinalDialogRef.current
-        : showDeleteAllFeedbackConfirm
-          ? deleteAllFeedbackConfirmDialogRef.current
-          : feedbackToDelete !== null
-            ? feedbackDeleteDialogRef.current
-            : feedbackContextItem
-              ? feedbackContextDialogRef.current
-              : showManualRagModal
-                ? manualPanelDialogRef.current
-                : showResetConfirmModal
-                  ? resetConfirmDialogRef.current
-                  : showDeleteAllConfirm
-                    ? deleteAllConfirmDialogRef.current
-                    : chatDialogRef.current;
+      const dialog = manualDocumentToDelete !== null
+        ? manualDeleteDialogRef.current
+        : showDeleteAllFeedbackFinalConfirm
+          ? deleteAllFeedbackFinalDialogRef.current
+          : showDeleteAllFeedbackConfirm
+            ? deleteAllFeedbackConfirmDialogRef.current
+            : feedbackToDelete !== null
+              ? feedbackDeleteDialogRef.current
+              : feedbackContextItem
+                ? feedbackContextDialogRef.current
+                : showManualRagModal
+                  ? manualPanelDialogRef.current
+                  : showResetConfirmModal
+                    ? resetConfirmDialogRef.current
+                    : showDeleteAllConfirm
+                      ? deleteAllConfirmDialogRef.current
+                      : chatDialogRef.current;
       if (!dialog) return;
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
@@ -2161,7 +2167,7 @@ export default function Dashboard() {
 
     window.addEventListener("keydown", trapChatFocus);
     return () => window.removeEventListener("keydown", trapChatFocus);
-  }, [feedbackContextItem, feedbackToDelete, isChatOpen, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
+  }, [feedbackContextItem, feedbackToDelete, isChatOpen, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
 
   useEffect(() => {
     if (!isChatOpen || !isChatNearBottomRef.current) return;
@@ -2253,7 +2259,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     const focusTimer = window.setTimeout(() => {
-      if (showDeleteAllFeedbackFinalConfirm) {
+      if (manualDocumentToDelete !== null) {
+        wasManualDeleteOpenRef.current = true;
+        manualDeleteCancelRef.current?.focus();
+      } else if (wasManualDeleteOpenRef.current) {
+        (manualDeleteTriggerRef.current?.isConnected ? manualDeleteTriggerRef.current : manualPanelCloseRef.current)?.focus();
+        wasManualDeleteOpenRef.current = false;
+      } else if (showDeleteAllFeedbackFinalConfirm) {
         wasDeleteAllFeedbackFinalConfirmOpenRef.current = true;
         deleteAllFeedbackFinalCancelRef.current?.focus();
       } else if (wasDeleteAllFeedbackFinalConfirmOpenRef.current) {
@@ -2311,7 +2323,7 @@ export default function Dashboard() {
     }, 0);
 
     return () => window.clearTimeout(focusTimer);
-  }, [feedbackContextItem, feedbackToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
+  }, [feedbackContextItem, feedbackToDelete, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
 
   const handleResetChat = async () => {
     try {
@@ -4436,7 +4448,11 @@ export default function Dashboard() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setManualDocumentToDelete(document.id)}
+                                  ref={manualDocumentToDelete === document.id ? manualDeleteTriggerRef : undefined}
+                                  onClick={(event) => {
+                                    manualDeleteTriggerRef.current = event.currentTarget;
+                                    setManualDocumentToDelete(document.id);
+                                  }}
                                   className="rounded border border-red-500/35 bg-red-500/10 px-1.5 py-1 text-[9px] font-bold text-red-400 transition-all hover:bg-red-500/20"
                                   aria-label={lang === "ko" ? "매뉴얼 삭제" : lang === "ja" ? "マニュアルを削除" : "Delete manual"}>
                                   🗑️
@@ -4519,12 +4535,15 @@ export default function Dashboard() {
                               </div>
                             )}
                             {manualDocumentToDelete === document.id && (
-                              <div className="mt-2 border-t pt-2" style={{ borderColor: th.border2 }}>
-                                <p className="text-[9px] leading-relaxed text-red-400">
+                              <div ref={manualDeleteDialogRef} role="alertdialog" aria-modal="true" aria-labelledby="manual-delete-confirm-title" aria-describedby="manual-delete-confirm-description" className="mt-2 border-t pt-2" style={{ borderColor: th.border2 }}>
+                                <p id="manual-delete-confirm-title" className="text-[9px] font-bold text-red-300">
+                                  ⚠️ {lang === "ko" ? "RAG 매뉴얼 삭제 확인" : lang === "ja" ? "RAGマニュアル削除の確認" : "Confirm RAG manual deletion"}
+                                </p>
+                                <p id="manual-delete-confirm-description" className="mt-1 text-[9px] leading-relaxed text-red-400">
                                   {lang === "ko" ? "이 매뉴얼과 연결된 모든 RAG 구간을 삭제할까요? 되돌릴 수 없습니다." : lang === "ja" ? "このマニュアルと関連するすべてのRAG区間を削除しますか？元に戻せません。" : "Delete this manual and all related RAG chunks? This cannot be undone."}
                                 </p>
                                 <div className="mt-1.5 flex justify-end gap-1.5">
-                                  <button type="button" onClick={() => setManualDocumentToDelete(null)} className="rounded px-2 py-1 text-[9px]" style={{ color: th.textMuted }}>
+                                  <button type="button" ref={manualDeleteCancelRef} onClick={() => setManualDocumentToDelete(null)} className="rounded px-2 py-1 text-[9px]" style={{ color: th.textMuted }}>
                                     {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
                                   </button>
                                   <button

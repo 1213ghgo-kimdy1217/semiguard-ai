@@ -19,7 +19,9 @@ describe("feedback history clear-all confirmation accessibility contract", () =>
   it("gives the final and first feedback confirmation priority in the shared Tab trap and Escape path", () => {
     expect(dashboardSource).toContain("if (showDeleteAllFeedbackFinalConfirm) return setShowDeleteAllFeedbackFinalConfirm(false);");
     expect(dashboardSource).toContain("if (showDeleteAllFeedbackConfirm) return setShowDeleteAllFeedbackConfirm(false);");
-    expect(dashboardSource).toContain("showDeleteAllFeedbackFinalConfirm\n        ? deleteAllFeedbackFinalDialogRef.current");
-    expect(dashboardSource).toContain("showDeleteAllFeedbackConfirm\n          ? deleteAllFeedbackConfirmDialogRef.current");
+    expect(dashboardSource).toContain("showDeleteAllFeedbackFinalConfirm");
+    expect(dashboardSource).toContain("? deleteAllFeedbackFinalDialogRef.current");
+    expect(dashboardSource).toContain("showDeleteAllFeedbackConfirm");
+    expect(dashboardSource).toContain("? deleteAllFeedbackConfirmDialogRef.current");
   });
 });

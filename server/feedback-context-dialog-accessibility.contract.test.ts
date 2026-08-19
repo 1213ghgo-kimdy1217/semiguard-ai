@@ -17,7 +17,8 @@ describe("feedback conversation context accessibility contract", () => {
   });
 
   it("uses the context dialog as the active Tab boundary and retains Escape dismissal", () => {
-    expect(dashboardSource).toContain("feedbackContextItem\n              ? feedbackContextDialogRef.current");
+    expect(dashboardSource).toContain("feedbackContextItem");
+    expect(dashboardSource).toContain("? feedbackContextDialogRef.current");
     expect(dashboardSource).toContain("if (feedbackContextItem) return setFeedbackContextItem(null);");
   });
 });

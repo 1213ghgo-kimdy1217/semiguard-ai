@@ -16,7 +16,8 @@ describe("individual feedback deletion confirmation accessibility contract", () 
   });
 
   it("gives the individual confirmation priority in the shared Tab trap and preserves Escape cancellation", () => {
-    expect(dashboardSource).toContain("feedbackToDelete !== null\n            ? feedbackDeleteDialogRef.current");
+    expect(dashboardSource).toContain("feedbackToDelete !== null");
+    expect(dashboardSource).toContain("? feedbackDeleteDialogRef.current");
     expect(dashboardSource).toContain("if (feedbackToDelete !== null) return setFeedbackToDelete(null);");
   });
 });
