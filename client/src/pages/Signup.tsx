@@ -277,7 +277,7 @@ export function Signup() {
             <p className="text-sm text-slate-400">{copy.subtitle}</p>
           </div>
 
-          <form onSubmit={handleSignup} className="space-y-5" aria-busy={isLoading}>
+          <form onSubmit={handleSignup} className="space-y-5" aria-busy={isLoading} noValidate>
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-sm font-medium text-slate-300">{copy.badgeNumber}</Label>
               <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} aria-invalid={fieldError === "badgeNumber"} aria-describedby={fieldError === "badgeNumber" ? "badgeNumber-error" : undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />

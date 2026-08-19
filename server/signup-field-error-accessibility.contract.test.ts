@@ -6,6 +6,7 @@ const signupSource = readFileSync(resolve(process.cwd(), "client/src/pages/Signu
 
 describe("signup required-field accessibility contract", () => {
   it("connects every validation target to an inline error and moves focus to it", () => {
+    expect(signupSource).toContain('aria-busy={isLoading} noValidate');
     for (const field of ["badgeNumber", "name", "dateOfBirth", "password", "passwordConfirm"]) {
       expect(signupSource).toContain(`showFieldError("${field}"`);
       expect(signupSource).toContain(`document.getElementById(field)?.focus()`);
