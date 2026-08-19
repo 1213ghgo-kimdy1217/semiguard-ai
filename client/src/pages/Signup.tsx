@@ -123,6 +123,7 @@ const LANGUAGE_LOCALES: Record<Language, string> = {
 };
 
 type PasswordStrengthLevel = "tooShort" | "weak" | "fair" | "strong";
+type SignupField = "badgeNumber" | "name" | "dateOfBirth" | "password" | "passwordConfirm";
 
 function getPasswordStrength(password: string): { level: PasswordStrengthLevel; score: number } {
   if (password.length < 6) return { level: "tooShort", score: 0 };
@@ -147,6 +148,7 @@ export function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
+  const [fieldError, setFieldError] = useState<SignupField | null>(null);
   const [formData, setFormData] = useState({
     badgeNumber: "",
     name: "",
@@ -190,19 +192,29 @@ export function Signup() {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData((previous) => ({ ...previous, [name]: value }));
+    if (fieldError === name || (name === "password" && fieldError === "passwordConfirm")) {
+      setFieldError(null);
+    }
   };
   const handleCapsLock = (event: React.KeyboardEvent<HTMLInputElement>) => {
     setCapsLockOn(event.getModifierState("CapsLock"));
   };
+  const showFieldError = (field: SignupField, message: string) => {
+    setFieldError(field);
+    toast.error(message);
+    window.requestAnimationFrame(() => document.getElementById(field)?.focus());
+  };
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!formData.badgeNumber.trim()) return void toast.error(copy.validation.badgeNumber);
-    if (!formData.name.trim()) return void toast.error(copy.validation.name);
-    if (!formData.dateOfBirth) return void toast.error(copy.validation.dateOfBirth);
-    if (!formData.password) return void toast.error(copy.validation.password);
-    if (formData.password.length < 6) return void toast.error(copy.validation.passwordLength);
-    if (formData.password !== formData.passwordConfirm) return void toast.error(copy.validation.passwordConfirm);
+    if (!formData.badgeNumber.trim()) return void showFieldError("badgeNumber", copy.validation.badgeNumber);
+    if (!formData.name.trim()) return void showFieldError("name", copy.validation.name);
+    if (!formData.dateOfBirth) return void showFieldError("dateOfBirth", copy.validation.dateOfBirth);
+    if (!formData.password) return void showFieldError("password", copy.validation.password);
+    if (formData.password.length < 6) return void showFieldError("password", copy.validation.passwordLength);
+    if (formData.password !== formData.passwordConfirm) return void showFieldError("passwordConfirm", copy.validation.passwordConfirm);
+
+    setFieldError(null);
 
     setIsLoading(true);
     try {
@@ -268,24 +280,28 @@ export function Signup() {
           <form onSubmit={handleSignup} className="space-y-5" aria-busy={isLoading}>
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-sm font-medium text-slate-300">{copy.badgeNumber}</Label>
-              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
+              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} aria-invalid={fieldError === "badgeNumber"} aria-describedby={fieldError === "badgeNumber" ? "badgeNumber-error" : undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
+              {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert">{copy.validation.badgeNumber}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium text-slate-300">{copy.name}</Label>
-              <Input id="name" name="name" type="text" placeholder={copy.namePlaceholder} value={formData.name} onChange={handleChange} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="name" required />
+              <Input id="name" name="name" type="text" placeholder={copy.namePlaceholder} value={formData.name} onChange={handleChange} aria-invalid={fieldError === "name"} aria-describedby={fieldError === "name" ? "name-error" : undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="name" required />
+              {fieldError === "name" && <p id="name-error" className="text-xs font-medium text-rose-300" role="alert">{copy.validation.name}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth" className="text-sm font-medium text-slate-300">{copy.dateOfBirth}</Label>
-              <Input id="dateOfBirth" name="dateOfBirth" type="date" lang={LANGUAGE_LOCALES[language]} value={formData.dateOfBirth} onChange={handleChange} className="border-slate-600 bg-slate-700 text-white focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="bday" required />
+              <Input id="dateOfBirth" name="dateOfBirth" type="date" lang={LANGUAGE_LOCALES[language]} value={formData.dateOfBirth} onChange={handleChange} aria-invalid={fieldError === "dateOfBirth"} aria-describedby={fieldError === "dateOfBirth" ? "dateOfBirth-error" : undefined} className="border-slate-600 bg-slate-700 text-white focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="bday" required />
+              {fieldError === "dateOfBirth" && <p id="dateOfBirth-error" className="text-xs font-medium text-rose-300" role="alert">{copy.validation.dateOfBirth}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
               <div className="relative">
-                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} aria-invalid={fieldError === "password"} aria-describedby={fieldError === "password" ? "password-error" : undefined} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
                 <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
+              {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert">{formData.password ? copy.validation.passwordLength : copy.validation.password}</p>}
               <div className="space-y-1.5" aria-live="polite" aria-atomic="true">
                 <div className="flex gap-1" aria-hidden="true">
                   <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 1 ? "bg-rose-400" : "bg-slate-600"}`} />
@@ -301,11 +317,12 @@ export function Signup() {
             <div className="space-y-2">
               <Label htmlFor="passwordConfirm" className="text-sm font-medium text-slate-300">{copy.passwordConfirm}</Label>
               <div className="relative">
-                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} aria-invalid={fieldError === "passwordConfirm"} aria-describedby={fieldError === "passwordConfirm" ? "passwordConfirm-error" : undefined} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
                 <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
                   {showPasswordConfirm ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
+              {fieldError === "passwordConfirm" && <p id="passwordConfirm-error" className="text-xs font-medium text-rose-300" role="alert">{copy.validation.passwordConfirm}</p>}
               {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status">{copy.capsLockWarning}</p>}
             </div>
             <Button type="submit" disabled={isLoading} className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 font-semibold text-white transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50">
