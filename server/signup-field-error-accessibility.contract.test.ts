@@ -22,6 +22,13 @@ describe("signup required-field accessibility contract", () => {
   it("clears a field error when the user corrects the relevant value", () => {
     expect(signupSource).toContain('if (fieldError === name || (name === "password" && fieldError === "passwordConfirm"))');
     expect(signupSource).toContain("setFieldError(null);");
+    expect(signupSource).toContain("setFieldErrorMessage(null);");
+  });
+
+  it("keeps the specific validation message with the field instead of replacing it with a generic label", () => {
+    expect(signupSource).toContain("const [fieldErrorMessage, setFieldErrorMessage] = useState<string | null>(null);");
+    expect(signupSource).toContain("setFieldErrorMessage(message);");
+    expect(signupSource).toContain("{fieldErrorMessage ?? copy.validation.badgeNumber}");
   });
 
   it("keeps Korean, English, and Japanese validation messages in the existing copy map", () => {
