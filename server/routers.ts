@@ -231,7 +231,7 @@ export const appRouter = router({
           previous: { ...previous, startAt: previousRange.startAt.toISOString(), endAt: previousRange.endAt.toISOString() },
         };
       }),
-    injectNormal: publicProcedure.mutation(async () => {
+    injectNormal: protectedProcedure.mutation(async () => {
     const dbThresholds = await getThresholds();
     const data = generateNormalData();
     const result = analyzeData(data);
@@ -250,7 +250,7 @@ export const appRouter = router({
     return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
   }),
 
-    injectAnomaly: publicProcedure.mutation(async () => {
+    injectAnomaly: protectedProcedure.mutation(async () => {
       const dbThresholds = await getThresholds();
       const data = generateAnomalyData();
       const result = analyzeData(data);
@@ -269,7 +269,7 @@ export const appRouter = router({
       return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
     }),
 
-    injectCaution: publicProcedure.mutation(async () => {
+    injectCaution: protectedProcedure.mutation(async () => {
       const dbThresholds = await getThresholds();
       const data = generateCautionData();
       const result = analyzeData(data);
@@ -288,7 +288,7 @@ export const appRouter = router({
       return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
     }),
 
-    injectWarning: publicProcedure.mutation(async () => {
+    injectWarning: protectedProcedure.mutation(async () => {
       const dbThresholds = await getThresholds();
       const data = generateWarningData();
       const result = analyzeData(data);
@@ -307,7 +307,7 @@ export const appRouter = router({
       return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
     }),
 
-    autoFetch: publicProcedure.mutation(async () => {
+    autoFetch: protectedProcedure.mutation(async () => {
       // 자동 폴링: 80% 정상, 10% 약한 주의, 10% 약한 경고
       const roll = Math.random();
       const data = roll < 0.80
@@ -352,7 +352,7 @@ export const appRouter = router({
         }));
       }),
 
-    clearLogs: publicProcedure.mutation(async () => {
+    clearLogs: protectedProcedure.mutation(async () => {
     await clearAnomalyLogs();
     // 로그 초기화 시 danger_reset_offset도 0으로 리셋
     await resetSavedCost(0);
@@ -471,7 +471,7 @@ export const appRouter = router({
         await saveSensorThresholds(input);
         return { success: true };
       }),
-    analyzeAnomaly: publicProcedure
+    analyzeAnomaly: protectedProcedure
       .input(
         z.object({
           current: z.number(),
