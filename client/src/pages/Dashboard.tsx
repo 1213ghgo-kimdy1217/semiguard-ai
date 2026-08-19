@@ -3545,7 +3545,7 @@ export default function Dashboard() {
       )}
       {/* LLM 분석 결과 플로팅 패널 (위험/경고 탐지 후 dangerAlert 닫혀도 유지) */}
       {llmAnalysis && !dangerAlert && (
-        <div role="region" aria-labelledby="ai-analysis-result-title" className="fixed bottom-6 right-6 z-[500] w-80 rounded-2xl shadow-2xl"
+        <div role="region" aria-live="polite" aria-atomic="true" aria-labelledby="ai-analysis-result-title" className="fixed bottom-6 right-6 z-[500] w-80 rounded-2xl shadow-2xl"
           style={{
             background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
             border: `1px solid ${llmAnalysis.riskLevel === "danger" ? "rgba(239,68,68,0.5)" : "rgba(249,115,22,0.5)"}`,

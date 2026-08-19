@@ -136,8 +136,8 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('id="ai-analysis-history-panel" role="region" aria-labelledby="ai-analysis-history-title"');
   });
 
-  it("exposes the floating AI analysis result as a named assistive-technology region", () => {
-    expect(dashboardSource).toContain('role="region" aria-labelledby="ai-analysis-result-title"');
+  it("exposes the floating AI analysis result as a named live assistive-technology region", () => {
+    expect(dashboardSource).toContain('role="region" aria-live="polite" aria-atomic="true" aria-labelledby="ai-analysis-result-title"');
     expect(dashboardSource).toContain('id="ai-analysis-result-title"');
   });
 
