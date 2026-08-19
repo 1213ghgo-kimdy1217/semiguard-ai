@@ -52,6 +52,7 @@ function LoadingBrand({ context }: Pick<LoadingCopy, "context">) {
 
 function DashboardModuleLoading() {
   const copy = dashboardLoadingCopy[getDashboardLoadingLanguage()];
+  const [, setLocation] = useLocation();
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 
   useEffect(() => {
@@ -73,6 +74,12 @@ function DashboardModuleLoading() {
             onClick={() => window.location.reload()}
             className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:ring-offset-2 focus:ring-offset-slate-900">
             {copy.retry}
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocation("/login")}
+            className="rounded-lg border border-slate-500/70 bg-slate-800/70 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:ring-offset-2 focus:ring-offset-slate-900">
+            {copy.login}
           </button>
         </div>
       )}
