@@ -20,4 +20,12 @@ describe("social OAuth error dialog accessibility contract", () => {
     expect(loginSource).toContain('event.key === "Escape"');
     expect(loginSource).toContain('dismissOauthError();');
   });
+
+  it("keeps Tab and Shift+Tab focus within the available dialog controls", () => {
+    expect(loginSource).toContain("event.key !== \"Tab\"");
+    expect(loginSource).toContain("button:not([disabled])");
+    expect(loginSource).toContain("focusableControls.length === 1");
+    expect(loginSource).toContain("event.shiftKey && document.activeElement === firstControl");
+    expect(loginSource).toContain("document.activeElement === lastControl");
+  });
 });

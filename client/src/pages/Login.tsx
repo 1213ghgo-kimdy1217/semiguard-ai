@@ -343,7 +343,25 @@ export function Login() {
 
           {showOauthError && oauthError && (
             <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/70 p-4 backdrop-blur-sm sm:items-center" role="presentation">
-              <section className="w-full max-w-md rounded-2xl border border-amber-400/45 bg-slate-900 p-5 text-slate-100 shadow-2xl shadow-black/50 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95" role="alertdialog" aria-modal="true" aria-labelledby="oauth-error-title" aria-describedby="oauth-error-message" onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); dismissOauthError(); } }}>
+              <section className="w-full max-w-md rounded-2xl border border-amber-400/45 bg-slate-900 p-5 text-slate-100 shadow-2xl shadow-black/50 motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95" role="alertdialog" aria-modal="true" aria-labelledby="oauth-error-title" aria-describedby="oauth-error-message" onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  dismissOauthError();
+                  return;
+                }
+                if (event.key !== "Tab") return;
+                const focusableControls = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+                const firstControl = focusableControls[0];
+                const lastControl = focusableControls.at(-1);
+                if (!firstControl || !lastControl) return;
+                if (focusableControls.length === 1 || (event.shiftKey && document.activeElement === firstControl)) {
+                  event.preventDefault();
+                  lastControl.focus();
+                } else if (!event.shiftKey && document.activeElement === lastControl) {
+                  event.preventDefault();
+                  firstControl.focus();
+                }
+              }}>
                 <div className="flex items-start gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-400/40 bg-amber-400/10 text-lg" aria-hidden="true">!</span>
                   <div className="min-w-0 space-y-1">
