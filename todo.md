@@ -126,6 +126,7 @@
 - [x] Kakao OAuth 콜백 실패 원인 점검 및 수정
 - [x] 소셜 로그인 실패 시 사용자 친화적인 로그인 페이지 안내 추가
 - [ ] 모바일 환경에서 Google·Naver·Kakao 소셜 로그인 성공 흐름 검증 (Google 실배포 확인; Naver·Kakao 실제 인증 필요)
+- [x] 실제 계정이 필요한 모바일 Google·Naver·Kakao 로그인 검증 절차·성공 판정·개인정보 보호 주의사항을 문서화 (`MOBILE_SOCIAL_LOGIN_VALIDATION.md`, README 연결, 제출 문서 계약 테스트·TypeScript·Vitest 396개·프로덕션 빌드 통과)
 - [x] Kakao OAuth 자격 증명 Vitest 테스트 추가
 - [x] Google·Naver·Kakao 각 제공자 콜백 처리 및 실패 리다이렉트 Vitest 테스트 추가
 - [x] 세션 쿠키 설정과 로그인 후 `/` 리다이렉트 서버 테스트 추가
