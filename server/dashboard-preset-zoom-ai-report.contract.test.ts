@@ -26,7 +26,7 @@ describe("dashboard period presets, zoom, and AI report contract", () => {
   });
 
   it("adds a data-grounded AI report summary with a server-side fallback", () => {
-    expect(routerSource).toContain("summarizePeriodForReport: publicProcedure");
+    expect(routerSource).toContain("summarizePeriodForReport: protectedProcedure");
     expect(routerSource).toContain('model: "gpt-5-mini"');
     expect(routerSource).toContain("Use only supplied numbers and do not diagnose a specific hardware failure.");
     expect(routerSource).toContain('source: "fallback" as const');

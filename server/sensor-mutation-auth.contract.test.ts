@@ -29,4 +29,19 @@ describe("sensor mutation authentication boundary contract", () => {
       expect(judgeDemoSource).not.toContain(`semiguard.${procedure}`);
     });
   });
+
+  it("protects dashboard-only configuration and LLM-consuming mutations", () => {
+    [
+      "resetSavedCost",
+      "saveThresholds",
+      "saveSensorThresholds",
+      "summarizePeriodForReport",
+      "chatWithAi",
+    ].forEach(procedure => {
+      expect(routerSource).toContain(`${procedure}: protectedProcedure`);
+      expect(routerSource).not.toContain(`${procedure}: publicProcedure`);
+    });
+    expect(dashboardSource).toContain("trpc.semiguard.summarizePeriodForReport.useMutation()");
+    expect(dashboardSource).toContain("trpc.semiguard.chatWithAi.useMutation()");
+  });
 });

@@ -392,7 +392,7 @@ export const appRouter = router({
       };
     }),
 
-    resetSavedCost: publicProcedure.mutation(async () => {
+    resetSavedCost: protectedProcedure.mutation(async () => {
       const stats = await getAnomalyStats();
       await resetSavedCost(stats.dangerCount);
       return { success: true };
@@ -406,7 +406,7 @@ export const appRouter = router({
       return getThresholds();
     }),
 
-    saveThresholds: publicProcedure
+    saveThresholds: protectedProcedure
       .input(z.object({
         normal: z.number().int().min(1).max(98),
         caution: z.number().int().min(2).max(98),
@@ -460,7 +460,7 @@ export const appRouter = router({
     getSensorThresholds: publicProcedure.query(async () => {
       return await getSensorThresholds();
     }),
-    saveSensorThresholds: publicProcedure
+    saveSensorThresholds: protectedProcedure
       .input(z.object({
         currentCaution: z.number(), currentWarning: z.number(), currentDanger: z.number(),
         tempCaution: z.number(), tempWarning: z.number(), tempDanger: z.number(),
@@ -583,7 +583,7 @@ export const appRouter = router({
         const selectedData = lang === "ko" ? koData : lang === "ja" ? jaData : enData;
         return { ...selectedData, translations: { ko: koData, en: enData, ja: jaData } };
       }),
-    summarizePeriodForReport: publicProcedure
+    summarizePeriodForReport: protectedProcedure
       .input(z.object({
         lang: z.enum(["ko", "en", "ja"]).default("ko"),
         periodLabel: z.string().min(1).max(120),
@@ -682,7 +682,7 @@ export const appRouter = router({
       return getLlmHistory(5);
     }),
 
-    chatWithAi: publicProcedure
+    chatWithAi: protectedProcedure
       .input(
         z.object({
           sensorContext: z.object({
