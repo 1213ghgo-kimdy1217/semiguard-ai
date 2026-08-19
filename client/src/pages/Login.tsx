@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocation } from "wouter";
-import { useRef, useState } from "react";
+import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
@@ -12,6 +12,8 @@ import { useEffect } from "react";
 export function Login() {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
+  const loginLanguageOptions = ["ko", "en", "ja"] as const;
+  const loginLanguageButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const [loginLanguage, setLoginLanguage] = useState<"ko" | "en" | "ja">(() => {
     try {
@@ -28,6 +30,23 @@ export function Login() {
     } catch {
       // 저장소가 제한된 환경에서는 현재 로그인 화면에서만 언어 선택을 적용한다.
     }
+  };
+  const handleLoginLanguageKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    const lastIndex = loginLanguageOptions.length - 1;
+    const nextIndex = event.key === "ArrowRight" || event.key === "ArrowDown"
+      ? (currentIndex + 1) % loginLanguageOptions.length
+      : event.key === "ArrowLeft" || event.key === "ArrowUp"
+        ? (currentIndex - 1 + loginLanguageOptions.length) % loginLanguageOptions.length
+        : event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? lastIndex
+            : null;
+
+    if (nextIndex === null) return;
+    event.preventDefault();
+    selectLoginLanguage(loginLanguageOptions[nextIndex]);
+    window.requestAnimationFrame(() => loginLanguageButtonRefs.current[nextIndex]?.focus());
   };
 
   useEffect(() => {
@@ -316,11 +335,13 @@ export function Login() {
                 ["ko", "한국어"],
                 ["en", "EN"],
                 ["ja", "日本語"],
-              ] as const).map(([language, label]) => (
+              ] as const).map(([language, label], index) => (
                 <button
                   key={language}
                   type="button"
                   onClick={() => selectLoginLanguage(language)}
+                  onKeyDown={(event) => handleLoginLanguageKeyDown(event, index)}
+                  ref={(element) => { loginLanguageButtonRefs.current[index] = element; }}
                   aria-pressed={loginLanguage === language}
                   className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 ${loginLanguage === language ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"}`}
                 >

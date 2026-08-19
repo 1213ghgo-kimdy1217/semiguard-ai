@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,6 +140,8 @@ function getPasswordStrength(password: string): { level: PasswordStrengthLevel; 
 
 export function Signup() {
   const [, setLocation] = useLocation();
+  const signupLanguageOptions: Language[] = ["ko", "en", "ja"];
+  const signupLanguageButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [language, setLanguage] = useState<Language>(() => {
     try {
       const saved = window.localStorage.getItem("semiguard_lang");
@@ -193,6 +195,23 @@ export function Signup() {
     } catch {
       // 브라우저 저장소가 제한돼도 현재 회원가입 화면의 표시 언어는 바꾼다.
     }
+  };
+  const handleSignupLanguageKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    const lastIndex = signupLanguageOptions.length - 1;
+    const nextIndex = event.key === "ArrowRight" || event.key === "ArrowDown"
+      ? (currentIndex + 1) % signupLanguageOptions.length
+      : event.key === "ArrowLeft" || event.key === "ArrowUp"
+        ? (currentIndex - 1 + signupLanguageOptions.length) % signupLanguageOptions.length
+        : event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? lastIndex
+            : null;
+
+    if (nextIndex === null) return;
+    event.preventDefault();
+    selectLanguage(signupLanguageOptions[nextIndex]);
+    window.requestAnimationFrame(() => signupLanguageButtonRefs.current[nextIndex]?.focus());
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -273,11 +292,13 @@ export function Signup() {
                 ["ko", "한국어"],
                 ["en", "EN"],
                 ["ja", "日本語"],
-              ] as const).map(([nextLanguage, label]) => (
+              ] as const).map(([nextLanguage, label], index) => (
                 <button
                   key={nextLanguage}
                   type="button"
                   onClick={() => selectLanguage(nextLanguage)}
+                  onKeyDown={(event) => handleSignupLanguageKeyDown(event, index)}
+                  ref={(element) => { signupLanguageButtonRefs.current[index] = element; }}
                   aria-pressed={language === nextLanguage}
                   className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 ${language === nextLanguage ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:bg-slate-700 hover:text-slate-100"}`}
                 >

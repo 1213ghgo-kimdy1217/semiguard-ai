@@ -1586,6 +1586,7 @@
 - [x] 개발 미리보기의 소셜 로그인 비활성 제어가 KO/EN/JA 사유를 보조기기에 명확히 전달하는지 점검하고 회귀 테스트 추가 (기존 미리보기 안내 role="status"와 Google·Naver·Kakao 버튼의 aria-describedby·published-site title 연결을 확인, TypeScript·Vitest 503개·프로덕션 빌드 상태 유지)
 - [x] 미리보기 네트워크 단절 시 대시보드가 무한 스켈레톤 대신 KO/EN/JA 연결 복구·재시도 안내를 제공하고 회귀 테스트 추가 (기존 핵심 조회 오류 감지·상태 배지·재연결 제어가 모든 핵심 쿼리를 refetch하고 KO/EN/JA aria-label을 제공함을 확인, TypeScript·Vitest 503개·프로덕션 빌드 상태 유지)
 - [x] 로그인 소셜 계정 연결 제어 묶음에 KO/EN/JA group 역할·이름을 제공하고 회귀 테스트 추가 (Google·Naver·Kakao 제어 묶음을 명명된 group으로 노출, TypeScript·Vitest 504개·프로덕션 빌드 통과)
+- [x] 로그인·회원가입 언어 선택 제어의 Arrow·Home·End 키 조작과 KO/EN/JA 회귀 테스트 추가 (Arrow·Home·End로 언어 선택·초점을 함께 이동하고 localStorage 언어 저장을 유지, TypeScript·Vitest 506개·프로덕션 빌드 통과)
 - [x] 대시보드 Recharts 별도 캐시 청크 후보를 검증했으나 기존 번들 계약이 수동 `manualChunks`를 금지해 즉시 되돌림; Vite 의존성 그래프·기존 지연 로딩을 유지하고 TypeScript·Vitest 425개·프로덕션 빌드 재확인
 - [x] README 최신 회귀 테스트 수치를 425개 결과와 일치시키고 제출 문서 계약 테스트 확인 (TypeScript·Vitest 425개·프로덕션 빌드 통과)
 - [x] LLM 사용량 소진 시 실시간 수치 기반 기본 안전 진단 배지·재시도·KO/EN/JA·저장 이력 경계를 확인하는 계약 테스트 4개 파일·8개 항목 통과 (기존 안전 안내 구현 확인, 코드 변경 없음)
