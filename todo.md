@@ -1579,6 +1579,7 @@
 - [x] 대시보드 모듈·인증 대기 화면의 진행 상태를 KO/EN/JA 보조기기 상태로 안내하고 회귀 테스트 추가 (role="status"에 polite·atomic·busy 상태를 명시해 전체 진행 문구를 안정적으로 안내, TypeScript·Vitest 499개·프로덕션 빌드 통과)
 - [x] 기간별 분석 데이터 갱신 중 스켈레톤 상태를 KO/EN/JA 보조기기 상태로 안내하고 회귀 테스트 추가 (기존 스켈레톤이 role="status"·polite·언어별 label·sr-only 진행 문구를 제공하고 기간 선택 제어가 aria-busy를 제공함을 확인, TypeScript·Vitest 499개·프로덕션 빌드 상태 유지)
 - [x] 실시간 시스템 상태 배지 점검: 정상·동기화·점검 필요 상태를 KO/EN/JA로 구분하고 role="status"·polite·상세 aria-label을 제공함을 확인
+- [x] 전역 오류 화면의 초기 초점·재시도 안내를 KO/EN/JA 보조기기 상태로 제공하고 회귀 테스트 추가 (기존 assertive 오류 안내·재시도 초기 초점·저장 기록 유지 문구를 계약으로 보호, TypeScript·Vitest 501개·프로덕션 빌드 통과)
 - [x] 대시보드 Recharts 별도 캐시 청크 후보를 검증했으나 기존 번들 계약이 수동 `manualChunks`를 금지해 즉시 되돌림; Vite 의존성 그래프·기존 지연 로딩을 유지하고 TypeScript·Vitest 425개·프로덕션 빌드 재확인
 - [x] README 최신 회귀 테스트 수치를 425개 결과와 일치시키고 제출 문서 계약 테스트 확인 (TypeScript·Vitest 425개·프로덕션 빌드 통과)
 - [x] LLM 사용량 소진 시 실시간 수치 기반 기본 안전 진단 배지·재시도·KO/EN/JA·저장 이력 경계를 확인하는 계약 테스트 4개 파일·8개 항목 통과 (기존 안전 안내 구현 확인, 코드 변경 없음)
