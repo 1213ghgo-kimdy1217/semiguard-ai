@@ -149,6 +149,7 @@ export function Signup() {
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [fieldError, setFieldError] = useState<SignupField | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     badgeNumber: "",
     name: "",
@@ -192,6 +193,7 @@ export function Signup() {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData((previous) => ({ ...previous, [name]: value }));
+    if (authError) setAuthError(null);
     if (fieldError === name || (name === "password" && fieldError === "passwordConfirm")) {
       setFieldError(null);
     }
@@ -215,6 +217,7 @@ export function Signup() {
     if (formData.password !== formData.passwordConfirm) return void showFieldError("passwordConfirm", copy.validation.passwordConfirm);
 
     setFieldError(null);
+    setAuthError(null);
 
     setIsLoading(true);
     try {
@@ -237,7 +240,9 @@ export function Signup() {
       window.setTimeout(() => setLocation("/login"), 1500);
     } catch (error) {
       console.error("Signup error:", error);
+      setAuthError(copy.error);
       toast.error(copy.error);
+      window.requestAnimationFrame(() => document.getElementById("badgeNumber")?.focus());
     } finally {
       setIsLoading(false);
     }
@@ -278,9 +283,14 @@ export function Signup() {
           </div>
 
           <form onSubmit={handleSignup} className="space-y-5" aria-busy={isLoading} noValidate>
+            {authError && (
+              <p id="signup-auth-error" role="alert" className="rounded-lg border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-200" tabIndex={-1}>
+                {authError}
+              </p>
+            )}
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-sm font-medium text-slate-300">{copy.badgeNumber}</Label>
-              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} aria-invalid={fieldError === "badgeNumber"} aria-describedby={fieldError === "badgeNumber" ? "badgeNumber-error" : undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
+              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={[fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ") || undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
               {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert">{copy.validation.badgeNumber}</p>}
             </div>
             <div className="space-y-2">

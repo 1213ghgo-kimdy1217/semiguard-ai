@@ -10,7 +10,11 @@ describe("signup required-field accessibility contract", () => {
     for (const field of ["badgeNumber", "name", "dateOfBirth", "password", "passwordConfirm"]) {
       expect(signupSource).toContain(`showFieldError("${field}"`);
       expect(signupSource).toContain(`document.getElementById(field)?.focus()`);
-      expect(signupSource).toContain(`aria-invalid={fieldError === "${field}"}`);
+      if (field === "badgeNumber") {
+        expect(signupSource).toContain('aria-invalid={fieldError === "badgeNumber" || Boolean(authError)}');
+      } else {
+        expect(signupSource).toContain(`aria-invalid={fieldError === "${field}"}`);
+      }
       expect(signupSource).toContain(`id="${field}-error"`);
     }
   });
