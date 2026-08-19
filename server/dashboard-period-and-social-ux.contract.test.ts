@@ -18,7 +18,7 @@ describe("dashboard period analysis and social UX contract", () => {
   });
 
   it("provides a typed server contract for period-scoped sensor and KPI data", () => {
-    expect(routerSource).toContain('getPeriodOverview: publicProcedure');
+    expect(routerSource).toContain('getPeriodOverview: protectedProcedure');
     expect(routerSource).toContain('z.enum(["day", "week", "month"])');
     expect(dbSource).toContain('export async function getPeriodDashboardOverview(period: DashboardPeriod, customRange?');
     expect(dbSource).toContain('DASHBOARD_PERIOD_MS');

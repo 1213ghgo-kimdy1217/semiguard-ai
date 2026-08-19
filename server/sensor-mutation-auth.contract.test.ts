@@ -51,4 +51,21 @@ describe("sensor mutation authentication boundary contract", () => {
     expect(dashboardSource).toContain("trpc.semiguard.trackVisit.useMutation()");
     expect(judgeDemoSource).not.toContain("semiguard.trackVisit");
   });
+
+  it("protects operational sensor reads while the public demo remains self-contained", () => {
+    [
+      "getLogs",
+      "getStats",
+      "getDailyMaxRisk",
+      "getThresholds",
+      "getRecentScores",
+      "getPeriodOverview",
+      "getSensorThresholds",
+      "getLlmHistory",
+    ].forEach(procedure => {
+      expect(routerSource).toContain(`${procedure}: protectedProcedure`);
+      expect(routerSource).not.toContain(`${procedure}: publicProcedure`);
+    });
+    expect(judgeDemoSource).not.toContain("trpc.semiguard.");
+  });
 });

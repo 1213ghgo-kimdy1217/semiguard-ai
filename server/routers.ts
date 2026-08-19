@@ -332,7 +332,7 @@ export const appRouter = router({
       return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
     }),
 
-    getLogs: publicProcedure
+    getLogs: protectedProcedure
       .input(z.object({ limit: z.number().optional().default(50) }))
       .query(async ({ input }) => {
         const logs = await getRecentAnomalyLogs(input.limit);
@@ -366,7 +366,7 @@ export const appRouter = router({
       return { todayCount, totalCount };
     }),
 
-    getStats: publicProcedure.query(async () => {
+    getStats: protectedProcedure.query(async () => {
       const [stats, totalVisitors] = await Promise.all([
         getAnomalyStats(),
         getTotalVisitors(),
@@ -398,11 +398,11 @@ export const appRouter = router({
       return { success: true };
     }),
 
-    getDailyMaxRisk: publicProcedure.query(async () => {
+    getDailyMaxRisk: protectedProcedure.query(async () => {
       return getDailyMaxRisk();
     }),
 
-    getThresholds: publicProcedure.query(async () => {
+    getThresholds: protectedProcedure.query(async () => {
       return getThresholds();
     }),
 
@@ -417,7 +417,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    getRecentScores: publicProcedure
+    getRecentScores: protectedProcedure
       .input(z.object({ limit: z.number().optional().default(50) }))
       .query(async ({ input }) => {
         const rows = await getRecentScores(input.limit);
@@ -427,7 +427,7 @@ export const appRouter = router({
           riskLevel: r.riskLevel,
         }));
       }),
-    getPeriodOverview: publicProcedure
+    getPeriodOverview: protectedProcedure
       .input(z.discriminatedUnion("period", [
         z.object({ period: z.enum(["day", "week", "month"]) }),
         z.object({
@@ -457,7 +457,7 @@ export const appRouter = router({
           })),
         };
       }),
-    getSensorThresholds: publicProcedure.query(async () => {
+    getSensorThresholds: protectedProcedure.query(async () => {
       return await getSensorThresholds();
     }),
     saveSensorThresholds: protectedProcedure
@@ -678,7 +678,7 @@ export const appRouter = router({
           return fallback;
         }
       }),
-    getLlmHistory: publicProcedure.query(async () => {
+    getLlmHistory: protectedProcedure.query(async () => {
       return getLlmHistory(5);
     }),
 
