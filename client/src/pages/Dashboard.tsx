@@ -1420,6 +1420,9 @@ export default function Dashboard() {
   const feedbackDeleteTriggerRef = useRef<HTMLButtonElement>(null);
   const feedbackDeleteCancelRef = useRef<HTMLButtonElement>(null);
   const feedbackDeleteDialogRef = useRef<HTMLDivElement>(null);
+  const feedbackContextTriggerRef = useRef<HTMLButtonElement>(null);
+  const feedbackContextCloseRef = useRef<HTMLButtonElement>(null);
+  const feedbackContextDialogRef = useRef<HTMLDivElement>(null);
   const manualPanelTriggerRef = useRef<HTMLButtonElement>(null);
   const manualPanelCloseRef = useRef<HTMLButtonElement>(null);
   const manualPanelDialogRef = useRef<HTMLDivElement>(null);
@@ -1431,6 +1434,7 @@ export default function Dashboard() {
   const wasDeleteAllFeedbackConfirmOpenRef = useRef(false);
   const wasDeleteAllFeedbackFinalConfirmOpenRef = useRef(false);
   const wasFeedbackDeleteOpenRef = useRef(false);
+  const wasFeedbackContextOpenRef = useRef(false);
   const wasManualPanelOpenRef = useRef(false);
   const wasResetConfirmOpenRef = useRef(false);
   const wasDeleteAllConfirmOpenRef = useRef(false);
@@ -2126,13 +2130,15 @@ export default function Dashboard() {
           ? deleteAllFeedbackConfirmDialogRef.current
           : feedbackToDelete !== null
             ? feedbackDeleteDialogRef.current
-            : showManualRagModal
-              ? manualPanelDialogRef.current
-              : showResetConfirmModal
-                ? resetConfirmDialogRef.current
-                : showDeleteAllConfirm
-                  ? deleteAllConfirmDialogRef.current
-                  : chatDialogRef.current;
+            : feedbackContextItem
+              ? feedbackContextDialogRef.current
+              : showManualRagModal
+                ? manualPanelDialogRef.current
+                : showResetConfirmModal
+                  ? resetConfirmDialogRef.current
+                  : showDeleteAllConfirm
+                    ? deleteAllConfirmDialogRef.current
+                    : chatDialogRef.current;
       if (!dialog) return;
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
@@ -2155,7 +2161,7 @@ export default function Dashboard() {
 
     window.addEventListener("keydown", trapChatFocus);
     return () => window.removeEventListener("keydown", trapChatFocus);
-  }, [feedbackToDelete, isChatOpen, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
+  }, [feedbackContextItem, feedbackToDelete, isChatOpen, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
 
   useEffect(() => {
     if (!isChatOpen || !isChatNearBottomRef.current) return;
@@ -2265,6 +2271,12 @@ export default function Dashboard() {
       } else if (wasFeedbackDeleteOpenRef.current) {
         (feedbackDeleteTriggerRef.current?.isConnected ? feedbackDeleteTriggerRef.current : feedbackPanelCloseRef.current)?.focus();
         wasFeedbackDeleteOpenRef.current = false;
+      } else if (feedbackContextItem) {
+        wasFeedbackContextOpenRef.current = true;
+        feedbackContextCloseRef.current?.focus();
+      } else if (wasFeedbackContextOpenRef.current) {
+        (feedbackContextTriggerRef.current?.isConnected ? feedbackContextTriggerRef.current : feedbackPanelCloseRef.current)?.focus();
+        wasFeedbackContextOpenRef.current = false;
       } else if (showDeleteAllConfirm) {
         wasDeleteAllConfirmOpenRef.current = true;
         deleteAllConfirmCancelRef.current?.focus();
@@ -2299,7 +2311,7 @@ export default function Dashboard() {
     }, 0);
 
     return () => window.clearTimeout(focusTimer);
-  }, [feedbackToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
+  }, [feedbackContextItem, feedbackToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
 
   const handleResetChat = async () => {
     try {
@@ -5336,17 +5348,17 @@ export default function Dashboard() {
                   </div>
                 )}
                 {feedbackContextItem && (
-                  <div className="absolute inset-0 z-[600] flex flex-col rounded-xl bg-black/80 p-3 backdrop-blur-md animate-fadeIn" role="dialog" aria-modal="true" aria-label={lang === "ko" ? "피드백 상담 맥락" : lang === "ja" ? "フィードバックの会話文脈" : "Feedback conversation context"}>
+                  <div ref={feedbackContextDialogRef} className="absolute inset-0 z-[600] flex flex-col rounded-xl bg-black/80 p-3 backdrop-blur-md animate-fadeIn" role="dialog" aria-modal="true" aria-labelledby="feedback-context-title" aria-describedby="feedback-context-description">
                     <div className="flex items-start justify-between gap-3 border-b pb-2" style={{ borderColor: th.border2 }}>
                       <div>
-                        <h5 className="text-xs font-bold" style={{ color: th.text }}>
+                        <h5 id="feedback-context-title" className="text-xs font-bold" style={{ color: th.text }}>
                           💬 {lang === "ko" ? "피드백 상담 맥락" : lang === "ja" ? "フィードバックの会話文脈" : "Feedback conversation context"}
                         </h5>
-                        <p className="mt-0.5 text-[9px] leading-relaxed" style={{ color: th.textMuted }}>
+                        <p id="feedback-context-description" className="mt-0.5 text-[9px] leading-relaxed" style={{ color: th.textMuted }}>
                           {lang === "ko" ? "평가한 답변은 강조 표시됩니다. 현재 사용자 소유 세션의 메시지만 표시합니다." : lang === "ja" ? "評価した回答は強調表示されます。現在のユーザー所有セッションのメッセージのみ表示します。" : "The rated response is highlighted. Only messages from your current-user-owned session are shown."}
                         </p>
                       </div>
-                      <button type="button" onClick={() => setFeedbackContextItem(null)} className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-bold transition-opacity hover:opacity-70" style={{ borderColor: th.border2, color: th.textMuted }} aria-label={lang === "ko" ? "상담 맥락 닫기" : lang === "ja" ? "会話文脈を閉じる" : "Close conversation context"}>✕</button>
+                      <button type="button" ref={feedbackContextCloseRef} onClick={() => setFeedbackContextItem(null)} className="shrink-0 rounded-md border px-2 py-1 text-[10px] font-bold transition-opacity hover:opacity-70" style={{ borderColor: th.border2, color: th.textMuted }} aria-label={lang === "ko" ? "상담 맥락 닫기" : lang === "ja" ? "会話文脈を閉じる" : "Close conversation context"}>✕</button>
                     </div>
                     <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
                       {feedbackContextMessagesQuery.isLoading ? (
@@ -5514,7 +5526,11 @@ export default function Dashboard() {
                           </p>
                           <button
                             type="button"
-                            onClick={() => setFeedbackContextItem({ id: item.id, sessionId: item.sessionId, messageId: item.messageId ?? null, messageContent: item.messageContent })}
+                            ref={feedbackContextItem?.id === item.id ? feedbackContextTriggerRef : undefined}
+                            onClick={(event) => {
+                              feedbackContextTriggerRef.current = event.currentTarget;
+                              setFeedbackContextItem({ id: item.id, sessionId: item.sessionId, messageId: item.messageId ?? null, messageContent: item.messageContent });
+                            }}
                             className="mt-2 inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[9px] font-bold transition-all hover:opacity-85 active:scale-95"
                             style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", background: "oklch(0.62 0.20 300 / 0.10)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
                             💬 {lang === "ko" ? "상담 맥락 보기" : lang === "ja" ? "会話文脈を見る" : "View context"}
