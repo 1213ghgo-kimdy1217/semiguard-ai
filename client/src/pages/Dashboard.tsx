@@ -1331,6 +1331,11 @@ export default function Dashboard() {
       if (event.key === "Escape") {
         event.preventDefault();
         acknowledgeDangerAlert();
+        return;
+      }
+      if (event.key === "Tab") {
+        event.preventDefault();
+        dangerAlertConfirmRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);

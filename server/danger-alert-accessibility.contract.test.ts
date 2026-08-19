@@ -19,6 +19,11 @@ describe("danger alert accessibility contract", () => {
     expect(dashboardSource).toContain("previouslyFocused?.focus();");
   });
 
+  it("keeps Tab and Shift+Tab on the alert confirmation control", () => {
+    expect(dashboardSource).toContain('if (event.key === "Tab")');
+    expect(dashboardSource).toContain("dangerAlertConfirmRef.current?.focus();");
+  });
+
   it("throttles repeated automatic danger modals after acknowledgement without delaying a manual danger injection", () => {
     expect(dashboardSource).toContain("const dangerAlertCooldownUntilRef = useRef(0);");
     expect(dashboardSource).toContain("Date.now() + 30_000");
