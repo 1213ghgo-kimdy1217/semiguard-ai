@@ -1195,6 +1195,29 @@ export default function Dashboard() {
     dialog.setAttribute("aria-describedby", description.id);
   }, [isFirstUseFeedbackOpen]);
 
+  useEffect(() => {
+    if (!isFirstUseFeedbackOpen) return;
+    const dialog = firstUseFeedbackDialogRef.current;
+    if (!dialog) return;
+    const moveRadioSelection = (event: KeyboardEvent) => {
+      if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
+      const target = event.target;
+      if (!(target instanceof HTMLButtonElement) || target.getAttribute("role") !== "radio") return;
+      const group = target.closest('[role="radiogroup"]');
+      const radios = Array.from(group?.querySelectorAll<HTMLButtonElement>('[role="radio"]:not([disabled])') ?? []);
+      const currentIndex = radios.indexOf(target);
+      if (currentIndex < 0 || radios.length === 0) return;
+      event.preventDefault();
+      const nextIndex = event.key === "Home" ? 0
+        : event.key === "End" ? radios.length - 1
+          : (currentIndex + (event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1) + radios.length) % radios.length;
+      radios[nextIndex]?.click();
+      radios[nextIndex]?.focus();
+    };
+    dialog.addEventListener("keydown", moveRadioSelection);
+    return () => dialog.removeEventListener("keydown", moveRadioSelection);
+  }, [isFirstUseFeedbackOpen]);
+
   const persistOnboardingStep = async (nextStep: 1 | 2 | 3, completed = false) => {
     setOnboardingStep(nextStep);
     try {
