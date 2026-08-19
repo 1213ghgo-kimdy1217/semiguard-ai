@@ -1292,12 +1292,14 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "log">("dashboard");
   const [initialized, setInitialized] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dangerAlert, setDangerAlert] = useState(false);
   const dangerAlertConfirmRef = useRef<HTMLButtonElement>(null);
   const dangerAlertCooldownUntilRef = useRef(0);
   const requestDangerAlert = useCallback((force = false) => {
     if (!force && Date.now() < dangerAlertCooldownUntilRef.current) return;
+    setShowResetConfirmModal(false);
     setDangerAlert(true);
   }, []);
   const acknowledgeDangerAlert = useCallback(() => {
@@ -1410,11 +1412,14 @@ export default function Dashboard() {
   const manualPanelTriggerRef = useRef<HTMLButtonElement>(null);
   const manualPanelCloseRef = useRef<HTMLButtonElement>(null);
   const manualPanelDialogRef = useRef<HTMLDivElement>(null);
+  const resetConfirmTriggerRef = useRef<HTMLButtonElement>(null);
+  const resetConfirmCancelRef = useRef<HTMLButtonElement>(null);
+  const resetConfirmDialogRef = useRef<HTMLDivElement>(null);
   const wasHistoryPanelOpenRef = useRef(false);
   const wasFeedbackPanelOpenRef = useRef(false);
   const wasManualPanelOpenRef = useRef(false);
+  const wasResetConfirmOpenRef = useRef(false);
   const wasChatOpenRef = useRef(isChatOpen);
-  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [showHistoryPanel, setShowHistoryPanel] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("history") === "open",
   );
@@ -2100,7 +2105,11 @@ export default function Dashboard() {
 
     const trapChatFocus = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
-      const dialog = showManualRagModal ? manualPanelDialogRef.current : chatDialogRef.current;
+      const dialog = showManualRagModal
+        ? manualPanelDialogRef.current
+        : showResetConfirmModal
+          ? resetConfirmDialogRef.current
+          : chatDialogRef.current;
       if (!dialog) return;
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
@@ -2123,7 +2132,7 @@ export default function Dashboard() {
 
     window.addEventListener("keydown", trapChatFocus);
     return () => window.removeEventListener("keydown", trapChatFocus);
-  }, [isChatOpen, showManualRagModal]);
+  }, [isChatOpen, showManualRagModal, showResetConfirmModal]);
 
   useEffect(() => {
     if (!isChatOpen || !isChatNearBottomRef.current) return;
@@ -2238,10 +2247,18 @@ export default function Dashboard() {
         manualPanelTriggerRef.current?.focus();
         wasManualPanelOpenRef.current = false;
       }
+
+      if (showResetConfirmModal) {
+        wasResetConfirmOpenRef.current = true;
+        resetConfirmCancelRef.current?.focus();
+      } else if (wasResetConfirmOpenRef.current) {
+        resetConfirmTriggerRef.current?.focus();
+        wasResetConfirmOpenRef.current = false;
+      }
     }, 0);
 
     return () => window.clearTimeout(focusTimer);
-  }, [showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal]);
+  }, [showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
 
   const handleResetChat = async () => {
     try {
@@ -4123,7 +4140,10 @@ export default function Dashboard() {
                 </button>
                 <button
                   type="button"
+                  ref={resetConfirmTriggerRef}
                   onClick={() => setShowResetConfirmModal(true)}
+                  aria-expanded={showResetConfirmModal}
+                  aria-controls="chat-reset-confirm"
                   title={lang === "ko" ? "새 상담 시작 (이전 대화 보관)" : lang === "ja" ? "新しい相談 (会話保存)" : "New Consultation"}
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
                   style={{ borderColor: "oklch(0.75 0.18 200 / 0.4)", background: "oklch(0.75 0.18 200 / 0.10)", color: "oklch(0.75 0.18 200)" }}>
@@ -4134,8 +4154,9 @@ export default function Dashboard() {
 
             {/* 새 상담 초기화 확인 모달 */}
             {showResetConfirmModal && (
-              <div className="absolute inset-0 z-[560] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn">
+              <div id="chat-reset-confirm" className="absolute inset-0 z-[560] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn" role="alertdialog" aria-modal="true" aria-labelledby="chat-reset-confirm-title" aria-describedby="chat-reset-confirm-description">
                 <div
+                  ref={resetConfirmDialogRef}
                   className="w-full max-w-sm rounded-xl p-5 shadow-2xl border space-y-4"
                   style={{
                     background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)",
@@ -4145,21 +4166,22 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">⚠️</span>
                     <div>
-                      <h4 className="text-sm font-bold">
-                        {lang === "ko" ? "대화를 초기화하시겠습니까?" : lang === "ja" ? "会話をリセットしますか？" : "Reset Conversation?"}
+                      <h4 id="chat-reset-confirm-title" className="text-sm font-bold">
+                        {lang === "ko" ? "새 상담을 시작하시겠습니까?" : lang === "ja" ? "新しい相談を開始しますか？" : "Start a New Consultation?"}
                       </h4>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p id="chat-reset-confirm-description" className="text-[11px] text-muted-foreground mt-0.5">
                         {lang === "ko"
-                          ? "새 상담을 시작하면 현재까지의 대화 내용이 모두 초기화됩니다. 계속하시겠습니까?"
+                          ? "이전 대화는 상담 기록에 보관되고, 현재 창만 새 상담으로 전환됩니다. 계속하시겠습니까?"
                           : lang === "ja"
-                          ? "新しい相談を開始すると、これまでの会話内容がすべてリセットされます。続行しますか？"
-                          : "Starting a new consultation will clear all current conversation turns. Do you want to continue?"}
+                          ? "これまでの会話は相談履歴に保存され、現在の画面だけが新しい相談に切り替わります。続行しますか？"
+                          : "Previous messages stay in Consultation History. Only this chat window switches to a new consultation. Continue?"}
                       </p>
                     </div>
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
                     <button
                       type="button"
+                      ref={resetConfirmCancelRef}
                       onClick={() => setShowResetConfirmModal(false)}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:opacity-80"
                       style={{ borderColor: th.border2, color: th.textMuted }}>
