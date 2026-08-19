@@ -16,6 +16,8 @@ describe("initial auth loading recovery contract", () => {
     expect(appSource).toContain("window.setTimeout(() => setIsSlowLoading(true), 8000)");
     expect(appSource).toContain('role="status" aria-live="polite"');
     expect(appSource).toContain("onClick={() => window.location.reload()}");
+    expect(appSource).toContain("로그인 화면으로 이동");
+    expect(appSource).toContain('onClick={() => setLocation("/login")}');
     expect(appSource).toContain("{isSlowLoading && (");
   });
 });
