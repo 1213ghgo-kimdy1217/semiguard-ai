@@ -127,6 +127,7 @@ const LANGUAGE_LOCALES: Record<Language, string> = {
 
 type PasswordStrengthLevel = "tooShort" | "weak" | "fair" | "strong";
 type SignupField = "badgeNumber" | "name" | "dateOfBirth" | "password" | "passwordConfirm";
+type SignupValidationKey = keyof typeof SIGNUP_COPY.ko.validation;
 
 function getPasswordStrength(password: string): { level: PasswordStrengthLevel; score: number } {
   if (password.length < 6) return { level: "tooShort", score: 0 };
@@ -152,7 +153,7 @@ export function Signup() {
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [fieldError, setFieldError] = useState<SignupField | null>(null);
-  const [fieldErrorMessage, setFieldErrorMessage] = useState<string | null>(null);
+  const [fieldErrorKey, setFieldErrorKey] = useState<SignupValidationKey | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     badgeNumber: "",
@@ -200,30 +201,30 @@ export function Signup() {
     if (authError) setAuthError(null);
     if (fieldError === name || (name === "password" && fieldError === "passwordConfirm")) {
       setFieldError(null);
-      setFieldErrorMessage(null);
+      setFieldErrorKey(null);
     }
   };
   const handleCapsLock = (event: React.KeyboardEvent<HTMLInputElement>) => {
     setCapsLockOn(event.getModifierState("CapsLock"));
   };
-  const showFieldError = (field: SignupField, message: string) => {
+  const showFieldError = (field: SignupField, messageKey: SignupValidationKey) => {
     setFieldError(field);
-    setFieldErrorMessage(message);
-    toast.error(message);
+    setFieldErrorKey(messageKey);
+    toast.error(copy.validation[messageKey]);
     window.requestAnimationFrame(() => document.getElementById(field)?.focus());
   };
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!formData.badgeNumber.trim()) return void showFieldError("badgeNumber", copy.validation.badgeNumber);
-    if (!formData.name.trim()) return void showFieldError("name", copy.validation.name);
-    if (!formData.dateOfBirth) return void showFieldError("dateOfBirth", copy.validation.dateOfBirth);
-    if (!formData.password) return void showFieldError("password", copy.validation.password);
-    if (formData.password.length < 6) return void showFieldError("password", copy.validation.passwordLength);
-    if (formData.password !== formData.passwordConfirm) return void showFieldError("passwordConfirm", copy.validation.passwordConfirm);
+    if (!formData.badgeNumber.trim()) return void showFieldError("badgeNumber", "badgeNumber");
+    if (!formData.name.trim()) return void showFieldError("name", "name");
+    if (!formData.dateOfBirth) return void showFieldError("dateOfBirth", "dateOfBirth");
+    if (!formData.password) return void showFieldError("password", "password");
+    if (formData.password.length < 6) return void showFieldError("password", "passwordLength");
+    if (formData.password !== formData.passwordConfirm) return void showFieldError("passwordConfirm", "passwordConfirm");
 
     setFieldError(null);
-    setFieldErrorMessage(null);
+    setFieldErrorKey(null);
     setAuthError(null);
 
     setIsLoading(true);
@@ -244,7 +245,7 @@ export function Signup() {
       const errorCode = payload?.error?.json?.data?.code ?? payload?.error?.data?.code;
       if (!response.ok || payload?.error) {
         if (errorCode === "CONFLICT") {
-          showFieldError("badgeNumber", copy.validation.badgeNumberExists);
+          showFieldError("badgeNumber", "badgeNumberExists");
           return;
         }
         throw new Error("signup_failed");
@@ -305,17 +306,17 @@ export function Signup() {
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-sm font-medium text-slate-300">{copy.badgeNumber}</Label>
               <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={[fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ") || undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
-              {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorMessage ?? copy.validation.badgeNumber}</p>}
+              {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.badgeNumber}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium text-slate-300">{copy.name}</Label>
               <Input id="name" name="name" type="text" placeholder={copy.namePlaceholder} value={formData.name} onChange={handleChange} aria-invalid={fieldError === "name"} aria-describedby={fieldError === "name" ? "name-error" : undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="name" required />
-              {fieldError === "name" && <p id="name-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorMessage ?? copy.validation.name}</p>}
+              {fieldError === "name" && <p id="name-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.name}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth" className="text-sm font-medium text-slate-300">{copy.dateOfBirth}</Label>
               <Input id="dateOfBirth" name="dateOfBirth" type="date" lang={LANGUAGE_LOCALES[language]} value={formData.dateOfBirth} onChange={handleChange} aria-invalid={fieldError === "dateOfBirth"} aria-describedby={fieldError === "dateOfBirth" ? "dateOfBirth-error" : undefined} className="border-slate-600 bg-slate-700 text-white focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="bday" required />
-              {fieldError === "dateOfBirth" && <p id="dateOfBirth-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorMessage ?? copy.validation.dateOfBirth}</p>}
+              {fieldError === "dateOfBirth" && <p id="dateOfBirth-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.dateOfBirth}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
@@ -325,7 +326,7 @@ export function Signup() {
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
-              {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorMessage ?? (formData.password ? copy.validation.passwordLength : copy.validation.password)}</p>}
+              {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : (formData.password ? copy.validation.passwordLength : copy.validation.password)}</p>}
               <div className="space-y-1.5" aria-live="polite" aria-atomic="true">
                 <div className="flex gap-1" aria-hidden="true">
                   <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 1 ? "bg-rose-400" : "bg-slate-600"}`} />
@@ -346,7 +347,7 @@ export function Signup() {
                   {showPasswordConfirm ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
-              {fieldError === "passwordConfirm" && <p id="passwordConfirm-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorMessage ?? copy.validation.passwordConfirm}</p>}
+              {fieldError === "passwordConfirm" && <p id="passwordConfirm-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.passwordConfirm}</p>}
               {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status">{copy.capsLockWarning}</p>}
             </div>
             <Button type="submit" disabled={isLoading} className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 font-semibold text-white transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50">

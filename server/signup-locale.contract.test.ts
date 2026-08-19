@@ -17,8 +17,8 @@ describe("signup locale contract", () => {
   it("synchronizes signup document metadata and localizes validation feedback", () => {
     expect(signupSource).toContain("document.documentElement.lang = LANGUAGE_LOCALES[language];");
     expect(signupSource).toContain("document.title = copy.pageTitle;");
-    expect(signupSource).toContain('showFieldError("passwordConfirm", copy.validation.passwordConfirm)');
-    expect(signupSource).toContain("toast.error(message);");
+    expect(signupSource).toContain('showFieldError("passwordConfirm", "passwordConfirm")');
+    expect(signupSource).toContain("toast.error(copy.validation[messageKey]);");
     expect(signupSource).toContain("toast.success(copy.success);");
   });
 });
