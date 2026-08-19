@@ -10,6 +10,7 @@ const aiUsage = readProjectDocument("AI_USAGE.md");
 const validationPlan = readProjectDocument("VALIDATION_PLAN.md");
 const pitchStoryboard = readProjectDocument("PITCH_VIDEO_STORYBOARD.md");
 const tenMinuteScript = readProjectDocument("PRESENTATION_10_MIN_SCRIPT.md");
+const recordingChecklist = readProjectDocument("DEMO_RECORDING_CHECKLIST.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -19,6 +20,7 @@ describe("submission documentation contract", () => {
       "PITCH_VIDEO_STORYBOARD.md",
       "PRESENTATION_DEMO_SCRIPT.md",
       "PRESENTATION_10_MIN_SCRIPT.md",
+      "DEMO_RECORDING_CHECKLIST.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -53,5 +55,12 @@ describe("submission documentation contract", () => {
     expect(tenMinuteScript).toContain("z-score 편차를 합산하는 규칙형 계산");
     expect(tenMinuteScript).toContain("실제 팹 데이터에서의 정확도는 아직 검증 전입니다.");
     expect(tenMinuteScript).toContain("설비를 자동으로 멈출 수 있나요?");
+  });
+
+  it("keeps the recording checklist centered on the public demo and transparent boundaries", () => {
+    expect(recordingChecklist).toContain("https://semiguardai-jifnzsvd.manus.space/demo");
+    expect(recordingChecklist).toContain("공개 `/demo`만으로");
+    expect(recordingChecklist).toContain("자동 설비 제어, 실제 팹 정확도, 실제 비용 절감 성과");
+    expect(recordingChecklist).toContain("실제 촬영·편집·제출은 팀이 직접 확인하고 수행해야 하며");
   });
 });
