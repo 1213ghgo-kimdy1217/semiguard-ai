@@ -6220,7 +6220,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <main id="dashboard-main" tabIndex={-1} className="flex-1 p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:p-5 sm:pb-5 focus:outline-none">
+      <main id="dashboard-main" tabIndex={-1} aria-busy={safetyMonitoringInitializing} className="flex-1 p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:p-5 sm:pb-5 focus:outline-none">
         <div id={`dashboard-panel-${activeTab}`} role="tabpanel" aria-labelledby={`dashboard-tab-${activeTab}`}>
         {activeTab === "dashboard" ? (
           <>
