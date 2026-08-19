@@ -1088,6 +1088,7 @@ export default function Dashboard() {
   const [isFirstUseFeedbackOpen, setIsFirstUseFeedbackOpen] = useState(false);
   const [firstUseEaseRating, setFirstUseEaseRating] = useState(0);
   const [firstUseDifficultStep, setFirstUseDifficultStep] = useState<"none" | "orientation" | "risk_review" | "analysis_review">("none");
+  const [firstUseFeedbackSaveError, setFirstUseFeedbackSaveError] = useState<string | null>(null);
   const [isFirstUseFeedbackPromptDismissed, setIsFirstUseFeedbackPromptDismissed] = useState(() => readDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY) === "true");
   const onboardingInitializedRef = useRef(false);
   const feedbackPromptedRef = useRef(false);
@@ -1152,6 +1153,7 @@ export default function Dashboard() {
   const closeFirstUseFeedback = () => {
     persistDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY, "true");
     setIsFirstUseFeedbackPromptDismissed(true);
+    setFirstUseFeedbackSaveError(null);
     setIsFirstUseFeedbackOpen(false);
     requestAnimationFrame(() => firstUseFeedbackTriggerRef.current?.focus());
   };
@@ -1200,6 +1202,19 @@ export default function Dashboard() {
     return () => dialog.removeEventListener("keydown", moveRadioSelection);
   }, [isFirstUseFeedbackOpen]);
 
+  useEffect(() => {
+    if (!isFirstUseFeedbackOpen || !firstUseFeedbackSaveError) return;
+    const dialog = firstUseFeedbackDialogRef.current;
+    if (!dialog) return;
+    const errorNode = document.createElement("p");
+    errorNode.id = "first-use-feedback-save-error";
+    errorNode.setAttribute("role", "alert");
+    errorNode.className = "mt-4 rounded-lg border border-rose-400/55 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-300";
+    errorNode.textContent = firstUseFeedbackSaveError;
+    dialog.insertBefore(errorNode, dialog.lastElementChild);
+    return () => errorNode.remove();
+  }, [firstUseFeedbackSaveError, isFirstUseFeedbackOpen]);
+
   const persistOnboardingStep = async (nextStep: 1 | 2 | 3, completed = false) => {
     setOnboardingStep(nextStep);
     try {
@@ -1212,6 +1227,7 @@ export default function Dashboard() {
   };
   const submitFirstUseFeedback = async () => {
     if (firstUseEaseRating < 1) return;
+    setFirstUseFeedbackSaveError(null);
     try {
       await saveFirstUseFeedbackMutation.mutateAsync({ easeRating: firstUseEaseRating, difficultStep: firstUseDifficultStep });
       await firstUseFeedbackQuery.refetch();
@@ -1219,7 +1235,9 @@ export default function Dashboard() {
       closeFirstUseFeedback();
       toast.success(firstUseFeedbackCopy.saved);
     } catch {
-      toast.error(lang === "ko" ? "첫 사용 피드백을 저장하지 못했습니다." : lang === "ja" ? "初回利用フィードバックを保存できませんでした。" : "Could not save first-use feedback.");
+      const errorMessage = lang === "ko" ? "첫 사용 피드백을 저장하지 못했습니다. 다시 시도해 주세요." : lang === "ja" ? "初回利用フィードバックを保存できませんでした。もう一度お試しください。" : "Could not save first-use feedback. Please try again.";
+      setFirstUseFeedbackSaveError(errorMessage);
+      toast.error(errorMessage);
     }
   };
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -7054,7 +7072,7 @@ export default function Dashboard() {
       {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && (
         <button ref={onboardingTriggerRef} type="button" onClick={() => setIsOnboardingOpen(true)} className="fixed bottom-5 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.65 0.18 200 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.16 220)" }} aria-label={onboardingCopy.review}>ⓘ {onboardingCopy.review}</button>
       )}
-      {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && <button ref={firstUseFeedbackTriggerRef} type="button" onClick={() => { const current = firstUseFeedbackQuery.data; setFirstUseEaseRating(current?.easeRating ?? 0); setFirstUseDifficultStep(current?.difficultStep ?? "none"); setIsFirstUseFeedbackOpen(true); }} className="fixed bottom-16 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.70 0.15 85 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.86 0.13 85)" : "oklch(0.46 0.13 62)" }} aria-label={firstUseFeedbackCopy.edit}>★ {firstUseFeedbackCopy.edit}</button>}
+      {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && <button ref={firstUseFeedbackTriggerRef} type="button" onClick={() => { const current = firstUseFeedbackQuery.data; setFirstUseEaseRating(current?.easeRating ?? 0); setFirstUseDifficultStep(current?.difficultStep ?? "none"); setFirstUseFeedbackSaveError(null); setIsFirstUseFeedbackOpen(true); }} className="fixed bottom-16 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.70 0.15 85 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.86 0.13 85)" : "oklch(0.46 0.13 62)" }} aria-label={firstUseFeedbackCopy.edit}>★ {firstUseFeedbackCopy.edit}</button>}
 
       {isOnboardingOpen && (
         <div className="fixed inset-0 z-[650] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-analysis-onboarding-title" aria-describedby="first-analysis-onboarding-description">
