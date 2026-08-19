@@ -6,6 +6,7 @@
 - [x] 실제 z-score 기반 탐지 방식 설명이 README·AI 활용 문서·작업 이력에서 일관되게 유지되는 회귀 계약 보강 (README·AI_USAGE·todo.md의 범위 설명을 함께 검증, TypeScript·Vitest 525개·프로덕션 빌드 통과)
 - [x] 최근 변경한 심사위원 데모·탐지 방식 회귀 계약 파일의 Prettier 포맷 정리와 회귀 검증 (계약을 공백·줄바꿈에 강한 정규식으로 보강하고 최근 파일 Prettier 검사·TypeScript·Vitest 525개·프로덕션 빌드 통과)
 - [x] 최신 프로덕션 의존성 감사 재확인: critical 0건·high 3건·moderate 16건·low 3건으로 기존 보안 검토와 동일하며, Express·Streamdown·Recharts 호환성 검토 전 자동 전이 의존성 패치는 보류 유지
+- [x] 최신 공개 운영 경로 점검: `https://semiguardai-jifnzsvd.manus.space/`와 `/demo`가 HTTPS HTTP 200으로 정상 응답함을 재확인
 - [x] 위험도 0~100 계산 및 4단계 판정 로직
 - [x] 이상 이력 로그 DB 스키마 및 저장 API
 - [x] Heartbeat 상태 (프론트엔드 타이머 기반)
