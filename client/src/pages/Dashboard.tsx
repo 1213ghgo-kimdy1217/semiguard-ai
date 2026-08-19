@@ -3707,7 +3707,7 @@ export default function Dashboard() {
               {lang === "ko" ? "소셜 계정 연동" : lang === "ja" ? "ソーシャルアカウント連携" : "Connected accounts"}
             </p>
             <div className="rounded-xl border p-3 mb-5" style={{ borderColor: th.border2, background: th.bgCard2 }}>
-              <p className="text-[10px] leading-relaxed text-muted-foreground mb-3">
+              <p id="social-linking-hint" className="text-[10px] leading-relaxed text-muted-foreground mb-3">
                 {lang === "ko" ? "회원가입한 계정에 소셜 로그인을 연결하면 다음부터 간편하게 로그인할 수 있습니다." : lang === "ja" ? "登録済みのアカウントにソーシャルログインを連携できます。" : "Connect a social account to sign in more easily next time."}
               </p>
               <div className="space-y-2">
@@ -3719,6 +3719,11 @@ export default function Dashboard() {
                       <button
                         type="button"
                         disabled={unlinkSocialMutation.isPending}
+                        aria-busy={unlinkSocialMutation.isPending}
+                        aria-describedby="social-linking-hint"
+                        aria-label={linked
+                          ? (lang === "ko" ? `${label} 계정이 연결되어 있습니다. 연결을 해제합니다.` : lang === "ja" ? `${label}アカウントは連携済みです。連携を解除します。` : `Unlink your connected ${label} account.`)
+                          : (lang === "ko" ? `${label} 계정을 연결합니다.` : lang === "ja" ? `${label}アカウントを連携します。` : `Connect a ${label} account.`)}
                         onClick={() => linked ? unlinkSocialMutation.mutate({ provider }) : start()}
                         className="min-h-8 rounded-md border px-2.5 text-[10px] font-bold transition-all hover:opacity-80 active:scale-95 disabled:opacity-50"
                         style={{ borderColor: linked ? "rgba(34,197,94,0.45)" : th.border2, color: linked ? "rgb(34,197,94)" : th.accent, background: linked ? "rgba(34,197,94,0.10)" : th.bgCard2 }}
