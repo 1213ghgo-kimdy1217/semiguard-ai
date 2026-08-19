@@ -17,6 +17,7 @@ const itOtReadOnlyPilotChecklist = readProjectDocument("IT_OT_READ_ONLY_PILOT_CH
 const fieldPilotReviewTemplate = readProjectDocument("FIELD_PILOT_REVIEW_TEMPLATE.md");
 const userInterviewTemplate = readProjectDocument("USER_INTERVIEW_TEMPLATE.md");
 const kpiMeasurementTemplate = readProjectDocument("KPI_MEASUREMENT_TEMPLATE.md");
+const firstUserObservationTemplate = readProjectDocument("FIRST_USER_OBSERVATION_TEMPLATE.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -33,6 +34,7 @@ describe("submission documentation contract", () => {
       "FIELD_PILOT_REVIEW_TEMPLATE.md",
       "USER_INTERVIEW_TEMPLATE.md",
       "KPI_MEASUREMENT_TEMPLATE.md",
+      "FIRST_USER_OBSERVATION_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -116,5 +118,12 @@ describe("submission documentation contract", () => {
     expect(kpiMeasurementTemplate).toContain("같은 기간·같은 분모·같은 제외 기준");
     expect(kpiMeasurementTemplate).toContain("분모가 0이면 비율을 0%로 바꾸지 않고 `계산 불가`");
     expect(kpiMeasurementTemplate).toContain("작은 표본의 변화는 제품 효과의 확정 증거가 아닙니다");
+  });
+
+  it("keeps the first-user observation template privacy-minimizing and free of fabricated recruitment results", () => {
+    expect(firstUserObservationTemplate).toContain("현재 모집 인원, 이탈률, 개선 효과는 **기록하지 않습니다.**");
+    expect(firstUserObservationTemplate).toContain("이름, 학번, 연락처, 계정, 실제 설비명은 기록하지 않습니다");
+    expect(firstUserObservationTemplate).toContain("개선은 한 번에 하나의 가설로 제한합니다");
+    expect(firstUserObservationTemplate).toContain("실제 모집·관찰이 끝나기 전에는");
   });
 });
