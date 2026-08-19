@@ -111,7 +111,7 @@ export default function JudgeDemo() {
 
       {showDemoBanner && <section className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-xl border border-amber-200/75 bg-[linear-gradient(100deg,rgba(14,116,144,0.68),rgba(8,145,178,0.48),rgba(245,158,11,0.28))] px-3 py-2 text-xs shadow-lg shadow-cyan-950/40" role="status" aria-live="polite">
         <div className="flex min-w-0 items-start gap-2"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-[10px] font-black text-slate-900">●</span><span className="shrink-0 font-black tracking-wide text-white">{text.demoMode}</span><span className="text-cyan-50/95">{text.demoModeDescription}</span></div>
-        <button type="button" onClick={() => setShowDemoBanner(false)} title={text.closeDemoMode} aria-label={text.closeDemoMode} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/30 bg-slate-950/20 text-sm font-bold text-white transition hover:bg-slate-950/45 focus:outline-none focus:ring-2 focus:ring-amber-100">×</button>
+        <button type="button" onClick={() => setShowDemoBanner(false)} title={text.closeDemoMode} aria-label={text.closeDemoMode} className="flex h-7 w-7 shrink-0 items-center justify-center gap-1 rounded-md border border-white/30 bg-slate-950/20 text-sm font-bold text-white transition hover:bg-slate-950/45 focus:outline-none focus:ring-2 focus:ring-amber-100 sm:w-auto sm:px-2"><span aria-hidden="true">×</span><span className="hidden text-xs sm:inline">{text.close}</span></button>
       </section>}
 
       <section className="mb-5 rounded-xl border border-amber-200/35 bg-amber-300/10 p-3 text-xs text-amber-50" role="note">
