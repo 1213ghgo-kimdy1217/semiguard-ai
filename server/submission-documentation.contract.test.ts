@@ -13,6 +13,7 @@ const tenMinuteScript = readProjectDocument("PRESENTATION_10_MIN_SCRIPT.md");
 const recordingChecklist = readProjectDocument("DEMO_RECORDING_CHECKLIST.md");
 const mobileSocialLoginValidation = readProjectDocument("MOBILE_SOCIAL_LOGIN_VALIDATION.md");
 const pilotLogValidationTemplate = readProjectDocument("PILOT_LOG_VALIDATION_TEMPLATE.md");
+const itOtReadOnlyPilotChecklist = readProjectDocument("IT_OT_READ_ONLY_PILOT_CHECKLIST.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -25,6 +26,7 @@ describe("submission documentation contract", () => {
       "DEMO_RECORDING_CHECKLIST.md",
       "MOBILE_SOCIAL_LOGIN_VALIDATION.md",
       "PILOT_LOG_VALIDATION_TEMPLATE.md",
+      "IT_OT_READ_ONLY_PILOT_CHECKLIST.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -80,5 +82,12 @@ describe("submission documentation contract", () => {
     expect(pilotLogValidationTemplate).toContain("승인한 과거 센서 로그의 읽기 전용 복제본");
     expect(pilotLogValidationTemplate).toContain("오탐과 미탐은 삭제하거나 예외로 숨기지 않습니다");
     expect(pilotLogValidationTemplate).toContain("설비 제어 기능을 추가하지 않습니다");
+  });
+
+  it("keeps the IT/OT checklist approval-gated and blocks equipment control paths", () => {
+    expect(itOtReadOnlyPilotChecklist).toContain("SemiGuard AI는 설비·PLC·MES에 가동·정지·레시피 변경·알람 해제·쓰기 명령을 전송하지 않으며");
+    expect(itOtReadOnlyPilotChecklist).toContain("제어 경로 차단");
+    expect(itOtReadOnlyPilotChecklist).toContain("하나라도 미승인·미기입·정책 충돌이면 파일럿은 **보류**합니다");
+    expect(itOtReadOnlyPilotChecklist).toContain("단일 장비");
   });
 });
