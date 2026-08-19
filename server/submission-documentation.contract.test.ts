@@ -14,6 +14,7 @@ const recordingChecklist = readProjectDocument("DEMO_RECORDING_CHECKLIST.md");
 const mobileSocialLoginValidation = readProjectDocument("MOBILE_SOCIAL_LOGIN_VALIDATION.md");
 const pilotLogValidationTemplate = readProjectDocument("PILOT_LOG_VALIDATION_TEMPLATE.md");
 const itOtReadOnlyPilotChecklist = readProjectDocument("IT_OT_READ_ONLY_PILOT_CHECKLIST.md");
+const fieldPilotReviewTemplate = readProjectDocument("FIELD_PILOT_REVIEW_TEMPLATE.md");
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -27,6 +28,7 @@ describe("submission documentation contract", () => {
       "MOBILE_SOCIAL_LOGIN_VALIDATION.md",
       "PILOT_LOG_VALIDATION_TEMPLATE.md",
       "IT_OT_READ_ONLY_PILOT_CHECKLIST.md",
+      "FIELD_PILOT_REVIEW_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -89,5 +91,12 @@ describe("submission documentation contract", () => {
     expect(itOtReadOnlyPilotChecklist).toContain("제어 경로 차단");
     expect(itOtReadOnlyPilotChecklist).toContain("하나라도 미승인·미기입·정책 충돌이면 파일럿은 **보류**합니다");
     expect(itOtReadOnlyPilotChecklist).toContain("단일 장비");
+  });
+
+  it("keeps the field-pilot review template unexecuted, read-only, and honest about scope expansion", () => {
+    expect(fieldPilotReviewTemplate).toContain("현재는 현장 파일럿을 진행하지 않았으며");
+    expect(fieldPilotReviewTemplate).toContain("SemiGuard AI 화면은 읽기 전용 참고 자료이며");
+    expect(fieldPilotReviewTemplate).toContain("오탐·미탐이 발견되면 결과를 좋게 보이게 하려고 기준값을 즉시 조정하지 않습니다");
+    expect(fieldPilotReviewTemplate).toContain("자동 확대하지 않습니다");
   });
 });
