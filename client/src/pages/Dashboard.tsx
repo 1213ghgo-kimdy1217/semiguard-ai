@@ -3518,6 +3518,13 @@ export default function Dashboard() {
               aria-label={lang === "ko" ? "AI 분석 이력 닫기" : lang === "ja" ? "AI分析履歴を閉じる" : "Close AI analysis history"}>✕</button>
           </div>
           <div className="max-h-80 overflow-y-auto">
+            <div className="mx-4 mt-3 rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" style={{ borderColor: "oklch(0.75 0.18 200 / 0.28)", background: isDark ? "oklch(0.16 0.02 240 / 0.62)" : "oklch(0.96 0.025 225 / 0.76)", color: th.textMuted }}>
+              {lang === "ko"
+                ? "새 분석은 동일 관측 로그의 센서값·점수·위험 단계를 확인한 뒤 저장됩니다. 각 항목의 출처 로그 번호를 함께 표시합니다."
+                : lang === "ja"
+                  ? "新しい分析は、同一観測ログのセンサー値・スコア・危険段階を確認してから保存されます。各項目には出典ログ番号を表示します。"
+                  : "New analyses are saved after checking the sensor values, score, and risk level of the same observation log. Each entry shows its source log number."}
+            </div>
             {llmHistoryQuery.isLoading ? (
               <div className="px-4 py-6 flex justify-center">
                 <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "oklch(0.75 0.18 200)", borderTopColor: "transparent" }} />
@@ -3541,10 +3548,15 @@ export default function Dashboard() {
               const lvlColor = item.riskLevel === "danger" ? "rgb(239,68,68)" : item.riskLevel === "warning" ? "rgb(249,115,22)" : "rgb(234,179,8)";
               return (
                 <div key={item.id} className="px-4 py-3 border-b last:border-0" style={{ borderColor: isDark ? "oklch(0.18 0.015 240)" : "oklch(0.90 0.005 240)" }}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[9px] font-mono text-muted-foreground">
-                      {new Date(item.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false })}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="min-w-0 flex items-center gap-1.5">
+                      <span className="truncate text-[9px] font-mono text-muted-foreground">
+                        {new Date(item.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false })}
+                      </span>
+                      <span className="shrink-0 rounded px-1 py-0.5 text-[8px] font-semibold" style={{ background: isDark ? "oklch(0.23 0.025 240)" : "oklch(0.91 0.018 240)", color: th.textMuted }} aria-label={lang === "ko" ? `출처 관측 로그 ${item.id}` : lang === "ja" ? `出典観測ログ ${item.id}` : `Source observation log ${item.id}`}>
+                        {lang === "ko" ? `로그 #${item.id}` : lang === "ja" ? `ログ #${item.id}` : `Log #${item.id}`}
+                      </span>
+                    </div>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: lvlColor, background: `${lvlColor}18`, border: `1px solid ${lvlColor}30` }}>
                       {lang === "ko" ? (item.riskLevel === "danger" ? "위험" : item.riskLevel === "warning" ? "경고" : "주의") : lang === "ja" ? (item.riskLevel === "danger" ? "危険" : item.riskLevel === "warning" ? "警告" : "注意") : item.riskLevel} {item.anomalyScore}
                     </span>
