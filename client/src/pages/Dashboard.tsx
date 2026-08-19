@@ -4191,9 +4191,10 @@ export default function Dashboard() {
             </div>
             <button type="button" onClick={() => setShowLanding(false)}
               aria-label={lang === "ko" ? "서비스 소개 닫기" : lang === "ja" ? "サービス紹介を閉じる" : "Close service introduction"}
-              className="text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-70"
+              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-70"
               style={{ borderColor: th.border2, color: th.textMuted }}>
-              ✕
+              <span aria-hidden="true">✕</span>
+              <span className="hidden sm:inline">{lang === "ko" ? "닫기" : lang === "ja" ? "閉じる" : "Close"}</span>
             </button>
           </div>
         </div>
