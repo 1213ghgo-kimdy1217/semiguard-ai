@@ -1417,6 +1417,9 @@ export default function Dashboard() {
   const deleteAllFeedbackConfirmDialogRef = useRef<HTMLDivElement>(null);
   const deleteAllFeedbackFinalCancelRef = useRef<HTMLButtonElement>(null);
   const deleteAllFeedbackFinalDialogRef = useRef<HTMLDivElement>(null);
+  const feedbackDeleteTriggerRef = useRef<HTMLButtonElement>(null);
+  const feedbackDeleteCancelRef = useRef<HTMLButtonElement>(null);
+  const feedbackDeleteDialogRef = useRef<HTMLDivElement>(null);
   const manualPanelTriggerRef = useRef<HTMLButtonElement>(null);
   const manualPanelCloseRef = useRef<HTMLButtonElement>(null);
   const manualPanelDialogRef = useRef<HTMLDivElement>(null);
@@ -1427,6 +1430,7 @@ export default function Dashboard() {
   const wasFeedbackPanelOpenRef = useRef(false);
   const wasDeleteAllFeedbackConfirmOpenRef = useRef(false);
   const wasDeleteAllFeedbackFinalConfirmOpenRef = useRef(false);
+  const wasFeedbackDeleteOpenRef = useRef(false);
   const wasManualPanelOpenRef = useRef(false);
   const wasResetConfirmOpenRef = useRef(false);
   const wasDeleteAllConfirmOpenRef = useRef(false);
@@ -2120,13 +2124,15 @@ export default function Dashboard() {
         ? deleteAllFeedbackFinalDialogRef.current
         : showDeleteAllFeedbackConfirm
           ? deleteAllFeedbackConfirmDialogRef.current
-          : showManualRagModal
-            ? manualPanelDialogRef.current
-            : showResetConfirmModal
-              ? resetConfirmDialogRef.current
-              : showDeleteAllConfirm
-                ? deleteAllConfirmDialogRef.current
-                : chatDialogRef.current;
+          : feedbackToDelete !== null
+            ? feedbackDeleteDialogRef.current
+            : showManualRagModal
+              ? manualPanelDialogRef.current
+              : showResetConfirmModal
+                ? resetConfirmDialogRef.current
+                : showDeleteAllConfirm
+                  ? deleteAllConfirmDialogRef.current
+                  : chatDialogRef.current;
       if (!dialog) return;
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
@@ -2149,7 +2155,7 @@ export default function Dashboard() {
 
     window.addEventListener("keydown", trapChatFocus);
     return () => window.removeEventListener("keydown", trapChatFocus);
-  }, [isChatOpen, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
+  }, [feedbackToDelete, isChatOpen, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
 
   useEffect(() => {
     if (!isChatOpen || !isChatNearBottomRef.current) return;
@@ -2253,6 +2259,12 @@ export default function Dashboard() {
       } else if (wasDeleteAllFeedbackConfirmOpenRef.current) {
         (deleteAllFeedbackTriggerRef.current?.isConnected ? deleteAllFeedbackTriggerRef.current : feedbackPanelCloseRef.current)?.focus();
         wasDeleteAllFeedbackConfirmOpenRef.current = false;
+      } else if (feedbackToDelete !== null) {
+        wasFeedbackDeleteOpenRef.current = true;
+        feedbackDeleteCancelRef.current?.focus();
+      } else if (wasFeedbackDeleteOpenRef.current) {
+        (feedbackDeleteTriggerRef.current?.isConnected ? feedbackDeleteTriggerRef.current : feedbackPanelCloseRef.current)?.focus();
+        wasFeedbackDeleteOpenRef.current = false;
       } else if (showDeleteAllConfirm) {
         wasDeleteAllConfirmOpenRef.current = true;
         deleteAllConfirmCancelRef.current?.focus();
@@ -2287,7 +2299,7 @@ export default function Dashboard() {
     }, 0);
 
     return () => window.clearTimeout(focusTimer);
-  }, [showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
+  }, [feedbackToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
 
   const handleResetChat = async () => {
     try {
@@ -5289,15 +5301,15 @@ export default function Dashboard() {
                   </div>
                 )}
                 {feedbackToDelete !== null && (
-                  <div className="absolute inset-0 z-[590] flex flex-col items-center justify-center rounded-xl bg-black/80 p-4 text-center backdrop-blur-md animate-fadeIn">
-                    <p className="text-xs font-bold text-red-300">
+                  <div ref={feedbackDeleteDialogRef} role="alertdialog" aria-modal="true" aria-labelledby="feedback-delete-confirm-title" aria-describedby="feedback-delete-confirm-description" className="absolute inset-0 z-[590] flex flex-col items-center justify-center rounded-xl bg-black/80 p-4 text-center backdrop-blur-md animate-fadeIn">
+                    <p id="feedback-delete-confirm-title" className="text-xs font-bold text-red-300">
                       ⚠️ {lang === "ko" ? "이 피드백 기록을 삭제할까요?" : lang === "ja" ? "このフィードバック履歴を削除しますか？" : "Delete this feedback record?"}
                     </p>
-                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                    <p id="feedback-delete-confirm-description" className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
                       {lang === "ko" ? "연결된 재생성 답변도 함께 삭제되며 되돌릴 수 없습니다." : lang === "ja" ? "関連する再生成回答も一緒に削除され、元に戻せません。" : "Its linked regenerated answer will also be removed permanently."}
                     </p>
                     <div className="mt-4 flex items-center gap-2">
-                      <button type="button" onClick={() => setFeedbackToDelete(null)} className="rounded-lg border px-3 py-1.5 text-xs font-bold" style={{ borderColor: th.border2, color: th.textMuted }}>
+                      <button type="button" ref={feedbackDeleteCancelRef} onClick={() => setFeedbackToDelete(null)} className="rounded-lg border px-3 py-1.5 text-xs font-bold" style={{ borderColor: th.border2, color: th.textMuted }}>
                         {lang === "ko" ? "취소" : lang === "ja" ? "キャンセル" : "Cancel"}
                       </button>
                       <button
@@ -5475,7 +5487,11 @@ export default function Dashboard() {
                               </span>
                               <button
                                 type="button"
-                                onClick={() => setFeedbackToDelete(item.id)}
+                                ref={feedbackToDelete === item.id ? feedbackDeleteTriggerRef : undefined}
+                                onClick={(event) => {
+                                  feedbackDeleteTriggerRef.current = event.currentTarget;
+                                  setFeedbackToDelete(item.id);
+                                }}
                                 title={lang === "ko" ? "이 피드백 삭제" : lang === "ja" ? "このフィードバックを削除" : "Delete feedback"}
                                 className="rounded p-0.5 text-[10px] text-red-400 transition-all hover:bg-red-500/15 hover:text-red-300 active:scale-95">
                                 🗑️
