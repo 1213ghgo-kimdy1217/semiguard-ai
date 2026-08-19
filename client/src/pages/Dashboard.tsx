@@ -3521,10 +3521,10 @@ export default function Dashboard() {
           <div className="max-h-80 overflow-y-auto">
             <div className="mx-4 mt-3 rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" style={{ borderColor: "oklch(0.75 0.18 200 / 0.28)", background: isDark ? "oklch(0.16 0.02 240 / 0.62)" : "oklch(0.96 0.025 225 / 0.76)", color: th.textMuted }}>
               {lang === "ko"
-                ? "새 분석은 동일 관측 로그의 센서값·점수·위험 단계를 확인한 뒤 저장됩니다. 각 항목의 출처 로그 번호를 함께 표시합니다."
+                ? "새 분석은 동일 관측 로그의 센서값·점수·위험 단계를 확인한 뒤 저장됩니다. 출처 로그 번호를 선택하면 해당 시점의 센서 상세를 확인할 수 있습니다."
                 : lang === "ja"
-                  ? "新しい分析は、同一観測ログのセンサー値・スコア・危険段階を確認してから保存されます。各項目には出典ログ番号を表示します。"
-                  : "New analyses are saved after checking the sensor values, score, and risk level of the same observation log. Each entry shows its source log number."}
+                  ? "新しい分析は、同一観測ログのセンサー値・スコア・危険段階を確認してから保存されます。出典ログ番号を選択すると、その時点のセンサー詳細を確認できます。"
+                  : "New analyses are saved after checking the sensor values, score, and risk level of the same observation log. Select a source log number to view the sensor details from that observation."}
             </div>
             {llmHistoryQuery.isLoading ? (
               <div className="px-4 py-6 flex justify-center">
@@ -3545,6 +3545,7 @@ export default function Dashboard() {
               let parsed: { primaryCause?: string; recommendation?: string } = {};
               const rawItem = lang === "ko" ? item.llmAnalysisKo : lang === "ja" ? item.llmAnalysisJa : item.llmAnalysisEn;
               const fallbackItem = item.llmAnalysisKo || item.llmAnalysisEn || item.llmAnalysisJa;
+              const sourceLog = logs.find((log) => log.id === item.id);
               try { parsed = JSON.parse(rawItem ?? fallbackItem ?? ""); } catch {}
               const lvlColor = item.riskLevel === "danger" ? "rgb(239,68,68)" : item.riskLevel === "warning" ? "rgb(249,115,22)" : "rgb(234,179,8)";
               return (
@@ -3554,9 +3555,25 @@ export default function Dashboard() {
                       <span className="truncate text-[9px] font-mono text-muted-foreground">
                         {new Date(item.timestamp).toLocaleString(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { hour12: false })}
                       </span>
-                      <span className="shrink-0 rounded px-1 py-0.5 text-[8px] font-semibold" style={{ background: isDark ? "oklch(0.23 0.025 240)" : "oklch(0.91 0.018 240)", color: th.textMuted }} aria-label={lang === "ko" ? `출처 관측 로그 ${item.id}` : lang === "ja" ? `出典観測ログ ${item.id}` : `Source observation log ${item.id}`}>
+                      <button
+                        type="button"
+                        disabled={!sourceLog}
+                        onClick={() => {
+                          if (!sourceLog) return;
+                          setShowAiHistory(false);
+                          setSelectedLog(sourceLog);
+                        }}
+                        className="shrink-0 rounded px-1 py-0.5 text-[8px] font-semibold transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-55"
+                        style={{ background: isDark ? "oklch(0.23 0.025 240)" : "oklch(0.91 0.018 240)", color: th.textMuted }}
+                        aria-label={sourceLog
+                          ? (lang === "ko" ? `출처 관측 로그 ${item.id} 상세 보기` : lang === "ja" ? `出典観測ログ ${item.id} の詳細を表示` : `View source observation log ${item.id} details`)
+                          : (lang === "ko" ? `출처 관측 로그 ${item.id}가 현재 이력에 없습니다` : lang === "ja" ? `出典観測ログ ${item.id} は現在の履歴にありません` : `Source observation log ${item.id} is not in the current history`) }
+                        title={sourceLog
+                          ? (lang === "ko" ? "센서 상세 보기" : lang === "ja" ? "センサー詳細を表示" : "View sensor details")
+                          : (lang === "ko" ? "현재 불러온 이력에서 찾을 수 없습니다" : lang === "ja" ? "現在読み込まれた履歴では見つかりません" : "Not found in the currently loaded history")}
+                      >
                         {lang === "ko" ? `로그 #${item.id}` : lang === "ja" ? `ログ #${item.id}` : `Log #${item.id}`}
-                      </span>
+                      </button>
                     </div>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: lvlColor, background: `${lvlColor}18`, border: `1px solid ${lvlColor}30` }}>
                       {lang === "ko" ? (item.riskLevel === "danger" ? "위험" : item.riskLevel === "warning" ? "경고" : "주의") : lang === "ja" ? (item.riskLevel === "danger" ? "危険" : item.riskLevel === "warning" ? "警告" : "注意") : item.riskLevel} {item.anomalyScore}
