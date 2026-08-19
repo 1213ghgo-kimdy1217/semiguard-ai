@@ -137,14 +137,22 @@ function downloadLlmAnalysisText(analysis: DownloadableLlmAnalysis, lang: Lang) 
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `semiguard_ai_analysis_${new Date().toISOString().slice(0, 10)}.txt`;
+  const filenamePrefix = lang === "ko" ? "세미가드_AI분석결과" : lang === "ja" ? "セミガード_AI分析結果" : "semiguard_ai_analysis";
+  anchor.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.txt`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
 
 function openLlmAnalysisPdf(analysis: DownloadableLlmAnalysis, lang: Lang) {
   const reportWindow = window.open("", "_blank", "width=900,height=760");
-  if (!reportWindow) throw new Error("Could not open the analysis report window.");
+  if (!reportWindow) {
+    const errorMessage = lang === "ko"
+      ? "분석 보고서 창을 열 수 없습니다."
+      : lang === "ja"
+        ? "分析レポートウィンドウを開けませんでした。"
+        : "Could not open the analysis report window.";
+    throw new Error(errorMessage);
+  }
   const title = lang === "ko" ? "SemiGuard AI 이상 분석 결과" : lang === "ja" ? "SemiGuard AI 異常分析結果" : "SemiGuard AI Anomaly Analysis";
   const text = buildLlmAnalysisText(analysis, lang);
   reportWindow.document.open();
