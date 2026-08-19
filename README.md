@@ -206,9 +206,9 @@ pnpm build
 
 ### 운영 의존성 보안 상태
 
-2026-08-16 운영 의존성 감사 후 DOMPurify를 **3.4.13**으로 통일하고 직접 Nano ID 의존성을 **5.1.16**으로 올렸습니다. 2026-08-18에는 `pnpm install --frozen-lockfile --ignore-scripts`로 잠금 파일 기반 설치 재현성을 확인하고, 프로덕션 의존성 감사를 다시 실행했습니다. 감사는 critical 0건, high 3건, moderate 16건, low 3건으로 총 22건을 보고합니다. high 항목은 Express 4.21.2의 전이 `path-to-regexp@0.1.12`, Streamdown→Mermaid 계열의 `lodash-es@4.17.21`, Recharts의 `lodash@4.17.21` 경로입니다.
+2026-08-16 운영 의존성 감사 후 DOMPurify를 **3.4.13**으로 통일하고 직접 Nano ID 의존성을 **5.1.16**으로 올렸습니다. 2026-08-19에 `pnpm audit --prod --json`으로 운영 의존성 감사를 다시 실행했으며, 결과는 critical 0건, high 3건, moderate 16건, low 3건으로 총 22건입니다. high 항목은 Express 4.21.2의 전이 `path-to-regexp@0.1.12`, Streamdown→Mermaid 계열의 `lodash-es@4.17.21`, Recharts의 `lodash@4.17.21` 경로입니다. 현재 서버 경로에는 공식 권고에서 설명한 3개 이상 매개변수 결합 세그먼트 형태가 정적으로 발견되지 않았지만, 설치된 전이 버전 자체는 별도 호환성 검토가 필요합니다.
 
-`path-to-regexp`의 권고 버전 고정이나 Express·Streamdown·Recharts 계열 업데이트는 라우팅·마크다운 렌더링·차트 호환성에 영향을 줄 수 있으므로 자동 적용하지 않습니다. 각 변경 후보는 별도 호환성 검토, 전체 타입·회귀·빌드, 공개 데모·로그인 흐름 확인을 거친 뒤에만 반영합니다.
+`path-to-regexp`의 권고 버전 고정이나 Express·Streamdown·Recharts 계열 업데이트는 라우팅·마크다운 렌더링·차트 호환성에 영향을 줄 수 있으므로 자동 적용하지 않습니다. Express 4.21.2는 현재 `path-to-regexp@0.1.12`를 정확한 버전으로 선언하므로 재정의도 설치 계약 변경으로 취급합니다. 각 변경 후보는 별도 호환성 검토, 전체 타입·회귀·빌드, 공개 데모·로그인 흐름 확인을 거친 뒤에만 반영합니다. 세부 분석과 출처는 [의존성 보안 검토](DEPENDENCY_SECURITY_REVIEW.md)에서 확인할 수 있습니다.
 
 ## 프로젝트 구조
 

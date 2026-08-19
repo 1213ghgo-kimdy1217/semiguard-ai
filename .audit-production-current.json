@@ -1,0 +1,1128 @@
+{
+  "actions": [
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1113048,
+          "path": ".>streamdown>react-markdown>mdast-util-to-hast",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "mdast-util-to-hast",
+      "target": "13.2.1",
+      "depth": 4
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1115805,
+          "path": ".>streamdown>mermaid>lodash-es",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1115809,
+          "path": ".>streamdown>mermaid>lodash-es",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1120368,
+          "path": ".>streamdown>mermaid>lodash-es",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "lodash-es",
+      "target": "4.18.1",
+      "depth": 4
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1119441,
+          "path": ".>streamdown>mermaid>uuid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "uuid",
+      "target": "11.1.1",
+      "depth": 4
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1120138,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1120140,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1120326,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1122162,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1138097,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1138099,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1138100,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1138101,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1138113,
+          "path": ".>streamdown>mermaid",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "mermaid",
+      "target": "11.16.1",
+      "depth": 3
+    },
+    {
+      "action": "review",
+      "module": "qs",
+      "resolves": [
+        {
+          "id": 1113161,
+          "path": ".>express>qs",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1113719,
+          "path": ".>express>qs",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1119502,
+          "path": ".>express>qs",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    },
+    {
+      "action": "review",
+      "module": "path-to-regexp",
+      "resolves": [
+        {
+          "id": 1115527,
+          "path": ".>express>path-to-regexp",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    },
+    {
+      "action": "review",
+      "module": "lodash",
+      "resolves": [
+        {
+          "id": 1115806,
+          "path": ".>recharts>lodash",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1115810,
+          "path": ".>recharts>lodash",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1120370,
+          "path": ".>recharts>lodash",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    },
+    {
+      "action": "review",
+      "module": "body-parser",
+      "resolves": [
+        {
+          "id": 1123977,
+          "path": ".>express>body-parser",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    }
+  ],
+  "advisories": {
+    "1113048": {
+      "findings": [
+        {
+          "version": "13.2.0",
+          "paths": [
+            ". > streamdown@1.4.0 > react-markdown@10.1.0 > mdast-util-to-hast@13.2.0",
+            ". > streamdown@1.4.0 > react-markdown@10.1.0 > remark-rehype@11.1.2 > mdast-util-to-hast@13.2.0",
+            ". > streamdown@1.4.0 > rehype-raw@7.0.0 > hast-util-raw@9.1.0 > mdast-util-to-hast@13.2.0",
+            ". > streamdown@1.4.0 > shiki@3.14.0 > @shikijs/core@3.14.0 > hast-util-to-html@9.0.5 > mdast-util-to-hast@13.2.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/syntax-tree/mdast-util-to-hast/security/advisories/GHSA-4fh9-h7wg-q85m\n- https://nvd.nist.gov/vuln/detail/CVE-2025-66400\n- https://github.com/syntax-tree/mdast-util-to-hast/commit/6fc783ae6abdeb798fd5a68e7f3f21411dde7403\n- https://github.com/syntax-tree/mdast-util-to-hast/commit/ab3a79570a1afbfa7efef5d4a0cd9b5caafbc5d7\n- https://github.com/advisories/GHSA-4fh9-h7wg-q85m",
+      "created": "2025-12-02T01:25:46.000Z",
+      "id": 1113048,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nMultiple (unprefixed) classnames could be added in markdown source by using character references.\nThis could make rendered user supplied markdown `code` elements appear like the rest of the page.\nThe following markdown:\n\n````markdown\n```js&#x20;xss\n```\n````\n\nWould create `<pre><code class=\"language-js xss\"></code></pre>`\nIf your page then applied `.xss` classes (or listeners in JS), those apply to this element.\nFor more info see <https://github.com/ChALkeR/notes/blob/master/Improper-markup-sanitization.md#unsanitized-class-attribute>\n\n### Patches\n\nThe bug was patched. When using regular semver, run `npm install`. For exact ranges, make sure to use `13.2.1`.\n\n### Workarounds\n\nUpdate.\n\n### References\n\n* bug introduced in https://github.com/syntax-tree/mdast-util-to-hast/commit/6fc783ae6abdeb798fd5a68e7f3f21411dde7403\n* bug fixed in https://github.com/syntax-tree/mdast-util-to-hast/commit/ab3a79570a1afbfa7efef5d4a0cd9b5caafbc5d7",
+      "reported_by": null,
+      "title": "mdast-util-to-hast has unsanitized class attribute",
+      "metadata": null,
+      "cves": [
+        "CVE-2025-66400"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mdast-util-to-hast",
+      "vulnerable_versions": ">=13.0.0 <13.2.1",
+      "github_advisory_id": "GHSA-4fh9-h7wg-q85m",
+      "recommendation": "Upgrade to version 13.2.1 or later",
+      "patched_versions": ">=13.2.1",
+      "updated": "2026-02-06T19:00:15.000Z",
+      "cvss": {
+        "score": 5.3,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+      },
+      "cwe": [
+        "CWE-20",
+        "CWE-915"
+      ],
+      "url": "https://github.com/advisories/GHSA-4fh9-h7wg-q85m"
+    },
+    "1113161": {
+      "findings": [
+        {
+          "version": "6.13.0",
+          "paths": [
+            ". > express@4.21.2 > body-parser@1.20.3 > qs@6.13.0",
+            ". > express@4.21.2 > qs@6.13.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/ljharb/qs/security/advisories/GHSA-w7fw-mjwx-w883\n- https://nvd.nist.gov/vuln/detail/CVE-2026-2391\n- https://github.com/ljharb/qs/commit/f6a7abff1f13d644db9b05fe4f2c98ada6bf8482\n- https://github.com/advisories/GHSA-w7fw-mjwx-w883",
+      "created": "2026-02-12T17:04:39.000Z",
+      "id": 1113161,
+      "npm_advisory_id": null,
+      "overview": "### Summary\nThe `arrayLimit` option in qs does not enforce limits for comma-separated values when `comma: true` is enabled, allowing attackers to cause denial-of-service via memory exhaustion. This is a bypass of the array limit enforcement, similar to the bracket notation bypass addressed in GHSA-6rw7-vpxm-498p (CVE-2025-15284).\n\n### Details\nWhen the `comma` option is set to `true` (not the default, but configurable in applications), qs allows parsing comma-separated strings as arrays (e.g., `?param=a,b,c` becomes `['a', 'b', 'c']`). However, the limit check for `arrayLimit` (default: 20) and the optional throwOnLimitExceeded occur after the comma-handling logic in `parseArrayValue`, enabling a bypass. This permits creation of arbitrarily large arrays from a single parameter, leading to excessive memory allocation.\n\n**Vulnerable code** (lib/parse.js: lines ~40-50):\n```js\nif (val && typeof val === 'string' && options.comma && val.indexOf(',') > -1) {\n    return val.split(',');\n}\n\nif (options.throwOnLimitExceeded && currentArrayLength >= options.arrayLimit) {\n    throw new RangeError('Array limit exceeded. Only ' + options.arrayLimit + ' element' + (options.arrayLimit === 1 ? '' : 's') + ' allowed in an array.');\n}\n\nreturn val;\n```\nThe `split(',')` returns the array immediately, skipping the subsequent limit check. Downstream merging via `utils.combine` does not prevent allocation, even if it marks overflows for sparse arrays.This discrepancy allows attackers to send a single parameter with millions of commas (e.g., `?param=,,,,,,,,...`), allocating massive arrays in memory without triggering limits. It bypasses the intent of `arrayLimit`, which is enforced correctly for indexed (`a[0]=`) and bracket (`a[]=`) notations (the latter fixed in v6.14.1 per GHSA-6rw7-vpxm-498p).\n\n### PoC\n**Test 1 - Basic bypass:**\n```\nnpm install qs\n```\n\n```js\nconst qs = require('qs');\n\nconst payload = 'a=' + ','.repeat(25);  // 26 elements after split (bypasses arrayLimit: 5)\nconst options = { comma: true, arrayLimit: 5, throwOnLimitExceeded: true };\n\ntry {\n  const result = qs.parse(payload, options);\n  console.log(result.a.length);  // Outputs: 26 (bypass successful)\n} catch (e) {\n  console.log('Limit enforced:', e.message);  // Not thrown\n}\n```\n**Configuration:**\n- `comma: true`\n- `arrayLimit: 5`\n- `throwOnLimitExceeded: true`\n\nExpected: Throws \"Array limit exceeded\" error.\nActual: Parses successfully, creating an array of length 26.\n\n\n### Impact\nDenial of Service (DoS) via memory exhaustion.\n\n### Suggested Fix\nMove the `arrayLimit` check before the comma split in `parseArrayValue`, and enforce it on the resulting array length. Use `currentArrayLength` (already calculated upstream) for consistency with bracket notation fixes.\n\n**Current code** (lib/parse.js: lines ~40-50):\n```js\nif (val && typeof val === 'string' && options.comma && val.indexOf(',') > -1) {\n    return val.split(',');\n}\n\nif (options.throwOnLimitExceeded && currentArrayLength >= options.arrayLimit) {\n    throw new RangeError('Array limit exceeded. Only ' + options.arrayLimit + ' element' + (options.arrayLimit === 1 ? '' : 's') + ' allowed in an array.');\n}\n\nreturn val;\n```\n\n**Fixed code:**\n```js\nif (val && typeof val === 'string' && options.comma && val.indexOf(',') > -1) {\n    const splitArray = val.split(',');\n    if (splitArray.length > options.arrayLimit - currentArrayLength) {  // Check against remaining limit\n        if (options.throwOnLimitExceeded) {\n            throw new RangeError('Array limit exceeded. Only ' + options.arrayLimit + ' element' + (options.arrayLimit === 1 ? '' : 's') + ' allowed in an array.');\n        } else {\n            // Optionally convert to object or truncate, per README\n            return splitArray.slice(0, options.arrayLimit - currentArrayLength);\n        }\n    }\n    return splitArray;\n}\n\nif (options.throwOnLimitExceeded && currentArrayLength >= options.arrayLimit) {\n    throw new RangeError('Array limit exceeded. Only ' + options.arrayLimit + ' element' + (options.arrayLimit === 1 ? '' : 's') + ' allowed in an array.');\n}\n\nreturn val;\n```\nThis aligns behavior with indexed and bracket notations, reuses `currentArrayLength`, and respects `throwOnLimitExceeded`. Update README to note the consistent enforcement.",
+      "reported_by": null,
+      "title": "qs's arrayLimit bypass in comma parsing allows denial of service",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-2391"
+      ],
+      "access": "public",
+      "severity": "low",
+      "module_name": "qs",
+      "vulnerable_versions": ">=6.7.0 <=6.14.1",
+      "github_advisory_id": "GHSA-w7fw-mjwx-w883",
+      "recommendation": "Upgrade to version 6.14.2 or later",
+      "patched_versions": ">=6.14.2",
+      "updated": "2026-02-12T20:08:00.000Z",
+      "cvss": {
+        "score": 3.7,
+        "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L"
+      },
+      "cwe": [
+        "CWE-20"
+      ],
+      "url": "https://github.com/advisories/GHSA-w7fw-mjwx-w883"
+    },
+    "1113719": {
+      "findings": [
+        {
+          "version": "6.13.0",
+          "paths": [
+            ". > express@4.21.2 > body-parser@1.20.3 > qs@6.13.0",
+            ". > express@4.21.2 > qs@6.13.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/ljharb/qs/security/advisories/GHSA-6rw7-vpxm-498p\n- https://nvd.nist.gov/vuln/detail/CVE-2025-15284\n- https://github.com/ljharb/qs/commit/3086902ecf7f088d0d1803887643ac6c03d415b9\n- https://github.com/advisories/GHSA-6rw7-vpxm-498p",
+      "created": "2025-12-30T21:02:54.000Z",
+      "id": 1113719,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\nThe `arrayLimit` option in qs did not enforce limits for bracket notation (`a[]=1&a[]=2`), only for indexed notation (`a[0]=1`). This is a consistency bug; `arrayLimit` should apply uniformly across all array notations.\n\n**Note:** The default `parameterLimit` of 1000 effectively mitigates the DoS scenario originally described. With default options, bracket notation cannot produce arrays larger than `parameterLimit` regardless of `arrayLimit`, because each `a[]=value` consumes one parameter slot. The severity has been reduced accordingly.\n\n### Details\n\nThe `arrayLimit` option only checked limits for indexed notation (`a[0]=1&a[1]=2`) but did not enforce it for bracket notation (`a[]=1&a[]=2`).\n\n**Vulnerable code** (`lib/parse.js:159-162`):\n```javascript\nif (root === '[]' && options.parseArrays) {\n    obj = utils.combine([], leaf);  // No arrayLimit check\n}\n```\n\n**Working code** (`lib/parse.js:175`):\n```javascript\nelse if (index <= options.arrayLimit) {  // Limit checked here\n    obj = [];\n    obj[index] = leaf;\n}\n```\n\nThe bracket notation handler at line 159 uses `utils.combine([], leaf)` without validating against `options.arrayLimit`, while indexed notation at line 175 checks `index <= options.arrayLimit` before creating arrays.\n\n### PoC\n\n```javascript\nconst qs = require('qs');\nconst result = qs.parse('a[]=1&a[]=2&a[]=3&a[]=4&a[]=5&a[]=6', { arrayLimit: 5 });\nconsole.log(result.a.length);  // Output: 6 (should be max 5)\n```\n\n**Note on parameterLimit interaction:** The original advisory's \"DoS demonstration\" claimed a length of 10,000, but `parameterLimit` (default: 1000) caps parsing to 1,000 parameters. With default options, the actual output is 1,000, not 10,000.\n\n### Impact\n\nConsistency bug in `arrayLimit` enforcement. With default `parameterLimit`, the practical DoS risk is negligible since `parameterLimit` already caps the total number of parsed parameters (and thus array elements from bracket notation). The risk increases only when `parameterLimit` is explicitly set to a very high value.",
+      "reported_by": null,
+      "title": "qs's arrayLimit bypass in its bracket notation allows DoS via memory exhaustion",
+      "metadata": null,
+      "cves": [
+        "CVE-2025-15284"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "qs",
+      "vulnerable_versions": "<6.14.1",
+      "github_advisory_id": "GHSA-6rw7-vpxm-498p",
+      "recommendation": "Upgrade to version 6.14.1 or later",
+      "patched_versions": ">=6.14.1",
+      "updated": "2026-03-02T22:05:33.000Z",
+      "cvss": {
+        "score": 3.7,
+        "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L"
+      },
+      "cwe": [
+        "CWE-20"
+      ],
+      "url": "https://github.com/advisories/GHSA-6rw7-vpxm-498p"
+    },
+    "1115527": {
+      "findings": [
+        {
+          "version": "0.1.12",
+          "paths": [
+            ". > express@4.21.2 > path-to-regexp@0.1.12"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/pillarjs/path-to-regexp/security/advisories/GHSA-37ch-88jc-xwx2\n- https://nvd.nist.gov/vuln/detail/CVE-2026-4867\n- https://blakeembrey.com/posts/2024-09-web-redos\n- https://cna.openjsf.org/security-advisories.html\n- https://github.com/advisories/GHSA-9wv6-86v2-598j\n- https://github.com/pillarjs/path-to-regexp/releases/tag/v.0.1.13\n- https://github.com/advisories/GHSA-37ch-88jc-xwx2",
+      "created": "2026-03-27T20:04:53.000Z",
+      "id": 1115527,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nA bad regular expression is generated any time you have three or more parameters within a single segment, separated by something that is not a period (`.`). For example, `/:a-:b-:c` or `/:a-:b-:c-:d`. The backtrack protection added in `path-to-regexp@0.1.12` only prevents ambiguity for two parameters. With three or more, the generated lookahead does not block single separator characters, so capture groups overlap and cause catastrophic backtracking.\n\n### Patches\n\nUpgrade to [path-to-regexp@0.1.13](https://github.com/pillarjs/path-to-regexp/releases/tag/v.0.1.13)\n\nCustom regex patterns in route definitions (e.g., `/:a-:b([^-/]+)-:c([^-/]+)`) are not affected because they override the default capture group.\n\n### Workarounds\n\nAll versions can be patched by providing a custom regular expression for parameters after the first in a single segment. As long as the custom regular expression does not match the text before the parameter, you will be safe. For example, change `/:a-:b-:c` to `/:a-:b([^-/]+)-:c([^-/]+)`.\n\nIf paths cannot be rewritten and versions cannot be upgraded, another alternative is to limit the URL length.\n\n### References\n\n- [GHSA-9wv6-86v2-598j](https://github.com/advisories/GHSA-9wv6-86v2-598j)\n- [Detailed blog post: ReDoS the web](https://blakeembrey.com/posts/2024-09-web-redos/)",
+      "reported_by": null,
+      "title": "path-to-regexp vulnerable to Regular Expression Denial of Service via multiple route parameters",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-4867"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "path-to-regexp",
+      "vulnerable_versions": "<0.1.13",
+      "github_advisory_id": "GHSA-37ch-88jc-xwx2",
+      "recommendation": "Upgrade to version 0.1.13 or later",
+      "patched_versions": ">=0.1.13",
+      "updated": "2026-03-27T20:04:54.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-1333"
+      ],
+      "url": "https://github.com/advisories/GHSA-37ch-88jc-xwx2"
+    },
+    "1115805": {
+      "findings": [
+        {
+          "version": "4.17.21",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > dagre-d3-es@7.0.11 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > lodash-es@4.17.21"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lodash/lodash/security/advisories/GHSA-r5fr-rjxr-66jc\n- https://nvd.nist.gov/vuln/detail/CVE-2026-4800\n- https://github.com/lodash/lodash/commit/3469357cff396a26c363f8c1b5a91dde28ba4b1c\n- https://cna.openjsf.org/security-advisories.html\n- https://github.com/advisories/GHSA-35jh-r3h4-6jhm\n- https://github.com/advisories/GHSA-r5fr-rjxr-66jc",
+      "created": "2026-04-01T23:51:12.000Z",
+      "id": 1115805,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nThe fix for [CVE-2021-23337](https://github.com/advisories/GHSA-35jh-r3h4-6jhm) added validation for the `variable` option in `_.template` but did not apply the same validation to `options.imports` key names. Both paths flow into the same `Function()` constructor sink.\n\nWhen an application passes untrusted input as `options.imports` key names, an attacker can inject default-parameter expressions that execute arbitrary code at template compilation time.\n\nAdditionally, `_.template` uses `assignInWith` to merge imports, which enumerates inherited properties via `for..in`. If `Object.prototype` has been polluted by any other vector, the polluted keys are copied into the imports object and passed to `Function()`.\n\n### Patches\n\nUsers should upgrade to version 4.18.0.\n\nThe fix applies two changes:\n1. Validate `importsKeys` against the existing `reForbiddenIdentifierChars` regex (same check already used for the `variable` option)\n2. Replace `assignInWith` with `assignWith` when merging imports, so only own properties are enumerated\n\n### Workarounds\n\nDo not pass untrusted input as key names in `options.imports`. Only use developer-controlled, static key names.",
+      "reported_by": null,
+      "title": "lodash vulnerable to Code Injection via `_.template` imports key names",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-4800"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "lodash-es",
+      "vulnerable_versions": ">=4.0.0 <=4.17.23",
+      "github_advisory_id": "GHSA-r5fr-rjxr-66jc",
+      "recommendation": "Upgrade to version 4.18.0 or later",
+      "patched_versions": ">=4.18.0",
+      "updated": "2026-04-01T23:51:13.000Z",
+      "cvss": {
+        "score": 8.1,
+        "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+      },
+      "cwe": [
+        "CWE-94"
+      ],
+      "url": "https://github.com/advisories/GHSA-r5fr-rjxr-66jc"
+    },
+    "1115806": {
+      "findings": [
+        {
+          "version": "4.17.21",
+          "paths": [
+            ". > recharts@2.15.4 > lodash@4.17.21"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lodash/lodash/security/advisories/GHSA-r5fr-rjxr-66jc\n- https://nvd.nist.gov/vuln/detail/CVE-2026-4800\n- https://github.com/lodash/lodash/commit/3469357cff396a26c363f8c1b5a91dde28ba4b1c\n- https://cna.openjsf.org/security-advisories.html\n- https://github.com/advisories/GHSA-35jh-r3h4-6jhm\n- https://github.com/advisories/GHSA-r5fr-rjxr-66jc",
+      "created": "2026-04-01T23:51:12.000Z",
+      "id": 1115806,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nThe fix for [CVE-2021-23337](https://github.com/advisories/GHSA-35jh-r3h4-6jhm) added validation for the `variable` option in `_.template` but did not apply the same validation to `options.imports` key names. Both paths flow into the same `Function()` constructor sink.\n\nWhen an application passes untrusted input as `options.imports` key names, an attacker can inject default-parameter expressions that execute arbitrary code at template compilation time.\n\nAdditionally, `_.template` uses `assignInWith` to merge imports, which enumerates inherited properties via `for..in`. If `Object.prototype` has been polluted by any other vector, the polluted keys are copied into the imports object and passed to `Function()`.\n\n### Patches\n\nUsers should upgrade to version 4.18.0.\n\nThe fix applies two changes:\n1. Validate `importsKeys` against the existing `reForbiddenIdentifierChars` regex (same check already used for the `variable` option)\n2. Replace `assignInWith` with `assignWith` when merging imports, so only own properties are enumerated\n\n### Workarounds\n\nDo not pass untrusted input as key names in `options.imports`. Only use developer-controlled, static key names.",
+      "reported_by": null,
+      "title": "lodash vulnerable to Code Injection via `_.template` imports key names",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-4800"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "lodash",
+      "vulnerable_versions": ">=4.0.0 <=4.17.23",
+      "github_advisory_id": "GHSA-r5fr-rjxr-66jc",
+      "recommendation": "Upgrade to version 4.18.0 or later",
+      "patched_versions": ">=4.18.0",
+      "updated": "2026-04-01T23:51:13.000Z",
+      "cvss": {
+        "score": 8.1,
+        "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+      },
+      "cwe": [
+        "CWE-94"
+      ],
+      "url": "https://github.com/advisories/GHSA-r5fr-rjxr-66jc"
+    },
+    "1115809": {
+      "findings": [
+        {
+          "version": "4.17.21",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > dagre-d3-es@7.0.11 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > lodash-es@4.17.21"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lodash/lodash/security/advisories/GHSA-f23m-r3pf-42rh\n- https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg\n- https://nvd.nist.gov/vuln/detail/CVE-2026-2950\n- https://github.com/advisories/GHSA-f23m-r3pf-42rh",
+      "created": "2026-04-01T23:50:27.000Z",
+      "id": 1115809,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nLodash versions 4.17.23 and earlier are vulnerable to prototype pollution in the `_.unset` and `_.omit` functions. The fix for [CVE-2025-13465](https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg) only guards against string key members, so an attacker can bypass the check by passing array-wrapped path segments. This allows deletion of properties from built-in prototypes such as `Object.prototype`, `Number.prototype`, and `String.prototype`.\n\nThe issue permits deletion of prototype properties but does not allow overwriting their original behavior.\n\n### Patches\n\nThis issue is patched in 4.18.0.\n\n### Workarounds\n\nNone. Upgrade to the patched version.",
+      "reported_by": null,
+      "title": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-2950"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "lodash-es",
+      "vulnerable_versions": "<=4.17.23",
+      "github_advisory_id": "GHSA-f23m-r3pf-42rh",
+      "recommendation": "Upgrade to version 4.18.0 or later",
+      "patched_versions": ">=4.18.0",
+      "updated": "2026-04-01T23:50:28.000Z",
+      "cvss": {
+        "score": 6.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-f23m-r3pf-42rh"
+    },
+    "1115810": {
+      "findings": [
+        {
+          "version": "4.17.21",
+          "paths": [
+            ". > recharts@2.15.4 > lodash@4.17.21"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lodash/lodash/security/advisories/GHSA-f23m-r3pf-42rh\n- https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg\n- https://nvd.nist.gov/vuln/detail/CVE-2026-2950\n- https://github.com/advisories/GHSA-f23m-r3pf-42rh",
+      "created": "2026-04-01T23:50:27.000Z",
+      "id": 1115810,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nLodash versions 4.17.23 and earlier are vulnerable to prototype pollution in the `_.unset` and `_.omit` functions. The fix for [CVE-2025-13465](https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg) only guards against string key members, so an attacker can bypass the check by passing array-wrapped path segments. This allows deletion of properties from built-in prototypes such as `Object.prototype`, `Number.prototype`, and `String.prototype`.\n\nThe issue permits deletion of prototype properties but does not allow overwriting their original behavior.\n\n### Patches\n\nThis issue is patched in 4.18.0.\n\n### Workarounds\n\nNone. Upgrade to the patched version.",
+      "reported_by": null,
+      "title": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-2950"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "lodash",
+      "vulnerable_versions": "<=4.17.23",
+      "github_advisory_id": "GHSA-f23m-r3pf-42rh",
+      "recommendation": "Upgrade to version 4.18.0 or later",
+      "patched_versions": ">=4.18.0",
+      "updated": "2026-04-01T23:50:28.000Z",
+      "cvss": {
+        "score": 6.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-f23m-r3pf-42rh"
+    },
+    "1119441": {
+      "findings": [
+        {
+          "version": "11.1.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > uuid@11.1.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/uuidjs/uuid/security/advisories/GHSA-w5hq-g745-h8pq\n- https://github.com/uuidjs/uuid/commit/3d2c5b0342f0fcb52a5ac681c3d47c13e7444b34\n- https://github.com/uuidjs/uuid/releases/tag/v14.0.0\n- https://nvd.nist.gov/vuln/detail/CVE-2026-41907\n- https://github.com/uuidjs/uuid/commit/32389c887c9e75f90442ee4cc95bbab0c4e8346e\n- https://github.com/uuidjs/uuid/commit/3d61d6ac1f782cf6b1dd8661c60f11722cd49a0d\n- https://github.com/uuidjs/uuid/commit/9d27ddf7046ce496ef39569ff84d948eeff9cb2a\n- https://github.com/uuidjs/uuid/releases/tag/v11.1.1\n- https://github.com/uuidjs/uuid/releases/tag/v12.0.1\n- https://github.com/uuidjs/uuid/releases/tag/v13.0.1\n- https://github.com/advisories/GHSA-w5hq-g745-h8pq",
+      "created": "2026-04-22T20:53:24.000Z",
+      "id": 1119441,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\nThe `v3()`, `v5()`, and `v6()` [API methods](https://github.com/uuidjs/uuid#api-summary) (not `uuid` release versions) accept external output buffers but do not reject out-of-range writes (small `buf` or large `offset`).  \nBy contrast, `v4()`, `v1()`, and `v7()` API methods explicitly throw `RangeError` on invalid bounds.\n\nThis inconsistency allows **silent partial writes** into caller-provided buffers.\n\n\n### Affected code\n\n- `src/v35.ts` (`v3()`/`v5()` path) writes `buf[offset + i]` without bounds validation.\n- `src/v6.ts` writes `buf[offset + i]` without bounds validation.\n\n### Reproducible PoC\n\n```bash\ncd /home/StrawHat/uuid\nnpm ci\nnpm run build\n\nnode --input-type=module -e \"\nimport {v4,v5,v6} from './dist-node/index.js';\nconst ns='6ba7b810-9dad-11d1-80b4-00c04fd430c8';\nfor (const [name,fn] of [\n  ['v4()',()=>v4({},new Uint8Array(8),4)],\n  ['v5()',()=>v5('x',ns,new Uint8Array(8),4)],\n  ['v6()',()=>v6({},new Uint8Array(8),4)],\n]) {\n  try { fn(); console.log(name,'NO_THROW'); }\n  catch(e){ console.log(name,'THREW',e.name); }\n}\"\n```\n\nObserved:\n\n- `v4() THREW RangeError`\n- `v5() NO_THROW`\n- `v6() NO_THROW`\n\nExample partial overwrite evidence captured during audit:\n\n```text\nsame true buf [\n  170, 170, 170, 170,\n   75, 224, 100,  63\n]\nv6 [\n  187, 187, 187, 187,\n   31,  19, 185,  64\n]\n```\n\n### Security impact\n\n- **Primary**: integrity/robustness issue (silent partial output).\n- If an application assumes full UUID writes into preallocated buffers, this can produce malformed/truncated/partially stale identifiers without error.\n- In systems where caller-controlled offsets/buffer sizes are exposed indirectly, this may become a security-relevant logic flaw.\n\n### Suggested fix\n\nAdd the same guard used by `v4()`/`v1()`/`v7()`:\n\n```ts\nif (offset < 0 || offset + 16 > buf.length) {\n  throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);\n}\n```\n\nApply to:\n\n- `src/v35.ts` (covers `v3()` and `v5()`)\n- `src/v6.ts`",
+      "reported_by": null,
+      "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-41907"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "uuid",
+      "vulnerable_versions": "<11.1.1",
+      "github_advisory_id": "GHSA-w5hq-g745-h8pq",
+      "recommendation": "Upgrade to version 11.1.1 or later",
+      "patched_versions": ">=11.1.1",
+      "updated": "2026-05-21T18:25:57.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+      },
+      "cwe": [
+        "CWE-787",
+        "CWE-1285"
+      ],
+      "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq"
+    },
+    "1119502": {
+      "findings": [
+        {
+          "version": "6.13.0",
+          "paths": [
+            ". > express@4.21.2 > body-parser@1.20.3 > qs@6.13.0",
+            ". > express@4.21.2 > qs@6.13.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/ljharb/qs/security/advisories/GHSA-q8mj-m7cp-5q26\n- https://nvd.nist.gov/vuln/detail/CVE-2026-8723\n- https://github.com/ljharb/qs/commit/21f80b33e5c8b3f7eba1034fff0da4a4a37a1d41\n- https://github.com/advisories/GHSA-q8mj-m7cp-5q26",
+      "created": "2026-05-22T17:27:19.000Z",
+      "id": 1119502,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\n`qs.stringify` throws `TypeError` when called with `arrayFormat: 'comma'` and `encodeValuesOnly: true` on an array containing `null` or `undefined`. The throw is synchronous and not handled by any of qs's null-related options (`skipNulls`, `strictNullHandling`).\n\n### Details\n\nIn the comma + `encodeValuesOnly` branch, `lib/stringify.js:145` mapped the array through the raw encoder before joining:\n\n```js\nobj = utils.maybeMap(obj, encoder);\n```\n\n`utils.encode` (`lib/utils.js:195`) reads `str.length` with no null guard, so a `null` or `undefined` element throws `TypeError`. `skipNulls` and `strictNullHandling` are both checked in the per-element loop below this line and never get a chance to run.\n\nSame class of bug as the filter-array path fixed in 0c180a4. The vulnerable shape of the comma + `encodeValuesOnly` branch was introduced in 4c4b23d (\"encode comma values more consistently\", PR #463, 2023-01-19), first released in v6.11.1.\n\n#### PoC\n\n```js\nconst qs = require('qs');\n\nqs.stringify({ a: [null, 'b'] },      { arrayFormat: 'comma', encodeValuesOnly: true });\nqs.stringify({ a: [undefined, 'b'] }, { arrayFormat: 'comma', encodeValuesOnly: true });\nqs.stringify({ a: [null] },           { arrayFormat: 'comma', encodeValuesOnly: true });\n// TypeError: Cannot read properties of null (reading 'length')\n//     at encode (lib/utils.js:195:13)\n//     at Object.maybeMap (lib/utils.js:322:37)\n//     at stringify (lib/stringify.js:145:25)\n```\n\n#### Fix\n\n`lib/stringify.js:145`, applied in 21f80b3 on `main`:\n\n```diff\n- obj = utils.maybeMap(obj, encoder);\n+ obj = utils.maybeMap(obj, function (v) {\n+     return v == null ? v : encoder(v);\n+ });\n```\n\n`null` and `undefined` now pass through `maybeMap` unchanged and reach the `join(',')` step as-is. For `{ a: [null, 'b'] }` this produces `a=,b`, matching the non-`encodeValuesOnly` comma path (which already joins before encoding and produces `a=%2Cb` for the same input). Single-element `[null]` arrays still collapse via the existing `obj.join(',') || null` and remain subject to `skipNulls` / `strictNullHandling` in the main loop.\n\n### Affected versions\n\n`>=6.11.1 <=6.15.1`\n\nThe vulnerable code shape was introduced in 4c4b23d and first shipped in v6.11.1. Earlier versions — including all of 6.7.x, 6.8.x, 6.9.x, 6.10.x, and 6.11.0 — implemented the comma + `encodeValuesOnly` path differently (joining before encoding) and are not affected. Empirically verified across released versions.\n\n### Impact\n\nApplication code that calls `qs.stringify` with both `arrayFormat: 'comma'` and `encodeValuesOnly: true` (both non-default) on input that may contain a `null` or `undefined` array element will throw synchronously instead of producing a query string. In a typical Node.js HTTP framework (Express, Fastify, Koa, hapi) the sync throw is caught by the framework's error boundary and the affected request returns a 500; the worker process does not exit and subsequent requests are unaffected. The \"kills the worker process\" framing applies only to call sites outside a request-handler error boundary (background jobs, startup paths, stream pipelines) or to deployments with framework error handling explicitly disabled.\n\nThe vulnerable input is a `null` or `undefined` entry inside an array; this is reachable from JSON request bodies or from application code constructing arrays from user input, but not from standard HTML form submissions (which produce strings or omitted fields, not literal `null`).",
+      "reported_by": null,
+      "title": "qs has a remotely triggerable DoS: qs.stringify crashes with TypeError on null/undefined entries in comma-format arrays when encodeValuesOnly is set",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-8723"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "qs",
+      "vulnerable_versions": ">=6.11.1 <=6.15.1",
+      "github_advisory_id": "GHSA-q8mj-m7cp-5q26",
+      "recommendation": "Upgrade to version 6.15.2 or later",
+      "patched_versions": ">=6.15.2",
+      "updated": "2026-05-22T17:27:20.000Z",
+      "cvss": {
+        "score": 5.3,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+      },
+      "cwe": [
+        "CWE-476"
+      ],
+      "url": "https://github.com/advisories/GHSA-q8mj-m7cp-5q26"
+    },
+    "1120138": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-ghcm-xqfw-q4vr\n- https://github.com/mermaid-js/mermaid/commit/37ff937f1da2e19f882fd1db01235db4d01f4056\n- https://github.com/mermaid-js/mermaid/commit/4e2d512bf5bf6f9de1a8f0a48da78dc4d09ac4f3\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.15.0\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.6\n- https://mermaid.js.org/config/schema-docs/config.html#securitylevel\n- https://nvd.nist.gov/vuln/detail/CVE-2026-41149\n- https://github.com/advisories/GHSA-ghcm-xqfw-q4vr",
+      "created": "2026-05-11T19:36:46.000Z",
+      "id": 1120138,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nUnder the default configuration, Mermaid state diagram's `classDef` allow DOM injection that escapes the SVG, although `<script>` tags are removed, preventing XSS.\n\n#### Proof-of-concept\n\n```\nstateDiagram-v2\n  classDef xss fill:red</style></svg><style>*{x:x;y:y;overflow:visible!important;contain:none!important;transform:none!important;filter:none!important;clip-path:none!important}</style><div style=\"x:x;y:y;color:red;font:5em/1 monospace;display:grid;place-items:center;z-index:2147483647;width:100vw;height:100vh;position:fixed;top:0;left:0;background:black\">HACKED</div><svg><style>a:b\n  [*] --> A:::xss\n```\n\n### Patches\n\n- [v11.15.0](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.15.0) (see [37ff937f1da2e19f882fd1db01235db4d01f4056](https://github.com/mermaid-js/mermaid/commit/37ff937f1da2e19f882fd1db01235db4d01f4056))\n- [v10.9.6](https://github.com/mermaid-js/mermaid/releases/tag/v10.9.6) (see [4e2d512bf5bf6f9de1a8f0a48da78dc4d09ac4f3](https://github.com/mermaid-js/mermaid/commit/4e2d512bf5bf6f9de1a8f0a48da78dc4d09ac4f3))\n\n### Workarounds\n\nIf you can not update to a patched version, setting [`\"securityLevel\": \"sandbox\"`](https://mermaid.js.org/config/schema-docs/config.html#securitylevel)  will prevent this, by rendering the mermaid diagram in a sandboxed `<iframe>`.\n\n### Credits\n\nThanks to @zsxsoft from @KeenSecurityLab for reporting this vulnerability.",
+      "reported_by": null,
+      "title": "Mermaid: Improper sanitization of `classDef` in state diagrams leads to HTML injection",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-41149"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.0.0-alpha.1 <=11.14.0",
+      "github_advisory_id": "GHSA-ghcm-xqfw-q4vr",
+      "recommendation": "Upgrade to version 11.15.0 or later",
+      "patched_versions": ">=11.15.0",
+      "updated": "2026-06-08T23:21:04.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-94"
+      ],
+      "url": "https://github.com/advisories/GHSA-ghcm-xqfw-q4vr"
+    },
+    "1120140": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-xcj9-5m2h-648r\n- https://github.com/mermaid-js/mermaid/commit/8fead23c59166b7bab6a39eac81acebee2859102\n- https://github.com/mermaid-js/mermaid/commit/e9b0f34d8d82a6260077764ee45e1d7d90957a0f\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.15.0\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.6\n- https://mermaid.js.org/config/schema-docs/config.html#securitylevel\n- https://nvd.nist.gov/vuln/detail/CVE-2026-41148\n- https://github.com/advisories/GHSA-xcj9-5m2h-648r",
+      "created": "2026-05-11T19:36:41.000Z",
+      "id": 1120140,
+      "npm_advisory_id": null,
+      "overview": "### Details\n\nThe state diagram and any other diagram type that routes user-controlled style strings through createCssStyles parser for Mermaid v11.14.0 and earlier captures `classDef` values with an unrestricted regex:\n\n```jison\n// packages/mermaid/src/diagrams/state/parser/stateDiagram.jison:83\n<CLASSDEFID>[^\\n]*   { this.popState(); return 'CLASSDEF_STYLEOPTS' }\n```\n\nThe value passes unsanitized through `addStyleClass()` -> `createCssStyles()` -> `style.innerHTML` (mermaidAPI.ts:418). A `}` in the value closes the generated CSS selector, and everything after becomes a new CSS rule on the page.\n\n### PoC\n\n```\nstateDiagram-v2 \n      classDef x }*{ background-image: url(\"http://media.giphy.com/media/SggILpMXO7Xt6/giphy.gif\")}\n```\n\nLive demo:\n<https://mermaid.live/edit#pako:eNpFjzFvgzAQhf-KdVNbEcBgMHhtlkqtOnSJKi8ONsYKBmRMlRTx3-skanvTfbp7996t0IxSAYPZC6_2Rmgn7O4rQ00v5nmvWnRG29OKjqI5aTcug9wZK7RiaHH9A4fO-4kliVXSiFibqbvEzWjvnHxo_fI6vR3e6cGXyX2qTcvhcYMItDMSmHeLisAqZ8UVYeUDQhx8p6ziwEIrhTtx4MNVM4nhcxztrywE0h2wVvRzoGWS_z_8rahBKvcckntgmN5OAFvhDIzUNCZZQXCR5nVaZkUEF2BVFpOcEkoxxhUuyRbB980yjStapKHqoKFlhvPtB7BFZEU>\n\n### Patches\n\nThis has been patched in:\n\n- [v11.15.0](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.15.0) (see [e9b0f34d8d82a6260077764ee45e1d7d90957a0f](https://github.com/mermaid-js/mermaid/commit/e9b0f34d8d82a6260077764ee45e1d7d90957a0f))\n- [v10.9.6](https://github.com/mermaid-js/mermaid/releases/tag/v10.9.6) (see [8fead23c59166b7bab6a39eac81acebee2859102](https://github.com/mermaid-js/mermaid/commit/8fead23c59166b7bab6a39eac81acebee2859102))\n\n### Workarounds\n\nSetting [`\"securityLevel\": \"sandbox\"`](https://mermaid.js.org/config/schema-docs/config.html#securitylevel)  will prevent this, by rendering the mermaid diagram in a sandboxed `<iframe>`.\n\n### Impact\n\n Enables page defacement, user tracking via `url()` callbacks, and DOM attribute exfiltration via CSS `:has()` selectors.",
+      "reported_by": null,
+      "title": "Mermaid: Improper sanitization of `classDefs` in diagrams leads to CSS injection",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-41148"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.0.0-alpha.1 <=11.14.0",
+      "github_advisory_id": "GHSA-xcj9-5m2h-648r",
+      "recommendation": "Upgrade to version 11.15.0 or later",
+      "patched_versions": ">=11.15.0",
+      "updated": "2026-06-08T23:20:59.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-94"
+      ],
+      "url": "https://github.com/advisories/GHSA-xcj9-5m2h-648r"
+    },
+    "1120326": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-6m6c-36f7-fhxh\n- https://github.com/mermaid-js/mermaid/commit/a59ea56174712ee5430dfd5bc877cb5151f501a6\n- https://github.com/mermaid-js/mermaid/commit/faafb5d49106dd32c367f3882505f2dd625aa30e\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.15.0\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.6\n- https://nvd.nist.gov/vuln/detail/CVE-2026-41150\n- https://github.com/advisories/GHSA-6m6c-36f7-fhxh",
+      "created": "2026-05-11T19:36:55.000Z",
+      "id": 1120326,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nMermaid v11.14.0 and earlier are vulnerable to a denial-of-service attack when rendering gantt charts, if they use the [`excludes` attribute](https://mermaid.js.org/syntax/gantt.html?#excludes) to exclude all dates.\n\nExample:\n\n```\ngantt\n  excludes monday,tuesday,wednesday,thursday,friday,saturday,sunday\n  DoS :2025-01-01, 1d\n```\n\n`mermaid.parse` is unaffected, unless you then call the `ganttDb.getTasks()` (which is called when rendering a diagram).\n\n### Patches\n\nThis has been patched in:\n\n- [v11.15.0](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.15.0) (see [faafb5d49106dd32c367f3882505f2dd625aa30e](https://github.com/mermaid-js/mermaid/commit/faafb5d49106dd32c367f3882505f2dd625aa30e))\n- [v10.9.6](https://github.com/mermaid-js/mermaid/releases/tag/v10.9.6) (see [a59ea56174712ee5430dfd5bc877cb5151f501a6](https://github.com/mermaid-js/mermaid/commit/a59ea56174712ee5430dfd5bc877cb5151f501a6))\n\n### Workarounds\n\nThere are no workarounds available without updating to a newer version of mermaid.",
+      "reported_by": null,
+      "title": "Mermaid Gantt Charts are vulnerable to an Infinite Loop DoS",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-41150"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.0.0-alpha.1 <=11.14.0",
+      "github_advisory_id": "GHSA-6m6c-36f7-fhxh",
+      "recommendation": "Upgrade to version 11.15.0 or later",
+      "patched_versions": ">=11.15.0",
+      "updated": "2026-06-09T10:28:49.000Z",
+      "cvss": {
+        "score": 5.3,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+      },
+      "cwe": [
+        "CWE-835"
+      ],
+      "url": "https://github.com/advisories/GHSA-6m6c-36f7-fhxh"
+    },
+    "1120368": {
+      "findings": [
+        {
+          "version": "4.17.21",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/cst-dts-gen@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > @chevrotain/gast@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > chevrotain@11.0.3 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > @mermaid-js/parser@0.6.3 > langium@3.3.1 > chevrotain-allstar@0.3.1 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > dagre-d3-es@7.0.11 > lodash-es@4.17.21",
+            ". > streamdown@1.4.0 > mermaid@11.12.0 > lodash-es@4.17.21"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg\n- https://nvd.nist.gov/vuln/detail/CVE-2025-13465\n- https://github.com/lodash/lodash/commit/edadd452146f7e4bad4ea684e955708931d84d81\n- https://cert-portal.siemens.com/productcert/html/ssa-253495.html\n- https://github.com/advisories/GHSA-xxjr-mmjv-4gpg",
+      "created": "2026-01-21T23:01:22.000Z",
+      "id": 1120368,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nLodash versions 4.0.0 through 4.17.22 are vulnerable to prototype pollution in the `_.unset` and `_.omit` functions. An attacker can pass crafted paths which cause Lodash to delete methods from global prototypes. \n\nThe issue permits deletion of properties but does not allow overwriting their original behavior.  \n\n### Patches\n\nThis issue is patched on 4.17.23.",
+      "reported_by": null,
+      "title": "Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions",
+      "metadata": null,
+      "cves": [
+        "CVE-2025-13465"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "lodash-es",
+      "vulnerable_versions": ">=4.0.0 <=4.17.22",
+      "github_advisory_id": "GHSA-xxjr-mmjv-4gpg",
+      "recommendation": "Upgrade to version 4.17.23 or later",
+      "patched_versions": ">=4.17.23",
+      "updated": "2026-06-09T10:56:35.000Z",
+      "cvss": {
+        "score": 6.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-xxjr-mmjv-4gpg"
+    },
+    "1120370": {
+      "findings": [
+        {
+          "version": "4.17.21",
+          "paths": [
+            ". > recharts@2.15.4 > lodash@4.17.21"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lodash/lodash/security/advisories/GHSA-xxjr-mmjv-4gpg\n- https://nvd.nist.gov/vuln/detail/CVE-2025-13465\n- https://github.com/lodash/lodash/commit/edadd452146f7e4bad4ea684e955708931d84d81\n- https://cert-portal.siemens.com/productcert/html/ssa-253495.html\n- https://github.com/advisories/GHSA-xxjr-mmjv-4gpg",
+      "created": "2026-01-21T23:01:22.000Z",
+      "id": 1120370,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nLodash versions 4.0.0 through 4.17.22 are vulnerable to prototype pollution in the `_.unset` and `_.omit` functions. An attacker can pass crafted paths which cause Lodash to delete methods from global prototypes. \n\nThe issue permits deletion of properties but does not allow overwriting their original behavior.  \n\n### Patches\n\nThis issue is patched on 4.17.23.",
+      "reported_by": null,
+      "title": "Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions",
+      "metadata": null,
+      "cves": [
+        "CVE-2025-13465"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "lodash",
+      "vulnerable_versions": ">=4.0.0 <=4.17.22",
+      "github_advisory_id": "GHSA-xxjr-mmjv-4gpg",
+      "recommendation": "Upgrade to version 4.17.23 or later",
+      "patched_versions": ">=4.17.23",
+      "updated": "2026-06-09T10:56:35.000Z",
+      "cvss": {
+        "score": 6.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-xxjr-mmjv-4gpg"
+    },
+    "1122162": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-87f9-hvmw-gh4p\n- https://github.com/mermaid-js/mermaid/commit/64769738d5b59211e1decb471ffbaca8afec51aa\n- https://github.com/mermaid-js/mermaid/commit/a9d9f0d8eb790349121508688cd338253fd80d76\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.15.0\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.6\n- https://nvd.nist.gov/vuln/detail/CVE-2026-41159\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid@11.15.0\n- https://github.com/advisories/GHSA-87f9-hvmw-gh4p",
+      "created": "2026-05-11T19:37:00.000Z",
+      "id": 1122162,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nMermaid's default configuration allows injecting CSS that applies outside of the Mermaid diagram via the `fontFamily`, `themeCSS`, and `altFontFamily` configuration options.\n\nLive demo: [mermaid.live](https://mermaid.live/edit#pako:eNpNjktLxDAUhf9KvFBR6JS-60QQfODKlUvJ5k6TtsEmKTHFGUP-u-mI6Nmdy3fOPR56wwVQSBIvtXSUeAaD0e4ZlZxPDChhcLxFfwiEauOuLq_9Afv30ZpVczpaITS5kGox1qF2gfSeBwYhJAnThAyz-ewntI68vG5-0z3Z7e7IA9OQwmglB-rsKlJQwircLPgNZeAmocTPAi4GXGfHgOkQYwvqN2PUbzJuGSegA84f0a0LRyeeJI4W_xChubCPcbQD2pwbgHo4Aq2aKmvbqq3zoiu7pizqFE6RybN9VFfFY1HWXRVS-Dr_zLObrt7_V_gGGXZlGg)\n\nExample code:\n\n```\n%%{init: {\"fontFamily\": \"x;a{b} :not(&){background:green !important} c{d}\"}}%%\nflowchart LR\n    A --> B\n```\n\nThe injected CSS exploits stylis's `&` (scope reference) handling. `:not(&)` escapes the `#mermaid-xxx` automatic scoping, applying styles to all page elements. Global at-rules (`@font-face`, `@keyframes`, `@counter-style`) are also injectable as stylis hoists them to top level.\n\nThis allows page defacement and DOM attribute exfiltration via CSS `:has()` selectors.\n\n### Patches\n\n- [v11.15.0](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.15.0) (see [64769738d5b59211e1decb471ffbaca8afec51aa](https://github.com/mermaid-js/mermaid/commit/64769738d5b59211e1decb471ffbaca8afec51aa))\n- [v10.9.6](https://github.com/mermaid-js/mermaid/releases/tag/v10.9.6) (see [a9d9f0d8eb790349121508688cd338253fd80d76](https://github.com/mermaid-js/mermaid/commit/a9d9f0d8eb790349121508688cd338253fd80d76))\n\n### Workarounds\n\nIf you can't upgrade mermaid, you can set the [`secure`](https://mermaid.js.org/config/schema-docs/config.html#secure) config value in the mermaid config to avoid allowing diagrams to modify `fontFamily`, `themeCSS`, `altFontFamily`, and `themeVariables`.\n\nSetting [`\"securityLevel\": \"sandbox\"`](https://mermaid.js.org/config/schema-docs/config.html#securitylevel)  will also prevent this.\n\n### Credits\n\nReported by @zsxsoft on behalf of @KeenSecurityLab",
+      "reported_by": null,
+      "title": "Mermaid: Improper sanitization of configuration leads to CSS injection",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-41159"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.0.0-alpha.1 <=11.14.0",
+      "github_advisory_id": "GHSA-87f9-hvmw-gh4p",
+      "recommendation": "Upgrade to version 11.15.0 or later",
+      "patched_versions": ">=11.15.0",
+      "updated": "2026-06-09T10:29:19.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-94"
+      ],
+      "url": "https://github.com/advisories/GHSA-87f9-hvmw-gh4p"
+    },
+    "1123977": {
+      "findings": [
+        {
+          "version": "1.20.3",
+          "paths": [
+            ". > express@4.21.2 > body-parser@1.20.3"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/expressjs/body-parser/security/advisories/GHSA-v422-hmwv-36x6\n- https://nvd.nist.gov/vuln/detail/CVE-2026-12590\n- https://github.com/expressjs/body-parser/pull/698\n- https://github.com/expressjs/body-parser/pull/741\n- https://github.com/expressjs/body-parser/commit/2322e111cc321413ec2b7b76d01be533d3de9d7d\n- https://github.com/expressjs/body-parser/commit/3492672eee593d5c158f239b6e9115498a5dbeac\n- https://cna.openjsf.org/security-advisories.html\n- https://github.com/expressjs/body-parser/releases/tag/1.20.6\n- https://github.com/expressjs/body-parser/releases/tag/v2.3.0\n- https://github.com/advisories/GHSA-v422-hmwv-36x6",
+      "created": "2026-07-20T23:23:26.000Z",
+      "id": 1123977,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nWhen body-parser is configured with an invalid `limit` option value, such as an unparseable string or `NaN`, `bytes.parse()` returns `null` and the request body size check is silently skipped. Applications that rely on `limit` as their primary safeguard against oversized request bodies will accept arbitrarily large payloads, leading to excessive memory and CPU usage and denial of service.\n\nThis issue affects applications that pass a programmatically computed or user-configurable value to the `limit` option without validating it first.\n\n### Patches\n\nThis issue is fixed in [body-parser@2.3.0](https://github.com/expressjs/body-parser/releases/tag/v2.3.0) and [body-parser@1.20.6](https://github.com/expressjs/body-parser/releases/tag/v1.20.6) via [#698](https://github.com/expressjs/body-parser/pull/698). After the fix, invalid `limit` values throw a clear error at parser construction time instead of silently disabling enforcement. `null` and `undefined` continue to fall back to the default limit (`100kb`).\n\n### Workarounds\n\nValidate `limit` before passing it to body-parser. For example, parse the value with [`bytes.parse()`](https://github.com/visionmedia/bytes.js) at startup and reject any configuration where it returns `null` or a non-finite number.\n\n### References\n\n- [#698](https://github.com/expressjs/body-parser/pull/698): fix PR\n- [bytes.js](https://github.com/visionmedia/bytes.js): limit parser",
+      "reported_by": null,
+      "title": "body-parser vulnerable to denial of service when invalid limit value silently disables size enforcement",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-12590"
+      ],
+      "access": "public",
+      "severity": "low",
+      "module_name": "body-parser",
+      "vulnerable_versions": "<1.20.6",
+      "github_advisory_id": "GHSA-v422-hmwv-36x6",
+      "recommendation": "Upgrade to version 1.20.6 or later",
+      "patched_versions": ">=1.20.6",
+      "updated": "2026-07-20T23:23:28.000Z",
+      "cvss": {
+        "score": 3.7,
+        "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L"
+      },
+      "cwe": [
+        "CWE-770"
+      ],
+      "url": "https://github.com/advisories/GHSA-v422-hmwv-36x6"
+    },
+    "1138097": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-c4c3-pg64-4m4v\n- https://github.com/mermaid-js/mermaid/pull/8022\n- https://github.com/mermaid-js/mermaid/commit/2cd6dcf735533b323507e3e889ffdea870540b43\n- https://github.com/mermaid-js/mermaid/commit/c34b07a0815842327e70794d69b0c8c5a1e2a956\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.8\n- https://github.com/advisories/GHSA-c4c3-pg64-4m4v",
+      "created": "2026-08-06T19:59:10.000Z",
+      "id": 1138097,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\nMermaid's configuration setters (`mermaid.initialize`, `mermaidAPI.setConfig`, and `mermaidAPI.updateSiteConfig`) merge the caller-supplied configuration object into Mermaid's internal config using the `assignWithDepth` deep-merge helper that is vulnerable to prototype pollution.\n\nBecause these APIs are intended to receive **trusted** configuration supplied by the application integrating Mermaid, Mermaid assesses the practical risk as **low**. The vulnerability is only reachable if an application forwards attacker-controlled data directly into one of these configuration entry points, which is outside their documented usage.\n\nUser-controlled configuration (e.g. configuration in diagram code using `%%{init: {}}%%` or YAML frontmatter) are already protected from prototype pollution.\n\n### Patches\n\nThis has been patched in https://github.com/mermaid-js/mermaid/commit/2cd6dcf735533b323507e3e889ffdea870540b43 and released in [Mermaid v11.16.1](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1).\n\nA backport has been made for the v10 branch in c34b07a0815842327e70794d69b0c8c5a1e2a956 and was released in [Mermaid v10.9.8](https://github.com/mermaid-js/mermaid/releases/tag/v10.9.8)\n\n### Impact\n\nMermaid believes it's unlikely that anybody is impacted, as these functions are configuration entry points expected to receive trusted, developer-controlled values as they can modify other security-relevant configuration.\n\n### Workarounds\n\nDon't pass user-controlled data to the `mermaid.initialize`, `mermaidAPI.setConfig`, and `mermaidAPI.updateSiteConfig` functions. Instead, users can use `%%{init: {}}%%` or YAML frontmatter in diagrams.\n\n### Reporters\n\n- liyi.zhou@sydney.edu.au (Liyi), https://lzhou1110.github.io/\n- ziyue0530@gmail.com (Ziyue), https://zyy0530.github.io/\n- cshe0476@uni.sydney.edu.au (Strick), https://str1ckl4nd.github.io/\n- chng0012@uni.sydney.edu.au (Maurice), http://maurice.busystar.org/\n- cyu210608@gmail.com (Chenchen), https://7thparkk.github.io/",
+      "reported_by": null,
+      "title": "Mermaid configuration APIs allow prototype pollution",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-71438"
+      ],
+      "access": "public",
+      "severity": "low",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.0.0-alpha.1 <11.16.1",
+      "github_advisory_id": "GHSA-c4c3-pg64-4m4v",
+      "recommendation": "Upgrade to version 11.16.1 or later",
+      "patched_versions": ">=11.16.1",
+      "updated": "2026-08-06T19:59:11.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-c4c3-pg64-4m4v"
+    },
+    "1138099": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-6x64-9x62-f2gx\n- https://github.com/mermaid-js/mermaid/pull/8022\n- https://github.com/mermaid-js/mermaid/commit/12d472c9ed43f94814b110da8d7a9ae6dd5266ed\n- https://github.com/mermaid-js/mermaid/commit/7e83f1533318b307764d961906a73377266f4c5e\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid@11.16.1\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.8\n- https://github.com/advisories/GHSA-6x64-9x62-f2gx",
+      "created": "2026-08-06T19:55:31.000Z",
+      "id": 1138099,
+      "npm_advisory_id": null,
+      "overview": "### Summary\n\nMermaid does not fully restrict CSS to the rendered SVG subtree. Although selectors are prefixed with `#mermaid-X`, sibling (`~` and `+`) combinators can still escape the Mermaid container and inject styles to DOM elements adjacent to the diagram `<svg>`.\n\n**Most users of mermaid would not be affected by this**, as mermaid adds its `<svg>` as an only child of it's parent element. However, you may be affected if you manually insert the `<svg>` (or other elements) into the DOM yourself.\n\n### Details\n\nMermaid namespaces CSS through with a middleware intended to scope all rules to the diagram's SVG element. CSS nesting expands `& ~ * { ... }` to `#svgId ~ *`, which selects all sibling elements following the SVG in the DOM, outside the diagram boundary.\n\n### Impact\n\nAn attacker able to supply diagram source to a page (e.g., user-generated content rendered by Mermaid) could inject CSS rules affecting sibling elements to the diagram `<svg>` on the host page. This can be used for UI redressing, hiding content, conditional CSS-based probing, or phishing-style visual manipulation.\n\nJavaScript execution is not possible via this vector.\n\n### Patches\n\nThis has been patched in https://github.com/mermaid-js/mermaid/commit/12d472c9ed43f94814b110da8d7a9ae6dd5266ed and released in [Mermaid v11.16.1](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1).\n\nA backport has been made for the v10 branch in 7e83f1533318b307764d961906a73377266f4c5e and was released in [Mermaid v10.9.8](https://github.com/mermaid-js/mermaid/releases/tag/v10.9.8)\n\n### Workarounds\n\nIf you are inserting the `<svg>` into the DOM yourself, you can wrap it in an element with no other children, e.g. `<div><svg>...</svg></div>` or `element.innerHTML = svg`. Alternatively, you can use `mermaid.run()` or `mermaid.initialize()`  which will do this for you. \n\nSetting [\"securityLevel\": \"sandbox\"](https://mermaid.js.org/config/schema-docs/config.html#securitylevel) will also prevent this, or setting the [`secure`](https://mermaid.js.org/config/schema-docs/config.html#secure) config value in the mermaid config to avoid allowing diagrams to modify `fontFamily`, `themeCSS`, `altFontFamily`, and `themeVariables`.\n\nTo test, you can try using a `themeCSS` with `& + * { /* my CSS here */}` and see if it's applied outside of your mermaid `<svg>`.\n\n```mermaid-example\n---\nconfig:\n  themeCSS: |-\n    & + * { background:red !important; width:100vw !important; height:100vh !important; position:fixed !important; inset:0 !important; }\n---\ninfo\n```\n\n### References\n\n- GHSA-87f9-hvmw-gh4p/CVE-2026-41159 (related vulnerability)\n- https://github.com/mermaid-js/mermaid/commit/12d472c9ed43f94814b110da8d7a9ae6dd5266ed\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1\n- https://github.com/mermaid-js/mermaid/commit/7e83f1533318b307764d961906a73377266f4c5e\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.8",
+      "reported_by": null,
+      "title": "Mermaid allows CSS injection applying to sibling elements of the diagram",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-50159"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.0.0-alpha.1 <11.16.1",
+      "github_advisory_id": "GHSA-6x64-9x62-f2gx",
+      "recommendation": "Upgrade to version 11.16.1 or later",
+      "patched_versions": ">=11.16.1",
+      "updated": "2026-08-06T19:55:33.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-94"
+      ],
+      "url": "https://github.com/advisories/GHSA-6x64-9x62-f2gx"
+    },
+    "1138100": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-3rrr-jr9j-h3q3\n- https://github.com/mermaid-js/mermaid/pull/8022\n- https://github.com/mermaid-js/mermaid/commit/99af3fc35ef0a9a9c8c6314521344d67523ddccf\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid@11.16.1\n- https://github.com/advisories/GHSA-3rrr-jr9j-h3q3",
+      "created": "2026-08-06T19:51:59.000Z",
+      "id": 1138100,
+      "npm_advisory_id": null,
+      "overview": "Rendering an untrusted `architecture-beta` diagram lets the diagram author write an arbitrary property with the value `horizontal` or `vertical` onto `Object.prototype`. A group id of `__proto__` is accepted as a valid parent.\n\n### Impact\n\nAny code in the same realm that reads a property of that name from an arbitrary object, or enumerates an object with bare `for...in`, observes the injected value (which can only be the string `horizontal` or `vertical`.\n\nThis may mean corrupted option/config defaults, bypassed truthiness checks, causing denial of service or logic corruption in the embedding application.\n\nBecause the injected value cannot be an object or function, this is not directly exploitable for remote code execution.\n\n### PoC\n\n```\narchitecture-beta\n      group mermaidPrototypePollutionMarker(cloud)[Marker]\n      service a(server)[A] in __proto__\n      service b(server)[B] in mermaidPrototypePollutionMarker\n      a:R -- L:b\n```\n\nThe vulnerable write was introduced in commit [cb0a4703bdf01d47508bde1c08aa9a980d70bc20](https://github.com/mermaid-js/mermaid/commit/cb0a4703bdf01d47508bde1c08aa9a980d70bc20) and first shipped in `mermaid@11.5.0`. The lines are unchanged in every release since.\n\n### Patches\n\nThis has been patched by https://github.com/mermaid-js/mermaid/commit/99af3fc35ef0a9a9c8c6314521344d67523ddccf, released in [Mermaid v11.16.1](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1)\n\n### Workarounds\n\nThere are no known workarounds. Please update to a patched version.\n\n### References\n\n_Are there any links users can visit to find out more?_\n\n- https://github.com/mermaid-js/mermaid/commit/99af3fc35ef0a9a9c8c6314521344d67523ddccf\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1",
+      "reported_by": null,
+      "title": "Mermaid Architecture diagrams are vulnerable to prototype pollution",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-71437"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.5.0 <11.16.1",
+      "github_advisory_id": "GHSA-3rrr-jr9j-h3q3",
+      "recommendation": "Upgrade to version 11.16.1 or later",
+      "patched_versions": ">=11.16.1",
+      "updated": "2026-08-06T19:52:01.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-1321"
+      ],
+      "url": "https://github.com/advisories/GHSA-3rrr-jr9j-h3q3"
+    },
+    "1138101": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-2v8p-3f2j-5mp7\n- https://github.com/mermaid-js/mermaid/pull/8022\n- https://github.com/mermaid-js/mermaid/commit/630aa7e5dd417e1f56bff2a1ce8df2c5ad08d289\n- https://github.com/mermaid-js/mermaid/commit/ef60adc837d9d5107af21285f01e83dea309bd0a\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid@11.16.1\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.8\n- https://github.com/advisories/GHSA-2v8p-3f2j-5mp7",
+      "created": "2026-08-06T19:49:48.000Z",
+      "id": 1138101,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nMermaid XY Charts are vulnerable to an infinite loop DoS attack in the `setXAxisRangeData()`, when configuring an X-Axis with invalid parameters.\n\nAs each loop appends an element to an array, this would generally only cause an `RangeError: Invalid array length` to appear after a few seconds, but may cause the page/JavaScript process to crash due to memory exhaustion, depending on the environment.\n\n#### Proof-of-concept\n\n```txt\nxychart\n  x-axis 1 --> 1\n  line [1, 2]\n```\n\n### Patches\n\nThis has been patched in https://github.com/mermaid-js/mermaid/commit/630aa7e5dd417e1f56bff2a1ce8df2c5ad08d289 and released in [Mermaid v11.16.1](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1).\n\nA backport has been made for the v10 branch in ef60adc837d9d5107af21285f01e83dea309bd0a and was released in [Mermaid v10.9.8](https://github.com/mermaid-js/mermaid/releases/tag/v10.9.8)\n\n### Workarounds\n\nThere are no known workarounds. Please update to the latest version or apply the patch.\n\n### References\n\n- https://github.com/mermaid-js/mermaid/commit/630aa7e5dd417e1f56bff2a1ce8df2c5ad08d289\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1\n- https://github.com/mermaid-js/mermaid/commit/ef60adc837d9d5107af21285f01e83dea309bd0a\n- https://github.com/mermaid-js/mermaid/releases/tag/v10.9.8",
+      "reported_by": null,
+      "title": "Mermaid XY Charts are vulnerable to an infinite loop DoS",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-71436"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.0.0-alpha.1 <11.16.1",
+      "github_advisory_id": "GHSA-2v8p-3f2j-5mp7",
+      "recommendation": "Upgrade to version 11.16.1 or later",
+      "patched_versions": ">=11.16.1",
+      "updated": "2026-08-06T19:49:48.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-835",
+        "CWE-1325"
+      ],
+      "url": "https://github.com/advisories/GHSA-2v8p-3f2j-5mp7"
+    },
+    "1138113": {
+      "findings": [
+        {
+          "version": "11.12.0",
+          "paths": [
+            ". > streamdown@1.4.0 > mermaid@11.12.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/mermaid-js/mermaid/security/advisories/GHSA-rhh3-jpg6-66xh\n- https://github.com/mermaid-js/mermaid/pull/8022\n- https://github.com/mermaid-js/mermaid/commit/59b22fad2b3bb04f87a476c84a8a2b24679e607e\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1\n- https://github.com/advisories/GHSA-rhh3-jpg6-66xh",
+      "created": "2026-08-06T20:01:07.000Z",
+      "id": 1138113,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nMermaid radar diagrams allow arbitrary large values for `ticks`, which can cause high CPU usage, freezing the webpage/JavaScript process for long periods of time, until the process is eventually killed due to OOM/running out of memory.\n\n#### Proof-of-concept\n\n```txt\nradar-beta\n  axis a, b\n  curve c {1, 1}\n  ticks 1000000000\n```\n\n### Patches\n\n_Has the problem been patched? What versions should users upgrade to?_\n\nThis problem has been patched by https://github.com/mermaid-js/mermaid/commit/59b22fad2b3bb04f87a476c84a8a2b24679e607e, which was released in [Mermaid v11.16.1](https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1)\n\n### Workarounds\n\n_Is there a way for users to fix or remediate the vulnerability without upgrading?_\n\nThere are no known workarounds without updating to a patched version of mermaid.\n\n### References\n\n_Are there any links users can visit to find out more?_\n\n- https://github.com/mermaid-js/mermaid/commit/59b22fad2b3bb04f87a476c84a8a2b24679e607e\n- https://github.com/mermaid-js/mermaid/releases/tag/mermaid%4011.16.1",
+      "reported_by": null,
+      "title": "Mermaid radar diagrams are vulnerable to DoS",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-71439"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "mermaid",
+      "vulnerable_versions": ">=11.6.0 <11.16.1",
+      "github_advisory_id": "GHSA-rhh3-jpg6-66xh",
+      "recommendation": "Upgrade to version 11.16.1 or later",
+      "patched_versions": ">=11.16.1",
+      "updated": "2026-08-06T20:01:08.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-606",
+        "CWE-1322"
+      ],
+      "url": "https://github.com/advisories/GHSA-rhh3-jpg6-66xh"
+    }
+  },
+  "muted": [],
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 3,
+      "moderate": 16,
+      "high": 3,
+      "critical": 0
+    },
+    "dependencies": 549,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 549
+  }
+}

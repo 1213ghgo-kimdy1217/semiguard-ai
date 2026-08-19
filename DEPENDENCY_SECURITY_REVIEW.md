@@ -4,7 +4,7 @@
 
 ## 1. 검토 범위와 현재 결과
 
-이 문서는 운영 의존성 감사에서 확인된 전이 의존성의 경로와 **자동 패치를 보류한 이유**를 기록합니다. 2026-08-18에 `pnpm install --frozen-lockfile --ignore-scripts`를 실행해 잠금 파일 기반 설치가 재현되는 것을 확인했고, 이어서 `pnpm audit --prod --audit-level high`를 실행했습니다. 감사 결과는 critical 0건, high 3건, moderate 16건, low 3건으로 총 22건입니다.
+이 문서는 운영 의존성 감사에서 확인된 전이 의존성의 경로와 **자동 패치를 보류한 이유**를 기록합니다. 2026-08-18에 `pnpm install --frozen-lockfile --ignore-scripts`를 실행해 잠금 파일 기반 설치가 재현되는 것을 확인했고, 2026-08-19에 `pnpm audit --prod --json`을 다시 실행했습니다. 운영 의존성 감사 결과는 critical 0건, high 3건, moderate 16건, low 3건으로 총 22건입니다.
 
 | 고위험 패키지 | 현재 잠금 경로 | 검토 판단 |
 |---|---|---|
@@ -13,6 +13,12 @@
 | `lodash@4.17.21` | `recharts@2.15.4 → lodash@4.17.21` | 대시보드 센서·위험도 차트 및 보고서 화면과 연결되므로 Recharts 호환성을 확인한 뒤 업데이트합니다. |
 
 > 이 기록은 취약점이 해소됐다는 선언이 아닙니다. 현재 배포 버전의 감사 결과와, 호환성 검토 없이 전이 의존성을 강제로 교체하지 않는 운영 원칙을 투명하게 보여 주기 위한 것입니다.
+
+### 1-1. 2026-08-19 정적 영향 분석
+
+`express@4.21.2`의 설치 메타데이터와 잠금 파일은 모두 `path-to-regexp@0.1.12`를 **정확한 버전**으로 선언합니다. 따라서 권고 버전 `0.1.13`을 pnpm 재정의로 강제하면 Express가 선언한 설치 계약을 벗어나므로, 단순한 마이너 패치처럼 자동 반영하지 않습니다. Express와 path-to-regexp의 공식 공지는 `/:a-:b-:c`처럼 하나의 경로 세그먼트에 매개변수 3개 이상을 결합할 때의 정규식 기반 서비스 거부 위험을 설명합니다. 현재 `server/`의 Express 경로 정의를 정적으로 점검한 결과 해당 형태는 발견되지 않았습니다. 이는 현재 라우트의 노출 형태를 좁히는 근거일 뿐, 취약한 전이 버전이 설치된 사실을 해소하지는 않습니다.
+
+운영 의존성과 분리해 전체 개발 의존성까지 포함한 `pnpm audit`도 확인했습니다. 이 범위는 개발 도구 경고까지 포함하므로 배포 런타임 감사와 구분해야 하며, 별도 업그레이드 검토가 필요합니다. 제출 안정성을 위해 이 검토에서는 패키지 설치·재정의·메이저 업그레이드를 실행하지 않았습니다.
 
 ## 2. 최소 변경 후보와 검증 조건
 
@@ -26,7 +32,7 @@
 
 ## 3. 실제 소스 영향 범위
 
-정적 소스 점검 결과, Streamdown과 Recharts는 잠금 파일에만 남은 미사용 의존성이 아닙니다. Streamdown은 `client/src/components/AIChatBox.tsx`와 `client/src/pages/Home.tsx`에서 직접 사용하며, Recharts는 `client/src/pages/Dashboard.tsx`와 `client/src/components/ui/chart.tsx`에서 직접 사용합니다. 따라서 두 계열의 업데이트는 단순 설치 성공 여부가 아니라 아래 화면·기능을 포함해 확인해야 합니다.
+정적 소스 점검 결과, Streamdown과 Recharts는 잠금 파일에만 남은 미사용 의존성이 아닙니다. Streamdown은 `client/src/components/AIChatBox.tsx`에서 AI 답변을 `<Streamdown>{message.content}</Streamdown>`으로 직접 렌더링하고, `client/src/pages/Home.tsx`에서도 직접 사용합니다. 전이 경로는 `streamdown@1.4.0 → mermaid@11.12.0`입니다. Recharts는 `client/src/pages/Dashboard.tsx`와 `client/src/components/ui/chart.tsx`에서 직접 사용하며, 전이 경로는 `recharts@2.15.4 → lodash@4.17.21`입니다. 따라서 두 계열의 업데이트는 단순 설치 성공 여부가 아니라 아래 화면·기능을 포함해 확인해야 합니다.
 
 | 계열 | 직접 사용 위치 | 변경 후 확인할 사용자 경험 |
 |---|---|---|
@@ -39,3 +45,8 @@
 실제 변경은 하나의 후보만 별도 작업에서 적용하고, 잠금 파일 차이와 영향 경로를 먼저 검토합니다. 이후 동결 설치, TypeScript 검사, Vitest, 프로덕션 빌드, 공개 데모, 로그인 화면, 보호된 대시보드 핵심 흐름을 확인합니다. 하나라도 실패하면 이전 안정 체크포인트로 복구하고 후보를 보류합니다.
 
 현재는 제출용 안정성을 우선하여 패키지 버전을 임의로 올리거나 대규모 의존성 교체를 실행하지 않습니다. 실제 패치가 승인·검증되기 전까지는 README와 `todo.md`의 감사 결과·보류 조건을 최신 상태로 유지합니다.
+
+## 5. 참고 자료
+
+- [Express 2026년 3월 보안 공지](https://expressjs.com/en/blog/2026-03-30-security-releases/): `path-to-regexp@0.1.13` 이상 권고와 영향 조건
+- [path-to-regexp GHSA-37ch-88jc-xwx2](https://github.com/pillarjs/path-to-regexp/security/advisories/GHSA-37ch-88jc-xwx2): 여러 매개변수 경로 패턴의 ReDoS 조건과 우회 방법
