@@ -17,4 +17,10 @@ describe("chat modal focus trap contract", () => {
     expect(dashboardSource).toContain("ref={chatDialogRef}");
     expect(dashboardSource).toContain("dialog.querySelectorAll<HTMLElement>");
   });
+
+  it("uses the nested RAG manual dialog as the focus boundary when it is open", () => {
+    expect(dashboardSource).toContain("const manualPanelDialogRef = useRef<HTMLDivElement>(null);");
+    expect(dashboardSource).toContain("const dialog = showManualRagModal ? manualPanelDialogRef.current : chatDialogRef.current;");
+    expect(dashboardSource).toContain("ref={manualPanelDialogRef}");
+  });
 });

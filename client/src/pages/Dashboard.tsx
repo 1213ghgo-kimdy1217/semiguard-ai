@@ -1404,6 +1404,7 @@ export default function Dashboard() {
   const feedbackPanelCloseRef = useRef<HTMLButtonElement>(null);
   const manualPanelTriggerRef = useRef<HTMLButtonElement>(null);
   const manualPanelCloseRef = useRef<HTMLButtonElement>(null);
+  const manualPanelDialogRef = useRef<HTMLDivElement>(null);
   const wasHistoryPanelOpenRef = useRef(false);
   const wasFeedbackPanelOpenRef = useRef(false);
   const wasManualPanelOpenRef = useRef(false);
@@ -2094,7 +2095,7 @@ export default function Dashboard() {
 
     const trapChatFocus = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
-      const dialog = chatDialogRef.current;
+      const dialog = showManualRagModal ? manualPanelDialogRef.current : chatDialogRef.current;
       if (!dialog) return;
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
@@ -2117,7 +2118,7 @@ export default function Dashboard() {
 
     window.addEventListener("keydown", trapChatFocus);
     return () => window.removeEventListener("keydown", trapChatFocus);
-  }, [isChatOpen]);
+  }, [isChatOpen, showManualRagModal]);
 
   useEffect(() => {
     if (!isChatOpen || !isChatNearBottomRef.current) return;
@@ -4174,7 +4175,7 @@ export default function Dashboard() {
             {/* 설비 매뉴얼 RAG 지식 등록 모달 */}
             {showManualRagModal && (
               <div id="chat-manual-panel" className="absolute inset-0 z-[565] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-md animate-fadeIn" role="dialog" aria-modal="true" aria-labelledby="rag-manual-dialog-title" aria-describedby="rag-manual-dialog-description">
-                <div className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border p-4 sm:p-5 shadow-2xl space-y-3 custom-scrollbar" style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}>
+                <div ref={manualPanelDialogRef} className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border p-4 sm:p-5 shadow-2xl space-y-3 custom-scrollbar" style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h4 id="rag-manual-dialog-title" className="text-sm font-bold" style={{ color: th.text }}>📘 {lang === "ko" ? "설비 매뉴얼 RAG 등록" : lang === "ja" ? "設備マニュアルRAG登録" : "Add Manual to RAG"}</h4>
