@@ -1431,6 +1431,9 @@ export default function Dashboard() {
   const dislikeReasonTriggerRef = useRef<HTMLButtonElement>(null);
   const dislikeReasonCloseRef = useRef<HTMLButtonElement>(null);
   const dislikeReasonDialogRef = useRef<HTMLDivElement>(null);
+  const manualSourceTriggerRef = useRef<HTMLButtonElement>(null);
+  const manualSourceCloseRef = useRef<HTMLButtonElement>(null);
+  const manualSourceDialogRef = useRef<HTMLDivElement>(null);
   const manualPanelTriggerRef = useRef<HTMLButtonElement>(null);
   const manualPanelCloseRef = useRef<HTMLButtonElement>(null);
   const manualPanelDialogRef = useRef<HTMLDivElement>(null);
@@ -1445,6 +1448,7 @@ export default function Dashboard() {
   const wasFeedbackContextOpenRef = useRef(false);
   const wasManualDeleteOpenRef = useRef(false);
   const wasDislikeReasonOpenRef = useRef(false);
+  const wasManualSourceOpenRef = useRef(false);
   const wasManualPanelOpenRef = useRef(false);
   const wasResetConfirmOpenRef = useRef(false);
   const wasDeleteAllConfirmOpenRef = useRef(false);
@@ -2134,25 +2138,27 @@ export default function Dashboard() {
 
     const trapChatFocus = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
-      const dialog = manualDocumentToDelete !== null
-        ? manualDeleteDialogRef.current
-        : showDeleteAllFeedbackFinalConfirm
-          ? deleteAllFeedbackFinalDialogRef.current
-          : showDeleteAllFeedbackConfirm
-            ? deleteAllFeedbackConfirmDialogRef.current
-            : feedbackToDelete !== null
-              ? feedbackDeleteDialogRef.current
-              : activeDislikeIdx !== null
-                ? dislikeReasonDialogRef.current
-                : feedbackContextItem
-                  ? feedbackContextDialogRef.current
-                  : showManualRagModal
-                    ? manualPanelDialogRef.current
-                    : showResetConfirmModal
-                      ? resetConfirmDialogRef.current
-                      : showDeleteAllConfirm
-                        ? deleteAllConfirmDialogRef.current
-                        : chatDialogRef.current;
+      const dialog = activeManualSource
+        ? manualSourceDialogRef.current
+        : manualDocumentToDelete !== null
+          ? manualDeleteDialogRef.current
+          : showDeleteAllFeedbackFinalConfirm
+            ? deleteAllFeedbackFinalDialogRef.current
+            : showDeleteAllFeedbackConfirm
+              ? deleteAllFeedbackConfirmDialogRef.current
+              : feedbackToDelete !== null
+                ? feedbackDeleteDialogRef.current
+                : activeDislikeIdx !== null
+                  ? dislikeReasonDialogRef.current
+                  : feedbackContextItem
+                    ? feedbackContextDialogRef.current
+                    : showManualRagModal
+                      ? manualPanelDialogRef.current
+                      : showResetConfirmModal
+                        ? resetConfirmDialogRef.current
+                        : showDeleteAllConfirm
+                          ? deleteAllConfirmDialogRef.current
+                          : chatDialogRef.current;
       if (!dialog) return;
 
       const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
@@ -2175,7 +2181,7 @@ export default function Dashboard() {
 
     window.addEventListener("keydown", trapChatFocus);
     return () => window.removeEventListener("keydown", trapChatFocus);
-  }, [activeDislikeIdx, feedbackContextItem, feedbackToDelete, isChatOpen, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
+  }, [activeDislikeIdx, activeManualSource, feedbackContextItem, feedbackToDelete, isChatOpen, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showManualRagModal, showResetConfirmModal]);
 
   useEffect(() => {
     if (!isChatOpen || !isChatNearBottomRef.current) return;
@@ -2267,7 +2273,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     const focusTimer = window.setTimeout(() => {
-      if (manualDocumentToDelete !== null) {
+      if (activeManualSource) {
+        wasManualSourceOpenRef.current = true;
+        manualSourceCloseRef.current?.focus();
+      } else if (wasManualSourceOpenRef.current) {
+        manualSourceTriggerRef.current?.focus();
+        wasManualSourceOpenRef.current = false;
+      } else if (manualDocumentToDelete !== null) {
         wasManualDeleteOpenRef.current = true;
         manualDeleteCancelRef.current?.focus();
       } else if (wasManualDeleteOpenRef.current) {
@@ -2337,7 +2349,7 @@ export default function Dashboard() {
     }, 0);
 
     return () => window.clearTimeout(focusTimer);
-  }, [activeDislikeIdx, feedbackContextItem, feedbackToDelete, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
+  }, [activeDislikeIdx, activeManualSource, feedbackContextItem, feedbackToDelete, manualDocumentToDelete, showDeleteAllConfirm, showDeleteAllFeedbackConfirm, showDeleteAllFeedbackFinalConfirm, showFeedbackHistoryPanel, showHistoryPanel, showManualRagModal, showResetConfirmModal]);
 
   const handleResetChat = async () => {
     try {
@@ -5719,7 +5731,11 @@ export default function Dashboard() {
                               <button
                                 key={`${source.documentId}-${source.chunkIndex}`}
                                 type="button"
-                                onClick={() => setActiveManualSource(source)}
+                                ref={activeManualSource?.documentId === source.documentId && activeManualSource.chunkIndex === source.chunkIndex ? manualSourceTriggerRef : undefined}
+                                onClick={(event) => {
+                                  manualSourceTriggerRef.current = event.currentTarget;
+                                  setActiveManualSource(source);
+                                }}
                                 title={source.content.slice(0, 120)}
                                 className="max-w-[200px] truncate rounded-full border px-2 py-0.5 text-[9px] font-bold transition-all hover:opacity-80 active:scale-95"
                                 style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.42 0.16 75)" }}>
@@ -6039,15 +6055,15 @@ export default function Dashboard() {
             {activeManualSource && (
               <div className="absolute inset-0 z-[575] flex items-center justify-center p-3 bg-black/55 backdrop-blur-sm animate-fadeIn"
                 onClick={() => setActiveManualSource(null)}>
-                <div className="w-full max-w-md max-h-[85%] overflow-hidden rounded-2xl border shadow-2xl flex flex-col"
+                <div ref={manualSourceDialogRef} role="dialog" aria-modal="true" aria-labelledby="manual-source-title" aria-describedby="manual-source-description" className="w-full max-w-md max-h-[85%] overflow-hidden rounded-2xl border shadow-2xl flex flex-col"
                   style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.003 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}
                   onClick={event => event.stopPropagation()}>
                   <div className="flex items-start justify-between gap-2 border-b px-4 py-3" style={{ borderColor: th.border2 }}>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold" style={{ color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
+                      <p id="manual-source-description" className="text-[10px] font-bold" style={{ color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
                         📘 {lang === "ko" ? "설비 매뉴얼 원문" : lang === "ja" ? "設備マニュアル原文" : "Manual Source"} [{activeManualSource.label}]
                       </p>
-                      <h4 className="mt-1 truncate text-sm font-bold" style={{ color: th.text }}>{activeManualSource.documentTitle}</h4>
+                      <h4 id="manual-source-title" className="mt-1 truncate text-sm font-bold" style={{ color: th.text }}>{activeManualSource.documentTitle}</h4>
                       <p className="text-[10px]" style={{ color: th.textMuted }}>
                         {lang === "ko" ? `구간 ${activeManualSource.chunkIndex + 1}` : lang === "ja" ? `区間 ${activeManualSource.chunkIndex + 1}` : `Chunk ${activeManualSource.chunkIndex + 1}`}
                       </p>
@@ -6058,7 +6074,7 @@ export default function Dashboard() {
                         </p>
                       )}
                     </div>
-                    <button type="button" onClick={() => setActiveManualSource(null)} className="shrink-0 text-sm hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "매뉴얼 원문 닫기" : lang === "ja" ? "マニュアル原文を閉じる" : "Close manual source"}>✕</button>
+                    <button type="button" ref={manualSourceCloseRef} onClick={() => setActiveManualSource(null)} className="shrink-0 text-sm hover:opacity-70" style={{ color: th.textMuted }} aria-label={lang === "ko" ? "매뉴얼 원문 닫기" : lang === "ja" ? "マニュアル原文を閉じる" : "Close manual source"}>✕</button>
                   </div>
                   <div className="flex-1 overflow-y-auto px-4 py-3 custom-scrollbar">
                     <p className="whitespace-pre-wrap text-[11px] leading-relaxed" style={{ color: th.text }}>{activeManualSource.content}</p>

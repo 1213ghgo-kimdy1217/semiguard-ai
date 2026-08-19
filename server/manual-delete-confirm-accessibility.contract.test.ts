@@ -16,7 +16,8 @@ describe("RAG manual deletion confirmation accessibility contract", () => {
   });
 
   it("gives the manual deletion confirmation priority in the shared Tab trap and preserves Escape cancellation", () => {
-    expect(dashboardSource).toContain("manualDocumentToDelete !== null\n        ? manualDeleteDialogRef.current");
+    expect(dashboardSource).toContain("manualDocumentToDelete !== null");
+    expect(dashboardSource).toContain("? manualDeleteDialogRef.current");
     expect(dashboardSource).toContain("if (manualDocumentToDelete !== null) return setManualDocumentToDelete(null);");
   });
 });

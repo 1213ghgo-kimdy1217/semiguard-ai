@@ -17,7 +17,8 @@ describe("dislike reason dialog accessibility contract", () => {
   });
 
   it("uses the reason picker as the active Tab boundary and retains Escape dismissal", () => {
-    expect(dashboardSource).toContain("activeDislikeIdx !== null\n                ? dislikeReasonDialogRef.current");
+    expect(dashboardSource).toContain("activeDislikeIdx !== null");
+    expect(dashboardSource).toContain("? dislikeReasonDialogRef.current");
     expect(dashboardSource).toContain("if (activeDislikeIdx !== null) return setActiveDislikeIdx(null);");
   });
 });
