@@ -1595,6 +1595,7 @@
 - [x] 최신 운영 배포 경로 점검: 공개 `/login`·`/demo`가 HTTPS HTTP 200으로 정상 응답 (실제 계정 인증·보호된 보고서 생성은 별도 보류)
 - [x] 공개 운영 보안 헤더 점검: HTTPS·HSTS·`X-Content-Type-Options: nosniff`·무캐시 인증 화면 응답을 확인; CSP·프레임 정책은 OAuth·플랫폼 프록시 호환성 검토가 필요해 자동 변경 보류
 - [x] 대시보드 핵심 데이터 초기 로딩 중 주 콘텐츠의 aria-busy 상태를 KO/EN/JA 보조기기에 연결하고 회귀 테스트 추가 (핵심 안전 데이터 조회 상태를 dashboard main에 연결, TypeScript·Vitest 511개·프로덕션 빌드 통과)
+- [x] 제품 사용 지표 로딩 스켈레톤의 KO/EN/JA 진행 상태를 보조기기에 정중하게 알리고 회귀 테스트 추가 (role="status"에 polite·atomic 갱신 상태를 명시, TypeScript·Vitest 512개·프로덕션 빌드 통과)
 - [x] 대시보드 Recharts 별도 캐시 청크 후보를 검증했으나 기존 번들 계약이 수동 `manualChunks`를 금지해 즉시 되돌림; Vite 의존성 그래프·기존 지연 로딩을 유지하고 TypeScript·Vitest 425개·프로덕션 빌드 재확인
 - [x] README 최신 회귀 테스트 수치를 425개 결과와 일치시키고 제출 문서 계약 테스트 확인 (TypeScript·Vitest 425개·프로덕션 빌드 통과)
 - [x] LLM 사용량 소진 시 실시간 수치 기반 기본 안전 진단 배지·재시도·KO/EN/JA·저장 이력 경계를 확인하는 계약 테스트 4개 파일·8개 항목 통과 (기존 안전 안내 구현 확인, 코드 변경 없음)
