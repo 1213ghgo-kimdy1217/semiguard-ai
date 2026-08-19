@@ -20,6 +20,19 @@
 
 운영 의존성과 분리해 전체 개발 의존성까지 포함한 `pnpm audit`도 확인했습니다. 이 범위는 개발 도구 경고까지 포함하므로 배포 런타임 감사와 구분해야 하며, 별도 업그레이드 검토가 필요합니다. 제출 안정성을 위해 이 검토에서는 패키지 설치·재정의·메이저 업그레이드를 실행하지 않았습니다.
 
+### 1-2. 2026-08-19 최신 권고 경로 재확인
+
+최신 `pnpm audit --prod --json`은 직접 패키지를 바꾸지 않고도 적용 가능한 하위 업데이트 후보와, 상위 호환성 검토가 필요한 후보를 구분합니다. Streamdown 경로에서는 `mdast-util-to-hast@13.2.1`, `lodash-es@4.18.1`, `uuid@11.1.1`, `mermaid@11.17.0`을 각각 권고하지만 모두 `streamdown@1.4.0 → mermaid@11.12.0` 및 마크다운 렌더링 체인에 걸쳐 있습니다. 따라서 개별 override보다 Streamdown·Mermaid 상위 호환성 검토가 선행되어야 합니다.
+
+Recharts 경로의 `lodash@4.17.21`은 `lodash@4.18.0` 이상이 권고되지만, 감사 도구가 단일 하위 패키지 update가 아닌 review로 분류합니다. Express 경로도 `qs`, `path-to-regexp`, `body-parser`를 review로 분류합니다. 이 결과는 `path-to-regexp@0.1.13` 재정의 또는 개별 lodash 고정을 자동 적용하지 않는 기존 판단과 일치합니다.
+
+| 경로 | 감사 권고 | 자동 적용하지 않는 이유 |
+|---|---|---|
+| `express@4.21.2 → path-to-regexp@0.1.12` | `path-to-regexp@0.1.13` 이상 | Express 4의 정확한 전이 계약과 라우팅·세션·OAuth 흐름 호환성 확인이 필요합니다. |
+| `express@4.21.2 → qs@6.13.0` | review | Express·body-parser 상위 경로에서 관리되므로 직접 고정 전 입력 파싱 동작을 검토해야 합니다. |
+| `streamdown@1.4.0 → mermaid@11.12.0` | `mermaid@11.17.0`, 하위 `mdast-util-to-hast@13.2.1`·`lodash-es@4.18.1`·`uuid@11.1.1` | 마크다운·다이어그램 렌더링 체인의 다중 전이 변경이라 상위 패키지 호환성 검토가 필요합니다. |
+| `recharts@2.15.4 → lodash@4.17.21` | `lodash@4.18.0` 이상 | 차트 확대·키보드 탐색·내보내기·보고서 동작을 포함한 Recharts 호환성 검토가 필요합니다. |
+
 ## 2. 최소 변경 후보와 검증 조건
 
 `path-to-regexp`는 권고 버전으로의 재정의가 가장 작아 보일 수 있지만, Express 4가 선언한 정확한 전이 버전과 다르므로 설치만 성공해도 라우트 매칭·세션·OAuth 콜백이 동일하게 동작한다는 보장은 없습니다. `lodash-es`와 `lodash`는 각각 Streamdown/Mermaid와 Recharts의 상위 호환 버전을 우선 검토해야 하며, 개별 강제 고정은 번들·렌더링 오류를 유발할 수 있습니다.
