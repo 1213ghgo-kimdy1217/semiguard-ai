@@ -20,7 +20,7 @@ describe("consultation history clear-all confirmation accessibility contract", (
   });
 
   it("keeps Tab and Shift+Tab inside the clear-all confirmation and supports Escape cancellation", () => {
-    expect(dashboardSource).toContain("showDeleteAllConfirm\n            ? deleteAllConfirmDialogRef.current");
+    expect(dashboardSource).toContain("showDeleteAllConfirm\n                ? deleteAllConfirmDialogRef.current");
     expect(dashboardSource).toContain("if (showDeleteAllConfirm) return setShowDeleteAllConfirm(false);");
   });
 });
