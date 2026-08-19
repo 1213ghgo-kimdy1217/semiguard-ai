@@ -67,8 +67,7 @@ export default function JudgeDemo() {
   const [lang, setLang] = useState<DemoLanguage>(getInitialLanguage);
   const [step, setStep] = useState<DemoStep>(1);
   const [showDemoBanner, setShowDemoBanner] = useState(true);
-  const [showResetToast, setShowResetToast] = useState(false);
-  const [shareNotice, setShareNotice] = useState<"success" | "error" | null>(null);
+  const [notice, setNotice] = useState<"reset" | "shareSuccess" | "shareError" | null>(null);
   const stepTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const text = copy[lang];
   const activeTitle = useMemo(() => step === 1 ? text.riskTitle : step === 2 ? text.evidenceTitle : text.actionTitle, [step, text]);
@@ -80,30 +79,24 @@ export default function JudgeDemo() {
   }, [lang]);
 
   useEffect(() => {
-    if (!showResetToast) return;
-    const timer = window.setTimeout(() => setShowResetToast(false), 2400);
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(null), notice === "reset" ? 2400 : 3200);
     return () => window.clearTimeout(timer);
-  }, [showResetToast]);
-
-  useEffect(() => {
-    if (!shareNotice) return;
-    const timer = window.setTimeout(() => setShareNotice(null), 3200);
-    return () => window.clearTimeout(timer);
-  }, [shareNotice]);
+  }, [notice]);
 
   const advance = () => setStep(current => current < 3 ? ((current + 1) as DemoStep) : 3);
   const previous = () => setStep(current => current > 1 ? ((current - 1) as DemoStep) : 1);
   const resetDemo = () => {
     setStep(1);
-    setShowResetToast(true);
+    setNotice("reset");
   };
   const copyShareLink = async () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?lang=${lang}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setShareNotice("success");
+      setNotice("shareSuccess");
     } catch {
-      setShareNotice("error");
+      setNotice("shareError");
     }
   };
   const handleStepTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -215,8 +208,7 @@ export default function JudgeDemo() {
           {step === 1 ? <button type="button" onClick={advance} className="h-10 rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-4 text-xs font-bold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200">{text.start}</button> : step < 3 ? <button type="button" onClick={advance} className="h-10 rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-4 text-xs font-bold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200">{text.next}</button> : <Link href="/login" className="flex h-10 items-center rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-4 text-xs font-bold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200">{text.login}</Link>}
         </div>
       </section>
-      {showResetToast && <div role="status" aria-live="polite" className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border border-emerald-200/60 bg-emerald-500/95 px-3 py-2 text-xs font-bold text-white shadow-xl shadow-emerald-950/30"><span aria-hidden="true">✓</span>{text.resetComplete}<button type="button" onClick={() => setShowResetToast(false)} aria-label={text.close} className="ml-1 rounded px-1 text-white/90 hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white">×</button></div>}
-      {shareNotice && <div role="status" aria-live="polite" className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold text-white shadow-xl ${shareNotice === "success" ? "border-cyan-100/60 bg-cyan-600/95 shadow-cyan-950/30" : "border-rose-100/60 bg-rose-600/95 shadow-rose-950/30"}`}><span aria-hidden="true">{shareNotice === "success" ? "✓" : "!"}</span>{shareNotice === "success" ? text.shareComplete : text.shareFailed}<button type="button" onClick={() => setShareNotice(null)} aria-label={text.close} className="ml-1 rounded px-1 text-white/90 hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white">×</button></div>}
+      {notice && <div role="status" aria-live="polite" className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold text-white shadow-xl ${notice === "shareError" ? "border-rose-100/60 bg-rose-600/95 shadow-rose-950/30" : notice === "reset" ? "border-emerald-200/60 bg-emerald-500/95 shadow-emerald-950/30" : "border-cyan-100/60 bg-cyan-600/95 shadow-cyan-950/30"}`}><span aria-hidden="true">{notice === "shareError" ? "!" : "✓"}</span>{notice === "reset" ? text.resetComplete : notice === "shareSuccess" ? text.shareComplete : text.shareFailed}<button type="button" onClick={() => setNotice(null)} aria-label={text.close} className="ml-1 rounded px-1 text-white/90 hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white">×</button></div>}
     </div>
   </main>;
 }

@@ -49,8 +49,8 @@ describe("read-only judge demo contract", () => {
 
   it("gives reset feedback, a closeable demo mode banner, and a soft accessible future-pilot tooltip", () => {
     expect(demoSource).toContain("const [showDemoBanner, setShowDemoBanner] = useState(true)");
-    expect(demoSource).toContain("const [showResetToast, setShowResetToast] = useState(false)");
-    expect(demoSource).toContain("setShowResetToast(true)");
+    expect(demoSource).toContain('const [notice, setNotice] = useState<"reset" | "shareSuccess" | "shareError" | null>(null);');
+    expect(demoSource).toContain('setNotice("reset");');
     expect(demoSource).toContain("text.resetComplete");
     expect(demoSource).toContain("text.closeDemoMode");
     expect(demoSource).toContain("text.showDemoMode");

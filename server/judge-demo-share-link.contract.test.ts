@@ -15,6 +15,14 @@ describe("judge demo share-link contract", () => {
     expect(source).toContain('share: "링크 복사"');
     expect(source).toContain('share: "Copy link"');
     expect(source).toContain('share: "リンクをコピー"');
-    expect(source).toContain('shareNotice === "success" ? text.shareComplete : text.shareFailed');
+    expect(source).toContain('notice === "shareSuccess" ? text.shareComplete : text.shareFailed');
+  });
+
+  it("uses one notice state so reset and share feedback cannot overlap", () => {
+    expect(source).toContain('const [notice, setNotice] = useState<"reset" | "shareSuccess" | "shareError" | null>(null);');
+    expect(source).toContain('setNotice("reset");');
+    expect(source).toContain('setNotice("shareSuccess");');
+    expect(source).not.toContain("showResetToast");
+    expect(source).not.toContain("shareNotice");
   });
 });
