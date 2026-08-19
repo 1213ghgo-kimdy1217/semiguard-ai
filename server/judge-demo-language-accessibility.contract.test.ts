@@ -1,0 +1,18 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const source = readFileSync(resolve(process.cwd(), "client/src/pages/JudgeDemo.tsx"), "utf8");
+
+describe("JudgeDemo 언어 선택 접근성 계약", () => {
+  it("지역화된 언어 선택 이름을 세 언어에 제공합니다", () => {
+    expect(source).toContain('languageLabel: "언어 선택"');
+    expect(source).toContain('languageLabel: "Language"');
+    expect(source).toContain('languageLabel: "言語選択"');
+  });
+
+  it("언어 선택과 관련 제어를 명명된 그룹으로 노출합니다", () => {
+    expect(source).toContain('role="group" aria-label={text.languageLabel}');
+    expect(source).toContain('<label className="sr-only" htmlFor="judge-demo-language">{text.languageLabel}</label>');
+  });
+});
