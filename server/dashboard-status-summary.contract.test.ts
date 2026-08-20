@@ -18,4 +18,9 @@ describe("dashboard header status summary contract", () => {
     expect(dashboardSource).toContain('className="hidden md:inline-flex items-center rounded-full border px-2 py-1 text-[10px] font-bold"');
     expect(dashboardSource).toContain('aria-label={systemStatusDescription}');
   });
+
+  it("announces complete operating and read-only scope states after status changes", () => {
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true" title={systemStatusDescription}');
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true" title={virtualFabDemoActive');
+  });
 });

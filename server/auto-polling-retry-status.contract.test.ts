@@ -14,6 +14,6 @@ describe("auto polling retry status contract", () => {
   it("surfaces a pending retry through the localized, accessible system summary", () => {
     expect(dashboardSource).toContain('safetyMonitoringInitializing || autoPollingRetryPending ? "syncing" : "healthy"');
     expect(dashboardSource).toContain('lang === "ko" ? "동기화 중" : lang === "ja" ? "同期中" : "Syncing"');
-    expect(dashboardSource).toContain('role="status" aria-live="polite" title={systemStatusDescription}');
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true" title={systemStatusDescription}');
   });
 });
