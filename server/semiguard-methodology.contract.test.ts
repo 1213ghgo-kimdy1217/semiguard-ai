@@ -46,6 +46,8 @@ describe("SemiGuard risk-score methodology", () => {
       "Isolation Forest 라이브러리나 사전 학습된 모델은 현재 사용하지 않습니다."
     );
     expect(readme).toContain("z-score 기반 규칙형 위험 점수");
+    expect(readme).toContain("abs((x - μ) / σ)");
+    expect(readme).not.toContain("|(x - μ) / σ|");
     expect(readme).toContain(
       "실제 팹 로그로 정확도·오탐·미탐·사전 경고 시간을 측정한 결과는 아직 없습니다."
     );
