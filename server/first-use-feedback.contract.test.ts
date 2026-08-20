@@ -71,4 +71,8 @@ describe("first-use feedback privacy and metrics contract", () => {
     expect(dashboardSource).toContain('persistDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY, "true")');
     expect(dashboardSource).toContain("firstUseFeedbackTriggerRef");
   });
+
+  it("announces complete localized submission status updates", () => {
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true" className="mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold"');
+  });
 });

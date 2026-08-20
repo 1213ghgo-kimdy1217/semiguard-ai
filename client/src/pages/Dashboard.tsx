@@ -5796,7 +5796,7 @@ export default function Dashboard() {
                         </div>
                       )}
                       {msg.usedFallback && (
-                        <div role="status" aria-live="polite" className="mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold"
+                        <div role="status" aria-live="polite" aria-atomic="true" className="mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold"
                           style={{ background: "oklch(0.76 0.14 82 / 0.14)", color: isDark ? "oklch(0.84 0.13 82)" : "oklch(0.44 0.13 62)", border: "1px solid oklch(0.76 0.14 82 / 0.35)" }}>
                           🛡 {lang === "ko" ? "실시간 수치 기반 기본 안전 진단" : lang === "ja" ? "リアルタイム数値に基づく基本安全診断" : "Live-measurement safety fallback"}
                         </div>
