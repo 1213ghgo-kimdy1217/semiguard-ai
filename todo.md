@@ -34,6 +34,7 @@
 - [x] 의존성 보안 검토 문서에서 호환성 검증 템플릿 링크가 유지되는 회귀 계약 보강 (템플릿 링크·한 후보씩 검증 원칙 계약 추가; Prettier·TypeScript·Vitest 530개·프로덕션 빌드 통과)
 - [x] KO·EN·JA 전환 시 HTML `lang` 속성을 현재 언어와 동기화해 보조기기 언어 판독을 개선하고 회귀 검증 (JudgeDemo의 `ko`·`en`·`ja` 값을 BCP 47 locale로 보완하고 Dashboard·JudgeDemo·Login·Signup·NotFound 5개 지역화 화면 전역 계약 추가; Prettier·TypeScript·Vitest 532개·프로덕션 빌드 통과)
 - [x] 공개 운영 도메인에서 JudgeDemo BCP 47 HTML lang 보완이 최신 자산으로 반영됐는지 재확인 (배포 완료 후 일본어·영어 공개 데모의 실제 `document.documentElement.lang`이 각각 `ja-JP`·`en-US`로 전환됨을 확인)
+- [x] BCP 47 locale 보완 후 한국어 심사위원 데모 모바일 시각 점검: 375px에서 언어 선택·초기화·링크 복사·로그인·안내·3단계 탭·센서 카드가 가로 넘침 없이 유지됨
 - [x] 위험도 0~100 계산 및 4단계 판정 로직
 - [x] 이상 이력 로그 DB 스키마 및 저장 API
 - [x] Heartbeat 상태 (프론트엔드 타이머 기반)
