@@ -90,7 +90,7 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       const copy = errorCopy[getStoredLanguage()];
       return (
-        <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 to-slate-800 p-6" role="alert" aria-live="assertive">
+        <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 to-slate-800 p-6" role="alert" aria-live="assertive" aria-atomic="true">
           <section className="w-full max-w-lg rounded-2xl border border-amber-300/25 bg-slate-900/85 p-6 text-center shadow-2xl sm:p-8">
             <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-amber-300/10 text-amber-300">
               <AlertTriangle size={25} aria-hidden="true" />

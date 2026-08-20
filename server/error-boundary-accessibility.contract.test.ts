@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(resolve(process.cwd(), "client/src/components/ErrorBoundary.tsx"), "utf8");
 
 describe("error boundary accessibility contract", () => {
-  it("moves focus to a safe retry action and exposes an assertive alert", () => {
+  it("moves focus to a safe retry action and exposes an atomic assertive alert", () => {
     expect(source).toContain("private readonly retryButtonRef = createRef<HTMLButtonElement>();");
     expect(source).toContain("window.requestAnimationFrame(() => this.retryButtonRef.current?.focus());");
-    expect(source).toContain('role="alert" aria-live="assertive"');
+    expect(source).toContain('role="alert" aria-live="assertive" aria-atomic="true"');
     expect(source).toContain('ref={this.retryButtonRef}');
   });
 
