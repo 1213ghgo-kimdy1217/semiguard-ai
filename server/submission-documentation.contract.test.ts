@@ -46,6 +46,9 @@ const periodReportBrowserValidation = readProjectDocument(
 const dependencyCompatibilityValidationTemplate = readProjectDocument(
   "DEPENDENCY_COMPATIBILITY_VALIDATION_TEMPLATE.md"
 );
+const dependencySecurityReview = readProjectDocument(
+  "DEPENDENCY_SECURITY_REVIEW.md"
+);
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -298,6 +301,15 @@ describe("submission documentation contract", () => {
     expect(dependencyCompatibilityValidationTemplate).toContain("Recharts");
     expect(dependencyCompatibilityValidationTemplate).toContain(
       "직전 안정 체크포인트로 복구"
+    );
+  });
+
+  it("keeps the security review connected to the compatibility validation template", () => {
+    expect(dependencySecurityReview).toContain(
+      "](DEPENDENCY_COMPATIBILITY_VALIDATION_TEMPLATE.md)"
+    );
+    expect(dependencySecurityReview).toContain(
+      "한 후보씩 검증하기 위한 기록 형식"
     );
   });
 });
