@@ -6106,7 +6106,7 @@ export default function Dashboard() {
                   💡 {chip}
                 </button>
               ))}
-              <span className="sr-only" aria-live="polite">{quickPromptStatus}</span>
+              <span className="sr-only" aria-live="polite" aria-atomic="true">{quickPromptStatus}</span>
             </div>
 
             {/* 입력 폼 영역 */}
