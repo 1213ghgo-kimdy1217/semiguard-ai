@@ -5172,7 +5172,7 @@ export default function Dashboard() {
                       aria-label={lang === "ko" ? "상담 기록 이전 페이지" : lang === "ja" ? "相談履歴の前のページ" : "Previous consultation history page"}>
                       {lang === "ko" ? "이전" : lang === "ja" ? "前へ" : "Previous"}
                     </button>
-                    <span className="text-[10px] font-medium" style={{ color: th.textMuted }} role="status" aria-live="polite" aria-label={lang === "ko" ? `상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지` : lang === "ja" ? `相談履歴 ${activeHistorySessionPage} / ${historySessionTotalPages} ページ` : `Consultation history page ${activeHistorySessionPage} of ${historySessionTotalPages}`}>
+                    <span className="text-[10px] font-medium" style={{ color: th.textMuted }} role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? `상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지` : lang === "ja" ? `相談履歴 ${activeHistorySessionPage} / ${historySessionTotalPages} ページ` : `Consultation history page ${activeHistorySessionPage} of ${historySessionTotalPages}`}>
                       {activeHistorySessionPage} / {historySessionTotalPages}
                       <span className="ml-1 text-[9px]">({filteredAndSortedChatSessions.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : ""})</span>
                     </span>
@@ -5714,7 +5714,7 @@ export default function Dashboard() {
                         style={{ borderColor: th.border2, color: th.textMuted }}>
                         ← {lang === "ko" ? "이전" : lang === "ja" ? "前へ" : "Prev"}
                       </button>
-                      <span className="text-[9px] font-bold" style={{ color: th.textMuted }} role="status" aria-live="polite" aria-label={lang === "ko" ? `피드백 이력 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} 페이지` : lang === "ja" ? `フィードバック履歴 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} ページ` : `Feedback history page ${feedbackHistoryPage} of ${feedbackHistoryTotalPages}`}>
+                      <span className="text-[9px] font-bold" style={{ color: th.textMuted }} role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? `피드백 이력 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} 페이지` : lang === "ja" ? `フィードバック履歴 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} ページ` : `Feedback history page ${feedbackHistoryPage} of ${feedbackHistoryTotalPages}`}>
                         {feedbackHistoryPage} / {feedbackHistoryTotalPages} · {filteredFeedbackHistory.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " items"}
                       </span>
                       <button

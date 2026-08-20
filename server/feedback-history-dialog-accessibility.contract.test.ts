@@ -23,4 +23,8 @@ describe("feedback history dialog accessibility contract", () => {
     expect(dashboardSource).toContain('aria-pressed={feedbackReasonFilter === filter.id}');
     expect(dashboardSource).toContain('aria-pressed={feedbackHistoryDatePreset === preset.id}');
   });
+
+  it("announces the complete feedback-history page status after pagination changes", () => {
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? `피드백 이력 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} 페이지`');
+  });
 });

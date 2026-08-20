@@ -21,4 +21,8 @@ describe("consultation history keyboard accessibility contract", () => {
     expect(dashboardSource).toContain('id="consultation-history-panel-title"');
     expect(dashboardSource).toContain('htmlFor="consultation-history-search"');
   });
+
+  it("announces the complete consultation-history page status after pagination changes", () => {
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? `상담 기록 ${activeHistorySessionPage} / ${historySessionTotalPages} 페이지`');
+  });
 });
