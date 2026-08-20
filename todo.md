@@ -193,7 +193,7 @@
 - [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증 (Google 실배포 확인; Naver·Kakao 실제 auth.me 확인 필요)
 - [x] 실제 배포 환경에서 OAuth 완료 후 콜백 응답·쿠키·auth.me를 직접 확인해 세션 흐름 기록 (Google 실제 검증)
 - [x] Google 소셜 로그인 사용자 식별자 매핑 수정 (`openId`가 `google_undefined`로 저장되는 문제 해결)
-- [ ] 모바일 Google·Naver·Kakao 로그인 후 auth.me의 openId·loginMethod·세션 쿠키 회귀 검증 (Google 실배포 확인; Naver·Kakao 실제 auth.me 확인 필요)
+- [x] 중복된 모바일 `auth.me` 외부 인증 검증 기록을 193번 보류 항목으로 통합 (Naver·Kakao 실제 인증·세션 쿠키 확인은 193번에서 계속 보류)
 - [x] 배포 OAuth 성공 콜백에 제공자·식별자 존재 여부·리다이렉트 완료 구조화 로그 추가 및 확인 (민감정보 없는 로그 코드·회귀 테스트 확인, 운영 로그 조회 제한 기록)
 
 ## 대시보드 슬라이드 메뉴 개선 (2026-08-12)
