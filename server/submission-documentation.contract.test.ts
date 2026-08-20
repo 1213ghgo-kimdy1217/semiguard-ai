@@ -43,6 +43,9 @@ const riskCalibrationChangeControlTemplate = readProjectDocument(
 const periodReportBrowserValidation = readProjectDocument(
   "PERIOD_REPORT_BROWSER_VALIDATION.md"
 );
+const dependencyCompatibilityValidationTemplate = readProjectDocument(
+  "DEPENDENCY_COMPATIBILITY_VALIDATION_TEMPLATE.md"
+);
 
 describe("submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
@@ -64,6 +67,7 @@ describe("submission documentation contract", () => {
       "EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md",
       "RISK_CALIBRATION_CHANGE_CONTROL_TEMPLATE.md",
       "PERIOD_REPORT_BROWSER_VALIDATION.md",
+      "DEPENDENCY_COMPATIBILITY_VALIDATION_TEMPLATE.md",
       "W1_TEAM_GOALS.md",
       "DEPENDENCY_SECURITY_REVIEW.md",
     ].forEach(filename => {
@@ -275,6 +279,25 @@ describe("submission documentation contract", () => {
     );
     expect(periodReportBrowserValidation).toContain(
       "완료한 것으로 주장하지 않습니다"
+    );
+  });
+
+  it("keeps dependency compatibility validation minimal, candidate-specific, and rollback-ready", () => {
+    expect(dependencyCompatibilityValidationTemplate).toContain(
+      "최소 패치 후보를 한 번에 하나씩"
+    );
+    expect(dependencyCompatibilityValidationTemplate).toContain(
+      "실제 인증 코드, 세션 쿠키, 소셜 제공자 토큰"
+    );
+    expect(dependencyCompatibilityValidationTemplate).toContain(
+      "path-to-regexp@0.1.13"
+    );
+    expect(dependencyCompatibilityValidationTemplate).toContain(
+      "Streamdown/Mermaid"
+    );
+    expect(dependencyCompatibilityValidationTemplate).toContain("Recharts");
+    expect(dependencyCompatibilityValidationTemplate).toContain(
+      "직전 안정 체크포인트로 복구"
     );
   });
 });

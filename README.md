@@ -13,6 +13,8 @@
 - [시스템 구조](#시스템-구조) · [탐지 방식과 검증 상태](#탐지-방식과-검증-상태) · [AI 활용과 안전 원칙](#ai-활용과-안전-원칙) · [실제 팹 도입 경로](#실제-팹-도입-경로) · [실행 방법](#실행-방법) · [테스트](#테스트)
 - [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [실증 검증 계획](VALIDATION_PLAN.md) · [위험 기준 보정 변경관리 템플릿](RISK_CALIBRATION_CHANGE_CONTROL_TEMPLATE.md) · [제출 증거 등록부 템플릿](EVIDENCE_REGISTER_TEMPLATE.md) · [외부 자문 기록 템플릿](EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md) · [KPI 측정·보고 템플릿](KPI_MEASUREMENT_TEMPLATE.md) · [사용자 인터뷰·문제 정의 템플릿](USER_INTERVIEW_TEMPLATE.md) · [첫 사용자 모집·이탈 관찰 템플릿](FIRST_USER_OBSERVATION_TEMPLATE.md) · [과거 로그 파일럿 검증 템플릿](PILOT_LOG_VALIDATION_TEMPLATE.md) · [IT/OT 읽기 전용 파일럿 체크리스트](IT_OT_READ_ONLY_PILOT_CHECKLIST.md) · [현장 파일럿 담당자 검토 템플릿](FIELD_PILOT_REVIEW_TEMPLATE.md) · [기간 보고서 브라우저 검증 안내](PERIOD_REPORT_BROWSER_VALIDATION.md) · [의존성 보안 검토](DEPENDENCY_SECURITY_REVIEW.md) · [모바일 소셜 로그인 검증](MOBILE_SOCIAL_LOGIN_VALIDATION.md) · [발표 시연 스크립트](PRESENTATION_DEMO_SCRIPT.md) · [10분 발표 대본](PRESENTATION_10_MIN_SCRIPT.md) · [3분 피치 영상 스토리보드](PITCH_VIDEO_STORYBOARD.md) · [3분 영상 녹화 체크리스트](DEMO_RECORDING_CHECKLIST.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
 
+> 전이 의존성 패치를 실제로 검토할 때는 [의존성 호환성 검증 템플릿](DEPENDENCY_COMPATIBILITY_VALIDATION_TEMPLATE.md)의 후보별 회귀 흐름과 롤백 기준을 사용합니다. 이 템플릿은 패치 승인을 의미하지 않습니다.
+
 ## 프로젝트 개요
 
 SemiGuard AI는 전류·온도·진동·소음 데이터에서 위험 신호를 찾고, 현장 담당자가 **무엇이 변했는지**, **왜 점검해야 하는지**, **무엇부터 확인할지**를 한 화면에서 이해하도록 돕는 웹 기반 예지안전 시스템입니다. 위험 점수만 표시하는 대신 센서 근거, 이상 이력, AI 보조 설명, 권장 점검 순서를 연결해 판단 과정을 투명하게 만드는 것이 목표입니다. 궁극적으로는 실제 팹의 승인된 읽기 전용 데이터를 바탕으로 엔지니어의 점검 판단을 더 빠르고 일관되게 돕되, 현장 안전 판단과 설비 제어 책임은 담당자와 기존 절차에 남기는 단계적 보조 시스템을 지향합니다.
@@ -202,7 +204,7 @@ pnpm test
 pnpm build
 ```
 
-현재 변경은 TypeScript 검사, Vitest **528개**, 프로덕션 빌드를 통과했습니다. 심사위원은 공개 `/demo`에서 핵심 경험을 확인할 수 있으며, `?lang=ko`, `?lang=en`, `?lang=ja` 직접 공유 링크로 각 언어의 읽기 전용 데모를 바로 시작하거나 상단의 **링크 복사** 제어로 현재 언어 링크를 복사할 수 있습니다. 초기화·공유 결과는 하나의 안내 영역에서 순차적으로 표시됩니다. 기간별 구조화 보고서는 사용자 클릭 시 새 창에서 작성되며, 브라우저의 인쇄 대화상자에서 PDF로 저장할 수 있습니다. 실제 사용자 브라우저에서의 새 창·인쇄 대화상자 최종 확인 절차는 [기간 보고서 브라우저 검증 안내](PERIOD_REPORT_BROWSER_VALIDATION.md)에 분리했습니다. 상담 기록 전체 초기화는 현재 로그인된 사용자 소유 세션만 대상으로 하고, 새 상담은 소유권 확인이 필요한 흐름입니다.
+현재 변경은 TypeScript 검사, Vitest **529개**, 프로덕션 빌드를 통과했습니다. 심사위원은 공개 `/demo`에서 핵심 경험을 확인할 수 있으며, `?lang=ko`, `?lang=en`, `?lang=ja` 직접 공유 링크로 각 언어의 읽기 전용 데모를 바로 시작하거나 상단의 **링크 복사** 제어로 현재 언어 링크를 복사할 수 있습니다. 초기화·공유 결과는 하나의 안내 영역에서 순차적으로 표시됩니다. 기간별 구조화 보고서는 사용자 클릭 시 새 창에서 작성되며, 브라우저의 인쇄 대화상자에서 PDF로 저장할 수 있습니다. 실제 사용자 브라우저에서의 새 창·인쇄 대화상자 최종 확인 절차는 [기간 보고서 브라우저 검증 안내](PERIOD_REPORT_BROWSER_VALIDATION.md)에 분리했습니다. 상담 기록 전체 초기화는 현재 로그인된 사용자 소유 세션만 대상으로 하고, 새 상담은 소유권 확인이 필요한 흐름입니다.
 
 ### 대시보드 성능 검토
 
