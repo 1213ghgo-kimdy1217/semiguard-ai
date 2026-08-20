@@ -19,7 +19,7 @@ describe("password Caps Lock warning contract", () => {
     expect(loginSource).toContain('event.getModifierState("CapsLock")');
     expect(loginSource).toContain("{loginUi.capsLockWarning}");
     expect(loginSource).toContain(
-      '{capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite">{loginUi.capsLockWarning}</p>}'
+      '{capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite" aria-atomic="true">{loginUi.capsLockWarning}</p>}'
     );
   });
 
@@ -32,7 +32,7 @@ describe("password Caps Lock warning contract", () => {
     expect(signupSource).toContain("Caps Lock is on.");
     expect(signupSource).toContain("Caps Lockがオンになっています。");
     expect(
-      signupSource.match(/aria-live="polite">\{copy\.capsLockWarning\}/g)
+      signupSource.match(/aria-live="polite" aria-atomic="true">\{copy\.capsLockWarning\}/g)
     ).toHaveLength(2);
   });
 });

@@ -466,7 +466,7 @@ export function Login() {
                 </button>
               </div>
               {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert">{loginMessages.passwordRequired}</p>}
-              {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite">{loginUi.capsLockWarning}</p>}
+              {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite" aria-atomic="true">{loginUi.capsLockWarning}</p>}
             </div>
 
             {/* Login Button */}
