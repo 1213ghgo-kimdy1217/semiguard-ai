@@ -34,4 +34,13 @@ describe("judge demo share-link contract", () => {
     expect(source).not.toContain("showResetToast");
     expect(source).not.toContain("shareNotice");
   });
+
+  it("announces reset and share feedback through one polite live status", () => {
+    expect(source).toMatch(
+      /\{notice && \(\s*<div\s+role="status"\s+aria-live="polite"/
+    );
+    expect(source).toContain("text.resetComplete");
+    expect(source).toContain("text.shareComplete");
+    expect(source).toContain("text.shareFailed");
+  });
 });
