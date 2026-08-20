@@ -32,4 +32,11 @@ describe("JudgeDemo 언어 선택 접근성 계약", () => {
       'const saved = localStorage.getItem("semiguard_lang")'
     );
   });
+
+  it("유효하지 않은 언어 URL 매개변수는 저장된 지원 언어 또는 한국어 기본값으로 안전하게 처리합니다", () => {
+    expect(source).toMatch(
+      /const saved = localStorage\.getItem\("semiguard_lang"\);\s*return saved === "en" \|\| saved === "ja" \|\| saved === "ko" \? saved : "ko";/
+    );
+    expect(source).toMatch(/catch\s*\{\s*return "ko";/);
+  });
 });
