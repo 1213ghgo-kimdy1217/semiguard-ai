@@ -513,7 +513,7 @@ export function Login() {
           </div>
 
           {!isOauthEnabled && (
-            <div id="preview-social-login-notice" className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-xs leading-relaxed text-cyan-100" role="status">
+            <div id="preview-social-login-notice" className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-xs leading-relaxed text-cyan-100" role="status" aria-live="polite" aria-atomic="true">
               {loginUi.previewSocialNotice}
             </div>
           )}
