@@ -12,7 +12,10 @@ describe("judge demo brand lockup contract", () => {
     expect(source).toContain('className="mb-3 flex items-center gap-2.5" aria-label="SemiGuard AI"');
     expect(source).toContain('className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl');
     expect(source).toContain(">\n                SG\n              </span>");
-    expect(source).toContain("Safety analysis console");
+    expect(source).toContain('brandConsole: "안전 분석 콘솔"');
+    expect(source).toContain('brandConsole: "Safety analysis console"');
+    expect(source).toContain('brandConsole: "安全分析コンソール"');
+    expect(source).toContain("{text.brandConsole}");
     expect(source.indexOf('aria-label="SemiGuard AI"')).toBeLessThan(source.indexOf("{text.badge}"));
   });
 });

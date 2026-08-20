@@ -14,6 +14,7 @@ type DemoCopy = {
   badge: string;
   title: string;
   subtitle: string;
+  brandConsole: string;
   readOnly: string;
   simulated: string;
   languageLabel: string;
@@ -72,6 +73,7 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     title: "30초로 확인하는 SemiGuard AI 안전 분석",
     subtitle:
       "실제 설비·계정 데이터 없이, 위험 신호에서 점검 순서까지의 판단 흐름을 체험합니다.",
+    brandConsole: "안전 분석 콘솔",
     readOnly: "읽기 전용",
     simulated: "시뮬레이션 데이터",
     languageLabel: "언어 선택",
@@ -139,6 +141,7 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     title: "See SemiGuard AI safety analysis in 30 seconds",
     subtitle:
       "Experience the path from a risk signal to an inspection sequence without real equipment or account data.",
+    brandConsole: "Safety analysis console",
     readOnly: "Read only",
     simulated: "Simulated data",
     languageLabel: "Language",
@@ -209,6 +212,7 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     title: "30秒で確認するSemiGuard AI安全分析",
     subtitle:
       "実際の設備・アカウントデータなしで、危険信号から点検順序までの判断フローを体験できます。",
+    brandConsole: "安全分析コンソール",
     readOnly: "読み取り専用",
     simulated: "シミュレーションデータ",
     languageLabel: "言語選択",
@@ -398,7 +402,7 @@ export default function JudgeDemo() {
               </span>
               <span className="min-w-0 leading-none">
                 <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">SemiGuard AI</span>
-                <span className="mt-1 block text-[9px] font-semibold tracking-wide text-slate-400">Safety analysis console</span>
+                <span className="mt-1 block text-[9px] font-semibold tracking-wide text-slate-400">{text.brandConsole}</span>
               </span>
             </div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
