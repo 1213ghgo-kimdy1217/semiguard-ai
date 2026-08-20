@@ -4419,7 +4419,7 @@ export default function Dashboard() {
                     className="custom-scrollbar min-h-40 w-full resize-y rounded-lg border px-3 py-2 text-xs leading-relaxed outline-none focus:ring-2"
                     style={{ background: isDark ? "oklch(0.18 0.02 240)" : "white", borderColor: th.border, color: th.text }}
                   />
-                  <div id="rag-manual-chunk-status" className="rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" role="status" aria-live="polite" style={{ borderColor: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.55)" : th.border, background: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.10)" : "transparent", color: isManualChunkWarning ? (isDark ? "oklch(0.86 0.14 80)" : "oklch(0.45 0.16 75)") : th.textMuted }}>
+                  <div id="rag-manual-chunk-status" className="rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed" role="status" aria-live="polite" aria-atomic="true" style={{ borderColor: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.55)" : th.border, background: isManualChunkWarning ? "oklch(0.72 0.16 75 / 0.10)" : "transparent", color: isManualChunkWarning ? (isDark ? "oklch(0.86 0.14 80)" : "oklch(0.45 0.16 75)") : th.textMuted }}>
                     {manualChunkEstimate === 0
                       ? (lang === "ko" ? "본문을 입력하면 등록될 RAG 구간 수를 미리 계산합니다." : lang === "ja" ? "本文を入力すると、登録されるRAG区間数を事前に計算します。" : "Enter manual text to preview the number of RAG chunks to be registered.")
                       : isManualChunkWarning
@@ -6285,7 +6285,7 @@ export default function Dashboard() {
             </div>
             {/* 임팩트 통계 섹션 */}
             {showPeriodSkeleton ? (
-              <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" role="status" aria-live="polite" aria-label={lang === "ko" ? "선택한 기간의 통계를 불러오는 중" : lang === "ja" ? "選択した期間の統計を読み込み中" : "Loading statistics for the selected period"}>
+              <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? "선택한 기간의 통계를 불러오는 중" : lang === "ja" ? "選択した期間の統計を読み込み中" : "Loading statistics for the selected period"}>
                 {Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-[102px] animate-pulse rounded-xl border p-4" style={{ borderColor: th.border, background: th.bgCard }}><div className="h-2.5 w-16 rounded-full" style={{ background: th.border2 }} /><div className="mt-5 h-7 w-20 rounded-md" style={{ background: th.border2 }} /><div className="mt-3 h-2 w-24 rounded-full" style={{ background: th.border }} /></div>)}
                 <span className="sr-only">{lang === "ko" ? "기간별 통계를 불러오는 중입니다." : lang === "ja" ? "期間別統計を読み込んでいます。" : "Loading period statistics."}</span>
               </div>
