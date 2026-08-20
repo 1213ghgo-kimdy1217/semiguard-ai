@@ -392,6 +392,15 @@ export default function JudgeDemo() {
       <div className="mx-auto max-w-5xl">
         <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-cyan-200/20 bg-slate-950/45 p-4 backdrop-blur sm:flex-row sm:items-start sm:justify-between sm:p-5">
           <div className="min-w-0">
+            <div className="mb-3 flex items-center gap-2.5" aria-label="SemiGuard AI">
+              <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-200/55 bg-cyan-300/10 text-[10px] font-black tracking-tight text-cyan-100 shadow-[0_0_20px_rgba(34,211,238,0.13)]">
+                SG
+              </span>
+              <span className="min-w-0 leading-none">
+                <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">SemiGuard AI</span>
+                <span className="mt-1 block text-[9px] font-semibold tracking-wide text-slate-400">Safety analysis console</span>
+              </span>
+            </div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-cyan-200/45 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-cyan-100">
                 {text.badge}
