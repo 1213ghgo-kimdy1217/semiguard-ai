@@ -35,9 +35,9 @@ describe("judge demo share-link contract", () => {
     expect(source).not.toContain("shareNotice");
   });
 
-  it("announces reset and share feedback through one polite live status", () => {
+  it("announces reset and share feedback through one atomic polite live status", () => {
     expect(source).toMatch(
-      /\{notice && \(\s*<div\s+role="status"\s+aria-live="polite"/
+      /\{notice && \(\s*<div\s+role="status"\s+aria-live="polite"\s+aria-atomic="true"/
     );
     expect(source).toContain("text.resetComplete");
     expect(source).toContain("text.shareComplete");

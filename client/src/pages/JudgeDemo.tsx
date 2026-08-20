@@ -474,6 +474,7 @@ export default function JudgeDemo() {
             className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-xl border border-amber-200/75 bg-[linear-gradient(100deg,rgba(14,116,144,0.68),rgba(8,145,178,0.48),rgba(245,158,11,0.28))] px-3 py-2 text-xs shadow-lg shadow-cyan-950/40"
             role="status"
             aria-live="polite"
+            aria-atomic="true"
           >
             <div className="flex min-w-0 items-start gap-2">
               <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-[10px] font-black text-slate-900">
@@ -821,6 +822,7 @@ export default function JudgeDemo() {
           <div
             role="status"
             aria-live="polite"
+            aria-atomic="true"
             className={`fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold text-white shadow-xl ${notice === "shareError" ? "border-rose-100/60 bg-rose-600/95 shadow-rose-950/30" : notice === "reset" ? "border-emerald-200/60 bg-emerald-500/95 shadow-emerald-950/30" : "border-cyan-100/60 bg-cyan-600/95 shadow-cyan-950/30"}`}
           >
             <span aria-hidden="true">
