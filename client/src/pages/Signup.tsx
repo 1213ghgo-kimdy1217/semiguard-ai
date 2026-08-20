@@ -319,6 +319,7 @@ export function Signup() {
           </div>
 
           <form onSubmit={handleSignup} className="space-y-5" aria-busy={isLoading} noValidate>
+            {isLoading && <p id="signup-submit-status" className="sr-only" role="status" aria-live="polite" aria-atomic="true">{copy.submitting}</p>}
             {authError && (
               <p id="signup-auth-error" role="alert" className="rounded-lg border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-200" tabIndex={-1}>
                 {authError}
