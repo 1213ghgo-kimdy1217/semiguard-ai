@@ -331,7 +331,8 @@ export default function JudgeDemo() {
     try {
       localStorage.setItem("semiguard_lang", lang);
     } catch {}
-    document.documentElement.lang = lang;
+    document.documentElement.lang =
+      lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
     document.title =
       lang === "ko"
         ? "SemiGuard AI 심사위원 읽기 전용 데모"
