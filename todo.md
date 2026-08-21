@@ -2389,3 +2389,4 @@
 - [x] 공개 심사위원 데모 CLI SSL 연결 오류 분리 점검 (CLI HTTPS 요청의 `SSL_ERROR_SYSCALL`과 달리 브라우저에서 KO·EN 공개 데모가 정상 렌더링되고 읽기 전용 경계·탐지 방식 한계·3단계·위험 점수·센서 근거·로그인 제어가 노출됨을 확인; `RUNTIME_CHECK_NOTES.md` 기록)
 - [x] 공개 운영 도메인 반복 시간 초과·개발 서버 분리 점검 (프로덕션 로그 CLI의 `cloudrun service not found`와 영어 데모 브라우저 `ERR_TIMED_OUT`을 확인했으나, 재시작 뒤 로컬 `/`는 HTTP 200·정상 서버 기동 로그를 반환해 코드 재현 오류가 아닌 운영 인프라 또는 프록시 가용성 문제로 `RUNTIME_CHECK_NOTES.md`에 기록)
 - [x] 공개 운영 가용성 분리를 위한 무인증 경량 헬스 상태 엔드포인트와 회귀 계약 추가 (`/api/health`가 tRPC·정적 라우트보다 먼저 HTTP 200·`{"status":"ok"}`·`Cache-Control: no-store`를 반환함을 정적 계약과 로컬 실제 응답으로 확인)
+- [x] 공개 헬스 상태 경로 운영 연결 재확인 (프로덕션 서버 기동 로그 뒤에도 공개 `/api/health`가 브라우저 `ERR_TIMED_OUT`·CLI `SSL_ERROR_SYSCALL`을 반환하고 로컬은 정상 JSON을 반환함을 확인해, 앱 코드가 아닌 도메인 라우팅·TLS 프록시·운영 인프라 가용성 문제 근거를 `RUNTIME_CHECK_NOTES.md`에 보강)
