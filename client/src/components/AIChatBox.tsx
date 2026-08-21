@@ -202,7 +202,7 @@ export function AIChatBox({
           <div className="flex h-full flex-col p-4">
             <div className="flex flex-1 flex-col items-center justify-center gap-6 text-muted-foreground">
               <div className="flex flex-col items-center gap-3">
-                <Sparkles className="size-12 opacity-20" />
+                <Sparkles className="size-12 opacity-20" aria-hidden="true" />
                 <p className="text-sm">{emptyStateMessage}</p>
               </div>
 
@@ -248,7 +248,7 @@ export function AIChatBox({
                   >
                     {message.role === "assistant" && (
                       <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Sparkles className="size-4 text-primary" />
+                        <Sparkles className="size-4 text-primary" aria-hidden="true" />
                       </div>
                     )}
 
@@ -274,7 +274,7 @@ export function AIChatBox({
 
                     {message.role === "user" && (
                       <div className="size-8 shrink-0 mt-1 rounded-full bg-secondary flex items-center justify-center">
-                        <User className="size-4 text-secondary-foreground" />
+                        <User className="size-4 text-secondary-foreground" aria-hidden="true" />
                       </div>
                     )}
                   </div>
@@ -291,7 +291,7 @@ export function AIChatBox({
                   }
                 >
                   <div className="size-8 shrink-0 mt-1 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="size-4 text-primary" />
+                    <Sparkles className="size-4 text-primary" aria-hidden="true" />
                   </div>
                   <div className="rounded-lg bg-muted px-4 py-2.5" role="status" aria-live="polite" aria-atomic="true">
                     <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true" />
@@ -330,9 +330,9 @@ export function AIChatBox({
           className="shrink-0 h-[38px] w-[38px]"
         >
           {isLoading ? (
-            <Loader2 className="size-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           ) : (
-            <Send className="size-4" />
+            <Send className="size-4" aria-hidden="true" />
           )}
         </Button>
       </form>

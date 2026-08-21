@@ -41,4 +41,12 @@ describe("common AI chat IME composition contract", () => {
   it("provides sender context before each newly announced chat message", () => {
     expect(aiChatBoxSource).toContain('<span className="sr-only">{message.role === "assistant" ? "AI: " : "You: "}</span>');
   });
+
+  it("hides decorative chat, avatar, loading, and send icons from assistive technology", () => {
+    expect(aiChatBoxSource).toContain('Sparkles className="size-12 opacity-20" aria-hidden="true"');
+    expect(aiChatBoxSource).toContain('Sparkles className="size-4 text-primary" aria-hidden="true"');
+    expect(aiChatBoxSource).toContain('User className="size-4 text-secondary-foreground" aria-hidden="true"');
+    expect(aiChatBoxSource).toContain('Loader2 className="size-4 animate-spin" aria-hidden="true"');
+    expect(aiChatBoxSource).toContain('Send className="size-4" aria-hidden="true"');
+  });
 });
