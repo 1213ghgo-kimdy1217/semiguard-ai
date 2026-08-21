@@ -2346,3 +2346,4 @@
 - [x] 대시보드 데모 자동 실행 활성 상태 점의 장식 처리와 회귀 계약 보강 (기존 KO·EN·JA 상태 문구와 `aria-pressed`는 유지하고, 시각적 활성 상태 점만 `aria-hidden` 처리; TypeScript·Vitest 270개 파일/630개 테스트·프로덕션 빌드 통과)
 - [x] 대시보드 위험 경보·데모 활성 상태 점의 모션 감소 설정 준수 점검 (전역 `prefers-reduced-motion: reduce` 규칙이 애니메이션 반복·지속 시간을 최소화하고, 기존 모션 감소 계약이 이를 검증하므로 중복 구현 없이 현재 보호를 유지)
 - [x] 대시보드 상담 기록 제목 저장·기간 프리셋 입력의 IME Enter 조기 실행 방지와 회귀 계약 보강 (한국어·일본어 등 IME 조합 중 Enter로 제목 저장·프리셋 저장이 조기 실행되지 않도록 `nativeEvent.isComposing`을 확인; TypeScript·Vitest 270개 파일/631개 테스트·프로덕션 빌드 통과)
+- [x] 공통 AI 채팅 입력의 IME Enter 조기 전송 방지와 회귀 계약 보강 (공통 `AIChatBox`에서 한국어·일본어 등 IME 조합 중 Enter 전송을 방지하고 기존 Enter 전송·Shift+Enter 줄바꿈을 유지; TypeScript·Vitest 271개 파일/632개 테스트·프로덕션 빌드 통과)
