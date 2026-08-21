@@ -22,4 +22,11 @@ describe("safety monitoring connection status contract", () => {
     expect(dashboardSource).toContain("void getRecentScoresQuery.refetch()");
     expect(dashboardSource).toContain("onClick={retrySafetyMonitoring}");
   });
+
+  it("announces the localized reconnecting state and busy status on the guarded recovery control", () => {
+    expect(dashboardSource).toContain("aria-busy={safetyMonitoringRetrying || undefined}");
+    expect(dashboardSource).toContain('aria-label={safetyMonitoringRetrying ? (lang === "ko" ? "안전 모니터링 데이터 연결 중"');
+    expect(dashboardSource).toContain('lang === "ja" ? "安全モニタリングデータに接続中"');
+    expect(dashboardSource).toContain('"Connecting safety monitoring data")');
+  });
 });
