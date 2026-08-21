@@ -4016,7 +4016,7 @@ export default function Dashboard() {
                 <span aria-hidden="true">{isDark ? "☀️" : "🌙"}</span>{" "}{isDark ? (lang === "ko" ? "라이트" : lang === "ja" ? "ライト" : "Light") : (lang === "ko" ? "다크" : lang === "ja" ? "ダーク" : "Dark")}
               </button>
               <button type="button" onClick={() => { setMuted(m => { const next = !m; mutedRef.current = next; try { localStorage.setItem("semiguard_muted", String(next)); } catch {} return next; }); }} className="min-h-11 rounded-lg border px-3 py-2 text-xs font-bold transition-all hover:opacity-80 active:scale-95" style={{ borderColor: muted ? "oklch(0.35 0.01 240)" : "oklch(0.65 0.18 200 / 0.4)", color: muted ? "oklch(0.45 0.01 240)" : "oklch(0.65 0.18 200)", background: muted ? (isDark ? "oklch(0.15 0.01 240)" : "oklch(0.88 0.01 240)") : "oklch(0.65 0.18 200 / 0.08)" }}>
-                {muted ? "🔕" : "🔔"} {muted ? (lang === "ko" ? "음소거 해제" : lang === "ja" ? "ミュート解除" : "Unmute") : (lang === "ko" ? "음소거" : lang === "ja" ? "ミュート" : "Mute")}
+                <span aria-hidden="true">{muted ? "🔕" : "🔔"}</span> {muted ? (lang === "ko" ? "음소거 해제" : lang === "ja" ? "ミュート解除" : "Unmute") : (lang === "ko" ? "음소거" : lang === "ja" ? "ミュート" : "Mute")}
               </button>
             </div>
             {!muted && (
