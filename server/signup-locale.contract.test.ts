@@ -30,4 +30,9 @@ describe("signup locale contract", () => {
     expect(signupSource).toContain('id="passwordConfirm" name="passwordConfirm"');
     expect(signupSource).toContain('enterKeyHint="done"');
   });
+
+  it("keeps English password placeholders concise for the 375px registration layout", () => {
+    expect(signupSource).toContain('passwordPlaceholder: "6+ characters"');
+    expect(signupSource).toContain('passwordConfirmPlaceholder: "Re-enter password"');
+  });
 });

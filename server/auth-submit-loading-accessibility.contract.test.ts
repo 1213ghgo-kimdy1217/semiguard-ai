@@ -25,4 +25,10 @@ describe("authentication submit loading accessibility contract", () => {
     expect(signupSource).toContain('aria-busy={isLoading}');
     expect(signupSource).toContain('aria-busy={isLoading || undefined}');
   });
+
+  it("keeps password visibility controls synchronized with localized submission progress", () => {
+    expect(loginSource).toMatch(/aria-pressed=\{showPassword\}[\s\S]{0,120}aria-busy=\{isLoading \|\| undefined\}/);
+    expect(signupSource).toMatch(/aria-pressed=\{showPassword\}[\s\S]{0,120}aria-busy=\{isLoading \|\| undefined\}/);
+    expect(signupSource).toMatch(/aria-pressed=\{showPasswordConfirm\}[\s\S]{0,120}aria-busy=\{isLoading \|\| undefined\}/);
+  });
 });

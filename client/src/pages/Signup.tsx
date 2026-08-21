@@ -59,14 +59,14 @@ const SIGNUP_COPY = {
     dateOfBirth: "Date of birth",
     dateHint: "The displayed format may follow your browser settings. Use the date picker.",
     password: "Password",
-    passwordPlaceholder: "At least 6 characters",
+    passwordPlaceholder: "6+ characters",
     passwordStrengthLabel: "Password strength",
     passwordStrength: { tooShort: "Use at least 6 characters", weak: "Weak", fair: "Fair", strong: "Strong" },
     capsLockWarning: "Caps Lock is on.",
     showPassword: "Show password",
     hidePassword: "Hide password",
     passwordConfirm: "Confirm password",
-    passwordConfirmPlaceholder: "Re-enter your password",
+    passwordConfirmPlaceholder: "Re-enter password",
     submit: "Create account",
     submitting: "Creating account...",
     accountPrompt: "Already have an account?",
@@ -347,8 +347,8 @@ export function Signup() {
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
               <div className="relative">
-                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} enterKeyHint="next" aria-invalid={fieldError === "password"} aria-describedby={[fieldError === "password" ? "password-error" : null, "password-strength-status"].filter(Boolean).join(" ")} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
-                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
+                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} enterKeyHint="next" aria-invalid={fieldError === "password"} aria-describedby={[fieldError === "password" ? "password-error" : null, "password-strength-status"].filter(Boolean).join(" ")} className="border-slate-600 bg-slate-700 pr-32 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} aria-busy={isLoading || undefined} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
@@ -368,8 +368,8 @@ export function Signup() {
             <div className="space-y-2">
               <Label htmlFor="passwordConfirm" className="text-sm font-medium text-slate-300">{copy.passwordConfirm}</Label>
               <div className="relative">
-                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} enterKeyHint="done" aria-invalid={fieldError === "passwordConfirm"} aria-describedby={fieldError === "passwordConfirm" ? "passwordConfirm-error" : undefined} className="border-slate-600 bg-slate-700 pr-24 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
-                <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
+                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} enterKeyHint="done" aria-invalid={fieldError === "passwordConfirm"} aria-describedby={fieldError === "passwordConfirm" ? "passwordConfirm-error" : undefined} className="border-slate-600 bg-slate-700 pr-32 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
+                <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} aria-busy={isLoading || undefined} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
                   {showPasswordConfirm ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>

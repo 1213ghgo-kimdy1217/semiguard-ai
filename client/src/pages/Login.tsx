@@ -466,6 +466,7 @@ export function Login() {
                   aria-label={showPassword ? loginUi.hidePassword : loginUi.showPassword}
                   aria-pressed={showPassword}
                   disabled={isLoading}
+                  aria-busy={isLoading || undefined}
                   className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50"
                 >
                   {showPassword ? loginUi.hidePassword : loginUi.showPassword}

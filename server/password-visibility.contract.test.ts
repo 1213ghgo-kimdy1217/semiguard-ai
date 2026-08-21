@@ -20,4 +20,9 @@ describe("password visibility control contract", () => {
     expect(signupSource).toContain('type={showPasswordConfirm ? "text" : "password"}');
     expect(signupSource).toContain("aria-pressed={showPasswordConfirm}");
   });
+
+  it("reserves enough inline space for each signup password visibility control on narrow screens", () => {
+    expect(signupSource).toMatch(/id="password"[\s\S]{0,900}className="[^"]*pr-32/);
+    expect(signupSource).toMatch(/id="passwordConfirm"[\s\S]{0,900}className="[^"]*pr-32/);
+  });
 });
