@@ -6004,6 +6004,8 @@ export default function Dashboard() {
                                       <textarea
                                         value={otherFeedbackText}
                                         onChange={(event) => setOtherFeedbackText(event.target.value)}
+                                        enterKeyHint="done"
+                                        aria-label={lang === "ko" ? "기타 피드백 내용" : lang === "ja" ? "その他のフィードバック内容" : "Other feedback details"}
                                         maxLength={300}
                                         rows={3}
                                         placeholder={lang === "ko" ? "부족했던 점을 직접 적어 주세요." : lang === "ja" ? "改善してほしい点を入力してください。" : "Tell us what should be improved."}

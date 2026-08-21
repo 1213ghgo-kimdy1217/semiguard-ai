@@ -14,4 +14,9 @@ describe("feedback reason popup accessibility contract", () => {
   it("closes the feedback reason picker before the parent consultation on Escape", () => {
     expect(dashboardSource).toContain('if (activeDislikeIdx !== null) return setActiveDislikeIdx(null);');
   });
+
+  it("gives the other-feedback field a localized name and a mobile completion hint", () => {
+    expect(dashboardSource).toContain('enterKeyHint="done"');
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "기타 피드백 내용" : lang === "ja" ? "その他のフィードバック内容" : "Other feedback details"}');
+  });
 });
