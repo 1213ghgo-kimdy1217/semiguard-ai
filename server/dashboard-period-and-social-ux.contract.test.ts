@@ -42,6 +42,16 @@ describe("dashboard period analysis and social UX contract", () => {
     expect(dashboardSource).toContain("Custom period preset name");
   });
 
+  it("announces custom-period application loading and gives both apply and save controls localized names", () => {
+    expect(dashboardSource).toContain("aria-busy={periodOverviewQuery.isFetching || undefined}");
+    expect(dashboardSource).toContain('aria-label={periodOverviewQuery.isFetching ? (lang === "ko" ? "사용자 지정 기간 데이터를 불러오는 중"');
+    expect(dashboardSource).toContain('lang === "ja" ? "カスタム期間データを読み込み中"');
+    expect(dashboardSource).toContain('"Loading custom period data")');
+    expect(dashboardSource).toContain('"사용자 지정 기간 프리셋 저장"');
+    expect(dashboardSource).toContain('"カスタム期間プリセットを保存"');
+    expect(dashboardSource).toContain('"Save custom period preset"');
+  });
+
   it("announces the saved preset date range when applying a custom period", () => {
     expect(dashboardSource).toContain('`${preset.name} 기간 프리셋 적용, ${preset.startDate}부터 ${preset.endDate}`');
     expect(dashboardSource).toContain('`${preset.name} 期間プリセットを適用、${preset.startDate}から${preset.endDate}`');
