@@ -6960,7 +6960,7 @@ export default function Dashboard() {
             </div>
           </div>
           {/* 2행: 필터 버튼 */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap" role="group" aria-label={lang === "ko" ? "위험 이력 단계 필터" : lang === "ja" ? "異常履歴のリスクレベルフィルター" : "Anomaly history risk-level filter"}>
               {/* 날짜 필터 chip */}
               {selectedDate && (
                 <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border"
