@@ -29,4 +29,8 @@ describe("common AI chat IME composition contract", () => {
     expect(aiChatBoxSource).toContain('<span className="sr-only">AI is generating a response</span>');
     expect(aiChatBoxSource).toContain('Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true"');
   });
+
+  it("announces newly added conversation messages through a polite live log", () => {
+    expect(aiChatBoxSource).toContain('role="log" aria-live="polite" aria-relevant="additions text" aria-label="AI conversation"');
+  });
 });

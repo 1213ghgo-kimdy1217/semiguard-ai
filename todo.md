@@ -2351,3 +2351,4 @@
 - [x] 공통 AI 채팅 입력의 모바일 전송 키보드 힌트와 회귀 계약 보강 (공통 `AIChatBox` 입력에 `enterKeyHint="send"`를 적용해 모바일 키보드의 전송 동작을 명시하고 기존 IME·Shift+Enter 동작을 유지; TypeScript·Vitest 271개 파일/634개 테스트·프로덕션 빌드 통과)
 - [x] 공통 AI 채팅 아이콘 전용 전송 버튼의 상태별 접근성 이름과 회귀 계약 보강 (공통 `AIChatBox` 전송 버튼에 기본·응답 생성 중 접근성 이름과 `aria-busy`를 추가해 아이콘 전용 제어의 상태를 전달; TypeScript·Vitest 271개 파일/635개 테스트·프로덕션 빌드 통과)
 - [x] 공통 AI 채팅 응답 생성 로딩 상태의 atomic 보조기기 안내와 회귀 계약 보강 (공통 `AIChatBox`가 응답 생성 중 전체 상태 문장을 polite·atomic으로 전달하고 장식 로딩 아이콘을 제외하도록 보완; TypeScript·Vitest 271개 파일/636개 테스트·프로덕션 빌드 통과)
+- [x] 공통 AI 채팅 새 메시지의 라이브 로그 전달과 회귀 계약 보강 (공통 `AIChatBox` 메시지 목록을 polite live log로 지정해 새 대화가 보조기기에 전달되도록 보완; TypeScript·Vitest 271개 파일/637개 테스트·프로덕션 빌드 통과)
