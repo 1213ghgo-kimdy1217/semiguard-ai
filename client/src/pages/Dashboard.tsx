@@ -6145,6 +6145,8 @@ export default function Dashboard() {
                 rows={1}
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
+                aria-label={lang === "ko" ? "AI 상담 메시지" : lang === "ja" ? "AI相談メッセージ" : "AI consultation message"}
+                aria-describedby="chat-input-help"
                 onKeyDown={e => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -6161,6 +6163,9 @@ export default function Dashboard() {
                 className="min-h-11 w-full flex-1 resize-none rounded-xl border px-3.5 py-2 text-xs outline-none transition-all focus:ring-2 focus:ring-cyan-500/40 max-h-24 custom-scrollbar"
                 style={{ borderColor: th.border2, background: th.bgCard2, color: th.text }}
               />
+              <span id="chat-input-help" className="sr-only">
+                {lang === "ko" ? "Enter 키로 전송하고 Shift와 Enter 키를 함께 누르면 줄바꿈합니다." : lang === "ja" ? "Enterキーで送信し、ShiftキーとEnterキーを同時に押すと改行します。" : "Press Enter to send. Press Shift and Enter together to add a new line."}
+              </span>
               <button
                 type="button"
                 onClick={() => void handleSendChatMessage()}
