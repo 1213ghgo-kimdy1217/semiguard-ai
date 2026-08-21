@@ -47,4 +47,8 @@ describe("RAG manual query recovery contract", () => {
       /manualPreviewQuery\.isError \? \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
     );
   });
+
+  it("keeps the manual list failure message while hiding its decorative warning symbol", () => {
+    expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "매뉴얼 목록을 불러오지 못했습니다."');
+  });
 });
