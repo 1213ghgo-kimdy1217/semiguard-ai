@@ -12,9 +12,10 @@ describe("initial auth loading recovery contract", () => {
     expect(appSource).toContain("安全なログイン状態を確認しています。");
   });
 
-  it("shows an accessible retry control only after an extended auth-loading wait", () => {
+  it("separates the loading status from recovery controls after an extended auth-loading wait", () => {
     expect(appSource).toContain("window.setTimeout(() => setIsSlowLoading(true), 8000)");
-    expect(appSource).toContain('role="status" aria-live="polite"');
+    expect(appSource).toContain('role="status" aria-live="polite" aria-atomic="true"');
+    expect(appSource).toContain('text-center" aria-busy="true"');
     expect(appSource).toContain("onClick={() => window.location.reload()}");
     expect(appSource).toContain("로그인 화면으로 이동");
     expect(appSource).toContain('onClick={() => setLocation("/login")}');
