@@ -4620,7 +4620,8 @@ export default function Dashboard() {
                                         type="button"
                                         onClick={async () => {
                                           try {
-                                            await navigator.clipboard.writeText(manualPreviewQuery.data.chunks.map(chunk => `[${chunk.chunkIndex + 1}] ${chunk.content}`).join("\n\n"));
+                                            const copied = await copyTextWithFallback(manualPreviewQuery.data.chunks.map(chunk => `[${chunk.chunkIndex + 1}] ${chunk.content}`).join("\n\n"));
+                                            if (!copied) throw new Error("Clipboard copy failed");
                                             toast.success(lang === "ko" ? "매뉴얼 원문을 복사했습니다." : lang === "ja" ? "マニュアル原文をコピーしました。" : "Manual source copied.");
                                           } catch (error) {
                                             console.error("Manual preview copy failed:", error);
@@ -6198,10 +6199,12 @@ export default function Dashboard() {
                       type="button"
                       onClick={async () => {
                         try {
-                          await navigator.clipboard.writeText(activeManualSource.content);
+                          const copied = await copyTextWithFallback(activeManualSource.content);
+                          if (!copied) throw new Error("Clipboard copy failed");
                           toast.success(lang === "ko" ? "매뉴얼 원문을 복사했습니다." : lang === "ja" ? "マニュアル原文をコピーしました。" : "Manual text copied.");
                         } catch (error) {
                           console.error("Manual copy failed:", error);
+                          toast.error(lang === "ko" ? "원문을 복사하지 못했습니다." : lang === "ja" ? "原文をコピーできませんでした。" : "Could not copy the source.");
                         }
                       }}
                       className="rounded-lg border px-3 py-1 text-[11px] font-bold transition-all hover:opacity-80"
