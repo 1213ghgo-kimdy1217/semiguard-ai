@@ -24,7 +24,7 @@ describe("signup locale contract", () => {
 
   it("guides mobile keyboards through the registration fields in order", () => {
     expect(signupSource).toContain('id="badgeNumber" name="badgeNumber" type="text"');
-    expect(signupSource).toContain('inputMode="text" enterKeyHint="next"');
+    expect(signupSource).toContain('inputMode="text" autoCapitalize="characters" spellCheck={false} enterKeyHint="next"');
     expect(signupSource).toContain('id="dateOfBirth" name="dateOfBirth" type="date"');
     expect(signupSource).toContain('enterKeyHint="next"');
     expect(signupSource).toContain('id="passwordConfirm" name="passwordConfirm"');

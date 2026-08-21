@@ -330,7 +330,7 @@ export function Signup() {
             )}
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-sm font-medium text-slate-300">{copy.badgeNumber}</Label>
-              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} inputMode="text" enterKeyHint="next" aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={[fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ") || undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
+              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} inputMode="text" autoCapitalize="characters" spellCheck={false} enterKeyHint="next" aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={[fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ") || undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
               {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.badgeNumber}</p>}
             </div>
             <div className="space-y-2">

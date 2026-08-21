@@ -422,6 +422,8 @@ export function Login() {
                 }}
                 autoComplete="username"
                 inputMode="text"
+                autoCapitalize="characters"
+                spellCheck={false}
                 enterKeyHint="next"
                 aria-invalid={fieldError === "badge" || Boolean(authError)}
                 aria-describedby={fieldError === "badge" ? "badgeNumber-error" : authError ? "login-auth-error" : undefined}
