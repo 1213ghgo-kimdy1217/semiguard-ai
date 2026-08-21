@@ -5973,7 +5973,7 @@ export default function Dashboard() {
                                     ✕
                                   </button>
                                 </div>
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1" role="group" aria-label={lang === "ko" ? "부정 피드백 사유" : lang === "ja" ? "否定的なフィードバックの理由" : "Negative feedback reason"}>
                                   {[
                                     { id: "inaccurate", ko: "정확하지 않음", ja: "正確ではない", en: "Inaccurate" },
                                     { id: "insufficient", ko: "설명 및 근거 부족", ja: "説明・根拠が不足", en: "Insufficient details" },
@@ -5999,6 +5999,8 @@ export default function Dashboard() {
                                             ? "フィードバックを反映しました。下のボタンから回答を再生成できます。"
                                             : "Feedback saved. You can regenerate the answer below.");
                                       }}
+                                      aria-expanded={reasonItem.id === "other" ? otherReasonIdx === idx : undefined}
+                                      aria-controls={reasonItem.id === "other" ? `feedback-other-details-${idx}` : undefined}
                                       className={`text-left px-2 py-1 rounded text-[10px] border transition-all ${
                                         messageReasons[idx] === (lang === "ko" ? reasonItem.ko : lang === "ja" ? reasonItem.ja : reasonItem.en)
                                           ? "bg-rose-500/20 border-rose-500 font-bold"
@@ -6009,7 +6011,7 @@ export default function Dashboard() {
                                     </button>
                                   ))}
                                   {otherReasonIdx === idx && (
-                                    <div className="mt-1.5 border-t pt-2" style={{ borderColor: th.border2 }}>
+                                    <div id={`feedback-other-details-${idx}`} className="mt-1.5 border-t pt-2" style={{ borderColor: th.border2 }}>
                                       <textarea
                                         value={otherFeedbackText}
                                         onChange={(event) => setOtherFeedbackText(event.target.value)}

@@ -16,4 +16,11 @@ describe("AI answer feedback control accessibility contract", () => {
     expect(dashboardSource).toContain('"AI answer was not helpful"');
     expect(dashboardSource).toContain('aria-pressed={messageFeedbacks[idx] === "dislike"}');
   });
+
+  it("connects the other-reason control to its expandable detail input", () => {
+    expect(dashboardSource).toContain('role="group" aria-label={lang === "ko" ? "부정 피드백 사유"');
+    expect(dashboardSource).toContain('aria-expanded={reasonItem.id === "other" ? otherReasonIdx === idx : undefined}');
+    expect(dashboardSource).toContain('aria-controls={reasonItem.id === "other" ? `feedback-other-details-${idx}` : undefined}');
+    expect(dashboardSource).toContain('id={`feedback-other-details-${idx}`}');
+  });
 });
