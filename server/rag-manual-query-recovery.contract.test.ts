@@ -22,4 +22,10 @@ describe("RAG manual query recovery contract", () => {
     expect(dashboardSource).toContain("manualDocumentSearchQuery.isFetching");
     expect(dashboardSource).toContain("manualPreviewQuery.isFetching");
   });
+
+  it("exposes each manual retry as busy while a replacement request is in flight", () => {
+    expect(dashboardSource).toContain('aria-busy={manualDocumentsQuery.isFetching || undefined}');
+    expect(dashboardSource).toContain('aria-busy={manualDocumentSearchQuery.isFetching || undefined}');
+    expect(dashboardSource).toContain('aria-busy={manualPreviewQuery.isFetching || undefined}');
+  });
 });
