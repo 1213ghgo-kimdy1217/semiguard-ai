@@ -6900,7 +6900,7 @@ export default function Dashboard() {
                       <span className="text-base font-bold font-mono" style={{ color: s.color }}>{s.count}</span>
                     </div>
                     {/* 비율 바 */}
-                    <div className="w-full h-1 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                    <div className="w-full h-1 rounded-full" role="progressbar" aria-label={lang === "ko" ? `${s.label} 위험 단계 비율` : lang === "ja" ? `${s.label}リスクレベルの割合` : `${s.label} risk level share`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} style={{ background: "rgba(255,255,255,0.08)" }}>
                       <div className="h-1 rounded-full transition-all duration-500"
                         style={{ width: `${pct}%`, background: s.color }} />
                     </div>

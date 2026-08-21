@@ -12,4 +12,11 @@ describe("anomaly history filter accessibility contract", () => {
     expect(dashboardSource).toContain('aria-pressed={isActive}');
     expect(dashboardSource).toContain('setLogFilter(f); setLogPage(1);');
   });
+
+  it("exposes each risk-level share bar as a localized progress value", () => {
+    expect(dashboardSource).toContain('role="progressbar" aria-label={lang === "ko" ? `${s.label} 위험 단계 비율`');
+    expect(dashboardSource).toContain('`${s.label}リスクレベルの割合`');
+    expect(dashboardSource).toContain('`${s.label} risk level share`');
+    expect(dashboardSource).toContain('aria-valuenow={pct}');
+  });
 });
