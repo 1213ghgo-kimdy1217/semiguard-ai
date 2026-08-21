@@ -21,4 +21,13 @@ describe("signup locale contract", () => {
     expect(signupSource).toContain("toast.error(copy.validation[messageKey]);");
     expect(signupSource).toContain("toast.success(copy.success);");
   });
+
+  it("guides mobile keyboards through the registration fields in order", () => {
+    expect(signupSource).toContain('id="badgeNumber" name="badgeNumber" type="text"');
+    expect(signupSource).toContain('inputMode="text" enterKeyHint="next"');
+    expect(signupSource).toContain('id="dateOfBirth" name="dateOfBirth" type="date"');
+    expect(signupSource).toContain('enterKeyHint="next"');
+    expect(signupSource).toContain('id="passwordConfirm" name="passwordConfirm"');
+    expect(signupSource).toContain('enterKeyHint="done"');
+  });
 });
