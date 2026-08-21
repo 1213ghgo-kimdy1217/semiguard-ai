@@ -570,12 +570,12 @@ export function Login() {
             </Button>
           </div>
 
-          <p className="text-center text-[11px] leading-relaxed text-slate-500">
+          <p className="text-center text-[11px] leading-relaxed text-slate-400">
             {loginUi.socialLinkHint}
           </p>
 
           {/* Footer */}
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-slate-400">
             {loginUi.terms}
           </p>
         </div>
