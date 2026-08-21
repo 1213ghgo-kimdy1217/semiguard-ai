@@ -6889,12 +6889,14 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
             <span className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "기간 (연-월-일)" : lang === "ja" ? "期間（年-月-日）" : "Period (YYYY-MM-DD)"}:</span>
             <input type="date" value={dateStart}
+              lang={lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"}
               aria-label={lang === "ko" ? "이상 이력 시작일" : lang === "ja" ? "異常履歴の開始日" : "Anomaly history start date"}
               onChange={e => { setDateStart(e.target.value); setLogPage(1); }}
               className="text-[10px] px-2 py-1 rounded-lg border outline-none"
               style={{ background: th.bgCard2, borderColor: th.border, color: th.text, colorScheme: isDark ? "dark" : "light" }} />
             <span className="text-[10px]" style={{ color: th.textMuted }}>~</span>
             <input type="date" value={dateEnd}
+              lang={lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"}
               aria-label={lang === "ko" ? "이상 이력 종료일" : lang === "ja" ? "異常履歴の終了日" : "Anomaly history end date"}
               onChange={e => { setDateEnd(e.target.value); setLogPage(1); }}
               className="text-[10px] px-2 py-1 rounded-lg border outline-none"
