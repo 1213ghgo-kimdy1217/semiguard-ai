@@ -21,4 +21,11 @@ describe("feedback conversation context accessibility contract", () => {
     expect(dashboardSource).toContain("? feedbackContextDialogRef.current");
     expect(dashboardSource).toContain("if (feedbackContextItem) return setFeedbackContextItem(null);");
   });
+
+  it("announces localized retry progress and busy state for a failed context fetch", () => {
+    expect(dashboardSource).toContain("aria-busy={feedbackContextMessagesQuery.isFetching || undefined}");
+    expect(dashboardSource).toContain('aria-label={feedbackContextMessagesQuery.isFetching ? (lang === "ko" ? "상담 맥락 다시 불러오는 중"');
+    expect(dashboardSource).toContain('lang === "ja" ? "会話文脈を再読み込み中"');
+    expect(dashboardSource).toContain('"Retrying conversation context")');
+  });
 });

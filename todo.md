@@ -126,6 +126,7 @@
 - [x] 기간 PDF 보고서 내보내기 버튼의 진행 중 다국어 접근성 이름과 회귀 계약 보강 (PDF 준비 중에도 KO·EN·JA 접근성 이름과 기존 `aria-busy` 상태를 전달; TypeScript·Vitest 253개 파일/590개 테스트·프로덕션 빌드 통과)
 - [x] 기간 CSV 내보내기 버튼의 다국어 접근성 이름과 회귀 계약 보강 (CSV 약어 대신 KO·EN·JA 기간 분석 내보내기 목적을 접근성 이름으로 전달; TypeScript·Vitest 253개 파일/591개 테스트·프로덕션 빌드 통과)
 - [x] 안전 모니터링 재연결 버튼의 진행 중 다국어 접근성 이름·busy 상태와 회귀 계약 보강 (연결 중에는 KO·EN·JA 상태 이름과 `aria-busy`를 전달; TypeScript·Vitest 253개 파일/592개 테스트·프로덕션 빌드 통과)
+- [x] 피드백 상담 맥락 재시도 버튼의 진행 중 다국어 접근성 이름·busy 상태와 회귀 계약 보강 (재시도 중에는 KO·EN·JA 상태 이름과 `aria-busy`를 전달; TypeScript·Vitest 253개 파일/593개 테스트·프로덕션 빌드 통과)
 - [x] 대시보드 AI 이상 분석 결과 카드 의미론 점검: 기존 `role="region"`·`aria-live="polite"`·`aria-atomic="true"`·`aria-labelledby` 및 다국어 제목 구현을 확인해 중복 변경 없이 유지
 - [x] 센서 차트 PNG·JPEG 내보내기 버튼의 진행 중 다국어 접근성 이름과 회귀 계약 보강 (내보내기 준비 중에도 KO·EN·JA 접근성 이름과 기존 `aria-busy` 상태를 전달; TypeScript·Vitest 253개 파일/589개 테스트·프로덕션 빌드 통과)
 - [x] 대시보드 상담·피드백 로딩 아이콘의 장식 처리와 회귀 계약 보강 (상담 이력·피드백 맥락·피드백 이력 로딩을 atomic polite live status로 안내하고 스피너를 보조기기에서 제외; TypeScript·Vitest 253개 파일/587개 테스트·프로덕션 빌드 통과)
