@@ -6853,7 +6853,7 @@ export default function Dashboard() {
               {getDailyMaxRisk.isError ? (
                 <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <div className="flex min-h-40 flex-col items-center justify-center gap-2 text-center text-[10px]" role="alert" aria-atomic="true" style={{ color: th.textMuted }}>
-                    <p>⚠️ {lang === "ko" ? "월간 위험도 히트맵을 불러오지 못했습니다." : lang === "ja" ? "月間リスクヒートマップを読み込めませんでした。" : "Could not load the monthly risk heatmap."}</p>
+                    <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "월간 위험도 히트맵을 불러오지 못했습니다." : lang === "ja" ? "月間リスクヒートマップを読み込めませんでした。" : "Could not load the monthly risk heatmap."}</p>
                     <button type="button" onClick={() => void getDailyMaxRisk.refetch()} disabled={getDailyMaxRisk.isFetching} aria-busy={getDailyMaxRisk.isFetching || undefined} aria-label={getDailyMaxRisk.isFetching ? (lang === "ko" ? "월간 위험도 히트맵 다시 불러오는 중" : lang === "ja" ? "月間リスクヒートマップを再読み込み中" : "Retrying monthly risk heatmap") : (lang === "ko" ? "월간 위험도 히트맵 다시 시도" : lang === "ja" ? "月間リスクヒートマップを再試行" : "Retry monthly risk heatmap")} className="rounded border px-2.5 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                       ↻ {getDailyMaxRisk.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                     </button>

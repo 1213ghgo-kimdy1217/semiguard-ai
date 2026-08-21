@@ -22,4 +22,8 @@ describe("dashboard analysis and risk error accessibility contract", () => {
       /getLogs\.isError \? \([\s\S]*?<div[^>]*role="alert"[^>]*aria-atomic="true"/
     );
   });
+
+  it("keeps the monthly risk heatmap failure message while hiding its decorative warning symbol", () => {
+    expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "월간 위험도 히트맵을 불러오지 못했습니다."');
+  });
 });
