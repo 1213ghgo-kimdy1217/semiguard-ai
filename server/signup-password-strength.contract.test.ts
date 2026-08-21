@@ -12,11 +12,12 @@ describe("signup password strength contract", () => {
     expect(signupSource).toContain('if (characterGroups >= 2) return { level: "fair", score: 2 };');
   });
 
-  it("announces localized feedback and exposes a visual progress state", () => {
+  it("announces localized feedback once and exposes a visual progress state", () => {
     expect(signupSource).toContain("passwordStrengthLabel: \"비밀번호 강도\"");
     expect(signupSource).toContain("passwordStrengthLabel: \"Password strength\"");
     expect(signupSource).toContain("passwordStrengthLabel: \"パスワードの強度\"");
-    expect(signupSource).toContain('aria-live="polite"');
+    expect(signupSource).toContain('className="space-y-1.5">');
+    expect(signupSource).toContain('id="password-strength-status" role="status" aria-live="polite" aria-atomic="true"');
     expect(signupSource).toContain("copy.passwordStrength[passwordStrength.level]");
   });
 

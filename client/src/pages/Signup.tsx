@@ -349,7 +349,7 @@ export function Signup() {
                 </button>
               </div>
               {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : (formData.password ? copy.validation.passwordLength : copy.validation.password)}</p>}
-              <div className="space-y-1.5" aria-live="polite" aria-atomic="true">
+              <div className="space-y-1.5">
                 <div className="flex gap-1" aria-hidden="true">
                   <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 1 ? "bg-rose-400" : "bg-slate-600"}`} />
                   <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 2 ? "bg-amber-400" : "bg-slate-600"}`} />
