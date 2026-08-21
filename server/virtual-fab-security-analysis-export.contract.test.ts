@@ -66,4 +66,9 @@ describe("virtual fab demo, security status, and analysis export contract", () =
   it("keeps the virtual-fab PDF export label while hiding its decorative document icon", () => {
     expect(dashboardSource).toContain('<span aria-hidden="true">📄</span> {lang === "ko" ? "PDF 보고서 내보내기"');
   });
+
+  it("hides the virtual-fab scenario factory and compact state indicators from assistive technology", () => {
+    expect(dashboardSource).toContain('<span aria-hidden="true">🏭</span>{" "}{lang === "ko" ? "가상 팹 위험 시나리오"');
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-[10px]">{virtualFabDemoActive');
+  });
 });
