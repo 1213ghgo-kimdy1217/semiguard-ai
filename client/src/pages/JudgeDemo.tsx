@@ -603,6 +603,7 @@ export default function JudgeDemo() {
               className="flex gap-1.5"
               role="tablist"
               aria-label={text.timing}
+              aria-orientation="horizontal"
             >
               {text.steps.map((label, index) => (
                 <button

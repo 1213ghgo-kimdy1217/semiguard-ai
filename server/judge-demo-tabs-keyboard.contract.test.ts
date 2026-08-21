@@ -20,6 +20,9 @@ describe("judge demo step tabs keyboard contract", () => {
       "stepTabRefs.current[nextIndex]?.focus()"
     );
     expect(judgeDemoSource).toContain("tabIndex={step === index + 1 ? 0 : -1}");
+    expect(judgeDemoSource).toMatch(
+      /role="tablist"\s+aria-label=\{text\.timing\}\s+aria-orientation="horizontal"/
+    );
   });
 
   it("connects the active tab to the live step panel", () => {
