@@ -322,6 +322,8 @@ export function AIChatBox({
           type="submit"
           size="icon"
           disabled={!input.trim() || isLoading}
+          aria-label={isLoading ? "AI is responding" : "Send message"}
+          aria-busy={isLoading || undefined}
           className="shrink-0 h-[38px] w-[38px]"
         >
           {isLoading ? (

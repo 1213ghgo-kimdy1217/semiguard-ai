@@ -2349,3 +2349,4 @@
 - [x] 공통 AI 채팅 입력의 IME Enter 조기 전송 방지와 회귀 계약 보강 (공통 `AIChatBox`에서 한국어·일본어 등 IME 조합 중 Enter 전송을 방지하고 기존 Enter 전송·Shift+Enter 줄바꿈을 유지; TypeScript·Vitest 271개 파일/632개 테스트·프로덕션 빌드 통과)
 - [x] 공통 AI 채팅 자동 스크롤의 모션 감소 설정 준수와 회귀 계약 보강 (공통 `AIChatBox`가 모션 감소 설정에서는 즉시, 기본 설정에서는 부드럽게 최신 메시지로 스크롤하도록 보완; TypeScript·Vitest 271개 파일/633개 테스트·프로덕션 빌드 통과)
 - [x] 공통 AI 채팅 입력의 모바일 전송 키보드 힌트와 회귀 계약 보강 (공통 `AIChatBox` 입력에 `enterKeyHint="send"`를 적용해 모바일 키보드의 전송 동작을 명시하고 기존 IME·Shift+Enter 동작을 유지; TypeScript·Vitest 271개 파일/634개 테스트·프로덕션 빌드 통과)
+- [x] 공통 AI 채팅 아이콘 전용 전송 버튼의 상태별 접근성 이름과 회귀 계약 보강 (공통 `AIChatBox` 전송 버튼에 기본·응답 생성 중 접근성 이름과 `aria-busy`를 추가해 아이콘 전용 제어의 상태를 전달; TypeScript·Vitest 271개 파일/635개 테스트·프로덕션 빌드 통과)

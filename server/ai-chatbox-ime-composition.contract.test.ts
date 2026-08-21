@@ -18,4 +18,9 @@ describe("common AI chat IME composition contract", () => {
     expect(aiChatBoxSource).toContain('enterKeyHint="send"');
     expect(aiChatBoxSource).toContain('!e.shiftKey && !e.nativeEvent.isComposing');
   });
+
+  it("gives the icon-only send button an accessible name and busy state", () => {
+    expect(aiChatBoxSource).toContain('aria-label={isLoading ? "AI is responding" : "Send message"}');
+    expect(aiChatBoxSource).toContain('aria-busy={isLoading || undefined}');
+  });
 });
