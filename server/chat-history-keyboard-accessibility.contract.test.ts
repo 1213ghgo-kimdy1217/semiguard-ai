@@ -36,6 +36,12 @@ describe("consultation history keyboard accessibility contract", () => {
     );
   });
 
+  it("does not save a consultation title or period preset while an IME composition is being committed", () => {
+    expect(dashboardSource).toContain('if (event.key === "Enter" && !event.nativeEvent.isComposing)');
+    expect(dashboardSource).toMatch(/value=\{editingSessionTitle\}[\s\S]{0,900}!event\.nativeEvent\.isComposing/);
+    expect(dashboardSource).toMatch(/value=\{customPeriodPresetName\}[\s\S]{0,900}!event\.nativeEvent\.isComposing/);
+  });
+
   it("exposes the full-screen history panel as a labeled dialog with a search label", () => {
     expect(dashboardSource).toContain('role="dialog"\n                aria-modal="true"\n                aria-labelledby="consultation-history-panel-title"');
     expect(dashboardSource).toContain('id="consultation-history-panel-title"');
