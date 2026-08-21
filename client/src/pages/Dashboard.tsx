@@ -38,6 +38,28 @@ function persistDashboardPreference(key: string, value: string) {
   }
 }
 
+async function copyTextWithFallback(value: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // Permission-denied clipboard calls use the legacy copy path below.
+  }
+
+  const temporaryInput = document.createElement("textarea");
+  temporaryInput.value = value;
+  temporaryInput.setAttribute("readonly", "");
+  temporaryInput.style.position = "fixed";
+  temporaryInput.style.opacity = "0";
+  document.body.appendChild(temporaryInput);
+  temporaryInput.select();
+  const copied = document.execCommand("copy");
+  document.body.removeChild(temporaryInput);
+  return copied;
+}
+
 function readCustomPeriodPresets(): CustomPeriodPreset[] {
   try {
     const raw = window.localStorage.getItem(CUSTOM_PERIOD_PRESETS_KEY);
@@ -5842,12 +5864,12 @@ export default function Dashboard() {
                         <button
                           type="button"
                           onClick={async () => {
-                            try {
-                              await navigator.clipboard.writeText(msg.content);
+                            const copied = await copyTextWithFallback(msg.content);
+                            if (copied) {
                               setCopiedIndex(idx);
                               setTimeout(() => setCopiedIndex(null), 2000);
-                            } catch (err) {
-                              console.error("Clipboard write failed:", err);
+                            } else {
+                              toast.error(lang === "ko" ? "답변을 복사하지 못했습니다. 브라우저 권한을 확인해주세요." : lang === "ja" ? "回答をコピーできませんでした。ブラウザーの権限を確認してください。" : "Could not copy the reply. Check browser permissions.");
                             }
                           }}
                           className="px-2 py-0.5 rounded text-[10px] border transition-all flex items-center gap-1 opacity-70 hover:opacity-100 shadow-sm"
