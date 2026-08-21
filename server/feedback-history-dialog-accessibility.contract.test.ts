@@ -15,6 +15,7 @@ describe("feedback history dialog accessibility contract", () => {
   it("labels the feedback history search input in every supported language", () => {
     expect(dashboardSource).toContain('htmlFor="feedback-history-search"');
     expect(dashboardSource).toContain('id="feedback-history-search"');
+    expect(dashboardSource).toContain('enterKeyHint="search"');
     expect(dashboardSource).toContain('lang === "ja" ? "フィードバック履歴を検索"');
   });
 

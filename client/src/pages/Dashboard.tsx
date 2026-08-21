@@ -5346,6 +5346,7 @@ export default function Dashboard() {
                   <input
                     id="feedback-history-search"
                     type="search"
+                    enterKeyHint="search"
                     value={feedbackHistorySearch}
                     onChange={event => setFeedbackHistorySearch(event.target.value)}
                     placeholder={lang === "ko" ? "답변·사유·재생성 내용 검색..." : lang === "ja" ? "回答・理由・再生成内容を検索..." : "Search answers, reasons, or regenerations..."}
