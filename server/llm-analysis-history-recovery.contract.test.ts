@@ -16,4 +16,11 @@ describe("LLM analysis history recovery contract", () => {
     expect(dashboardSource).toContain("llmHistoryQuery.isFetching");
     expect(dashboardSource).toContain("다시 시도");
   });
+
+  it("announces analysis-history loading without exposing the decorative spinner", () => {
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? "AI 분석 이력을 불러오는 중"');
+    expect(dashboardSource).toContain('"AI分析履歴を読み込み中"');
+    expect(dashboardSource).toContain('"Loading AI analysis history"');
+    expect(dashboardSource).toContain('border-t-transparent animate-spin" aria-hidden="true"');
+  });
 });

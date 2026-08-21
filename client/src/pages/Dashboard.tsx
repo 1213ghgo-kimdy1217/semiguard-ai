@@ -3843,8 +3843,8 @@ export default function Dashboard() {
                   : "New analyses are saved after checking the sensor values, score, and risk level of the same observation log. Select a source log number to view the sensor details from that observation."}
             </div>
             {llmHistoryQuery.isLoading ? (
-              <div className="px-4 py-6 flex justify-center">
-                <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "oklch(0.75 0.18 200)", borderTopColor: "transparent" }} />
+              <div className="px-4 py-6 flex justify-center" role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? "AI 분석 이력을 불러오는 중" : lang === "ja" ? "AI分析履歴を読み込み中" : "Loading AI analysis history"}>
+                <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" aria-hidden="true" style={{ borderColor: "oklch(0.75 0.18 200)", borderTopColor: "transparent" }} />
               </div>
             ) : llmHistoryQuery.isError ? (
               <div className="flex flex-col items-center gap-2 px-4 py-6 text-center text-xs" style={{ color: "rgb(239,68,68)" }}>
