@@ -31,9 +31,13 @@ describe("period report export contract", () => {
     expect(dashboardSource).toContain('"Preparing PDF report")');
   });
 
-  it("provides a localized descriptive name for the period CSV export control", () => {
-    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "기간 분석 CSV 내보내기"');
+  it("provides a localized descriptive name and busy state for the period CSV export control", () => {
+    expect(dashboardSource).toContain("aria-busy={periodOverviewQuery.isFetching || undefined}");
+    expect(dashboardSource).toContain('aria-label={periodOverviewQuery.isFetching ? (lang === "ko" ? "기간 분석 데이터를 불러오는 중"');
+    expect(dashboardSource).toContain('lang === "ja" ? "期間分析データを読み込み中"');
+    expect(dashboardSource).toContain('"Loading period analysis data")');
+    expect(dashboardSource).toContain('"기간 분석 CSV 내보내기"');
     expect(dashboardSource).toContain('lang === "ja" ? "期間分析CSVを出力"');
-    expect(dashboardSource).toContain('"Export period analysis CSV"}');
+    expect(dashboardSource).toContain('"Export period analysis CSV"');
   });
 });
