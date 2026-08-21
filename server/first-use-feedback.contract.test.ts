@@ -88,5 +88,6 @@ describe("first-use feedback privacy and metrics contract", () => {
 
   it("marks the feedback dialog busy while the selected response is saving", () => {
     expect(dashboardSource).toContain('dialog.setAttribute("aria-busy", saveFirstUseFeedbackMutation.isPending ? "true" : "false")');
+    expect(dashboardSource).toContain('aria-busy={saveFirstUseFeedbackMutation.isPending || undefined}');
   });
 });
