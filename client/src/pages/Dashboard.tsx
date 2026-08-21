@@ -6747,7 +6747,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-0.5">
                     <p className="text-xs font-semibold">{t.simulatorTitle}</p>
                     {lastInjectedMode && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                      <span role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? `가상 팹 ${t[lastInjectedMode]} 단계 주입 완료` : lang === "ja" ? `仮想ファブに${t[lastInjectedMode]}レベルを注入しました` : `Virtual fab ${t[lastInjectedMode]} level injected`} className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                         style={{
                           background: lastInjectedMode === "normal" ? "rgba(34,197,94,0.15)" : lastInjectedMode === "caution" ? "rgba(234,179,8,0.15)" : lastInjectedMode === "warning" ? "rgba(249,115,22,0.15)" : "rgba(239,68,68,0.15)",
                           color: lastInjectedMode === "normal" ? "#22c55e" : lastInjectedMode === "caution" ? "#eab308" : lastInjectedMode === "warning" ? "#f97316" : "#ef4444",
@@ -6757,7 +6757,7 @@ export default function Dashboard() {
                     )}
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-relaxed">{t.simulatorDesc}</p>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="grid grid-cols-2 gap-2 mt-1" role="group" aria-label={t.simulatorTitle}>
                     <button type="button" onClick={handleInjectNormal} disabled={injectNormal.isPending}
                       className="py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
                       style={{ background: "rgba(34,197,94,0.10)", borderColor: "#22c55e45", color: "#22c55e" }}>

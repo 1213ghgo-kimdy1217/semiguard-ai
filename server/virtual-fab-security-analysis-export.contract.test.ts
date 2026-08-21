@@ -38,6 +38,14 @@ describe("virtual fab demo, security status, and analysis export contract", () =
     expect(dashboardSource).toContain("설비 제어 없음");
   });
 
+  it("groups virtual-fab risk injections and announces the last injected level", () => {
+    expect(dashboardSource).toContain('role="group" aria-label={t.simulatorTitle}');
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true"');
+    expect(dashboardSource).toContain('`가상 팹 ${t[lastInjectedMode]} 단계 주입 완료`');
+    expect(dashboardSource).toContain('`仮想ファブに${t[lastInjectedMode]}レベルを注入しました`');
+    expect(dashboardSource).toContain('`Virtual fab ${t[lastInjectedMode]} level injected`');
+  });
+
   it("exports the visible LLM anomaly analysis as text or a print-to-PDF report", () => {
     expect(dashboardSource).toContain("function downloadLlmAnalysisText");
     expect(dashboardSource).toContain("function openLlmAnalysisPdf");
