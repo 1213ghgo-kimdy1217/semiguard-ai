@@ -59,6 +59,16 @@ describe("first-use feedback privacy and metrics contract", () => {
     expect(dashboardSource).toContain("document.activeElement === lastControl");
   });
 
+  it("supports roving focus and arrow-key selection for both feedback radio groups", () => {
+    expect(dashboardSource).toContain('role="radiogroup" aria-label={firstUseFeedbackCopy.ease}');
+    expect(dashboardSource).toContain('role="radiogroup" aria-label={firstUseFeedbackCopy.difficult}');
+    expect(dashboardSource).toContain('role="radio" aria-checked={selected}');
+    expect(dashboardSource).toContain('event.key === "ArrowLeft" || event.key === "ArrowUp"');
+    expect(dashboardSource).toContain('event.key === "Home" ? 1 : event.key === "End" ? 5');
+    expect(dashboardSource).toContain('const difficultSteps = ["none", "orientation", "risk_review", "analysis_review"] as const');
+    expect(dashboardSource).toContain('requestAnimationFrame(() => radios[nextIndex]?.focus())');
+  });
+
   it("keeps the mobile defer control readable on one line", () => {
     expect(dashboardSource).toContain('className="min-h-8 min-w-14 shrink-0 whitespace-nowrap rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300"');
     expect(dashboardSource).toContain('<div className="min-w-0">');
