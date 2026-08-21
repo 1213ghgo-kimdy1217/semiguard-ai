@@ -10,6 +10,9 @@ describe("not found locale contract", () => {
     expect(notFoundSource).toContain("페이지를 찾을 수 없습니다");
     expect(notFoundSource).toContain("Page Not Found");
     expect(notFoundSource).toContain("ページが見つかりません");
+    expect(notFoundSource).toContain("심사위원 데모 열기");
+    expect(notFoundSource).toContain("Open Judge Demo");
+    expect(notFoundSource).toContain("審査員デモを開く");
     expect(notFoundSource).toContain("{user ? copy.goHome : copy.goLogin}");
   });
 
@@ -19,6 +22,8 @@ describe("not found locale contract", () => {
     expect(notFoundSource).toContain('pageTitle: "SemiGuard AI | Page Not Found"');
     expect(notFoundSource).toContain('pageTitle: "SemiGuard AI | ページが見つかりません"');
     expect(notFoundSource).toContain("document.title = copy.pageTitle;");
+    expect(notFoundSource).toContain('onClick={handleGoDemo}');
+    expect(notFoundSource).toContain('setLocation("/demo")');
     expect(notFoundSource).toContain('aria-labelledby="not-found-title"');
   });
 });

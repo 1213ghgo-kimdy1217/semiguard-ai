@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Home } from "lucide-react";
+import { AlertCircle, Home, MonitorPlay } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 type NotFoundLanguage = "ko" | "en" | "ja";
 
-const NOT_FOUND_COPY: Record<NotFoundLanguage, { pageTitle: string; title: string; description: string; moved: string; goHome: string; goLogin: string }> = {
+const NOT_FOUND_COPY: Record<NotFoundLanguage, { pageTitle: string; title: string; description: string; moved: string; goHome: string; goLogin: string; goDemo: string }> = {
   ko: {
     pageTitle: "SemiGuard AI | 페이지를 찾을 수 없습니다",
     title: "페이지를 찾을 수 없습니다",
@@ -15,6 +15,7 @@ const NOT_FOUND_COPY: Record<NotFoundLanguage, { pageTitle: string; title: strin
     moved: "주소가 변경되었거나 삭제되었을 수 있습니다.",
     goHome: "대시보드로 이동",
     goLogin: "로그인으로 이동",
+    goDemo: "심사위원 데모 열기",
   },
   en: {
     pageTitle: "SemiGuard AI | Page Not Found",
@@ -23,6 +24,7 @@ const NOT_FOUND_COPY: Record<NotFoundLanguage, { pageTitle: string; title: strin
     moved: "It may have been moved or deleted.",
     goHome: "Go Home",
     goLogin: "Go to Login",
+    goDemo: "Open Judge Demo",
   },
   ja: {
     pageTitle: "SemiGuard AI | ページが見つかりません",
@@ -31,6 +33,7 @@ const NOT_FOUND_COPY: Record<NotFoundLanguage, { pageTitle: string; title: strin
     moved: "ページのアドレスが変更または削除された可能性があります。",
     goHome: "ダッシュボードへ移動",
     goLogin: "ログインへ移動",
+    goDemo: "審査員デモを開く",
   },
 };
 
@@ -59,6 +62,10 @@ export default function NotFound() {
 
   const handleGoHome = () => {
     setLocation(user ? "/" : "/login");
+  };
+
+  const handleGoDemo = () => {
+    setLocation("/demo");
   };
 
   return (
@@ -94,6 +101,15 @@ export default function NotFound() {
             >
               <Home className="w-4 h-4 mr-2" />
               {user ? copy.goHome : copy.goLogin}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGoDemo}
+              className="border-slate-300 bg-white/70 px-6 py-2.5 text-slate-700 hover:bg-slate-100"
+            >
+              <MonitorPlay className="w-4 h-4 mr-2" />
+              {copy.goDemo}
             </Button>
           </div>
         </CardContent>
