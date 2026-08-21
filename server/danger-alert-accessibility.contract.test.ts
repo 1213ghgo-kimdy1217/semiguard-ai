@@ -9,6 +9,7 @@ describe("danger alert accessibility contract", () => {
     expect(dashboardSource).toContain('role="alertdialog" aria-modal="true" aria-labelledby="danger-alert-title" aria-describedby="danger-alert-description"');
     expect(dashboardSource).toContain('id="danger-alert-title"');
     expect(dashboardSource).toContain('id="danger-alert-description"');
+    expect(dashboardSource).toContain('<div aria-hidden="true" className="text-6xl animate-pulse">🚨</div>');
   });
 
   it("moves focus to the confirmation control and supports Escape dismissal with focus restoration", () => {

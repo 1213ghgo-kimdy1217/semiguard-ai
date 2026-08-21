@@ -3692,7 +3692,7 @@ export default function Dashboard() {
               animation: "slideUp 0.4s cubic-bezier(0.23, 1, 0.32, 1)"
             }}>
             <div className="flex flex-col items-center gap-4">
-              <div className="text-6xl animate-pulse">🚨</div>
+              <div aria-hidden="true" className="text-6xl animate-pulse">🚨</div>
               <h2 id="danger-alert-title" className="text-2xl font-bold text-center" style={{ color: "rgb(239,68,68)" }}>
                 {lang === "ko" ? "위험 단계 도달!" : lang === "ja" ? "危険レベル到達！" : "DANGER LEVEL REACHED!"}
               </h2>
