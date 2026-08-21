@@ -5266,7 +5266,7 @@ export default function Dashboard() {
                   </button>
                 </div>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
-                  <div className="flex flex-wrap items-center gap-1 rounded-lg border p-1" style={{ borderColor: th.border2, background: th.bgCard }}>
+                  <div className="flex flex-wrap items-center gap-1 rounded-lg border p-1" role="group" aria-label={lang === "ko" ? "피드백 이력 필터" : lang === "ja" ? "フィードバック履歴フィルター" : "Feedback history filters"} style={{ borderColor: th.border2, background: th.bgCard }}>
                     {([
                       { id: "all", ko: "전체", ja: "すべて", en: "All", icon: "☷" },
                       { id: "like", ko: "긍정", ja: "肯定", en: "Positive", icon: "👍" },
