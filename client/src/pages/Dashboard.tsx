@@ -5453,6 +5453,7 @@ export default function Dashboard() {
                     type="button"
                     onClick={() => void analyzeCurrentFeedbackKeywords()}
                     disabled={sortedFeedbackHistory.length === 0 || analyzeFeedbackKeywordsMutation.isPending}
+                    aria-busy={analyzeFeedbackKeywordsMutation.isPending || undefined}
                     className="rounded-lg border px-2 py-1.5 text-[10px] font-bold transition-all hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40"
                     style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
                     {analyzeFeedbackKeywordsMutation.isPending ? "✨…" : `✨ ${lang === "ko" ? "AI 키워드" : lang === "ja" ? "AIキーワード" : "AI keywords"}`}
