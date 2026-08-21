@@ -5650,7 +5650,7 @@ export default function Dashboard() {
                     <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" style={{ color: th.textMuted }}>
                       <span className="text-base">⚠️</span>
                       <p>{lang === "ko" ? "피드백 이력을 불러오지 못했습니다." : lang === "ja" ? "フィードバック履歴を読み込めませんでした。" : "Could not load feedback history."}</p>
-                      <button type="button" onClick={() => void feedbackHistoryQuery.refetch()} disabled={feedbackHistoryQuery.isFetching} className="rounded-lg border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
+                      <button type="button" onClick={() => void feedbackHistoryQuery.refetch()} disabled={feedbackHistoryQuery.isFetching} aria-busy={feedbackHistoryQuery.isFetching || undefined} aria-label={feedbackHistoryQuery.isFetching ? (lang === "ko" ? "피드백 이력 다시 불러오는 중" : lang === "ja" ? "フィードバック履歴を再読み込み中" : "Retrying feedback history") : (lang === "ko" ? "피드백 이력 다시 시도" : lang === "ja" ? "フィードバック履歴を再試行" : "Retry feedback history")} className="rounded-lg border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
                         ↻ {feedbackHistoryQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                       </button>
                     </div>

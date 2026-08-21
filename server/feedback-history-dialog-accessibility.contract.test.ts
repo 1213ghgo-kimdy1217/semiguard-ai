@@ -28,4 +28,11 @@ describe("feedback history dialog accessibility contract", () => {
   it("announces the complete feedback-history page status after pagination changes", () => {
     expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? `피드백 이력 ${feedbackHistoryPage} / ${feedbackHistoryTotalPages} 페이지`');
   });
+
+  it("announces localized retry progress and busy state when feedback-history loading fails", () => {
+    expect(dashboardSource).toContain("aria-busy={feedbackHistoryQuery.isFetching || undefined}");
+    expect(dashboardSource).toContain('aria-label={feedbackHistoryQuery.isFetching ? (lang === "ko" ? "피드백 이력 다시 불러오는 중"');
+    expect(dashboardSource).toContain('lang === "ja" ? "フィードバック履歴を再読み込み中"');
+    expect(dashboardSource).toContain('"Retrying feedback history")');
+  });
 });
