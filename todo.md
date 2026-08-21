@@ -117,6 +117,7 @@
 - [x] 최신 운영 공개 경로 재확인: 대시보드와 KO·EN·JA 심사위원 데모(`/`, `/demo?lang=ko`, `/demo?lang=en`, `/demo?lang=ja`) 모두 HTTP 200 응답 (`RUNTIME_CHECK_NOTES.md` 기록)
 - [x] 최신 개발 미리보기 일본어 대시보드 화면 점검: 헤더·데모 배너·기간 분석·지표·AI 상담 진입 제어가 상단 화면 폭 안에 표시되고, 요청 중 스켈레톤도 정상 표시됨 (`RUNTIME_CHECK_NOTES.md` 기록)
 - [x] 기간 분석·제품 지표 로딩 접근성 점검: 기존 KO·EN·JA atomic live status를 확인하고 최신 네트워크 4xx/5xx 없음, 과거 `Failed to fetch` 콘솔 기록은 현재 재현 오류와 분리 (`RUNTIME_CHECK_NOTES.md` 기록)
+- [x] 모바일 375px 로그인 전환 화면 점검: 일본어 브랜드·상태 제목·설명·스피너가 화면 폭 안에서 중앙 정렬되고 가로 넘침·잘림 없음 (`RUNTIME_CHECK_NOTES.md` 기록)
 - [x] 센서 차트 PNG·JPEG 내보내기 버튼의 진행 중 다국어 접근성 이름과 회귀 계약 보강 (내보내기 준비 중에도 KO·EN·JA 접근성 이름과 기존 `aria-busy` 상태를 전달; TypeScript·Vitest 253개 파일/589개 테스트·프로덕션 빌드 통과)
 - [x] 대시보드 상담·피드백 로딩 아이콘의 장식 처리와 회귀 계약 보강 (상담 이력·피드백 맥락·피드백 이력 로딩을 atomic polite live status로 안내하고 스피너를 보조기기에서 제외; TypeScript·Vitest 253개 파일/587개 테스트·프로덕션 빌드 통과)
 - [x] AI 분석 이력 로딩 상태의 다국어 live status·장식 스피너 처리와 회귀 계약 보강 (AI 분석 이력 로딩을 KO·EN·JA atomic polite live status로 안내하고 스피너를 보조기기에서 제외; TypeScript·Vitest 253개 파일/588개 테스트·프로덕션 빌드 통과)
