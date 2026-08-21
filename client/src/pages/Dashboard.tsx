@@ -4499,7 +4499,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     {manualDocumentsQuery.isLoading ? (
-                      <p className="py-2 text-center text-[10px]" style={{ color: th.textMuted }}>
+                      <p className="py-2 text-center text-[10px]" role="status" aria-live="polite" aria-atomic="true" style={{ color: th.textMuted }}>
                         {lang === "ko" ? "매뉴얼 목록을 불러오는 중..." : lang === "ja" ? "マニュアル一覧を読み込み中..." : "Loading manuals..."}
                       </p>
                     ) : manualDocumentsQuery.isError ? (
@@ -4558,7 +4558,7 @@ export default function Dashboard() {
                           )}
                         </div>
                         {isManualSearching ? (
-                          <p className="py-3 text-center text-[10px]" style={{ color: th.textMuted }}>
+                          <p className="py-3 text-center text-[10px]" role="status" aria-live="polite" aria-atomic="true" style={{ color: th.textMuted }}>
                             {isManualSearchPending
                               ? (lang === "ko" ? "입력을 확인하는 중..." : lang === "ja" ? "入力を確認中..." : "Waiting for input...")
                               : (lang === "ko" ? "매뉴얼 제목과 원문을 검색하는 중..." : lang === "ja" ? "マニュアルのタイトル・原文を検索中..." : "Searching manual titles and content...")}
@@ -4619,7 +4619,7 @@ export default function Dashboard() {
                                   {lang === "ko" ? "저장된 원문 구간" : lang === "ja" ? "保存された原文区間" : "Stored source sections"}
                                 </p>
                                 {manualPreviewQuery.isLoading ? (
-                                  <p className="py-1 text-[9px]" style={{ color: th.textMuted }}>{lang === "ko" ? "원문을 불러오는 중..." : lang === "ja" ? "原文を読み込み中..." : "Loading source..."}</p>
+                                  <p className="py-1 text-[9px]" role="status" aria-live="polite" aria-atomic="true" style={{ color: th.textMuted }}>{lang === "ko" ? "원문을 불러오는 중..." : lang === "ja" ? "原文を読み込み中..." : "Loading source..."}</p>
                                 ) : manualPreviewQuery.isError ? (
                                   <div className="flex items-center justify-between gap-2 py-1 text-[9px]" style={{ color: th.textMuted }}>
                                     <span>⚠️ {lang === "ko" ? "원문을 불러오지 못했습니다." : lang === "ja" ? "原文を読み込めませんでした。" : "Could not load the source."}</span>

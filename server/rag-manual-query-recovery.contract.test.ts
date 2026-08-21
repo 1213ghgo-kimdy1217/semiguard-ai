@@ -28,4 +28,11 @@ describe("RAG manual query recovery contract", () => {
     expect(dashboardSource).toContain('aria-busy={manualDocumentSearchQuery.isFetching || undefined}');
     expect(dashboardSource).toContain('aria-busy={manualPreviewQuery.isFetching || undefined}');
   });
+
+  it("announces localized list, search, and source loading states as atomic polite statuses", () => {
+    expect(dashboardSource).toContain('"매뉴얼 목록을 불러오는 중..."');
+    expect(dashboardSource).toContain('"매뉴얼 제목과 원문을 검색하는 중..."');
+    expect(dashboardSource).toContain('"원문을 불러오는 중..."');
+    expect(dashboardSource.match(/role="status" aria-live="polite" aria-atomic="true"/g)?.length).toBeGreaterThan(2);
+  });
 });
