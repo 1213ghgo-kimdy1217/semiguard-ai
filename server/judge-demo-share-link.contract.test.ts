@@ -16,6 +16,8 @@ describe("judge demo share-link contract", () => {
     expect(source).toContain('navigator.clipboard?.writeText');
     expect(source).toContain('document.createElement("textarea")');
     expect(source).toContain('document.execCommand("copy")');
+    expect(source).toContain("finally {");
+    expect(source).toContain("temporaryInput.remove();");
     expect(source).toContain('setNotice(copyWithFallback() ? "shareSuccess" : "shareError");');
   });
 

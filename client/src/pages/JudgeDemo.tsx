@@ -371,10 +371,12 @@ export default function JudgeDemo() {
       temporaryInput.style.position = "fixed";
       temporaryInput.style.opacity = "0";
       document.body.appendChild(temporaryInput);
-      temporaryInput.select();
-      const copied = document.execCommand("copy");
-      document.body.removeChild(temporaryInput);
-      return copied;
+      try {
+        temporaryInput.select();
+        return document.execCommand("copy");
+      } finally {
+        temporaryInput.remove();
+      }
     };
 
     try {
