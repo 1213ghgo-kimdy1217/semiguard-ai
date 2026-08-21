@@ -6231,7 +6231,7 @@ export default function Dashboard() {
       )}
 
       {/* ── 탭 ── */}
-      <div className="flex border-b px-5" role="tablist" aria-label={lang === "ko" ? "대시보드 보기 전환" : lang === "ja" ? "ダッシュボード表示の切り替え" : "Dashboard view switcher"} style={{ borderColor: th.border }}>
+      <div className="flex border-b px-5" role="tablist" aria-label={lang === "ko" ? "대시보드 보기 전환" : lang === "ja" ? "ダッシュボード表示の切り替え" : "Dashboard view switcher"} aria-orientation="horizontal" style={{ borderColor: th.border }}>
         {(["dashboard", "log"] as const).map(tab => (
           <button key={tab} type="button" id={`dashboard-tab-${tab}`} role="tab" aria-selected={activeTab === tab} aria-controls={`dashboard-panel-${tab}`} tabIndex={activeTab === tab ? 0 : -1} onClick={() => setActiveTab(tab)}
             onKeyDown={(event) => {

@@ -7,6 +7,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 describe("dashboard tabs accessibility contract", () => {
   it("communicates tab selection and links every tab to its active panel", () => {
     expect(dashboardSource).toContain('role="tablist"');
+    expect(dashboardSource).toContain('aria-orientation="horizontal"');
     expect(dashboardSource).toContain('role="tab"');
     expect(dashboardSource).toContain('aria-selected={activeTab === tab}');
     expect(dashboardSource).toContain('aria-controls={`dashboard-panel-${tab}`}');
