@@ -13,7 +13,7 @@ describe("chat latest-message control contract", () => {
 
   it("provides a localized jump-to-latest control and preserves automatic scrolling near the bottom", () => {
     expect(dashboardSource).toContain("if (!isChatOpen || !isChatNearBottomRef.current) return;");
-    expect(dashboardSource).toContain("messageList.scrollTo({ top: messageList.scrollHeight, behavior: \"smooth\" })");
+    expect(dashboardSource).toContain("messageList.scrollTo({ top: messageList.scrollHeight, behavior: getKeyboardScrollBehavior() })");
     expect(dashboardSource).toContain("최신 메시지로 이동");
     expect(dashboardSource).toContain("最新メッセージへ移動");
     expect(dashboardSource).toContain("Jump to latest message");

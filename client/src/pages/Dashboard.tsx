@@ -6081,7 +6081,7 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => {
                   const messageList = chatMessageListRef.current;
-                  if (messageList) messageList.scrollTo({ top: messageList.scrollHeight, behavior: "smooth" });
+                  if (messageList) messageList.scrollTo({ top: messageList.scrollHeight, behavior: getKeyboardScrollBehavior() });
                   isChatNearBottomRef.current = true;
                   setIsChatAwayFromLatest(false);
                   setUnreadChatMessageCount(0);
@@ -6110,7 +6110,7 @@ export default function Dashboard() {
                 if (event.target !== event.currentTarget) return;
                 if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
                   event.preventDefault();
-                  event.currentTarget.scrollBy({ left: event.key === "ArrowRight" ? 180 : -180, behavior: "smooth" });
+                  event.currentTarget.scrollBy({ left: event.key === "ArrowRight" ? 180 : -180, behavior: getKeyboardScrollBehavior() });
                 }
               }}>
               <span id="chat-quick-prompt-help" className="sr-only">

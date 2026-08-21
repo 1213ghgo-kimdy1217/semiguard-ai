@@ -14,7 +14,7 @@ describe("chat keyboard and quick-question accessibility contract", () => {
 
   it("provides scroll and screen-reader guidance for mobile quick questions", () => {
     expect(dashboardSource).toContain('aria-describedby="chat-quick-prompt-help"');
-    expect(dashboardSource).toContain('event.currentTarget.scrollBy({ left: event.key === "ArrowRight" ? 180 : -180, behavior: "smooth" })');
+    expect(dashboardSource).toContain('event.currentTarget.scrollBy({ left: event.key === "ArrowRight" ? 180 : -180, behavior: getKeyboardScrollBehavior() })');
     expect(dashboardSource).toContain('aria-live="polite"');
   });
 });
