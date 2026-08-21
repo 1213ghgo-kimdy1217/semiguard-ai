@@ -16,4 +16,13 @@ describe("feedback load error decorative icon contract", () => {
     expect(dashboardSource).toContain("상담 맥락을 불러오지 못했습니다");
     expect(dashboardSource).toContain("피드백 이력을 불러오지 못했습니다");
   });
+
+  it("announces each localized loading failure as an atomic alert", () => {
+    expect(dashboardSource).toMatch(
+      /feedbackContextMessagesQuery\.isError \? \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
+    );
+    expect(dashboardSource).toMatch(
+      /feedbackHistoryQuery\.isError \? \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
+    );
+  });
 });

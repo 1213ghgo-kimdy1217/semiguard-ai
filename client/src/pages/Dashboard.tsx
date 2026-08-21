@@ -5552,7 +5552,7 @@ export default function Dashboard() {
                           {lang === "ko" ? "상담 맥락을 불러오는 중..." : lang === "ja" ? "会話文脈を読み込み中..." : "Loading conversation context..."}
                         </div>
                       ) : feedbackContextMessagesQuery.isError ? (
-                        <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[10px]" style={{ color: th.textMuted }}>
+                        <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[10px]" role="alert" aria-atomic="true" style={{ color: th.textMuted }}>
                           <span aria-hidden="true" className="text-base">⚠️</span>
                           <p>{lang === "ko" ? "상담 맥락을 불러오지 못했습니다." : lang === "ja" ? "会話文脈を読み込めませんでした。" : "Could not load the conversation context."}</p>
                           <button type="button" onClick={() => void feedbackContextMessagesQuery.refetch()} disabled={feedbackContextMessagesQuery.isFetching} aria-busy={feedbackContextMessagesQuery.isFetching || undefined} aria-label={feedbackContextMessagesQuery.isFetching ? (lang === "ko" ? "상담 맥락 다시 불러오는 중" : lang === "ja" ? "会話文脈を再読み込み中" : "Retrying conversation context") : (lang === "ko" ? "상담 맥락 다시 시도" : lang === "ja" ? "会話文脈を再試行" : "Retry conversation context")} className="rounded-lg border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
@@ -5647,7 +5647,7 @@ export default function Dashboard() {
                       <span>{lang === "ko" ? "피드백 이력 불러오는 중..." : lang === "ja" ? "フィードバック履歴を読み込み中..." : "Loading feedback history..."}</span>
                     </div>
                   ) : feedbackHistoryQuery.isError ? (
-                    <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" style={{ color: th.textMuted }}>
+                    <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" role="alert" aria-atomic="true" style={{ color: th.textMuted }}>
                       <span aria-hidden="true" className="text-base">⚠️</span>
                       <p>{lang === "ko" ? "피드백 이력을 불러오지 못했습니다." : lang === "ja" ? "フィードバック履歴を読み込めませんでした。" : "Could not load feedback history."}</p>
                       <button type="button" onClick={() => void feedbackHistoryQuery.refetch()} disabled={feedbackHistoryQuery.isFetching} aria-busy={feedbackHistoryQuery.isFetching || undefined} aria-label={feedbackHistoryQuery.isFetching ? (lang === "ko" ? "피드백 이력 다시 불러오는 중" : lang === "ja" ? "フィードバック履歴を再読み込み中" : "Retrying feedback history") : (lang === "ko" ? "피드백 이력 다시 시도" : lang === "ja" ? "フィードバック履歴を再試行" : "Retry feedback history")} className="rounded-lg border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
