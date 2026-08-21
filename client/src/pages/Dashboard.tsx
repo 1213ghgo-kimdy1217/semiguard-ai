@@ -4191,6 +4191,7 @@ export default function Dashboard() {
             type="button"
             id="btn-export-pdf"
             disabled={pdfExporting}
+            aria-busy={pdfExporting || undefined}
             onClick={exportSelectedPeriodPdf}
             title={lang === "ko" ? "구조화 PDF 보고서 내보내기" : lang === "ja" ? "構造化PDFレポートを出力" : "Export structured PDF report"}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
@@ -4203,6 +4204,7 @@ export default function Dashboard() {
             id="btn-logout"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
+            aria-busy={logoutMutation.isPending || undefined}
             title={lang === "ko" ? "로그아웃" : lang === "ja" ? "ログアウト" : "Logout"}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
             style={{ borderColor: "oklch(0.65 0.20 30 / 0.6)", color: "oklch(0.75 0.20 30)", background: "oklch(0.65 0.20 30 / 0.12)" }}>
