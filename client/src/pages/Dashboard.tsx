@@ -4112,6 +4112,8 @@ export default function Dashboard() {
               });
             }}
             title={muted ? (lang === "ko" ? "소리 켜기" : lang === "ja" ? "音声をオン" : "Unmute") : (lang === "ko" ? "소리 끄기" : lang === "ja" ? "音声をオフ" : "Mute")}
+            aria-label={lang === "ko" ? "알림 음소거" : lang === "ja" ? "通知音をミュート" : "Mute alerts"}
+            aria-pressed={muted}
             className="hidden w-8 h-8 flex items-center justify-center rounded-lg border transition-all duration-200 hover:opacity-80 active:scale-95 text-base"
             style={{
               borderColor: muted ? "oklch(0.35 0.01 240)" : "oklch(0.65 0.18 200 / 0.4)",
