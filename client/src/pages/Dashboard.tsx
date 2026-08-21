@@ -1208,6 +1208,12 @@ export default function Dashboard() {
   }, [isFirstUseFeedbackOpen]);
 
   useEffect(() => {
+    const dialog = firstUseFeedbackDialogRef.current;
+    if (!dialog) return;
+    dialog.setAttribute("aria-busy", saveFirstUseFeedbackMutation.isPending ? "true" : "false");
+  }, [isFirstUseFeedbackOpen, saveFirstUseFeedbackMutation.isPending]);
+
+  useEffect(() => {
     if (!isFirstUseFeedbackOpen) return;
     const dialog = firstUseFeedbackDialogRef.current;
     if (!dialog) return;
