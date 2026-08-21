@@ -4176,7 +4176,7 @@ export default function Dashboard() {
               background: demoRunning ? "oklch(0.65 0.20 30 / 0.12)" : th.bgCard,
             }}>
             {demoRunning ? (
-              <><span className="inline-block w-2 h-2 rounded-sm" style={{ background: "oklch(0.75 0.20 30)", animation: "pulse 1s ease-in-out infinite" }} /> {lang === "ko" ? "데모 중" : lang === "ja" ? "デモ実行中" : "Demo ON"}</>
+              <><span aria-hidden="true" className="inline-block w-2 h-2 rounded-sm" style={{ background: "oklch(0.75 0.20 30)", animation: "pulse 1s ease-in-out infinite" }} /> {lang === "ko" ? "데모 중" : lang === "ja" ? "デモ実行中" : "Demo ON"}</>
             ) : (
               <><span aria-hidden="true">▶</span> {lang === "ko" ? "데모" : lang === "ja" ? "デモ" : "Demo"}</>
             )}
