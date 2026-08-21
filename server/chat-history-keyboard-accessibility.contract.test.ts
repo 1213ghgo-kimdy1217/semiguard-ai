@@ -23,6 +23,13 @@ describe("consultation history keyboard accessibility contract", () => {
     expect(dashboardSource).toContain('"Pin consultation to top"');
   });
 
+  it("groups the all and pinned consultation filters with their selected state", () => {
+    expect(dashboardSource).toContain('role="group" aria-label={lang === "ko" ? "상담 기록 표시 필터"');
+    expect(dashboardSource).toContain('"相談履歴表示フィルター"');
+    expect(dashboardSource).toContain('"Consultation history display filter"');
+    expect(dashboardSource).toContain('aria-pressed={historySessionFilter === filter}');
+  });
+
   it("offers a mobile completion keyboard hint while editing a consultation title", () => {
     expect(dashboardSource).toMatch(
       /value=\{editingSessionTitle\}[\s\S]*?enterKeyHint="done"/,

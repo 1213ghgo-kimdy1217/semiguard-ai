@@ -4805,12 +4805,13 @@ export default function Dashboard() {
                     )}
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-1 rounded-lg border p-0.5" style={{ borderColor: th.border2, background: th.bgCard2 }}>
+                    <div className="flex items-center gap-1 rounded-lg border p-0.5" role="group" aria-label={lang === "ko" ? "상담 기록 표시 필터" : lang === "ja" ? "相談履歴表示フィルター" : "Consultation history display filter"} style={{ borderColor: th.border2, background: th.bgCard2 }}>
                       {(["all", "pinned"] as const).map(filter => (
                         <button
                           key={filter}
                           type="button"
                           onClick={() => setHistorySessionFilter(filter)}
+                          aria-pressed={historySessionFilter === filter}
                           className="rounded px-2 py-1 text-[9px] font-bold transition-all"
                           style={{
                             background: historySessionFilter === filter ? "oklch(0.67 0.17 210 / 0.20)" : "transparent",
