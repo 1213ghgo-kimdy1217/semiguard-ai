@@ -4173,7 +4173,7 @@ export default function Dashboard() {
             {demoRunning ? (
               <><span className="inline-block w-2 h-2 rounded-sm" style={{ background: "oklch(0.75 0.20 30)", animation: "pulse 1s ease-in-out infinite" }} /> {lang === "ko" ? "데모 중" : lang === "ja" ? "デモ実行中" : "Demo ON"}</>
             ) : (
-              <><span>▶</span> {lang === "ko" ? "데모" : lang === "ja" ? "デモ" : "Demo"}</>
+              <><span aria-hidden="true">▶</span> {lang === "ko" ? "데모" : lang === "ja" ? "デモ" : "Demo"}</>
             )}
           </button>
           {/* 데모 속도 슬라이더 - 모바일 숨김 */}

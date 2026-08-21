@@ -10,5 +10,6 @@ describe("dashboard demo auto-run control accessibility contract", () => {
     expect(dashboardSource).toContain('"デモ自動実行"');
     expect(dashboardSource).toContain('"Demo auto-run"');
     expect(dashboardSource).toMatch(/setDemoRunning\(r => !r\)[\s\S]*?aria-pressed=\{demoRunning\}/);
+    expect(dashboardSource).toContain('<><span aria-hidden="true">▶</span> {lang === "ko" ? "데모" : lang === "ja" ? "デモ" : "Demo"}</>');
   });
 });
