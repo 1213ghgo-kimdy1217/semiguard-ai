@@ -422,6 +422,7 @@ export function Login() {
                 }}
                 autoComplete="username"
                 inputMode="text"
+                enterKeyHint="next"
                 aria-invalid={fieldError === "badge" || Boolean(authError)}
                 aria-describedby={fieldError === "badge" ? "badgeNumber-error" : authError ? "login-auth-error" : undefined}
                 className="h-12 bg-slate-700/70 border-slate-600 text-white placeholder-slate-500 text-base"
@@ -450,6 +451,7 @@ export function Login() {
                   onKeyUp={(event) => setCapsLockOn(event.getModifierState("CapsLock"))}
                   onBlur={() => setCapsLockOn(false)}
                   autoComplete="current-password"
+                  enterKeyHint="done"
                   aria-invalid={fieldError === "password" || Boolean(authError)}
                   aria-describedby={fieldError === "password" ? "password-error" : authError ? "login-auth-error" : undefined}
                   className="h-12 bg-slate-700/70 border-slate-600 pr-24 text-white placeholder-slate-500 text-base"
