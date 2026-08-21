@@ -5460,7 +5460,7 @@ export default function Dashboard() {
                       <span>{lang === "ko" ? "전체 피드백 평가 요약" : lang === "ja" ? "全フィードバック評価の要約" : "All feedback summary"}</span>
                       <span>{allFeedbackHistory.length}{lang === "ko" ? "건" : lang === "ja" ? "件" : " total"}</span>
                     </div>
-                    <div className="flex h-2.5 overflow-hidden rounded-full shadow-inner" style={{ background: "oklch(0.60 0.05 240 / 0.18)" }}>
+                    <div className="flex h-2.5 overflow-hidden rounded-full shadow-inner" role="progressbar" aria-label={lang === "ko" ? "피드백 긍정 비율" : lang === "ja" ? "フィードバックの肯定比率" : "Positive feedback ratio"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={animatedPositiveRatio} style={{ background: "oklch(0.60 0.05 240 / 0.18)" }}>
                       <div className="h-full transition-[width] duration-700 ease-out" style={{ width: `${animatedPositiveRatio}%`, background: "linear-gradient(90deg, oklch(0.60 0.19 145), oklch(0.76 0.18 145))" }} />
                       <div className="h-full transition-[width] duration-700 ease-out" style={{ width: `${allFeedbackHistory.length ? 100 - animatedPositiveRatio : 0}%`, background: "linear-gradient(90deg, oklch(0.78 0.16 35), oklch(0.60 0.20 20))" }} />
                     </div>

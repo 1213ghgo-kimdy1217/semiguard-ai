@@ -28,4 +28,11 @@ describe("feedback history filter accessibility contract", () => {
     expect(dashboardSource).toContain('"フィードバック履歴の日付フィルターをリセット"');
     expect(dashboardSource).toContain('"Reset feedback history date filter"');
   });
+
+  it("exposes the positive feedback ratio bar as a localized progress value", () => {
+    expect(dashboardSource).toContain('role="progressbar" aria-label={lang === "ko" ? "피드백 긍정 비율"');
+    expect(dashboardSource).toContain('"フィードバックの肯定比率"');
+    expect(dashboardSource).toContain('"Positive feedback ratio"');
+    expect(dashboardSource).toContain('aria-valuenow={animatedPositiveRatio}');
+  });
 });
