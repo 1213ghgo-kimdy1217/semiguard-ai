@@ -39,6 +39,14 @@ describe("SemiGuard risk-score methodology", () => {
     );
     const readme = readFileSync(resolve(process.cwd(), "README.md"), "utf8");
     const aiUsage = readFileSync(resolve(process.cwd(), "AI_USAGE.md"), "utf8");
+    const technicalReference = readFileSync(
+      resolve(process.cwd(), "TECHNICAL_REFERENCE.md"),
+      "utf8"
+    );
+    const impactScorecard = readFileSync(
+      resolve(process.cwd(), "IMPACT_EVIDENCE_SCORECARD.md"),
+      "utf8"
+    );
     const todo = readFileSync(resolve(process.cwd(), "todo.md"), "utf8");
 
     expect(demoSource).toContain("methodTitle");
@@ -50,6 +58,14 @@ describe("SemiGuard risk-score methodology", () => {
     expect(readme).not.toContain("|(x - μ) / σ|");
     expect(readme).toContain(
       "실제 팹 로그로 정확도·오탐·미탐·사전 경고 시간을 측정한 결과는 아직 없습니다."
+    );
+    expect(readme).toContain("| 학습 데이터 | **없음**입니다.");
+    expect(technicalReference).toContain("z-score 독립 합산 규칙형 엔진");
+    expect(technicalReference).toContain(
+      "Mahalanobis 거리나 Isolation Forest, 사전 학습된 고장 분류 모델을 사용하지 않습니다."
+    );
+    expect(impactScorecard).toContain(
+      "현재 실제 사용자 수, 현장 정확도, 절감 비용은 확정·측정된 성과로 기재하지 않습니다."
     );
     expect(aiUsage).toContain("Isolation Forest, 사전 학습된 고장 분류 모델");
     expect(todo).toContain("z-score 기반 규칙형 위험 신호 탐지 엔진");
