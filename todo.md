@@ -2390,3 +2390,4 @@
 - [x] 공개 운영 도메인 반복 시간 초과·개발 서버 분리 점검 (프로덕션 로그 CLI의 `cloudrun service not found`와 영어 데모 브라우저 `ERR_TIMED_OUT`을 확인했으나, 재시작 뒤 로컬 `/`는 HTTP 200·정상 서버 기동 로그를 반환해 코드 재현 오류가 아닌 운영 인프라 또는 프록시 가용성 문제로 `RUNTIME_CHECK_NOTES.md`에 기록)
 - [x] 공개 운영 가용성 분리를 위한 무인증 경량 헬스 상태 엔드포인트와 회귀 계약 추가 (`/api/health`가 tRPC·정적 라우트보다 먼저 HTTP 200·`{"status":"ok"}`·`Cache-Control: no-store`를 반환함을 정적 계약과 로컬 실제 응답으로 확인)
 - [x] 공개 헬스 상태 경로 운영 연결 재확인 (프로덕션 서버 기동 로그 뒤에도 공개 `/api/health`가 브라우저 `ERR_TIMED_OUT`·CLI `SSL_ERROR_SYSCALL`을 반환하고 로컬은 정상 JSON을 반환함을 확인해, 앱 코드가 아닌 도메인 라우팅·TLS 프록시·운영 인프라 가용성 문제 근거를 `RUNTIME_CHECK_NOTES.md`에 보강)
+- [x] 개발 대시보드 재시작 후 초기 로딩·화면 전환 점검 (서버·브라우저·네트워크 새 오류 없이 1280×720에서 첫 사용 피드백 대화상자와 점수·단계·나중에·응답 저장 제어가 배경 대시보드 위에 정상 표시됨을 확인; `RUNTIME_CHECK_NOTES.md` 기록)
