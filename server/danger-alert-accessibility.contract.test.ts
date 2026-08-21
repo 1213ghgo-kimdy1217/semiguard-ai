@@ -45,4 +45,11 @@ describe("danger alert accessibility contract", () => {
     expect(dashboardSource).toContain('"確認・30秒非表示"');
     expect(dashboardSource).toContain('"OK · Hide 30s"');
   });
+
+  it("announces AI analysis progress and exposes a named analysis result region", () => {
+    expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true"');
+    expect(dashboardSource).toContain('animate-spin flex-shrink-0" aria-hidden="true"');
+    expect(dashboardSource).toContain('role="region" aria-labelledby="danger-alert-ai-analysis-title"');
+    expect(dashboardSource).toContain('<h3 id="danger-alert-ai-analysis-title"');
+  });
 });
