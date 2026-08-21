@@ -5014,14 +5014,14 @@ export default function Dashboard() {
                   ) : chatSessionsQuery.isError ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" style={{ color: th.textMuted }}>
                       <p>⚠️ {lang === "ko" ? "상담 기록을 불러오지 못했습니다." : lang === "ja" ? "相談履歴を読み込めませんでした。" : "Could not load consultation history."}</p>
-                      <button type="button" onClick={() => void chatSessionsQuery.refetch()} disabled={chatSessionsQuery.isFetching} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.22 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                      <button type="button" onClick={() => void chatSessionsQuery.refetch()} disabled={chatSessionsQuery.isFetching} aria-busy={chatSessionsQuery.isFetching || undefined} aria-label={chatSessionsQuery.isFetching ? (lang === "ko" ? "상담 기록 다시 불러오는 중" : lang === "ja" ? "相談履歴を再読み込み中" : "Retrying consultation history") : (lang === "ko" ? "상담 기록 다시 시도" : lang === "ja" ? "相談履歴を再試行" : "Retry consultation history")} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.22 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                         ↻ {chatSessionsQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                       </button>
                     </div>
                   ) : normalizedHistorySearch && searchChatSessionsQuery.isError ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" style={{ color: th.textMuted }}>
                       <p>⚠️ {lang === "ko" ? "상담 기록 검색 결과를 불러오지 못했습니다." : lang === "ja" ? "相談履歴の検索結果を読み込めませんでした。" : "Could not load consultation search results."}</p>
-                      <button type="button" onClick={() => void searchChatSessionsQuery.refetch()} disabled={searchChatSessionsQuery.isFetching} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.22 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                      <button type="button" onClick={() => void searchChatSessionsQuery.refetch()} disabled={searchChatSessionsQuery.isFetching} aria-busy={searchChatSessionsQuery.isFetching || undefined} aria-label={searchChatSessionsQuery.isFetching ? (lang === "ko" ? "상담 기록 검색 결과 다시 불러오는 중" : lang === "ja" ? "相談履歴の検索結果を再読み込み中" : "Retrying consultation search results") : (lang === "ko" ? "상담 기록 검색 결과 다시 시도" : lang === "ja" ? "相談履歴の検索結果を再試行" : "Retry consultation search results")} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.22 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                         ↻ {searchChatSessionsQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                       </button>
                     </div>

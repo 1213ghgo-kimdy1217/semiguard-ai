@@ -20,4 +20,11 @@ describe("consultation history query recovery contract", () => {
     expect(dashboardSource).toContain("void loadHistorySession(historySessionLoadError)");
     expect(dashboardSource).toContain("상담 기록을 열지 못했습니다.");
   });
+
+  it("announces localized busy retry states for history and history-search failures", () => {
+    expect(dashboardSource).toContain("aria-busy={chatSessionsQuery.isFetching || undefined}");
+    expect(dashboardSource).toContain('"Retrying consultation history"');
+    expect(dashboardSource).toContain("aria-busy={searchChatSessionsQuery.isFetching || undefined}");
+    expect(dashboardSource).toContain('"Retrying consultation search results"');
+  });
 });
