@@ -5095,6 +5095,7 @@ export default function Dashboard() {
                                 <button
                                   type="button"
                                   disabled={updateSessionTitleMutation.isPending || !editingSessionTitle.trim()}
+                                  aria-busy={updateSessionTitleMutation.isPending || undefined}
                                   onClick={async () => {
                                     try {
                                       const result = await updateSessionTitleMutation.mutateAsync({ sessionId: session.id, title: editingSessionTitle.trim() });
@@ -5152,6 +5153,7 @@ export default function Dashboard() {
                             }
                           }}
                           disabled={setChatSessionPinnedMutation.isPending}
+                          aria-busy={setChatSessionPinnedMutation.isPending || undefined}
                           className={`p-1 text-xs transition-opacity hover:opacity-75 disabled:opacity-45 ${session.isPinned === 1 ? "text-amber-400" : "opacity-60"}`}
                           title={session.isPinned === 1 ? (lang === "ko" ? "상단 고정 해제" : lang === "ja" ? "上部固定を解除" : "Unpin") : (lang === "ko" ? "상단에 고정" : lang === "ja" ? "上部に固定" : "Pin to top")}
                           aria-label={session.isPinned === 1 ? (lang === "ko" ? "상담 기록 상단 고정 해제" : lang === "ja" ? "相談履歴の上部固定を解除" : "Unpin consultation") : (lang === "ko" ? "상담 기록 상단에 고정" : lang === "ja" ? "相談履歴を上部に固定" : "Pin consultation to top")}>

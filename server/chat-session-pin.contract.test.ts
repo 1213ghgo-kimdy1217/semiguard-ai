@@ -24,6 +24,7 @@ describe("consultation session pin contract", () => {
     expect(dashboardSource).toContain("상담 기록을 상단에 고정했습니다.");
     expect(dashboardSource).toContain("相談履歴を上部に固定しました。");
     expect(dashboardSource).toContain("Pin consultation to top");
+    expect(dashboardSource).toContain('aria-busy={setChatSessionPinnedMutation.isPending || undefined}');
   });
 
   it("keeps combined search and pinned-session filtering controls", () => {
