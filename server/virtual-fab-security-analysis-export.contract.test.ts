@@ -71,4 +71,9 @@ describe("virtual fab demo, security status, and analysis export contract", () =
     expect(dashboardSource).toContain('<span aria-hidden="true">🏭</span>{" "}{lang === "ko" ? "가상 팹 위험 시나리오"');
     expect(dashboardSource).toContain('<span aria-hidden="true" className="text-[10px]">{virtualFabDemoActive');
   });
+
+  it("hides the actual-fab pilot lock icon while preserving the future-support notice", () => {
+    expect(dashboardSource).toContain('<span aria-hidden="true">🔒</span>{" "}{lang === "ko" ? "실제 팹 파일럿 연동"');
+    expect(dashboardSource).toContain("실제 팹 파일럿 연동, 추후 지원 예정");
+  });
 });
