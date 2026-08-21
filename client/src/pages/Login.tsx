@@ -423,6 +423,7 @@ export function Login() {
                 autoComplete="username"
                 inputMode="text"
                 autoCapitalize="characters"
+                autoCorrect="off"
                 spellCheck={false}
                 enterKeyHint="next"
                 aria-invalid={fieldError === "badge" || Boolean(authError)}

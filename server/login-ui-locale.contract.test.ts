@@ -21,6 +21,7 @@ describe("login UI locale contract", () => {
     expect(loginSource).toContain("{loginUi.socialLinkHint}");
     expect(loginSource).toContain('inputMode="text"');
     expect(loginSource).toContain('autoCapitalize="characters"');
+    expect(loginSource).toContain('autoCorrect="off"');
     expect(loginSource).toContain("spellCheck={false}");
     expect(loginSource).toContain('enterKeyHint="next"');
     expect(loginSource).toContain('autoComplete="current-password"');
