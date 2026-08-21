@@ -16,6 +16,13 @@ describe("consultation history keyboard accessibility contract", () => {
     expect(dashboardSource).toContain("focus-visible:ring-cyan-400");
   });
 
+  it("announces the selected state of the consultation pin control", () => {
+    expect(dashboardSource).toContain('aria-pressed={session.isPinned === 1}');
+    expect(dashboardSource).toContain('"상담 기록 상단에 고정"');
+    expect(dashboardSource).toContain('"相談履歴を上部に固定"');
+    expect(dashboardSource).toContain('"Pin consultation to top"');
+  });
+
   it("offers a mobile completion keyboard hint while editing a consultation title", () => {
     expect(dashboardSource).toMatch(
       /value=\{editingSessionTitle\}[\s\S]*?enterKeyHint="done"/,
