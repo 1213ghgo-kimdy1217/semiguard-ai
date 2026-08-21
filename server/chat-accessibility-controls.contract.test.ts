@@ -17,4 +17,13 @@ describe("chat keyboard and quick-question accessibility contract", () => {
     expect(dashboardSource).toContain('event.currentTarget.scrollBy({ left: event.key === "ArrowRight" ? 180 : -180, behavior: getKeyboardScrollBehavior() })');
     expect(dashboardSource).toContain('aria-live="polite"');
   });
+
+  it("hides decorative feedback, manual, and new-chat icons while keeping their localized text controls", () => {
+    expect(dashboardSource).toContain('<span aria-hidden="true">✨</span>');
+    expect(dashboardSource).toContain('<span aria-hidden="true">📘</span>');
+    expect(dashboardSource).toContain('<span aria-hidden="true">🔄</span>');
+    expect(dashboardSource).toContain('lang === "ko" ? "피드백"');
+    expect(dashboardSource).toContain('lang === "ko" ? "매뉴얼"');
+    expect(dashboardSource).toContain('lang === "ko" ? "새 상담"');
+  });
 });

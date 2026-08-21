@@ -4354,7 +4354,7 @@ export default function Dashboard() {
                   title={lang === "ko" ? "피드백·재생성 답변 히스토리 보기" : lang === "ja" ? "フィードバック・再生成回答の履歴を見る" : "View feedback and regenerated answer history"}
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
                   style={{ borderColor: "oklch(0.62 0.20 300 / 0.45)", background: "oklch(0.62 0.20 300 / 0.12)", color: isDark ? "oklch(0.82 0.16 300)" : "oklch(0.45 0.20 300)" }}>
-                  ✨ {lang === "ko" ? "피드백" : lang === "ja" ? "フィードバック" : "Feedback"}
+                  <span aria-hidden="true">✨</span> {lang === "ko" ? "피드백" : lang === "ja" ? "フィードバック" : "Feedback"}
                 </button>
                 <button
                   type="button"
@@ -4365,7 +4365,7 @@ export default function Dashboard() {
                   title={lang === "ko" ? "설비 매뉴얼을 RAG 지식으로 등록" : lang === "ja" ? "設備マニュアルをRAG知識として登録" : "Add equipment manual as RAG knowledge"}
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0 flex items-center gap-1"
                   style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", background: "oklch(0.72 0.15 75 / 0.12)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
-                  📘 {lang === "ko" ? "매뉴얼" : lang === "ja" ? "マニュアル" : "Manual"}{manualDocumentsQuery.data?.length ? ` ${manualDocumentsQuery.data.length}` : ""}
+                  <span aria-hidden="true">📘</span> {lang === "ko" ? "매뉴얼" : lang === "ja" ? "マニュアル" : "Manual"}{manualDocumentsQuery.data?.length ? ` ${manualDocumentsQuery.data.length}` : ""}
                 </button>
                 <button
                   type="button"
@@ -4376,7 +4376,7 @@ export default function Dashboard() {
                   title={lang === "ko" ? "새 상담 시작 (이전 대화 보관)" : lang === "ja" ? "新しい相談 (会話保存)" : "New Consultation"}
                   className="px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border transition-all duration-150 hover:opacity-80 active:scale-95 whitespace-nowrap shrink-0"
                   style={{ borderColor: "oklch(0.75 0.18 200 / 0.4)", background: "oklch(0.75 0.18 200 / 0.10)", color: "oklch(0.75 0.18 200)" }}>
-                  🔄 {lang === "ko" ? "새 상담" : lang === "ja" ? "新規相談" : "New Chat"}
+                  <span aria-hidden="true">🔄</span> {lang === "ko" ? "새 상담" : lang === "ja" ? "新規相談" : "New Chat"}
                 </button>
               </div>
             </div>
