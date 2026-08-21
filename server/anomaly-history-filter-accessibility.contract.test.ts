@@ -33,4 +33,12 @@ describe("anomaly history filter accessibility contract", () => {
     expect(dashboardSource).toContain('"Anomaly detail sensor values"');
     expect(dashboardSource).toContain('key={s.label} role="listitem"');
   });
+
+  it("exposes saved AI anomaly analysis as a named detail region", () => {
+    expect(dashboardSource).toContain('role="region" aria-labelledby="selected-log-ai-analysis-title"');
+    expect(dashboardSource).toContain('<h3 id="selected-log-ai-analysis-title"');
+    expect(dashboardSource).toContain('"AI 이상 원인 분석"');
+    expect(dashboardSource).toContain('"AI異常原因分析"');
+    expect(dashboardSource).toContain('"AI Anomaly Analysis"');
+  });
 });
