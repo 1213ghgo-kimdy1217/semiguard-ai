@@ -3631,7 +3631,7 @@ export default function Dashboard() {
               </div>
               {/* 점수 바 */}
               <div className="px-5 pb-4">
-                <div className="w-full h-2 rounded-full" style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
+                <div className="w-full h-2 rounded-full" role="progressbar" aria-label={lang === "ko" ? "이상 이력 상세 위험 점수" : lang === "ja" ? "異常履歴詳細の異常スコア" : "Anomaly detail score"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(log.anomalyScore, 100)} style={{ background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)" }}>
                   <div className="h-2 rounded-full transition-all duration-700"
                     style={{ width: `${Math.min(log.anomalyScore, 100)}%`, background: color }} />
                 </div>

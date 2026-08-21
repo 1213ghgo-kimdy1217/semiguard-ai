@@ -19,4 +19,11 @@ describe("anomaly history filter accessibility contract", () => {
     expect(dashboardSource).toContain('`${s.label} risk level share`');
     expect(dashboardSource).toContain('aria-valuenow={pct}');
   });
+
+  it("exposes the selected anomaly detail score as a localized progress value", () => {
+    expect(dashboardSource).toContain('role="progressbar" aria-label={lang === "ko" ? "이상 이력 상세 위험 점수"');
+    expect(dashboardSource).toContain('"異常履歴詳細の異常スコア"');
+    expect(dashboardSource).toContain('"Anomaly detail score"');
+    expect(dashboardSource).toContain('aria-valuenow={Math.min(log.anomalyScore, 100)}');
+  });
 });
