@@ -30,4 +30,10 @@ describe("period report export contract", () => {
     expect(dashboardSource).toContain('lang === "ja" ? "PDFレポートを準備中"');
     expect(dashboardSource).toContain('"Preparing PDF report")');
   });
+
+  it("provides a localized descriptive name for the period CSV export control", () => {
+    expect(dashboardSource).toContain('aria-label={lang === "ko" ? "기간 분석 CSV 내보내기"');
+    expect(dashboardSource).toContain('lang === "ja" ? "期間分析CSVを出力"');
+    expect(dashboardSource).toContain('"Export period analysis CSV"}');
+  });
 });
