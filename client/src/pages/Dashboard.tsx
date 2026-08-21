@@ -4393,7 +4393,7 @@ export default function Dashboard() {
                     color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)"
                   }}>
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">⚠️</span>
+                    <span className="text-2xl" aria-hidden="true">⚠️</span>
                     <div>
                       <h4 id="chat-reset-confirm-title" className="text-sm font-bold">
                         {lang === "ko" ? "새 상담을 시작하시겠습니까?" : lang === "ja" ? "新しい相談を開始しますか？" : "Start a New Consultation?"}

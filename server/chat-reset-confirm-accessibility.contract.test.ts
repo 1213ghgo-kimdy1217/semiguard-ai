@@ -25,4 +25,8 @@ describe("new consultation confirmation accessibility contract", () => {
     expect(dashboardSource).toContain("? resetConfirmDialogRef.current");
     expect(dashboardSource).toContain("ref={resetConfirmDialogRef}");
   });
+
+  it("keeps the warning icon decorative while the localized title and description carry the alert meaning", () => {
+    expect(dashboardSource).toContain('<span className="text-2xl" aria-hidden="true">⚠️</span>');
+  });
 });
