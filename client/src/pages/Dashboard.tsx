@@ -6462,7 +6462,7 @@ export default function Dashboard() {
                             : `Normal ≤${thresholds.normal} / Caution ≤${thresholds.caution} / Warning ≤${thresholds.warning} / Danger >${thresholds.warning}`}
                       </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{showThresholdPanel ? "▲" : "▼"}</span>
+                    <span aria-hidden="true" className="text-xs text-muted-foreground">{showThresholdPanel ? "▲" : "▼"}</span>
                   </button>
                   {showThresholdPanel && (
                     <div id="risk-threshold-panel" role="region" aria-label={lang === "ko" ? "전체 위험도 임계값 설정" : lang === "ja" ? "全体リスクしきい値設定" : "Global risk threshold settings"} className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-3 gap-5"

@@ -15,6 +15,7 @@ describe("threshold setting accordion accessibility contract", () => {
       'id="risk-threshold-panel" role="region" aria-label={lang === "ko"'
     );
     expect(dashboardSource).toContain('<span aria-hidden="true" className="text-base">⚙️</span>');
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-xs text-muted-foreground">{showThresholdPanel ? "▲" : "▼"}</span>');
   });
 
   it("connects sensor threshold toggle state to its labelled region", () => {
