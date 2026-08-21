@@ -135,7 +135,7 @@ export default function NotFound() {
               aria-describedby="not-found-description"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
             >
-              <Home className="w-4 h-4 mr-2" />
+              <Home aria-hidden="true" className="w-4 h-4 mr-2" />
               {user ? copy.goHome : copy.goLogin}
             </Button>
             <Button
@@ -144,7 +144,7 @@ export default function NotFound() {
               onClick={handleGoDemo}
               className="border-slate-300 bg-white/70 px-6 py-2.5 text-slate-700 hover:bg-slate-100"
             >
-              <MonitorPlay className="w-4 h-4 mr-2" />
+              <MonitorPlay aria-hidden="true" className="w-4 h-4 mr-2" />
               {copy.goDemo}
             </Button>
           </div>

@@ -14,4 +14,9 @@ describe("404 장식 아이콘 접근성 계약", () => {
     );
     expect(notFoundSource).toMatch(/<AlertCircle\s+aria-hidden="true"/);
   });
+
+  it("복구 제어는 텍스트 이름을 유지하고 장식 아이콘은 숨긴다", () => {
+    expect(notFoundSource).toContain('<Home aria-hidden="true" className="w-4 h-4 mr-2" />');
+    expect(notFoundSource).toContain('<MonitorPlay aria-hidden="true" className="w-4 h-4 mr-2" />');
+  });
 });
