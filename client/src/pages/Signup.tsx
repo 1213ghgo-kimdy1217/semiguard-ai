@@ -20,6 +20,7 @@ const SIGNUP_COPY = {
     name: "이름",
     namePlaceholder: "예: 홍길동",
     dateOfBirth: "생년월일",
+    dateHint: "표시 형식은 브라우저 설정에 따라 달라질 수 있습니다. 날짜 선택기를 사용해 주세요.",
     password: "비밀번호",
     passwordPlaceholder: "6자 이상",
     passwordStrengthLabel: "비밀번호 강도",
@@ -56,6 +57,7 @@ const SIGNUP_COPY = {
     name: "Name",
     namePlaceholder: "e.g., Hong Gildong",
     dateOfBirth: "Date of birth",
+    dateHint: "The displayed format may follow your browser settings. Use the date picker.",
     password: "Password",
     passwordPlaceholder: "At least 6 characters",
     passwordStrengthLabel: "Password strength",
@@ -92,6 +94,7 @@ const SIGNUP_COPY = {
     name: "氏名",
     namePlaceholder: "例: ホン・ギルドン",
     dateOfBirth: "生年月日",
+    dateHint: "表示形式はブラウザー設定により異なる場合があります。日付選択を使用してください。",
     password: "パスワード",
     passwordPlaceholder: "6文字以上",
     passwordStrengthLabel: "パスワードの強度",
@@ -337,7 +340,8 @@ export function Signup() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth" className="text-sm font-medium text-slate-300">{copy.dateOfBirth}</Label>
-              <Input id="dateOfBirth" name="dateOfBirth" type="date" lang={LANGUAGE_LOCALES[language]} value={formData.dateOfBirth} onChange={handleChange} aria-invalid={fieldError === "dateOfBirth"} aria-describedby={fieldError === "dateOfBirth" ? "dateOfBirth-error" : undefined} className="border-slate-600 bg-slate-700 text-white focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="bday" required />
+              <Input id="dateOfBirth" name="dateOfBirth" type="date" lang={LANGUAGE_LOCALES[language]} value={formData.dateOfBirth} onChange={handleChange} aria-invalid={fieldError === "dateOfBirth"} aria-describedby={[fieldError === "dateOfBirth" ? "dateOfBirth-error" : null, "dateOfBirth-hint"].filter(Boolean).join(" ")} className="border-slate-600 bg-slate-700 text-white focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="bday" required />
+              <p id="dateOfBirth-hint" className="text-xs leading-relaxed text-slate-400">{copy.dateHint}</p>
               {fieldError === "dateOfBirth" && <p id="dateOfBirth-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.dateOfBirth}</p>}
             </div>
             <div className="space-y-2">
