@@ -4156,6 +4156,8 @@ export default function Dashboard() {
             type="button"
             onClick={() => { setVirtualFabDemoActive(false); setDemoRunning(r => !r); }}
             title={demoRunning ? (lang === "ko" ? "데모 중지" : lang === "ja" ? "デモを停止" : "Stop Demo") : (lang === "ko" ? "데모 자동 실행" : lang === "ja" ? "デモ自動実行" : "Auto Demo")}
+            aria-label={lang === "ko" ? "데모 자동 실행" : lang === "ja" ? "デモ自動実行" : "Demo auto-run"}
+            aria-pressed={demoRunning}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95"
             style={{
               borderColor: demoRunning ? "oklch(0.65 0.20 30 / 0.6)" : "oklch(0.35 0.01 240)",
