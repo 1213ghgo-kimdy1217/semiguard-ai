@@ -10,6 +10,8 @@ describe("AI chat reply copy fallback contract", () => {
     expect(source).toContain("navigator.clipboard?.writeText");
     expect(source).toContain('document.createElement("textarea")');
     expect(source).toContain('document.execCommand("copy")');
+    expect(source).toContain("finally {");
+    expect(source).toContain("temporaryInput.remove();");
   });
 
   it("only marks a reply as copied after a successful copy and localizes failures", () => {
