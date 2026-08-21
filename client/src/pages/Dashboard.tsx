@@ -4131,7 +4131,7 @@ export default function Dashboard() {
           {/* 볼륨 슬라이더 - 모바일 숨김 */}
           {!muted && !isMobile && (
             <div className="hidden flex items-center gap-1.5" title={lang === "ko" ? "볼륨 조절" : lang === "ja" ? "音量調節" : "Volume"}>
-              <span style={{ fontSize: 11, color: "oklch(0.50 0.01 240)" }}>🔉</span>
+              <span aria-hidden="true" style={{ fontSize: 11, color: "oklch(0.50 0.01 240)" }}>🔉</span>
               <input
                 type="range"
                 min={0}
