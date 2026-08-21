@@ -13,6 +13,10 @@ describe("judge demo share-link contract", () => {
       /const shareUrl =\s*`\$\{window\.location\.origin\}\$\{window\.location\.pathname\}\?lang=\$\{lang\}`;/
     );
     expect(source).toContain("await navigator.clipboard.writeText(shareUrl);");
+    expect(source).toContain('navigator.clipboard?.writeText');
+    expect(source).toContain('document.createElement("textarea")');
+    expect(source).toContain('document.execCommand("copy")');
+    expect(source).toContain('setNotice(copyWithFallback() ? "shareSuccess" : "shareError");');
   });
 
   it("exposes an accessible copy control and localized success and failure notices", () => {

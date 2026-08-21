@@ -364,12 +364,30 @@ export default function JudgeDemo() {
   };
   const copyShareLink = async () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?lang=${lang}`;
+    const copyWithFallback = () => {
+      const temporaryInput = document.createElement("textarea");
+      temporaryInput.value = shareUrl;
+      temporaryInput.setAttribute("readonly", "");
+      temporaryInput.style.position = "fixed";
+      temporaryInput.style.opacity = "0";
+      document.body.appendChild(temporaryInput);
+      temporaryInput.select();
+      const copied = document.execCommand("copy");
+      document.body.removeChild(temporaryInput);
+      return copied;
+    };
+
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setNotice("shareSuccess");
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        setNotice("shareSuccess");
+        return;
+      }
     } catch {
-      setNotice("shareError");
+      // Permission-denied clipboard calls use the legacy copy path below.
     }
+
+    setNotice(copyWithFallback() ? "shareSuccess" : "shareError");
   };
   const handleStepTabKeyDown = (
     event: KeyboardEvent<HTMLButtonElement>,
