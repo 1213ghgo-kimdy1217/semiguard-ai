@@ -18,4 +18,10 @@ describe("데모 자동 실행 탭 가시성 계약", () => {
     expect(dashboardSource).toContain('<span aria-hidden="true" className="inline-block w-2 h-2 rounded-sm"');
     expect(dashboardSource).toContain('lang === "ko" ? "데모 중" : lang === "ja" ? "デモ実行中" : "Demo ON"');
   });
+
+  it("자동 실행 제어의 재생·정지 기호는 장식으로 숨기고 다국어 동작 문구를 유지한다", () => {
+    expect(dashboardSource).toContain('<span aria-hidden="true">{demoRunning ? "■" : "▶"}</span>');
+    expect(dashboardSource).toContain('lang === "ko" ? "데모 중지"');
+    expect(dashboardSource).toContain('lang === "ko" ? "데모 자동 실행"');
+  });
 });
