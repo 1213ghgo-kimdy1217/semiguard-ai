@@ -5516,6 +5516,7 @@ export default function Dashboard() {
                       <button
                         type="button"
                         disabled={deleteChatFeedbackMutation.isPending}
+                        aria-busy={deleteChatFeedbackMutation.isPending || undefined}
                         onClick={async () => {
                           try {
                             const result = await deleteChatFeedbackMutation.mutateAsync({ feedbackId: feedbackToDelete });
@@ -5625,6 +5626,7 @@ export default function Dashboard() {
                       <button
                         type="button"
                         disabled={deleteAllChatFeedbacksMutation.isPending}
+                        aria-busy={deleteAllChatFeedbacksMutation.isPending || undefined}
                         onClick={async () => {
                           try {
                             const result = await deleteAllChatFeedbacksMutation.mutateAsync();
