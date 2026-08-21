@@ -5007,8 +5007,8 @@ export default function Dashboard() {
                 )}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                   {chatSessionsQuery.isLoading || isHistorySearchPending || (debouncedHistorySearch.length > 0 && searchChatSessionsQuery.isLoading) ? (
-                    <div className="flex items-center justify-center py-8 text-xs text-muted-foreground gap-2">
-                      <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="flex items-center justify-center py-8 text-xs text-muted-foreground gap-2" role="status" aria-live="polite" aria-atomic="true">
+                      <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
                       <span>{isHistorySearchPending || debouncedHistorySearch.length > 0 ? (lang === "ko" ? "기록 검색 중..." : lang === "ja" ? "履歴を検索中..." : "Searching history...") : (lang === "ko" ? "기록 불러오는 중..." : lang === "ja" ? "履歴を読み込んでいます..." : "Loading history...")}</span>
                     </div>
                   ) : chatSessionsQuery.isError ? (
@@ -5547,8 +5547,8 @@ export default function Dashboard() {
                     </div>
                     <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
                       {feedbackContextMessagesQuery.isLoading ? (
-                        <div className="flex items-center justify-center gap-2 py-8 text-[10px]" style={{ color: th.textMuted }}>
-                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-fuchsia-400 border-t-transparent" />
+                        <div className="flex items-center justify-center gap-2 py-8 text-[10px]" role="status" aria-live="polite" aria-atomic="true" style={{ color: th.textMuted }}>
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-fuchsia-400 border-t-transparent" aria-hidden="true" />
                           {lang === "ko" ? "상담 맥락을 불러오는 중..." : lang === "ja" ? "会話文脈を読み込み中..." : "Loading conversation context..."}
                         </div>
                       ) : feedbackContextMessagesQuery.isError ? (
@@ -5642,8 +5642,8 @@ export default function Dashboard() {
                 )}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                   {feedbackHistoryQuery.isLoading ? (
-                    <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
-                      <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground" role="status" aria-live="polite" aria-atomic="true">
+                      <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
                       <span>{lang === "ko" ? "피드백 이력 불러오는 중..." : lang === "ja" ? "フィードバック履歴を読み込み中..." : "Loading feedback history..."}</span>
                     </div>
                   ) : feedbackHistoryQuery.isError ? (
