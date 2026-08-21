@@ -687,7 +687,7 @@ function AlertPanel({ riskLevel, relayTripped, t }: { riskLevel: RiskLevel; rela
   return (
     <div className="flex h-7 shrink-0 items-center gap-1 rounded-full border px-2 whitespace-nowrap sm:h-auto sm:gap-2 sm:border-0 sm:px-0" role="img" aria-label={label} title={label}>
       <div className="flex items-center gap-1.5">
-        <div className="hidden h-2.5 w-2.5 rounded-full sm:block" style={{
+        <div aria-hidden="true" className="hidden h-2.5 w-2.5 rounded-full sm:block" style={{
           background: isDanger ? "#ef4444" : "#22c55e",
           animation: isDanger ? "pulse 0.5s infinite" : "none",
         }} />
