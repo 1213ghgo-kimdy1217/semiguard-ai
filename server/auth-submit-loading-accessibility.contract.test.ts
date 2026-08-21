@@ -16,11 +16,13 @@ describe("authentication submit loading accessibility contract", () => {
     expect(loginSource).toContain('id="login-submit-status" className="sr-only" role="status" aria-live="polite" aria-atomic="true"');
     expect(loginSource).toContain("{loginUi.signingIn}");
     expect(loginSource).toContain('aria-busy={isLoading}');
+    expect(loginSource).toContain('aria-busy={isLoading || undefined}');
   });
 
   it("keeps an atomic polite status for localized signup submission progress", () => {
     expect(signupSource).toContain('id="signup-submit-status" className="sr-only" role="status" aria-live="polite" aria-atomic="true"');
     expect(signupSource).toContain("{copy.submitting}");
     expect(signupSource).toContain('aria-busy={isLoading}');
+    expect(signupSource).toContain('aria-busy={isLoading || undefined}');
   });
 });

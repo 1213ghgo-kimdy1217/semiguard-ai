@@ -376,7 +376,7 @@ export function Signup() {
               {fieldError === "passwordConfirm" && <p id="passwordConfirm-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.passwordConfirm}</p>}
               {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite" aria-atomic="true">{copy.capsLockWarning}</p>}
             </div>
-            <Button type="submit" disabled={isLoading} className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 font-semibold text-white transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50">
+            <Button type="submit" disabled={isLoading} aria-busy={isLoading || undefined} className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 font-semibold text-white transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50">
               {isLoading ? copy.submitting : copy.submit}
             </Button>
           </form>

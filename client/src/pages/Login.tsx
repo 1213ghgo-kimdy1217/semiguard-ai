@@ -479,6 +479,7 @@ export function Login() {
             <Button
               type="submit"
               disabled={isLoading}
+              aria-busy={isLoading || undefined}
               className="w-full h-12 bg-cyan-500 hover:bg-cyan-600 text-white font-bold text-base transition-transform duration-150 active:scale-[0.98]"
             >
               {isLoading ? loginUi.signingIn : loginUi.signIn}
