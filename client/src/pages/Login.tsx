@@ -404,7 +404,7 @@ export function Login() {
           <form onSubmit={handleLogin} className="space-y-4" aria-busy={isLoading}>
             {isLoading && <p id="login-submit-status" className="sr-only" role="status" aria-live="polite" aria-atomic="true">{loginUi.signingIn}</p>}
             {authError && <p id="login-auth-error" className="rounded-lg border border-rose-400/45 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-200" role="alert">{authError}</p>}
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{loginUi.employeeLogin}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{loginUi.employeeLogin}</p>
             {/* Badge Number */}
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-slate-300 text-sm font-medium">

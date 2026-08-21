@@ -19,6 +19,7 @@ describe("login UI locale contract", () => {
     expect(loginSource).toContain("placeholder={loginUi.passwordPlaceholder}");
     expect(loginSource).toContain("{isLoading ? loginUi.signingIn : loginUi.signIn}");
     expect(loginSource).toContain("{loginUi.socialLinkHint}");
+    expect(loginSource).toContain('text-[11px] font-semibold uppercase tracking-wider text-slate-400');
     expect(loginSource).toContain('text-center text-[11px] leading-relaxed text-slate-400');
     expect(loginSource).toContain('text-center text-xs text-slate-400');
   });
