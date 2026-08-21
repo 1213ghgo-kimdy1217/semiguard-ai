@@ -3735,7 +3735,7 @@ export default function Dashboard() {
                     {llmAnalysis.details}
                   </p>
                   <div className="flex items-start gap-1.5">
-                    <span className="text-xs mt-0.5">💡</span>
+                    <span className="text-xs mt-0.5" aria-hidden="true">💡</span>
                     <p className="text-xs" style={{ color: "rgba(255,200,100,0.9)" }}>
                       {llmAnalysis.recommendation}
                     </p>
@@ -3769,7 +3769,7 @@ export default function Dashboard() {
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <span className="text-base">🤖</span>
+                <span className="text-base" aria-hidden="true">🤖</span>
                 <span id="ai-analysis-result-title" className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
                   {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
                 </span>
@@ -3806,7 +3806,7 @@ export default function Dashboard() {
             </p>
             <div className="flex items-start gap-1.5 rounded-lg p-2"
               style={{ background: isDark ? "rgba(255,200,100,0.06)" : "rgba(180,120,0,0.06)", border: "1px solid rgba(255,200,100,0.15)" }}>
-              <span className="text-xs mt-0.5 flex-shrink-0">💡</span>
+              <span className="text-xs mt-0.5 flex-shrink-0" aria-hidden="true">💡</span>
               <p className="text-xs leading-relaxed" style={{ color: isDark ? "rgba(255,200,100,0.9)" : "oklch(0.40 0.10 80)" }}>
                 {llmAnalysis.recommendation}
               </p>
