@@ -7,7 +7,18 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 type NotFoundLanguage = "ko" | "en" | "ja";
 
-const NOT_FOUND_COPY: Record<NotFoundLanguage, { pageTitle: string; title: string; description: string; moved: string; goHome: string; goLogin: string; goDemo: string }> = {
+const NOT_FOUND_COPY: Record<
+  NotFoundLanguage,
+  {
+    pageTitle: string;
+    title: string;
+    description: string;
+    moved: string;
+    goHome: string;
+    goLogin: string;
+    goDemo: string;
+  }
+> = {
   ko: {
     pageTitle: "SemiGuard AI | 페이지를 찾을 수 없습니다",
     title: "페이지를 찾을 수 없습니다",
@@ -52,7 +63,8 @@ export default function NotFound() {
   const copy = NOT_FOUND_COPY[language];
 
   useEffect(() => {
-    document.documentElement.lang = language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US";
+    document.documentElement.lang =
+      language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US";
     document.title = copy.pageTitle;
   }, [copy.pageTitle, language]);
 
@@ -69,21 +81,45 @@ export default function NotFound() {
   };
 
   return (
-    <main className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100" aria-labelledby="not-found-title">
+    <main
+      className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100"
+      aria-labelledby="not-found-title"
+    >
       <Card className="w-full max-w-lg mx-4 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
         <CardContent className="pt-8 pb-8 text-center">
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <div aria-hidden="true" className="absolute inset-0 rounded-full bg-red-100 animate-pulse motion-reduce:animate-none" />
-              <AlertCircle aria-hidden="true" className="relative h-16 w-16 text-red-500" />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-red-100 animate-pulse motion-reduce:animate-none"
+              />
+              <AlertCircle
+                aria-hidden="true"
+                className="relative h-16 w-16 text-red-500"
+              />
             </div>
           </div>
 
-          <p aria-hidden="true" className="text-4xl font-bold text-slate-900 mb-2">404</p>
+          <p
+            aria-hidden="true"
+            className="text-4xl font-bold text-slate-900 mb-2"
+          >
+            404
+          </p>
 
-          <h1 ref={titleRef} id="not-found-title" tabIndex={-1} className="text-xl font-semibold text-slate-700 mb-4 focus:outline-none">{copy.title}</h1>
+          <h1
+            ref={titleRef}
+            id="not-found-title"
+            tabIndex={-1}
+            className="text-xl font-semibold text-slate-700 mb-4 focus:outline-none"
+          >
+            {copy.title}
+          </h1>
 
-          <p id="not-found-description" className="text-slate-600 mb-8 leading-relaxed">
+          <p
+            id="not-found-description"
+            className="text-slate-600 mb-8 leading-relaxed"
+          >
             {copy.description}
             <br />
             {copy.moved}
