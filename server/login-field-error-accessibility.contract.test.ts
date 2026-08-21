@@ -11,6 +11,7 @@ describe("login required-field accessibility contract", () => {
     expect(loginSource).toContain('aria-invalid={fieldError === "badge" || Boolean(authError)}');
     expect(loginSource).toContain('aria-describedby={fieldError === "badge" ? "badgeNumber-error" : authError ? "login-auth-error" : undefined}');
     expect(loginSource).toContain('id="badgeNumber-error"');
+    expect(loginSource).toContain('id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true"');
   });
 
   it("marks the missing password as invalid, explains the error, and restores focus", () => {
@@ -19,6 +20,7 @@ describe("login required-field accessibility contract", () => {
     expect(loginSource).toContain('aria-invalid={fieldError === "password" || Boolean(authError)}');
     expect(loginSource).toContain('aria-describedby={fieldError === "password" ? "password-error" : authError ? "login-auth-error" : undefined}');
     expect(loginSource).toContain('id="password-error"');
+    expect(loginSource).toContain('id="password-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true"');
   });
 
   it("keeps required-field messages localized through the existing language message map", () => {

@@ -331,18 +331,18 @@ export function Signup() {
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-sm font-medium text-slate-300">{copy.badgeNumber}</Label>
               <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} inputMode="text" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={[fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ") || undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
-              {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.badgeNumber}</p>}
+              {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.badgeNumber}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium text-slate-300">{copy.name}</Label>
               <Input id="name" name="name" type="text" placeholder={copy.namePlaceholder} value={formData.name} onChange={handleChange} inputMode="text" enterKeyHint="next" aria-invalid={fieldError === "name"} aria-describedby={fieldError === "name" ? "name-error" : undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="name" required />
-              {fieldError === "name" && <p id="name-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.name}</p>}
+              {fieldError === "name" && <p id="name-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.name}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth" className="text-sm font-medium text-slate-300">{copy.dateOfBirth}</Label>
               <Input id="dateOfBirth" name="dateOfBirth" type="date" lang={LANGUAGE_LOCALES[language]} value={formData.dateOfBirth} onChange={handleChange} enterKeyHint="next" aria-invalid={fieldError === "dateOfBirth"} aria-describedby={[fieldError === "dateOfBirth" ? "dateOfBirth-error" : null, "dateOfBirth-hint"].filter(Boolean).join(" ")} className="border-slate-600 bg-slate-700 text-white focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="bday" required />
               <p id="dateOfBirth-hint" className="text-xs leading-relaxed text-slate-400">{copy.dateHint}</p>
-              {fieldError === "dateOfBirth" && <p id="dateOfBirth-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.dateOfBirth}</p>}
+              {fieldError === "dateOfBirth" && <p id="dateOfBirth-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.dateOfBirth}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
@@ -352,7 +352,7 @@ export function Signup() {
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
-              {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : (formData.password ? copy.validation.passwordLength : copy.validation.password)}</p>}
+              {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : (formData.password ? copy.validation.passwordLength : copy.validation.password)}</p>}
               <div className="space-y-1.5">
                 <div className="flex gap-1" aria-hidden="true">
                   <span className={`h-1 flex-1 rounded-full ${passwordStrength.score >= 1 ? "bg-rose-400" : "bg-slate-600"}`} />
@@ -373,7 +373,7 @@ export function Signup() {
                   {showPasswordConfirm ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
-              {fieldError === "passwordConfirm" && <p id="passwordConfirm-error" className="text-xs font-medium text-rose-300" role="alert">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.passwordConfirm}</p>}
+              {fieldError === "passwordConfirm" && <p id="passwordConfirm-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.passwordConfirm}</p>}
               {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite" aria-atomic="true">{copy.capsLockWarning}</p>}
             </div>
             <Button type="submit" disabled={isLoading} aria-busy={isLoading || undefined} className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 font-semibold text-white transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50">

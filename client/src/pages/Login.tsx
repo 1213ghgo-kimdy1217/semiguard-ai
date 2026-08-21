@@ -431,7 +431,7 @@ export function Login() {
                 className="h-12 bg-slate-700/70 border-slate-600 text-white placeholder-slate-500 text-base"
                 disabled={isLoading}
               />
-              {fieldError === "badge" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert">{loginMessages.badgeRequired}</p>}
+              {fieldError === "badge" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{loginMessages.badgeRequired}</p>}
             </div>
 
             {/* Password */}
@@ -471,7 +471,7 @@ export function Login() {
                   {showPassword ? loginUi.hidePassword : loginUi.showPassword}
                 </button>
               </div>
-              {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert">{loginMessages.passwordRequired}</p>}
+              {fieldError === "password" && <p id="password-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{loginMessages.passwordRequired}</p>}
               {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite" aria-atomic="true">{loginUi.capsLockWarning}</p>}
             </div>
 

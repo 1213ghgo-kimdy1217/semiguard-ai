@@ -17,6 +17,7 @@ describe("signup required-field accessibility contract", () => {
       }
       expect(signupSource).toContain(`id="${field}-error"`);
     }
+    expect(signupSource).toContain('role="alert" aria-atomic="true"');
   });
 
   it("clears a field error when the user corrects the relevant value", () => {
