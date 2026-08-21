@@ -3723,7 +3723,7 @@ export default function Dashboard() {
                 <div className="w-full rounded-xl p-4 text-left" role="region" aria-labelledby="danger-alert-ai-analysis-title"
                   style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(239,68,68,0.3)" }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm">🤖</span>
+                    <span className="text-sm" aria-hidden="true">🤖</span>
                     <h3 id="danger-alert-ai-analysis-title" className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
                       {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
                     </h3>

@@ -53,4 +53,8 @@ describe("danger alert accessibility contract", () => {
     expect(dashboardSource).toContain('role="region" aria-labelledby="danger-alert-ai-analysis-title"');
     expect(dashboardSource).toContain('<h3 id="danger-alert-ai-analysis-title"');
   });
+
+  it("keeps the AI analysis title while hiding its decorative robot icon", () => {
+    expect(dashboardSource).toContain('<span className="text-sm" aria-hidden="true">🤖</span>');
+  });
 });
