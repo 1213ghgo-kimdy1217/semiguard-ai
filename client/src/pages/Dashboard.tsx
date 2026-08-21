@@ -2988,7 +2988,8 @@ export default function Dashboard() {
   };
   const copyReportShareLink = async () => {
     try {
-      await navigator.clipboard.writeText(getReportShareUrl());
+      const copied = await copyTextWithFallback(getReportShareUrl());
+      if (!copied) throw new Error("Clipboard copy failed");
       toast.success(lang === "ko" ? "로그인 보호 분석 기간 링크를 복사했습니다." : lang === "ja" ? "ログイン保護された分析期間リンクをコピーしました。" : "Copied the login-protected analysis period link.");
     } catch (error) {
       console.error("Report share link copy failed:", error);
