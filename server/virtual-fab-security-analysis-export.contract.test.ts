@@ -62,4 +62,8 @@ describe("virtual fab demo, security status, and analysis export contract", () =
       "AI 분석 보고서를 준비했습니다. 인쇄 창에서 PDF로 저장하세요."
     );
   });
+
+  it("keeps the virtual-fab PDF export label while hiding its decorative document icon", () => {
+    expect(dashboardSource).toContain('<span aria-hidden="true">📄</span> {lang === "ko" ? "PDF 보고서 내보내기"');
+  });
 });
