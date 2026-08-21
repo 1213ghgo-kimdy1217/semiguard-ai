@@ -4207,7 +4207,7 @@ export default function Dashboard() {
             title={lang === "ko" ? "구조화 PDF 보고서 내보내기" : lang === "ja" ? "構造化PDFレポートを出力" : "Export structured PDF report"}
             className="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all duration-200 hover:opacity-80 active:scale-95 disabled:opacity-50"
             style={{ borderColor: th.border2, color: "oklch(0.65 0.18 200)", background: th.bgCard }}>
-            {pdfExporting ? <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid oklch(0.65 0.18 200)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "📄"} {lang === "ko" ? "보고서" : lang === "ja" ? "レポート" : "Report"}
+            {pdfExporting ? <span aria-hidden="true" style={{ display: "inline-block", width: 12, height: 12, border: "2px solid oklch(0.65 0.18 200)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : <span aria-hidden="true">📄</span>} {lang === "ko" ? "보고서" : lang === "ja" ? "レポート" : "Report"}
           </button>
           {/* 로그아웃 버튼 */}
           <button

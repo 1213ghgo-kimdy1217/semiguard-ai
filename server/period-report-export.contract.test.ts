@@ -38,6 +38,14 @@ describe("period report export contract", () => {
     expect(dashboardSource).toContain('"Loading period analysis data")');
   });
 
+  it("hides the decorative PDF and loading icons while keeping localized report text visible", () => {
+    expect(dashboardSource).toContain('<span aria-hidden="true">📄</span>');
+    expect(dashboardSource).toContain('pdfExporting ? <span aria-hidden="true"');
+    expect(dashboardSource).toContain('lang === "ko" ? "보고서"');
+    expect(dashboardSource).toContain('lang === "ja" ? "レポート"');
+    expect(dashboardSource).toContain('"Report"');
+  });
+
   it("provides a localized descriptive name and busy state for the period CSV export control", () => {
     expect(dashboardSource).toContain("aria-busy={periodOverviewQuery.isFetching || undefined}");
     expect(dashboardSource).toContain('aria-label={periodOverviewQuery.isFetching ? (lang === "ko" ? "기간 분석 데이터를 불러오는 중"');
