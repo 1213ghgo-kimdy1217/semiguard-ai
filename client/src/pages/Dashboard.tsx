@@ -6452,7 +6452,7 @@ export default function Dashboard() {
                     className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:opacity-80"
                     style={{ background: th.bgCard }}>
                     <div className="flex items-center gap-2">
-                      <span className="text-base">⚙️</span>
+                      <span aria-hidden="true" className="text-base">⚙️</span>
                       <span className="text-xs font-semibold">{lang === "ko" ? "위험도 임계값 설정" : lang === "ja" ? "リスクしきい値設定" : "Risk Threshold Settings"}</span>
                       <span className="text-[10px] text-muted-foreground ml-1">
                         {lang === "ko"
