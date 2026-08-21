@@ -5607,7 +5607,7 @@ export default function Dashboard() {
                 )}
                 {showDeleteAllFeedbackFinalConfirm && (
                   <div ref={deleteAllFeedbackFinalDialogRef} role="alertdialog" aria-modal="true" aria-labelledby="feedback-delete-all-final-confirm-title" aria-describedby="feedback-delete-all-final-confirm-description" className="absolute inset-0 z-[595] flex flex-col items-center justify-center rounded-xl bg-black/90 p-4 text-center backdrop-blur-md animate-fadeIn">
-                    <span className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500/20 text-lg">🛑</span>
+                    <span aria-hidden="true" className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500/20 text-lg">🛑</span>
                     <p id="feedback-delete-all-final-confirm-title" className="text-xs font-bold text-red-300">
                       {lang === "ko" ? "최종 확인: 모든 피드백을 영구 삭제할까요?" : lang === "ja" ? "最終確認：すべてのフィードバックを完全に削除しますか？" : "Final confirmation: permanently delete all feedback?"}
                     </p>
