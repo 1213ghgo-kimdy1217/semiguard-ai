@@ -16,4 +16,8 @@ describe("sensor sparkline accessibility contract", () => {
     expect(dashboardSource).toContain('現在 ${currentScore}、最小 ${minScore}、最大 ${maxScore}');
     expect(dashboardSource).toContain('Current ${currentScore}, minimum ${minScore}, maximum ${maxScore}');
   });
+
+  it("hides decorative sensor card icons while retaining the sensor label and trend summary", () => {
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-base opacity-70">{card.icon}</span>');
+  });
 });

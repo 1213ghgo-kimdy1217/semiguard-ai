@@ -6664,7 +6664,7 @@ export default function Dashboard() {
                     style={{ background: "rgba(255,255,255,0.025)", borderColor: blinkBorderColor, animation: blinkAnim, borderWidth: alertLevel !== "normal" ? "2px" : "1px" }}>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{card.label}</span>
-                      <span className="text-base opacity-70">{card.icon}</span>
+                      <span aria-hidden="true" className="text-base opacity-70">{card.icon}</span>
                     </div>
                     <div className="flex items-end gap-1.5">
                       <span className="text-3xl font-bold font-mono leading-none" style={{ color: card.color }}>{card.value.toFixed(1)}</span>
