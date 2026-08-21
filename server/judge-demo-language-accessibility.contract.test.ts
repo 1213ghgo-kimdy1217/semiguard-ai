@@ -39,4 +39,11 @@ describe("JudgeDemo 언어 선택 접근성 계약", () => {
     );
     expect(source).toMatch(/catch\s*\{\s*return "ko";/);
   });
+
+  it("선택 언어에 맞춰 BCP 47 HTML 언어와 문서 제목을 함께 갱신합니다", () => {
+    expect(source).toContain('lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"');
+    expect(source).toContain('"SemiGuard AI 심사위원 읽기 전용 데모"');
+    expect(source).toContain('"SemiGuard AI 審査員向け読み取り専用デモ"');
+    expect(source).toContain('"SemiGuard AI Read-only Judge Demo"');
+  });
 });
