@@ -33,4 +33,8 @@ describe("common AI chat IME composition contract", () => {
   it("announces newly added conversation messages through a polite live log", () => {
     expect(aiChatBoxSource).toContain('role="log" aria-live="polite" aria-relevant="additions text" aria-label="AI conversation"');
   });
+
+  it("keeps the chat input named after its placeholder even while the placeholder is visually hidden", () => {
+    expect(aiChatBoxSource).toContain('aria-label={placeholder}');
+  });
 });
