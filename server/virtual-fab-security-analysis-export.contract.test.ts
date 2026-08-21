@@ -21,6 +21,12 @@ describe("virtual fab demo, security status, and analysis export contract", () =
     );
     expect(dashboardSource).toContain("실제 팹 파일럿 연동은 추후 지원 예정");
     expect(dashboardSource).toContain("실제 팹 파일럿 연동, 추후 지원 예정");
+    expect(dashboardSource).toContain('role="note"');
+    expect(dashboardSource).toContain('aria-describedby="actual-fab-pilot-help"');
+    expect(dashboardSource).toContain('id="actual-fab-pilot-help"');
+    expect(dashboardSource).toContain("IT/OT 보안 승인, 현장 담당자 협의 후 별도 검토합니다.");
+    expect(dashboardSource).toContain("IT/OTセキュリティ承認、現場担当者との協議後に個別検討します。");
+    expect(dashboardSource).toContain("IT/OT security approval, and on-site operator alignment.");
     expect(dashboardSource).toContain("cursor-not-allowed");
   });
 
