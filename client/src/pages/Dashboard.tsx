@@ -5401,7 +5401,7 @@ export default function Dashboard() {
                     />
                   </label>
                 </div>
-                <div className="mb-2 flex flex-wrap items-center gap-1">
+                <div className="mb-2 flex flex-wrap items-center gap-1" role="group" aria-label={lang === "ko" ? "피드백 이력 빠른 기간" : lang === "ja" ? "フィードバック履歴のクイック期間" : "Feedback history quick period"}>
                   <span className="mr-0.5 text-[9px] font-bold" style={{ color: th.textMuted }}>{lang === "ko" ? "빠른 기간" : lang === "ja" ? "クイック期間" : "Quick period"}</span>
                   {([
                     { id: "all", ko: "전체", ja: "すべて", en: "All" },
