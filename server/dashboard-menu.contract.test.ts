@@ -27,6 +27,7 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('document.getElementById("btn-logout")?.click()');
     expect(dashboardSource).toContain("setDemoRunning(r => !r)");
     expect(dashboardSource).toContain('localStorage.setItem("semiguard_muted"');
+    expect(dashboardSource).toContain('<span aria-hidden="true">🚪</span>');
   });
 
   it("declares header actions as non-submitting buttons", () => {
