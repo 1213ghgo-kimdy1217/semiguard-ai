@@ -22,4 +22,10 @@ describe("RAG manual chunk safety contract", () => {
     expect(dashboardSource).toContain("장·설비별로 나누어 등록해 주세요.");
     expect(dashboardSource).toContain("章・設備ごとに分けて登録してください。");
   });
+
+  it("uses a completion keyboard hint for the long-form manual input", () => {
+    expect(dashboardSource).toMatch(
+      /<textarea\s+id="rag-manual-content"[\s\S]*?enterKeyHint="done"/,
+    );
+  });
 });

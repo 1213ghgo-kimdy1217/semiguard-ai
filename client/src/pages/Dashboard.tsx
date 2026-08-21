@@ -4443,6 +4443,7 @@ export default function Dashboard() {
                     id="rag-manual-content"
                     value={manualContent}
                     onChange={event => setManualContent(event.target.value)}
+                    enterKeyHint="done"
                     minLength={50}
                     maxLength={60000}
                     placeholder={lang === "ko" ? "매뉴얼 또는 점검표 본문을 붙여넣어 주세요. 문단으로 나누면 더 정확하게 검색됩니다." : lang === "ja" ? "マニュアルまたは点検表の本文を貼り付けてください。段落で区切ると検索精度が向上します。" : "Paste manual or checklist text. Separate paragraphs for more accurate retrieval."}
