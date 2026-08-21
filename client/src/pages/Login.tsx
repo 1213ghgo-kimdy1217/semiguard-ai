@@ -354,7 +354,7 @@ export function Login() {
           {/* Header */}
           <div className="text-center space-y-3">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-2xl shadow-lg">
-              🛡️
+              <span aria-hidden="true">🛡️</span>
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">SemiGuard AI</h1>
