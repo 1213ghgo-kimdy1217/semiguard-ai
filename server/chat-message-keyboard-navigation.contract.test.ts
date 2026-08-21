@@ -9,8 +9,8 @@ describe("chat message keyboard navigation contract", () => {
     expect(dashboardSource).toContain("tabIndex={0}");
     expect(dashboardSource).toContain('if (event.key === "Home")');
     expect(dashboardSource).toContain('if (event.key === "End")');
-    expect(dashboardSource).toContain("event.currentTarget.scrollTo({ top: 0, behavior: \"smooth\" })");
-    expect(dashboardSource).toContain("event.currentTarget.scrollTo({ top: event.currentTarget.scrollHeight, behavior: \"smooth\" })");
+    expect(dashboardSource).toContain("event.currentTarget.scrollTo({ top: 0, behavior: getKeyboardScrollBehavior() })");
+    expect(dashboardSource).toContain("event.currentTarget.scrollTo({ top: event.currentTarget.scrollHeight, behavior: getKeyboardScrollBehavior() })");
   });
 
   it("describes the keyboard navigation in Korean, Japanese, and English", () => {

@@ -60,6 +60,10 @@ async function copyTextWithFallback(value: string) {
   return copied;
 }
 
+function getKeyboardScrollBehavior(): ScrollBehavior {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+}
+
 function readCustomPeriodPresets(): CustomPeriodPreset[] {
   try {
     const raw = window.localStorage.getItem(CUSTOM_PERIOD_PRESETS_KEY);
@@ -5770,11 +5774,11 @@ export default function Dashboard() {
               onKeyDown={(event) => {
                 if (event.key === "Home") {
                   event.preventDefault();
-                  event.currentTarget.scrollTo({ top: 0, behavior: "smooth" });
+                  event.currentTarget.scrollTo({ top: 0, behavior: getKeyboardScrollBehavior() });
                 }
                 if (event.key === "End") {
                   event.preventDefault();
-                  event.currentTarget.scrollTo({ top: event.currentTarget.scrollHeight, behavior: "smooth" });
+                  event.currentTarget.scrollTo({ top: event.currentTarget.scrollHeight, behavior: getKeyboardScrollBehavior() });
                   isChatNearBottomRef.current = true;
                   setIsChatAwayFromLatest(false);
                   setUnreadChatMessageCount(0);
