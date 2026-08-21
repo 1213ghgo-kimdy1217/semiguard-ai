@@ -485,7 +485,7 @@ export default function JudgeDemo() {
                 aria-label={text.showDemoMode}
                 className="flex h-9 items-center rounded-lg border border-amber-200/60 bg-amber-300/15 px-2.5 text-xs font-bold text-amber-50 transition hover:bg-amber-300/25 focus:outline-none focus:ring-2 focus:ring-amber-200"
               >
-                ●{" "}
+                <span aria-hidden="true">●</span>{" "}
                 <span className="hidden sm:ml-1 sm:inline">
                   {text.demoMode}
                 </span>
@@ -510,7 +510,7 @@ export default function JudgeDemo() {
             aria-atomic="true"
           >
             <div className="flex min-w-0 items-start gap-2">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-[10px] font-black text-slate-900">
+              <span aria-hidden="true" className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-[10px] font-black text-slate-900">
                 ●
               </span>
               <span className="shrink-0 font-black tracking-wide text-white">
