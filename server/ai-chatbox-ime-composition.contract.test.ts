@@ -23,4 +23,10 @@ describe("common AI chat IME composition contract", () => {
     expect(aiChatBoxSource).toContain('aria-label={isLoading ? "AI is responding" : "Send message"}');
     expect(aiChatBoxSource).toContain('aria-busy={isLoading || undefined}');
   });
+
+  it("announces the full AI response generation status instead of only exposing a spinner", () => {
+    expect(aiChatBoxSource).toContain('role="status" aria-live="polite" aria-atomic="true"');
+    expect(aiChatBoxSource).toContain('<span className="sr-only">AI is generating a response</span>');
+    expect(aiChatBoxSource).toContain('Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true"');
+  });
 });
