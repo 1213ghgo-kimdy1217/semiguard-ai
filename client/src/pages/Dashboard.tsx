@@ -4434,7 +4434,7 @@ export default function Dashboard() {
                 <div ref={manualPanelDialogRef} className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border p-4 sm:p-5 shadow-2xl space-y-3 custom-scrollbar" style={{ background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.98 0.005 240)", borderColor: "oklch(0.72 0.15 75 / 0.45)" }}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h4 id="rag-manual-dialog-title" className="text-sm font-bold" style={{ color: th.text }}>📘 {lang === "ko" ? "설비 매뉴얼 RAG 등록" : lang === "ja" ? "設備マニュアルRAG登録" : "Add Manual to RAG"}</h4>
+                      <h4 id="rag-manual-dialog-title" className="text-sm font-bold" style={{ color: th.text }}><span aria-hidden="true">📘</span>{" "}{lang === "ko" ? "설비 매뉴얼 RAG 등록" : lang === "ja" ? "設備マニュアルRAG登録" : "Add Manual to RAG"}</h4>
                       <p id="rag-manual-dialog-description" className="mt-1 text-[10px] leading-relaxed" style={{ color: th.textMuted }}>
                         {lang === "ko" ? "매뉴얼·점검표의 텍스트를 등록하면, AI가 질문과 관련된 부분을 찾아 근거로 제시합니다. 민감정보는 제외해 주세요." : lang === "ja" ? "マニュアル・点検表のテキストを登録すると、AIが質問に関連する箇所を根拠として提示します。機密情報は除外してください。" : "Add manual or checklist text. The AI retrieves relevant sections as evidence. Exclude confidential information."}
                       </p>

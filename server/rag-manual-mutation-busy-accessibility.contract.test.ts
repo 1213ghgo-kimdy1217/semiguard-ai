@@ -16,4 +16,8 @@ describe("RAG manual mutation busy accessibility contract", () => {
     expect(dashboardSource).toContain("등록 중...");
     expect(dashboardSource).toContain("삭제 중...");
   });
+
+  it("keeps the manual registration dialog title while hiding its decorative book icon", () => {
+    expect(dashboardSource).toContain('<h4 id="rag-manual-dialog-title" className="text-sm font-bold" style={{ color: th.text }}><span aria-hidden="true">📘</span>{" "}{lang === "ko" ? "설비 매뉴얼 RAG 등록"');
+  });
 });
