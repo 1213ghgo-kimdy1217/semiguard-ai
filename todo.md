@@ -2348,3 +2348,4 @@
 - [x] 대시보드 상담 기록 제목 저장·기간 프리셋 입력의 IME Enter 조기 실행 방지와 회귀 계약 보강 (한국어·일본어 등 IME 조합 중 Enter로 제목 저장·프리셋 저장이 조기 실행되지 않도록 `nativeEvent.isComposing`을 확인; TypeScript·Vitest 270개 파일/631개 테스트·프로덕션 빌드 통과)
 - [x] 공통 AI 채팅 입력의 IME Enter 조기 전송 방지와 회귀 계약 보강 (공통 `AIChatBox`에서 한국어·일본어 등 IME 조합 중 Enter 전송을 방지하고 기존 Enter 전송·Shift+Enter 줄바꿈을 유지; TypeScript·Vitest 271개 파일/632개 테스트·프로덕션 빌드 통과)
 - [x] 공통 AI 채팅 자동 스크롤의 모션 감소 설정 준수와 회귀 계약 보강 (공통 `AIChatBox`가 모션 감소 설정에서는 즉시, 기본 설정에서는 부드럽게 최신 메시지로 스크롤하도록 보완; TypeScript·Vitest 271개 파일/633개 테스트·프로덕션 빌드 통과)
+- [x] 공통 AI 채팅 입력의 모바일 전송 키보드 힌트와 회귀 계약 보강 (공통 `AIChatBox` 입력에 `enterKeyHint="send"`를 적용해 모바일 키보드의 전송 동작을 명시하고 기존 IME·Shift+Enter 동작을 유지; TypeScript·Vitest 271개 파일/634개 테스트·프로덕션 빌드 통과)

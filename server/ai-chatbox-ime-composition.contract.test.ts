@@ -13,4 +13,9 @@ describe("common AI chat IME composition contract", () => {
   it("keeps automatic scrolling immediate when reduced motion is requested", () => {
     expect(aiChatBoxSource).toContain('behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"');
   });
+
+  it("offers a mobile send keyboard hint without changing the multiline Enter shortcut", () => {
+    expect(aiChatBoxSource).toContain('enterKeyHint="send"');
+    expect(aiChatBoxSource).toContain('!e.shiftKey && !e.nativeEvent.isComposing');
+  });
 });
