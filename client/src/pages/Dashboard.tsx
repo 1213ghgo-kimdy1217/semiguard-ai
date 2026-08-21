@@ -4784,6 +4784,7 @@ export default function Dashboard() {
                       placeholder={lang === "ko" ? "과거 대화 내용 검색..." : lang === "ja" ? "過去の会話を検索..." : "Search past consultations..."}
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
+                      enterKeyHint="search"
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg border outline-none transition-all focus:ring-1 focus:ring-sky-500"
                       style={{
                         background: isDark ? "oklch(0.12 0.01 240)" : "oklch(0.99 0.002 240)",

@@ -20,6 +20,9 @@ describe("consultation history keyboard accessibility contract", () => {
     expect(dashboardSource).toContain('role="dialog"\n                aria-modal="true"\n                aria-labelledby="consultation-history-panel-title"');
     expect(dashboardSource).toContain('id="consultation-history-panel-title"');
     expect(dashboardSource).toContain('htmlFor="consultation-history-search"');
+    expect(dashboardSource).toMatch(
+      /id="consultation-history-search"[\s\S]*?enterKeyHint="search"/,
+    );
   });
 
   it("announces the complete consultation-history page status after pagination changes", () => {
