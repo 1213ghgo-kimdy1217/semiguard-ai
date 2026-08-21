@@ -260,6 +260,7 @@ export function AIChatBox({
                           : "bg-muted text-foreground"
                       )}
                     >
+                      <span className="sr-only">{message.role === "assistant" ? "AI: " : "You: "}</span>
                       {message.role === "assistant" ? (
                         <div className="prose prose-sm dark:prose-invert max-w-none">
                           <Streamdown>{message.content}</Streamdown>

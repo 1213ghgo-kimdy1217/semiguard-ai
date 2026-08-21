@@ -37,4 +37,8 @@ describe("common AI chat IME composition contract", () => {
   it("keeps the chat input named after its placeholder even while the placeholder is visually hidden", () => {
     expect(aiChatBoxSource).toContain('aria-label={placeholder}');
   });
+
+  it("provides sender context before each newly announced chat message", () => {
+    expect(aiChatBoxSource).toContain('<span className="sr-only">{message.role === "assistant" ? "AI: " : "You: "}</span>');
+  });
 });
