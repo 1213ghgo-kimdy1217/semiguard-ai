@@ -6191,7 +6191,7 @@ export default function Dashboard() {
                 aria-label={lang === "ko" ? "AI 상담 메시지" : lang === "ja" ? "AI相談メッセージ" : "AI consultation message"}
                 aria-describedby="chat-input-help"
                 onKeyDown={e => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault();
                     void handleSendChatMessage();
                   }

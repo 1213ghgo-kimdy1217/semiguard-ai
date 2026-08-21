@@ -18,4 +18,8 @@ describe("chat message keyboard navigation contract", () => {
     expect(dashboardSource).toContain("Homeキーで最初のメッセージ");
     expect(dashboardSource).toContain("use Home to move to the first message");
   });
+
+  it("does not send a message while a Korean or Japanese IME composition is active", () => {
+    expect(dashboardSource).toContain('e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing');
+  });
 });
