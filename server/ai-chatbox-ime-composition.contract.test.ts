@@ -9,4 +9,8 @@ describe("common AI chat IME composition contract", () => {
     expect(aiChatBoxSource).toContain('if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing)');
     expect(aiChatBoxSource).toContain("handleSubmit(e);");
   });
+
+  it("keeps automatic scrolling immediate when reduced motion is requested", () => {
+    expect(aiChatBoxSource).toContain('behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"');
+  });
 });
