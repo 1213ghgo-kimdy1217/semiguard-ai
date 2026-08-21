@@ -6886,7 +6886,7 @@ export default function Dashboard() {
               onClick={() => setNewLogCount(0)}
               aria-label={lang === "ko" ? `새 이상 이력 ${newLogCount}건 알림 닫기` : lang === "ja" ? `新しい異常履歴${newLogCount}件の通知を閉じる` : `Dismiss ${newLogCount} new anomaly record notification${newLogCount > 1 ? "s" : ""}`}
             >
-              <span>🔔 {lang === "ko" ? `새 기록 ${newLogCount}건이 추가되었습니다` : lang === "ja" ? `新しい記録が${newLogCount}件追加されました` : `${newLogCount} new record${newLogCount > 1 ? "s" : ""} added`}</span>
+              <span><span aria-hidden="true">🔔</span>{" "}{lang === "ko" ? `새 기록 ${newLogCount}건이 추가되었습니다` : lang === "ja" ? `新しい記録が${newLogCount}件追加されました` : `${newLogCount} new record${newLogCount > 1 ? "s" : ""} added`}</span>
               <span className="text-xs opacity-70">{lang === "ko" ? "선택하여 닫기" : lang === "ja" ? "選択して閉じる" : "Select to dismiss"}</span>
             </button>
           )}
