@@ -9,6 +9,7 @@ describe("login authentication failure accessibility contract", () => {
     expect(loginSource).toContain('const [authError, setAuthError] = useState<string | null>(null);');
     expect(loginSource).toContain('id="login-auth-error"');
     expect(loginSource).toContain('role="alert"');
+    expect(loginSource).toContain('role="alert" aria-atomic="true"');
     expect(loginSource).toContain('authError ? "login-auth-error" : undefined');
     expect(loginSource).toContain('aria-invalid={fieldError === "badge" || Boolean(authError)}');
     expect(loginSource).toContain('aria-invalid={fieldError === "password" || Boolean(authError)}');

@@ -10,6 +10,7 @@ describe("회원가입 인증 실패 접근성 계약", () => {
     expect(signupSource).toContain('setAuthError(copy.error)');
     expect(signupSource).toContain('role="alert"');
     expect(signupSource).toContain('id="signup-auth-error"');
+    expect(signupSource).toContain('id="signup-auth-error" role="alert" aria-atomic="true"');
     expect(signupSource).toContain('document.getElementById("badgeNumber")?.focus()');
   });
 
