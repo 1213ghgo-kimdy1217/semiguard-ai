@@ -13,6 +13,7 @@ describe("chat input safe-area contract", () => {
   it("gives the message composer an explicit localized name and shortcut instructions", () => {
     expect(dashboardSource).toContain('aria-label={lang === "ko" ? "AI 상담 메시지" : lang === "ja" ? "AI相談メッセージ" : "AI consultation message"}');
     expect(dashboardSource).toContain('aria-describedby="chat-input-help"');
+    expect(dashboardSource).toContain('enterKeyHint="send"');
     expect(dashboardSource).toContain('id="chat-input-help"');
     expect(dashboardSource).toContain('Enter 키로 전송하고 Shift와 Enter 키를 함께 누르면 줄바꿈합니다.');
     expect(dashboardSource).toContain('Enterキーで送信し、ShiftキーとEnterキーを同時に押すと改行します。');

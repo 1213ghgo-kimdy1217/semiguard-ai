@@ -6151,6 +6151,7 @@ export default function Dashboard() {
                 rows={1}
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
+                enterKeyHint="send"
                 aria-label={lang === "ko" ? "AI 상담 메시지" : lang === "ja" ? "AI相談メッセージ" : "AI consultation message"}
                 aria-describedby="chat-input-help"
                 onKeyDown={e => {
