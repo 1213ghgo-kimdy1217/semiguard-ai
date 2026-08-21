@@ -5054,6 +5054,7 @@ export default function Dashboard() {
                                 maxLength={120}
                                 autoFocus
                                 onChange={event => setEditingSessionTitle(event.target.value)}
+                                enterKeyHint="done"
                                 onKeyDown={event => {
                                   if (event.key === "Escape") {
                                     setEditingSessionId(null);
