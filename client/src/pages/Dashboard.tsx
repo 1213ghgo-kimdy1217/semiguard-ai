@@ -4469,6 +4469,7 @@ export default function Dashboard() {
                       <button
                         type="button"
                         disabled={manualTitle.trim().length === 0 || manualContent.trim().length < 50 || addManualTextMutation.isPending}
+                        aria-busy={addManualTextMutation.isPending || undefined}
                         onClick={async () => {
                           try {
                             const result = await addManualTextMutation.mutateAsync({ title: manualTitle.trim(), content: manualContent.trim() });
@@ -4704,6 +4705,7 @@ export default function Dashboard() {
                                   <button
                                     type="button"
                                     disabled={deleteManualDocumentMutation.isPending}
+                                    aria-busy={deleteManualDocumentMutation.isPending || undefined}
                                     onClick={async () => {
                                       try {
                                         const result = await deleteManualDocumentMutation.mutateAsync({ documentId: document.id });
