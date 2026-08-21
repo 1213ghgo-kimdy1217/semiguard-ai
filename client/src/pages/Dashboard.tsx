@@ -4579,7 +4579,7 @@ export default function Dashboard() {
                           </p>
                         ) : normalizedManualSearch && manualDocumentSearchQuery.isError ? (
                           <div className="flex flex-col items-center gap-1.5 py-3 text-center text-[10px]" role="alert" aria-atomic="true" style={{ color: th.textMuted }}>
-                            <p>⚠️ {lang === "ko" ? "매뉴얼 검색 결과를 불러오지 못했습니다." : lang === "ja" ? "マニュアル検索結果を読み込めませんでした。" : "Could not load manual search results."}</p>
+                            <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "매뉴얼 검색 결과를 불러오지 못했습니다." : lang === "ja" ? "マニュアル検索結果を読み込めませんでした。" : "Could not load manual search results."}</p>
                             <button type="button" onClick={() => void manualDocumentSearchQuery.refetch()} disabled={manualDocumentSearchQuery.isFetching} aria-busy={manualDocumentSearchQuery.isFetching || undefined} className="rounded border px-2 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.72 0.15 75 / 0.45)", color: isDark ? "oklch(0.86 0.14 80)" : "oklch(0.46 0.16 75)" }}>
                               ↻ {manualDocumentSearchQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                             </button>
@@ -5009,7 +5009,7 @@ export default function Dashboard() {
                 )}
                 {historySessionLoadError && (
                   <div className="mb-2 rounded-lg border p-2 text-[10px]" role="alert" aria-atomic="true" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", background: "oklch(0.65 0.20 25 / 0.08)", color: th.textMuted }}>
-                    <p>⚠️ {lang === "ko" ? `“${historySessionLoadError.title}” 기록을 열지 못했습니다.` : lang === "ja" ? `「${historySessionLoadError.title}」の履歴を開けませんでした。` : `Could not open “${historySessionLoadError.title}”.`}</p>
+                    <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? `“${historySessionLoadError.title}” 기록을 열지 못했습니다.` : lang === "ja" ? `「${historySessionLoadError.title}」の履歴を開けませんでした。` : `Could not open “${historySessionLoadError.title}”.`}</p>
                     <div className="mt-1.5 flex justify-end gap-1.5">
                       <button type="button" onClick={() => void loadHistorySession(historySessionLoadError)} disabled={loadingHistorySessionId === historySessionLoadError.id} aria-busy={loadingHistorySessionId === historySessionLoadError.id || undefined} className="rounded border px-2 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
                         ↻ {loadingHistorySessionId === historySessionLoadError.id ? (lang === "ko" ? "다시 여는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
@@ -5028,14 +5028,14 @@ export default function Dashboard() {
                     </div>
                   ) : chatSessionsQuery.isError ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" role="alert" aria-atomic="true" style={{ color: th.textMuted }}>
-                      <p>⚠️ {lang === "ko" ? "상담 기록을 불러오지 못했습니다." : lang === "ja" ? "相談履歴を読み込めませんでした。" : "Could not load consultation history."}</p>
+                      <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "상담 기록을 불러오지 못했습니다." : lang === "ja" ? "相談履歴を読み込めませんでした。" : "Could not load consultation history."}</p>
                       <button type="button" onClick={() => void chatSessionsQuery.refetch()} disabled={chatSessionsQuery.isFetching} aria-busy={chatSessionsQuery.isFetching || undefined} aria-label={chatSessionsQuery.isFetching ? (lang === "ko" ? "상담 기록 다시 불러오는 중" : lang === "ja" ? "相談履歴を再読み込み中" : "Retrying consultation history") : (lang === "ko" ? "상담 기록 다시 시도" : lang === "ja" ? "相談履歴を再試行" : "Retry consultation history")} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.22 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                         ↻ {chatSessionsQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                       </button>
                     </div>
                   ) : normalizedHistorySearch && searchChatSessionsQuery.isError ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-8 text-center text-[11px]" role="alert" aria-atomic="true" style={{ color: th.textMuted }}>
-                      <p>⚠️ {lang === "ko" ? "상담 기록 검색 결과를 불러오지 못했습니다." : lang === "ja" ? "相談履歴の検索結果を読み込めませんでした。" : "Could not load consultation search results."}</p>
+                      <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "상담 기록 검색 결과를 불러오지 못했습니다." : lang === "ja" ? "相談履歴の検索結果を読み込めませんでした。" : "Could not load consultation search results."}</p>
                       <button type="button" onClick={() => void searchChatSessionsQuery.refetch()} disabled={searchChatSessionsQuery.isFetching} aria-busy={searchChatSessionsQuery.isFetching || undefined} aria-label={searchChatSessionsQuery.isFetching ? (lang === "ko" ? "상담 기록 검색 결과 다시 불러오는 중" : lang === "ja" ? "相談履歴の検索結果を再読み込み中" : "Retrying consultation search results") : (lang === "ko" ? "상담 기록 검색 결과 다시 시도" : lang === "ja" ? "相談履歴の検索結果を再試行" : "Retry consultation search results")} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.22 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                         ↻ {searchChatSessionsQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                       </button>
@@ -6411,7 +6411,7 @@ export default function Dashboard() {
 
             {periodOverviewQuery.isError && (
               <div className="mb-6 flex flex-col items-start justify-between gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center" role="alert" aria-atomic="true" style={{ background: "oklch(0.65 0.20 25 / 0.08)", borderColor: "oklch(0.65 0.20 25 / 0.45)", color: th.textMuted }}>
-                <p>⚠️ {lang === "ko" ? "운영 통계를 불러오지 못했습니다. KPI와 예상 절감 비용은 최신 값이 아닐 수 있습니다." : lang === "ja" ? "運用統計を読み込めませんでした。KPIと予想削減コストは最新値ではない可能性があります。" : "Could not load operational statistics. KPI values and expected savings may not be current."}</p>
+                <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "운영 통계를 불러오지 못했습니다. KPI와 예상 절감 비용은 최신 값이 아닐 수 있습니다." : lang === "ja" ? "運用統計を読み込めませんでした。KPIと予想削減コストは最新値ではない可能性があります。" : "Could not load operational statistics. KPI values and expected savings may not be current."}</p>
                 <button type="button" onClick={() => void periodOverviewQuery.refetch()} disabled={periodOverviewQuery.isFetching} aria-busy={periodOverviewQuery.isFetching || undefined} aria-label={periodOverviewQuery.isFetching ? (lang === "ko" ? "운영 통계 다시 불러오는 중" : lang === "ja" ? "運用統計を再読み込み中" : "Retrying operational statistics") : (lang === "ko" ? "운영 통계 다시 시도" : lang === "ja" ? "運用統計を再試行" : "Retry operational statistics")} className="shrink-0 rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
                   ↻ {periodOverviewQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                 </button>
@@ -6841,7 +6841,7 @@ export default function Dashboard() {
                 </div>
                 {getRecentScoresQuery.isError ? (
                   <div className="flex h-[150px] flex-col items-center justify-center gap-2 text-center text-[10px]" role="alert" aria-atomic="true" style={{ color: th.textMuted }}>
-                    <p>⚠️ {lang === "ko" ? "위험도 점수 추이를 불러오지 못했습니다." : lang === "ja" ? "リスクスコア推移を読み込めませんでした。" : "Could not load risk score trends."}</p>
+                    <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "위험도 점수 추이를 불러오지 못했습니다." : lang === "ja" ? "リスクスコア推移を読み込めませんでした。" : "Could not load risk score trends."}</p>
                     <button type="button" onClick={() => void getRecentScoresQuery.refetch()} disabled={getRecentScoresQuery.isFetching} aria-busy={getRecentScoresQuery.isFetching || undefined} aria-label={getRecentScoresQuery.isFetching ? (lang === "ko" ? "위험도 점수 추이 다시 불러오는 중" : lang === "ja" ? "リスクスコア推移を再読み込み中" : "Retrying risk score trends") : (lang === "ko" ? "위험도 점수 추이 다시 시도" : lang === "ja" ? "リスクスコア推移を再試行" : "Retry risk score trends")} className="rounded border px-2.5 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                       ↻ {getRecentScoresQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                     </button>
@@ -7047,7 +7047,7 @@ export default function Dashboard() {
                     <tr>
                       <td colSpan={8} className="px-4 py-10 text-center">
                         <div className="flex flex-col items-center gap-2 text-[11px]" role="alert" aria-atomic="true" style={{ color: th.textMuted }}>
-                          <p>⚠️ {lang === "ko" ? "이상 이력을 불러오지 못했습니다." : lang === "ja" ? "異常履歴を読み込めませんでした。" : "Could not load anomaly history."}</p>
+                          <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "이상 이력을 불러오지 못했습니다." : lang === "ja" ? "異常履歴を読み込めませんでした。" : "Could not load anomaly history."}</p>
                           <button type="button" onClick={() => void getLogs.refetch()} disabled={getLogs.isFetching} aria-busy={getLogs.isFetching || undefined} aria-label={getLogs.isFetching ? (lang === "ko" ? "이상 이력 다시 불러오는 중" : lang === "ja" ? "異常履歴を再読み込み中" : "Retrying anomaly history") : (lang === "ko" ? "이상 이력 다시 시도" : lang === "ja" ? "異常履歴を再試行" : "Retry anomaly history")} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                             ↻ {getLogs.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                           </button>
