@@ -19,4 +19,15 @@ describe("sensor chart image export localization contract", () => {
     expect(dashboardSource).toContain('"セミガード_センサー区間"');
     expect(dashboardSource).toContain('"semiguard_sensor_range"');
   });
+
+  it("announces the localized preparation state while PNG or JPEG export is busy", () => {
+    expect(dashboardSource).toContain('aria-busy={sensorImageExporting === "png" || undefined}');
+    expect(dashboardSource).toContain('aria-busy={sensorImageExporting === "jpeg" || undefined}');
+    expect(dashboardSource).toContain('"PNG 이미지 저장 준비 중"');
+    expect(dashboardSource).toContain('"PNG画像を保存する準備中"');
+    expect(dashboardSource).toContain('"Preparing PNG image export"');
+    expect(dashboardSource).toContain('"JPEG 이미지 저장 준비 중"');
+    expect(dashboardSource).toContain('"JPEG画像を保存する準備中"');
+    expect(dashboardSource).toContain('"Preparing JPEG image export"');
+  });
 });
