@@ -33,4 +33,12 @@ describe("dashboard period analysis and social UX contract", () => {
     expect(loginSource).toContain('const retryOauthLogin = () => {');
     expect(loginSource).toContain('rounded-xl border border-slate-200 bg-white');
   });
+
+  it("labels the custom-period preset input and offers a mobile completion keyboard hint", () => {
+    expect(dashboardSource).toMatch(
+      /aria-label=\{lang === "ko" \? "사용자 지정 기간 프리셋 이름"[\s\S]*?enterKeyHint="done"/,
+    );
+    expect(dashboardSource).toContain("カスタム期間プリセット名");
+    expect(dashboardSource).toContain("Custom period preset name");
+  });
 });
