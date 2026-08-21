@@ -4882,6 +4882,7 @@ export default function Dashboard() {
                     <input
                       id="consultation-history-start-date"
                       type="date"
+                      lang={lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"}
                       value={historySessionStartDate}
                       max={historySessionEndDate || undefined}
                       onChange={(event) => { setHistorySessionStartDate(event.target.value); setHistorySessionDatePreset("custom"); }}
@@ -4895,6 +4896,7 @@ export default function Dashboard() {
                     <input
                       id="consultation-history-end-date"
                       type="date"
+                      lang={lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"}
                       value={historySessionEndDate}
                       min={historySessionStartDate || undefined}
                       onChange={(event) => { setHistorySessionEndDate(event.target.value); setHistorySessionDatePreset("custom"); }}
@@ -5366,6 +5368,7 @@ export default function Dashboard() {
                     <span className="mb-0.5 block text-[9px] font-bold" style={{ color: th.textMuted }}>{lang === "ko" ? "시작일" : lang === "ja" ? "開始日" : "From"}</span>
                     <input
                       type="date"
+                      lang={lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"}
                       value={feedbackHistoryStartDate}
                       max={feedbackHistoryEndDate || undefined}
                       onChange={event => { setFeedbackHistoryStartDate(event.target.value); setFeedbackHistoryDatePreset("custom"); }}
@@ -5377,6 +5380,7 @@ export default function Dashboard() {
                     <span className="mb-0.5 block text-[9px] font-bold" style={{ color: th.textMuted }}>{lang === "ko" ? "종료일" : lang === "ja" ? "終了日" : "To"}</span>
                     <input
                       type="date"
+                      lang={lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"}
                       value={feedbackHistoryEndDate}
                       min={feedbackHistoryStartDate || undefined}
                       onChange={event => { setFeedbackHistoryEndDate(event.target.value); setFeedbackHistoryDatePreset("custom"); }}
@@ -6281,12 +6285,12 @@ export default function Dashboard() {
                 {dashboardPeriod === "custom" && <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border p-2 sm:w-auto" style={{ borderColor: th.border2, background: th.bgCard2 }}>
                   <label className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: th.textMuted }}>
                     <span>{lang === "ko" ? "시작" : lang === "ja" ? "開始" : "Start"}</span>
-                    <input type="date" value={customStartDate} max={customEndDate || todayDateValue} onChange={event => setCustomStartDate(event.target.value)} className="h-8 rounded border px-1.5 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text, background: th.bgCard, borderColor: th.border2, colorScheme: isDark ? "dark" : "light" }} />
+                    <input type="date" lang={lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"} value={customStartDate} max={customEndDate || todayDateValue} onChange={event => setCustomStartDate(event.target.value)} className="h-8 rounded border px-1.5 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text, background: th.bgCard, borderColor: th.border2, colorScheme: isDark ? "dark" : "light" }} />
                   </label>
                   <span aria-hidden="true" style={{ color: th.textMuted }}>–</span>
                   <label className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: th.textMuted }}>
                     <span>{lang === "ko" ? "종료" : lang === "ja" ? "終了" : "End"}</span>
-                    <input type="date" value={customEndDate} min={customStartDate} max={todayDateValue} onChange={event => setCustomEndDate(event.target.value)} className="h-8 rounded border px-1.5 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text, background: th.bgCard, borderColor: th.border2, colorScheme: isDark ? "dark" : "light" }} />
+                    <input type="date" lang={lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US"} value={customEndDate} min={customStartDate} max={todayDateValue} onChange={event => setCustomEndDate(event.target.value)} className="h-8 rounded border px-1.5 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-cyan-300" style={{ color: th.text, background: th.bgCard, borderColor: th.border2, colorScheme: isDark ? "dark" : "light" }} />
                   </label>
                   <button type="button" onClick={applyCustomPeriod} disabled={periodOverviewQuery.isFetching || !customStartDate || !customEndDate || customStartDate > customEndDate} className="h-8 rounded border px-2 text-[10px] font-bold transition-all hover:opacity-85 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.38 0.16 220)", background: "oklch(0.65 0.18 200 / 0.08)" }}>
                     {lang === "ko" ? "적용" : lang === "ja" ? "適用" : "Apply"}

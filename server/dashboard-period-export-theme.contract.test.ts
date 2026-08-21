@@ -48,8 +48,8 @@ describe("dashboard period export, loading, and theme contract", () => {
     expect(dashboardSource).toContain('const [dashboardPeriod, setDashboardPeriod] = useState<"day" | "week" | "month" | "custom">');
     expect(dashboardSource).toContain("const applyCustomPeriod = () => {");
     expect(dashboardSource).toContain('value="custom"');
-    expect(dashboardSource).toContain("type=\"date\" value={customStartDate}");
-    expect(dashboardSource).toContain("type=\"date\" value={customEndDate}");
+    expect(dashboardSource).toContain("type=\"date\" lang={lang === \"ko\" ? \"ko-KR\" : lang === \"ja\" ? \"ja-JP\" : \"en-US\"} value={customStartDate}");
+    expect(dashboardSource).toContain("type=\"date\" lang={lang === \"ko\" ? \"ko-KR\" : lang === \"ja\" ? \"ja-JP\" : \"en-US\"} value={customEndDate}");
   });
 
   it("keeps a visible, persistent, keyboard-labelled header theme switch", () => {
