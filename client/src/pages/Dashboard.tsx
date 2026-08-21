@@ -4695,7 +4695,7 @@ export default function Dashboard() {
                             {manualDocumentToDelete === document.id && (
                               <div ref={manualDeleteDialogRef} role="alertdialog" aria-modal="true" aria-labelledby="manual-delete-confirm-title" aria-describedby="manual-delete-confirm-description" className="mt-2 border-t pt-2" style={{ borderColor: th.border2 }}>
                                 <p id="manual-delete-confirm-title" className="text-[9px] font-bold text-red-300">
-                                  ⚠️ {lang === "ko" ? "RAG 매뉴얼 삭제 확인" : lang === "ja" ? "RAGマニュアル削除の確認" : "Confirm RAG manual deletion"}
+                                  <span aria-hidden="true">⚠️ </span>{lang === "ko" ? "RAG 매뉴얼 삭제 확인" : lang === "ja" ? "RAGマニュアル削除の確認" : "Confirm RAG manual deletion"}
                                 </p>
                                 <p id="manual-delete-confirm-description" className="mt-1 text-[9px] leading-relaxed text-red-400">
                                   {lang === "ko" ? "이 매뉴얼과 연결된 모든 RAG 구간을 삭제할까요? 되돌릴 수 없습니다." : lang === "ja" ? "このマニュアルと関連するすべてのRAG区間を削除しますか？元に戻せません。" : "Delete this manual and all related RAG chunks? This cannot be undone."}
