@@ -35,4 +35,16 @@ describe("RAG manual query recovery contract", () => {
     expect(dashboardSource).toContain('"원문을 불러오는 중..."');
     expect(dashboardSource.match(/role="status" aria-live="polite" aria-atomic="true"/g)?.length).toBeGreaterThan(2);
   });
+
+  it("announces localized list, search, and source failures as atomic alerts", () => {
+    expect(dashboardSource).toMatch(
+      /manualDocumentsQuery\.isError \? \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
+    );
+    expect(dashboardSource).toMatch(
+      /manualDocumentSearchQuery\.isError \? \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
+    );
+    expect(dashboardSource).toMatch(
+      /manualPreviewQuery\.isError \? \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
+    );
+  });
 });
