@@ -6392,7 +6392,7 @@ export default function Dashboard() {
             {periodOverviewQuery.isError && (
               <div className="mb-6 flex flex-col items-start justify-between gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center" role="alert" style={{ background: "oklch(0.65 0.20 25 / 0.08)", borderColor: "oklch(0.65 0.20 25 / 0.45)", color: th.textMuted }}>
                 <p>⚠️ {lang === "ko" ? "운영 통계를 불러오지 못했습니다. KPI와 예상 절감 비용은 최신 값이 아닐 수 있습니다." : lang === "ja" ? "運用統計を読み込めませんでした。KPIと予想削減コストは最新値ではない可能性があります。" : "Could not load operational statistics. KPI values and expected savings may not be current."}</p>
-                <button type="button" onClick={() => void periodOverviewQuery.refetch()} disabled={periodOverviewQuery.isFetching} className="shrink-0 rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
+                <button type="button" onClick={() => void periodOverviewQuery.refetch()} disabled={periodOverviewQuery.isFetching} aria-busy={periodOverviewQuery.isFetching || undefined} aria-label={periodOverviewQuery.isFetching ? (lang === "ko" ? "운영 통계 다시 불러오는 중" : lang === "ja" ? "運用統計を再読み込み中" : "Retrying operational statistics") : (lang === "ko" ? "운영 통계 다시 시도" : lang === "ja" ? "運用統計を再試行" : "Retry operational statistics")} className="shrink-0 rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
                   ↻ {periodOverviewQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                 </button>
               </div>
@@ -6822,7 +6822,7 @@ export default function Dashboard() {
                 {getRecentScoresQuery.isError ? (
                   <div className="flex h-[150px] flex-col items-center justify-center gap-2 text-center text-[10px]" style={{ color: th.textMuted }}>
                     <p>⚠️ {lang === "ko" ? "위험도 점수 추이를 불러오지 못했습니다." : lang === "ja" ? "リスクスコア推移を読み込めませんでした。" : "Could not load risk score trends."}</p>
-                    <button type="button" onClick={() => void getRecentScoresQuery.refetch()} disabled={getRecentScoresQuery.isFetching} className="rounded border px-2.5 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                    <button type="button" onClick={() => void getRecentScoresQuery.refetch()} disabled={getRecentScoresQuery.isFetching} aria-busy={getRecentScoresQuery.isFetching || undefined} aria-label={getRecentScoresQuery.isFetching ? (lang === "ko" ? "위험도 점수 추이 다시 불러오는 중" : lang === "ja" ? "リスクスコア推移を再読み込み中" : "Retrying risk score trends") : (lang === "ko" ? "위험도 점수 추이 다시 시도" : lang === "ja" ? "リスクスコア推移を再試行" : "Retry risk score trends")} className="rounded border px-2.5 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                       ↻ {getRecentScoresQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                     </button>
                   </div>
@@ -6834,7 +6834,7 @@ export default function Dashboard() {
                 <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <div className="flex min-h-40 flex-col items-center justify-center gap-2 text-center text-[10px]" style={{ color: th.textMuted }}>
                     <p>⚠️ {lang === "ko" ? "월간 위험도 히트맵을 불러오지 못했습니다." : lang === "ja" ? "月間リスクヒートマップを読み込めませんでした。" : "Could not load the monthly risk heatmap."}</p>
-                    <button type="button" onClick={() => void getDailyMaxRisk.refetch()} disabled={getDailyMaxRisk.isFetching} className="rounded border px-2.5 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                    <button type="button" onClick={() => void getDailyMaxRisk.refetch()} disabled={getDailyMaxRisk.isFetching} aria-busy={getDailyMaxRisk.isFetching || undefined} aria-label={getDailyMaxRisk.isFetching ? (lang === "ko" ? "월간 위험도 히트맵 다시 불러오는 중" : lang === "ja" ? "月間リスクヒートマップを再読み込み中" : "Retrying monthly risk heatmap") : (lang === "ko" ? "월간 위험도 히트맵 다시 시도" : lang === "ja" ? "月間リスクヒートマップを再試行" : "Retry monthly risk heatmap")} className="rounded border px-2.5 py-1 text-[9px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                       ↻ {getDailyMaxRisk.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                     </button>
                   </div>
@@ -7028,7 +7028,7 @@ export default function Dashboard() {
                       <td colSpan={8} className="px-4 py-10 text-center">
                         <div className="flex flex-col items-center gap-2 text-[11px]" style={{ color: th.textMuted }}>
                           <p>⚠️ {lang === "ko" ? "이상 이력을 불러오지 못했습니다." : lang === "ja" ? "異常履歴を読み込めませんでした。" : "Could not load anomaly history."}</p>
-                          <button type="button" onClick={() => void getLogs.refetch()} disabled={getLogs.isFetching} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
+                          <button type="button" onClick={() => void getLogs.refetch()} disabled={getLogs.isFetching} aria-busy={getLogs.isFetching || undefined} aria-label={getLogs.isFetching ? (lang === "ko" ? "이상 이력 다시 불러오는 중" : lang === "ja" ? "異常履歴を再読み込み中" : "Retrying anomaly history") : (lang === "ko" ? "이상 이력 다시 시도" : lang === "ja" ? "異常履歴を再試行" : "Retry anomaly history")} className="rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", color: isDark ? "oklch(0.78 0.15 200)" : "oklch(0.42 0.17 220)" }}>
                             ↻ {getLogs.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                           </button>
                         </div>
