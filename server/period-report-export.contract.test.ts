@@ -24,4 +24,10 @@ describe("period report export contract", () => {
     expect(dashboardSource).toContain("reportWindow.document.close();");
     expect(dashboardSource).toContain("window.setTimeout(() => { reportWindow.focus(); reportWindow.print(); }, 250);");
   });
+
+  it("announces the localized PDF report preparation state through the export control name", () => {
+    expect(dashboardSource).toContain('aria-label={pdfExporting ? (lang === "ko" ? "PDF 보고서를 준비하는 중"');
+    expect(dashboardSource).toContain('lang === "ja" ? "PDFレポートを準備中"');
+    expect(dashboardSource).toContain('"Preparing PDF report")');
+  });
 });
