@@ -3637,9 +3637,9 @@ export default function Dashboard() {
                 </div>
               </div>
               {/* 센서 값 그리드 */}
-              <div className="px-5 pb-5 grid grid-cols-2 gap-2">
+              <div className="px-5 pb-5 grid grid-cols-2 gap-2" role="list" aria-label={lang === "ko" ? "이상 이력 상세 센서 값" : lang === "ja" ? "異常履歴詳細のセンサー値" : "Anomaly detail sensor values"}>
                 {sensorItems.map(s => (
-                  <div key={s.label} className="rounded-xl p-3 border flex flex-col gap-1"
+                  <div key={s.label} role="listitem" className="rounded-xl p-3 border flex flex-col gap-1"
                     style={{ background: `${s.color}0d`, borderColor: `${s.color}30` }}>
                     <div className="flex items-center gap-1">
                       <span className="text-sm">{s.icon}</span>

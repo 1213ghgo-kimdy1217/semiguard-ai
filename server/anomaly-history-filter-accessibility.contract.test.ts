@@ -26,4 +26,11 @@ describe("anomaly history filter accessibility contract", () => {
     expect(dashboardSource).toContain('"Anomaly detail score"');
     expect(dashboardSource).toContain('aria-valuenow={Math.min(log.anomalyScore, 100)}');
   });
+
+  it("groups anomaly-detail sensor values as a localized list", () => {
+    expect(dashboardSource).toContain('role="list" aria-label={lang === "ko" ? "이상 이력 상세 센서 값"');
+    expect(dashboardSource).toContain('"異常履歴詳細のセンサー値"');
+    expect(dashboardSource).toContain('"Anomaly detail sensor values"');
+    expect(dashboardSource).toContain('key={s.label} role="listitem"');
+  });
 });
