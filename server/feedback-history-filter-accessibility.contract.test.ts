@@ -19,4 +19,13 @@ describe("feedback history filter accessibility contract", () => {
     expect(dashboardSource).toContain('"Feedback history quick period"');
     expect(dashboardSource).toContain('aria-pressed={feedbackHistoryDatePreset === preset.id}');
   });
+
+  it("labels the feedback sort select and icon-only date reset control", () => {
+    expect(dashboardSource).toContain('"피드백 이력 정렬"');
+    expect(dashboardSource).toContain('"フィードバック履歴の並び順"');
+    expect(dashboardSource).toContain('"Feedback history sort order"');
+    expect(dashboardSource).toContain('"피드백 이력 날짜 필터 초기화"');
+    expect(dashboardSource).toContain('"フィードバック履歴の日付フィルターをリセット"');
+    expect(dashboardSource).toContain('"Reset feedback history date filter"');
+  });
 });

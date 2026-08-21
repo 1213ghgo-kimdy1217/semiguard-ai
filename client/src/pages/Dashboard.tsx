@@ -5428,6 +5428,7 @@ export default function Dashboard() {
                   <select
                     value={feedbackHistorySort}
                     onChange={event => setFeedbackHistorySort(event.target.value as "newest" | "oldest")}
+                    aria-label={lang === "ko" ? "피드백 이력 정렬" : lang === "ja" ? "フィードバック履歴の並び順" : "Feedback history sort order"}
                     className="min-w-0 flex-1 rounded-lg border px-2 py-1.5 text-[10px] font-bold outline-none focus:ring-1 focus:ring-fuchsia-500"
                     style={{ background: th.bgCard, borderColor: th.border2, color: th.text }}>
                     <option value="newest">{lang === "ko" ? "정렬: 최신순" : lang === "ja" ? "並び順: 新しい順" : "Sort: Newest first"}</option>
@@ -5438,6 +5439,7 @@ export default function Dashboard() {
                       type="button"
                       onClick={() => applyFeedbackDatePreset("all")}
                       title={lang === "ko" ? "날짜 필터 초기화" : lang === "ja" ? "日付フィルターをリセット" : "Reset date filter"}
+                      aria-label={lang === "ko" ? "피드백 이력 날짜 필터 초기화" : lang === "ja" ? "フィードバック履歴の日付フィルターをリセット" : "Reset feedback history date filter"}
                       className="rounded-lg border px-2 py-1.5 text-[10px] font-bold transition-all hover:opacity-80"
                       style={{ borderColor: th.border2, color: th.textMuted }}>
                       ↺
