@@ -30,4 +30,11 @@ describe("sensor chart image export localization contract", () => {
     expect(dashboardSource).toContain('"JPEG画像を保存する準備中"');
     expect(dashboardSource).toContain('"Preparing JPEG image export"');
   });
+
+  it("hides decorative color dots in the sensor chart legends from assistive technology", () => {
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-[#38bdf8]">●</span>');
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-[#fb923c]">●</span>');
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-[#a78bfa]">●</span>');
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-[#34d399]">●</span>');
+  });
 });

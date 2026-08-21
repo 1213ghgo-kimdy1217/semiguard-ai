@@ -6699,7 +6699,7 @@ export default function Dashboard() {
                 {/* 전류 + 온도 */}
                 <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-                    {t.current} <span className="text-[#38bdf8]">●</span> / {t.temperature} <span className="text-[#fb923c]">●</span>
+                    {t.current} <span aria-hidden="true" className="text-[#38bdf8]">●</span> / {t.temperature} <span aria-hidden="true" className="text-[#fb923c]">●</span>
                   </p>
                   <ResponsiveContainer width="100%" height={150}>
                     <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
@@ -6716,7 +6716,7 @@ export default function Dashboard() {
                 {/* 진동 + 소음 */}
                 <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-                    {t.vibration} <span className="text-[#a78bfa]">●</span> / {t.noise} <span className="text-[#34d399]">●</span>
+                    {t.vibration} <span aria-hidden="true" className="text-[#a78bfa]">●</span> / {t.noise} <span aria-hidden="true" className="text-[#34d399]">●</span>
                   </p>
                   <ResponsiveContainer width="100%" height={150}>
                     <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
