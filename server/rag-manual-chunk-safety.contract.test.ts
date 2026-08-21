@@ -28,4 +28,13 @@ describe("RAG manual chunk safety contract", () => {
       /<textarea\s+id="rag-manual-content"[\s\S]*?enterKeyHint="done"/,
     );
   });
+
+  it("offers mobile next and search keyboard hints for manual title and retrieval search", () => {
+    expect(dashboardSource).toMatch(
+      /<input\s+id="rag-manual-title"[\s\S]*?enterKeyHint="next"/,
+    );
+    expect(dashboardSource).toMatch(
+      /value=\{manualSearchQuery\}[\s\S]*?enterKeyHint="search"/,
+    );
+  });
 });
