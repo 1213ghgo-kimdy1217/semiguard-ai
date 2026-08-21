@@ -19,6 +19,7 @@ describe("consultation history query recovery contract", () => {
     expect(dashboardSource).toContain("setHistorySessionLoadError({ id: session.id, title: session.title })");
     expect(dashboardSource).toContain("void loadHistorySession(historySessionLoadError)");
     expect(dashboardSource).toContain("상담 기록을 열지 못했습니다.");
+    expect(dashboardSource).toContain('aria-busy={loadingHistorySessionId === historySessionLoadError.id || undefined}');
   });
 
   it("announces localized busy retry states for history and history-search failures", () => {
@@ -26,5 +27,17 @@ describe("consultation history query recovery contract", () => {
     expect(dashboardSource).toContain('"Retrying consultation history"');
     expect(dashboardSource).toContain("aria-busy={searchChatSessionsQuery.isFetching || undefined}");
     expect(dashboardSource).toContain('"Retrying consultation search results"');
+  });
+
+  it("announces session-open, history-list, and history-search failures as atomic alerts", () => {
+    expect(dashboardSource).toMatch(
+      /historySessionLoadError && \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
+    );
+    expect(dashboardSource).toMatch(
+      /chatSessionsQuery\.isError \? \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
+    );
+    expect(dashboardSource).toMatch(
+      /searchChatSessionsQuery\.isError \? \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
+    );
   });
 });
