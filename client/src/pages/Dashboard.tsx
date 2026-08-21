@@ -5896,7 +5896,7 @@ export default function Dashboard() {
                           <span>{copiedIndex === idx ? "✅" : "📋"}</span>
                           <span>{copiedIndex === idx ? (lang === "ko" ? "복사됨" : lang === "ja" ? "コピー済" : "Copied") : (lang === "ko" ? "복사" : lang === "ja" ? "コピー" : "Copy")}</span>
                         </button>
-                        <div className="flex flex-wrap items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1" role="group" aria-label={lang === "ko" ? "AI 답변 평가" : lang === "ja" ? "AI回答の評価" : "AI answer feedback"}>
                           <button
                             type="button"
                             onClick={() => {
@@ -5911,6 +5911,8 @@ export default function Dashboard() {
                               void persistChatFeedback(idx, "like");
                             }}
                             title={lang === "ko" ? "좋아요" : lang === "ja" ? "いいね" : "Helpful"}
+                            aria-label={lang === "ko" ? "AI 답변이 도움이 됨" : lang === "ja" ? "AI回答が役に立った" : "AI answer was helpful"}
+                            aria-pressed={messageFeedbacks[idx] === "like"}
                             className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
                               messageFeedbacks[idx] === "like" ? "bg-emerald-500/20 border-emerald-500 text-emerald-500 font-bold" : "opacity-60 hover:opacity-100"
                             }`}
@@ -5940,6 +5942,8 @@ export default function Dashboard() {
                                 }
                               }}
                               title={lang === "ko" ? "아쉬워요" : lang === "ja" ? "イマイチ" : "Not helpful"}
+                              aria-label={lang === "ko" ? "AI 답변이 도움이 되지 않음" : lang === "ja" ? "AI回答が役に立たなかった" : "AI answer was not helpful"}
+                              aria-pressed={messageFeedbacks[idx] === "dislike"}
                               className={`px-1.5 py-0.5 rounded text-[10px] border transition-all ${
                                 messageFeedbacks[idx] === "dislike" ? "bg-rose-500/20 border-rose-500 text-rose-500 font-bold" : "opacity-60 hover:opacity-100"
                               }`}
