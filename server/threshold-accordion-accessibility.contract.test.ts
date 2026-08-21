@@ -24,6 +24,8 @@ describe("threshold setting accordion accessibility contract", () => {
     expect(dashboardSource).toContain(
       'id="sensor-threshold-panel" role="region" aria-label={lang === "ko"'
     );
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-base">🔬</span>');
+    expect(dashboardSource).toContain('<span aria-hidden="true" className="text-xs text-muted-foreground">{showSensorPanel ? "▲" : "▼"}</span>');
   });
 
   it("keeps global risk threshold sliders named and value-announced in Korean, English, and Japanese", () => {

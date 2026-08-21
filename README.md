@@ -10,9 +10,8 @@
 ## 문서 안내
 
 - [프로젝트 개요](#프로젝트-개요) · [1주차 팀 목표](#1주차-팀-목표) · [빠른 안내](#빠른-안내) · [문제와 해결 방식](#문제와-해결-방식) · [핵심 기능](#핵심-기능)
-- [시스템 구조](#시스템-구조) · [탐지 방식과 검증 상태](#탐지-방식과-검증-상태) · [AI 활용과 안전 원칙](#ai-활용과-안전-원칙) · [실제 팹 도입 경로](#실제-팹-도입-경로) · [실행 방법](#실행-방법) · [테스트](#테스트)
-- [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [실증 검증 계획](VALIDATION_PLAN.md) · [위험 기준 보정 변경관리 템플릿](RISK_CALIBRATION_CHANGE_CONTROL_TEMPLATE.md) · [제출 증거 등록부 템플릿](EVIDENCE_REGISTER_TEMPLATE.md) · [외부 자문 기록 템플릿](EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md) · [KPI 측정·보고 템플릿](KPI_MEASUREMENT_TEMPLATE.md) · [사용자 인터뷰·문제 정의 템플릿](USER_INTERVIEW_TEMPLATE.md) · [첫 사용자 모집·이탈 관찰 템플릿](FIRST_USER_OBSERVATION_TEMPLATE.md) · [과거 로그 파일럿 검증 템플릿](PILOT_LOG_VALIDATION_TEMPLATE.md) · [IT/OT 읽기 전용 파일럿 체크리스트](IT_OT_READ_ONLY_PILOT_CHECKLIST.md) · [현장 파일럿 담당자 검토 템플릿](FIELD_PILOT_REVIEW_TEMPLATE.md) · [기간 보고서 브라우저 검증 안내](PERIOD_REPORT_BROWSER_VALIDATION.md) · [의존성 보안 검토](DEPENDENCY_SECURITY_REVIEW.md) · [모바일 소셜 로그인 검증](MOBILE_SOCIAL_LOGIN_VALIDATION.md) · [발표 시연 스크립트](PRESENTATION_DEMO_SCRIPT.md) · [10분 발표 대본](PRESENTATION_10_MIN_SCRIPT.md) · [3분 피치 영상 스토리보드](PITCH_VIDEO_STORYBOARD.md) · [3분 영상 녹화 체크리스트](DEMO_RECORDING_CHECKLIST.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
-- [런타임 점검 메모](RUNTIME_CHECK_NOTES.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
+- [시스템 구조](#시스템-구조) · [탐지 방식과 검증 상태](#탐지-방식과-검증-상태) · [개발 과정과 실증 증거](#개발-과정과-실증-증거) · [AI 활용과 안전 원칙](#ai-활용과-안전-원칙) · [실제 팹 도입 경로](#실제-팹-도입-경로) · [실행 방법](#실행-방법) · [테스트](#테스트)
+- [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [실증 검증 계획](VALIDATION_PLAN.md) · [개발 과정 타임라인](COACHING_PROGRESS_TIMELINE.md) · [임팩트 증거 스코어카드](IMPACT_EVIDENCE_SCORECARD.md) · [위험 기준 보정 변경관리 템플릿](RISK_CALIBRATION_CHANGE_CONTROL_TEMPLATE.md) · [제출 증거 등록부 템플릿](EVIDENCE_REGISTER_TEMPLATE.md) · [외부 자문 기록 템플릿](EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md) · [KPI 측정·보고 템플릿](KPI_MEASUREMENT_TEMPLATE.md) · [사용자 인터뷰·문제 정의 템플릿](USER_INTERVIEW_TEMPLATE.md) · [첫 사용자 모집·이탈 관찰 템플릿](FIRST_USER_OBSERVATION_TEMPLATE.md) · [과거 로그 파일럿 검증 템플릿](PILOT_LOG_VALIDATION_TEMPLATE.md) · [IT/OT 읽기 전용 파일럿 체크리스트](IT_OT_READ_ONLY_PILOT_CHECKLIST.md) · [현장 파일럿 담당자 검토 템플릿](FIELD_PILOT_REVIEW_TEMPLATE.md) · [기간 보고서 브라우저 검증 안내](PERIOD_REPORT_BROWSER_VALIDATION.md) · [의존성 보안 검토](DEPENDENCY_SECURITY_REVIEW.md) · [모바일 소셜 로그인 검증](MOBILE_SOCIAL_LOGIN_VALIDATION.md) · [발표 시연 스크립트](PRESENTATION_DEMO_SCRIPT.md) · [10분 발표 대본](PRESENTATION_10_MIN_SCRIPT.md) · [3분 피치 영상 스토리보드](PITCH_VIDEO_STORYBOARD.md) · [3분 영상 녹화 체크리스트](DEMO_RECORDING_CHECKLIST.md) · [런타임 점검 메모](RUNTIME_CHECK_NOTES.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
 
 > 전이 의존성 패치를 실제로 검토할 때는 [의존성 호환성 검증 템플릿](DEPENDENCY_COMPATIBILITY_VALIDATION_TEMPLATE.md)의 후보별 회귀 흐름과 롤백 기준을 사용합니다. 이 템플릿은 패치 승인을 의미하지 않습니다.
 
@@ -121,12 +120,26 @@ SemiGuard AI는 전류·온도·진동·소음 데이터에서 위험 신호를 
 | 입력 데이터 | 전류·온도·진동·소음의 **시뮬레이션 데이터**와 향후 승인된 읽기 전용 연동 데이터를 위한 형식입니다. 현재 공개 데모와 기본 폴링은 실제 팹 데이터가 아닙니다.                                  |
 | 기준값      | 전류 5.0±0.5A, 온도 45±3°C, 진동 2.0±0.3mm/s, 소음 55±4dB를 시연 기준으로 사용합니다. 실제 장비별 기준은 승인된 과거 로그와 담당자 검토 후 별도로 보정해야 합니다.                          |
 | 점수 계산   | `min(round(Σ min(8 × abs((x - μ) / σ), 25)), 100)`으로 계산하며, 위험 단계의 기본 구간은 0~29 정상, 30~49 주의, 50~69 경고, 70~100 위험입니다. 대시보드에서 단계 경계는 설정할 수 있습니다. |
+| 학습 데이터 | **없음**입니다. 현재 평균·표준편차는 시뮬레이션 시연 기준의 고정 설정값이며, 현장 데이터로 학습된 분포·고장 라벨·모델 가중치가 아닙니다. |
 | AI의 역할   | LLM은 계산된 센서 수치·편차·위험 단계를 자연어 점검 설명으로 정리합니다. LLM이 위험 점수를 계산하거나 고장을 확정하지 않습니다.                                                             |
-| 검증 상태   | 코드 수준의 점수 계산 회귀 테스트는 갖추었지만, 실제 팹 로그로 정확도·오탐·미탐·사전 경고 시간을 측정한 결과는 아직 없습니다.                                                               |
+| 구현 검증   | 코드 수준에서 기준값·센서별 25점 상한·합계 100점 상한·위험 단계 매핑을 회귀 테스트로 확인합니다. 이는 계산 구현의 일관성 검증이며 현장 성능 평가와는 다릅니다. |
+| 검증 상태   | 실제 팹 로그로 정확도·오탐·미탐·사전 경고 시간을 측정한 결과는 아직 없습니다.                                                                                                       |
 
 > 공개 `/demo`의 **탐지 방식과 검증 상태** 패널은 위의 계산 구조, 시뮬레이션 경계와 실증 전 한계를 한국어·영어·일본어로 동일하게 안내합니다. 실제 정확도, 비용 절감, 장비 제어 효과를 확정된 성과로 주장하지 않습니다.
 
 실제 도입 전에는 승인된 과거 로그에서 사건 시점과 점수 변화를 비교하고, 오탐·미탐·사전 경고 시간·담당자 해석 가능성을 읽기 전용 범위에서 확인해야 합니다. 데이터 항목, 평가 절차, 지표 정의와 결과 보고 형식은 [실증 검증 계획](VALIDATION_PLAN.md)에 정리했습니다.
+
+## 개발 과정과 실증 증거
+
+심사에서 확인할 수 있는 개발 과정은 기능 목록이 아니라 **문제 정의 → 구현 → 검증 → 다음 실증 조건**의 연결입니다. 현재 저장소에는 위험 점수 엔진, 다국어 AI 보조 설명, 읽기 전용 심사위원 데모, 접근성·모바일 회귀 검증이 남아 있으며, 실제 사용자·현장 성과는 확인 전 상태로 분리해 기록합니다.
+
+| 심사 피드백 항목 | 현재 제공 자료 | 현재 상태와 다음 증거 |
+| --- | --- | --- |
+| 핵심 탐지 모델 설명 | [탐지 방식과 검증 상태](#탐지-방식과-검증-상태), [기술 참고 문서](TECHNICAL_REFERENCE.md), 공개 `/demo` 패널 | z-score 독립 합산·점수 상한·학습 데이터 부재·현장 정확도 미검증을 명시합니다. |
+| 팀 실행 과정 | [개발 과정 타임라인](COACHING_PROGRESS_TIMELINE.md), [작업 기록](todo.md) | 저장소 체크포인트로 확인 가능한 이슈·해결·검증 결과를 정리하며, 향후 주차는 증거 수집 조건을 함께 표시합니다. |
+| 피치 영상 | [3분 피치 영상 스토리보드](PITCH_VIDEO_STORYBOARD.md), [녹화 체크리스트](DEMO_RECORDING_CHECKLIST.md) | 실제 촬영본은 아직 제출 증거로 등록되지 않았습니다. 두 팀원이 공개 데모를 사용해 촬영·검수할 수 있도록 화면·대본·보안 점검 순서를 제공합니다. |
+| 사용자·현장 임팩트 | [임팩트 증거 스코어카드](IMPACT_EVIDENCE_SCORECARD.md), [실증 검증 계획](VALIDATION_PLAN.md) | 현재 실제 사용자 수·정확도·절감 비용은 미측정입니다. 승인된 로그·사용자 관찰·파일럿이 생긴 뒤 분모·기간·출처와 함께 기록합니다. |
+| 팀 정보 일관성 | [팀](#팀), [W1 팀 목표](W1_TEAM_GOALS.md), 발표·영상 자료 | 현재 제출 문서는 **김대영(팀장)·김승현(팀원) 2인** 기준으로 통일했습니다. |
 
 ## AI 활용과 안전 원칙
 
@@ -205,7 +218,7 @@ pnpm test
 pnpm build
 ```
 
-현재 변경은 TypeScript 검사, Vitest **271개 파일/650개 테스트**, 프로덕션 빌드를 통과했습니다. 심사위원은 공개 `/demo`에서 핵심 경험을 확인할 수 있으며, `?lang=ko`, `?lang=en`, `?lang=ja` 직접 공유 링크로 각 언어의 읽기 전용 데모를 바로 시작하거나 상단의 **링크 복사** 제어로 현재 언어 링크를 복사할 수 있습니다. 초기화·공유 결과는 하나의 안내 영역에서 순차적으로 표시됩니다. 기간별 구조화 보고서는 사용자 클릭 시 새 창에서 작성되며, 브라우저의 인쇄 대화상자에서 PDF로 저장할 수 있습니다. 실제 사용자 브라우저에서의 새 창·인쇄 대화상자 최종 확인 절차는 [기간 보고서 브라우저 검증 안내](PERIOD_REPORT_BROWSER_VALIDATION.md)에 분리했습니다. 상담 기록 전체 초기화는 현재 로그인된 사용자 소유 세션만 대상으로 하고, 새 상담은 소유권 확인이 필요한 흐름입니다.
+현재 변경은 TypeScript 검사, Vitest **271개 파일/651개 테스트**, 프로덕션 빌드를 통과했습니다. 심사위원은 공개 `/demo`에서 핵심 경험을 확인할 수 있으며, `?lang=ko`, `?lang=en`, `?lang=ja` 직접 공유 링크로 각 언어의 읽기 전용 데모를 바로 시작하거나 상단의 **링크 복사** 제어로 현재 언어 링크를 복사할 수 있습니다. 초기화·공유 결과는 하나의 안내 영역에서 순차적으로 표시됩니다. 기간별 구조화 보고서는 사용자 클릭 시 새 창에서 작성되며, 브라우저의 인쇄 대화상자에서 PDF로 저장할 수 있습니다. 실제 사용자 브라우저에서의 새 창·인쇄 대화상자 최종 확인 절차는 [기간 보고서 브라우저 검증 안내](PERIOD_REPORT_BROWSER_VALIDATION.md)에 분리했습니다. 상담 기록 전체 초기화는 현재 로그인된 사용자 소유 세션만 대상으로 하고, 새 상담은 소유권 확인이 필요한 흐름입니다.
 
 ### 대시보드 성능 검토
 

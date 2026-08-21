@@ -6566,10 +6566,10 @@ export default function Dashboard() {
                     className="w-full flex items-center justify-between px-5 py-3 text-left transition-all hover:opacity-80"
                     style={{ background: th.bgCard }}>
                     <div className="flex items-center gap-2">
-                      <span className="text-base">🔬</span>
+                      <span aria-hidden="true" className="text-base">🔬</span>
                       <span className="text-xs font-semibold">{lang === "ko" ? "센서별 임계값 설정" : lang === "ja" ? "センサー別しきい値設定" : "Per-Sensor Threshold Settings"}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{showSensorPanel ? "▲" : "▼"}</span>
+                    <span aria-hidden="true" className="text-xs text-muted-foreground">{showSensorPanel ? "▲" : "▼"}</span>
                   </button>
                   {showSensorPanel && (
                     <div id="sensor-threshold-panel" role="region" aria-label={lang === "ko" ? "센서별 위험도 임계값 설정" : lang === "ja" ? "センサー別リスクしきい値設定" : "Per-sensor risk threshold settings"} className="px-5 py-4 border-t grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5"

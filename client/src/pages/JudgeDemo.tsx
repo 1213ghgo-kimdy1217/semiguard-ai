@@ -60,9 +60,12 @@ type DemoCopy = {
   close: string;
   methodTitle: string;
   methodDescription: string;
+  methodInputs: string;
   methodFormula: string;
   methodBaseline: string;
   methodOutput: string;
+  methodTraining: string;
+  methodImplementationCheck: string;
   methodLimit: string;
   methodDisclaimer: string;
 };
@@ -126,11 +129,17 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     methodTitle: "탐지 방식과 검증 상태",
     methodDescription:
       "현재 위험 점수는 학습된 고장 분류 모델이 아니라, 4개 센서가 기준 범위에서 벗어난 정도를 합산하는 규칙형 계산입니다.",
+    methodInputs:
+      "입력: 전류·온도·진동·소음의 현재 시뮬레이션 관측값",
     methodFormula:
       "계산: 센서별 |z-score| × 8점, 센서당 최대 25점, 4개 센서 합계 최대 100점",
     methodBaseline:
       "기준: 전류 5.0±0.5A · 온도 45±3°C · 진동 2.0±0.3mm/s · 소음 55±4dB",
     methodOutput: "출력: 0~100점과 정상·주의·경고·위험 4단계",
+    methodTraining:
+      "학습: 없음 — 기준값은 시연용 고정 설정이며 학습 데이터 분포가 아닙니다.",
+    methodImplementationCheck:
+      "구현 검증: 점수 계산 계약 테스트를 통과했으며, 실제 팹 정확도 검증과는 별개입니다.",
     methodLimit:
       "실제 팹 로그로 정확도·오탐·미탐·사전 경고 시간을 검증한 상태는 아닙니다.",
     methodDisclaimer:
@@ -196,12 +205,18 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     methodTitle: "Detection method and validation status",
     methodDescription:
       "The current risk score is not a trained fault-classification model. It is a rule-based calculation that adds each of four sensors' deviation from its baseline.",
+    methodInputs:
+      "Inputs: current simulated observations for current, temperature, vibration, and noise",
     methodFormula:
       "Calculation: |z-score| × 8 per sensor, capped at 25 points each, capped at 100 points total",
     methodBaseline:
       "Baselines: Current 5.0±0.5A · Temperature 45±3°C · Vibration 2.0±0.3mm/s · Noise 55±4dB",
     methodOutput:
       "Output: score from 0 to 100 and four levels—normal, caution, warning, danger",
+    methodTraining:
+      "Training: none — baselines are fixed demo settings, not a learned data distribution.",
+    methodImplementationCheck:
+      "Implementation check: score-calculation contract tests; separate from fab accuracy validation.",
     methodLimit:
       "Accuracy, false alarms, misses, and early-warning time have not yet been validated with actual fab logs.",
     methodDisclaimer:
@@ -266,11 +281,17 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     methodTitle: "検知方式と検証状況",
     methodDescription:
       "現在のリスクスコアは学習済みの故障分類モデルではなく、4種類のセンサーが基準範囲から離れた程度を合算するルール型計算です。",
+    methodInputs:
+      "入力: 電流・温度・振動・騒音の現在のシミュレーション観測値",
     methodFormula:
       "計算: センサーごとの |z-score| × 8点、センサーごと最大25点、4センサー合計は最大100点",
     methodBaseline:
       "基準: 電流 5.0±0.5A・温度 45±3°C・振動 2.0±0.3mm/s・騒音 55±4dB",
     methodOutput: "出力: 0～100点と正常・注意・警告・危険の4段階",
+    methodTraining:
+      "学習: なし — 基準値はデモ用の固定設定であり、学習データの分布ではありません。",
+    methodImplementationCheck:
+      "実装検証: スコア計算の契約テストを通過していますが、実ファブでの精度検証とは別です。",
     methodLimit:
       "実ファブログによる精度、誤報、見逃し、早期警告時間の検証はまだ行っていません。",
     methodDisclaimer:
@@ -565,9 +586,12 @@ export default function JudgeDemo() {
             <div className="border-t border-slate-700/80 px-3.5 py-4 sm:px-4">
               <div className="grid gap-2 sm:grid-cols-3">
                 {[
+                  text.methodInputs,
                   text.methodFormula,
                   text.methodBaseline,
                   text.methodOutput,
+                  text.methodTraining,
+                  text.methodImplementationCheck,
                 ].map(item => (
                   <p
                     key={item}

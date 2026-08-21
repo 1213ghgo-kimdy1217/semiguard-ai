@@ -89,4 +89,14 @@ describe("read-only judge demo contract", () => {
     expect(demoSource).toContain("{text.safeNextStep}");
     expect(demoSource).not.toContain(">SAFE NEXT STEP<");
   });
+
+  it("discloses the current detector inputs, no-training boundary, and implementation-only verification", () => {
+    expect(demoSource).toContain("methodInputs:");
+    expect(demoSource).toContain("입력: 전류·온도·진동·소음의 현재 시뮬레이션 관측값");
+    expect(demoSource).toContain("methodTraining:");
+    expect(demoSource).toContain("학습: 없음 — 기준값은 시연용 고정 설정이며 학습 데이터 분포가 아닙니다.");
+    expect(demoSource).toContain("text.methodImplementationCheck");
+    expect(demoSource).toContain("Training: none — baselines are fixed demo settings");
+    expect(demoSource).toContain("学習: なし — 基準値はデモ用の固定設定");
+  });
 });
