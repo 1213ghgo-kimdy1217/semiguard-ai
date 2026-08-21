@@ -3668,7 +3668,7 @@ export default function Dashboard() {
                     <div className="px-5 pb-5 flex flex-col gap-2">
                       <div className="rounded-xl p-3 border" role="region" aria-labelledby="selected-log-ai-analysis-title" style={{ background: "oklch(0.75 0.18 200 / 0.06)", borderColor: "oklch(0.75 0.18 200 / 0.25)" }}>
                         <h3 id="selected-log-ai-analysis-title" className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "oklch(0.75 0.18 200)" }}>
-                          🤖 {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
+                          <span aria-hidden="true">🤖</span> {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
                         </h3>
                         <p className="text-[11px] font-semibold mb-1" style={{ color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)" }}>{a.primaryCause}</p>
                         <p className="text-[10px] leading-relaxed mb-1.5" style={{ color: isDark ? "oklch(0.60 0.01 240)" : "oklch(0.40 0.01 240)" }}>{a.details}</p>
