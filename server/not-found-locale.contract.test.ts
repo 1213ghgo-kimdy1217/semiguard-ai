@@ -15,6 +15,10 @@ describe("not found locale contract", () => {
 
   it("synchronizes the document language and labels the recovery page", () => {
     expect(notFoundSource).toContain('document.documentElement.lang = language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US";');
+    expect(notFoundSource).toContain('pageTitle: "SemiGuard AI | 페이지를 찾을 수 없습니다"');
+    expect(notFoundSource).toContain('pageTitle: "SemiGuard AI | Page Not Found"');
+    expect(notFoundSource).toContain('pageTitle: "SemiGuard AI | ページが見つかりません"');
+    expect(notFoundSource).toContain("document.title = copy.pageTitle;");
     expect(notFoundSource).toContain('aria-labelledby="not-found-title"');
   });
 });

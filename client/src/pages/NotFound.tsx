@@ -7,8 +7,9 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 type NotFoundLanguage = "ko" | "en" | "ja";
 
-const NOT_FOUND_COPY: Record<NotFoundLanguage, { title: string; description: string; moved: string; goHome: string; goLogin: string }> = {
+const NOT_FOUND_COPY: Record<NotFoundLanguage, { pageTitle: string; title: string; description: string; moved: string; goHome: string; goLogin: string }> = {
   ko: {
+    pageTitle: "SemiGuard AI | 페이지를 찾을 수 없습니다",
     title: "페이지를 찾을 수 없습니다",
     description: "요청하신 페이지가 존재하지 않습니다.",
     moved: "주소가 변경되었거나 삭제되었을 수 있습니다.",
@@ -16,6 +17,7 @@ const NOT_FOUND_COPY: Record<NotFoundLanguage, { title: string; description: str
     goLogin: "로그인으로 이동",
   },
   en: {
+    pageTitle: "SemiGuard AI | Page Not Found",
     title: "Page Not Found",
     description: "Sorry, the page you are looking for doesn't exist.",
     moved: "It may have been moved or deleted.",
@@ -23,6 +25,7 @@ const NOT_FOUND_COPY: Record<NotFoundLanguage, { title: string; description: str
     goLogin: "Go to Login",
   },
   ja: {
+    pageTitle: "SemiGuard AI | ページが見つかりません",
     title: "ページが見つかりません",
     description: "お探しのページは存在しません。",
     moved: "ページのアドレスが変更または削除された可能性があります。",
@@ -47,7 +50,8 @@ export default function NotFound() {
 
   useEffect(() => {
     document.documentElement.lang = language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US";
-  }, [language]);
+    document.title = copy.pageTitle;
+  }, [copy.pageTitle, language]);
 
   useEffect(() => {
     window.requestAnimationFrame(() => titleRef.current?.focus());
