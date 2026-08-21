@@ -29,6 +29,10 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerSocialOAuthRoutes(app);
+  app.get("/api/health", (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    res.status(200).json({ status: "ok" });
+  });
   // tRPC API
   app.use(
     "/api/trpc",
