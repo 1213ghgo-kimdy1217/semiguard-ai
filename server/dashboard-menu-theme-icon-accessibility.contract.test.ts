@@ -8,8 +8,12 @@ const dashboardSource = readFileSync(
 );
 
 describe("dashboard menu theme icon accessibility contract", () => {
-  it("keeps the theme label available while hiding its decorative icon", () => {
+  it("keeps the theme state and switching intent available while hiding its decorative icon", () => {
     expect(dashboardSource).toContain('<span aria-hidden="true">{isDark ? "☀️" : "🌙"}</span>');
+    expect(dashboardSource).toContain("aria-pressed={isDark}");
+    expect(dashboardSource).toContain('현재 ${isDark ? "다크" : "라이트"} 모드.');
+    expect(dashboardSource).toContain('現在${isDark ? "ダーク" : "ライト"}モード。');
+    expect(dashboardSource).toContain('Currently ${isDark ? "dark" : "light"} mode.');
     expect(dashboardSource).toContain('lang === "ko" ? "라이트"');
     expect(dashboardSource).toContain('lang === "ja" ? "ライト"');
     expect(dashboardSource).toContain('"Light"');
