@@ -25,6 +25,12 @@ const fieldPilotReviewTemplate = readProjectDocument(
   "FIELD_PILOT_REVIEW_TEMPLATE.md"
 );
 const userInterviewTemplate = readProjectDocument("USER_INTERVIEW_TEMPLATE.md");
+const w2InterviewQuestionnaire = readProjectDocument(
+  "W2_INTERVIEW_QUESTIONNAIRE_DRAFT.md"
+);
+const w2AnonymousQuoteConsentForm = readProjectDocument(
+  "W2_ANONYMOUS_QUOTE_CONSENT_FORM.md"
+);
 const kpiMeasurementTemplate = readProjectDocument(
   "KPI_MEASUREMENT_TEMPLATE.md"
 );
@@ -64,6 +70,8 @@ describe("submission documentation contract", () => {
       "IT_OT_READ_ONLY_PILOT_CHECKLIST.md",
       "FIELD_PILOT_REVIEW_TEMPLATE.md",
       "USER_INTERVIEW_TEMPLATE.md",
+      "W2_INTERVIEW_QUESTIONNAIRE_DRAFT.md",
+      "W2_ANONYMOUS_QUOTE_CONSENT_FORM.md",
       "KPI_MEASUREMENT_TEMPLATE.md",
       "FIRST_USER_OBSERVATION_TEMPLATE.md",
       "EVIDENCE_REGISTER_TEMPLATE.md",
@@ -195,6 +203,21 @@ describe("submission documentation contract", () => {
     expect(userInterviewTemplate).toContain(
       "최소 5명의 실제 참여자 기록이 쌓이기 전에는 빈도·비율·사용자 수를 주장하지 않습니다"
     );
+  });
+
+  it("keeps the W2 question list and anonymous quote form public, reusable, and free of interview evidence", () => {
+    expect(w2InterviewQuestionnaire).toContain(
+      "](W2_ANONYMOUS_QUOTE_CONSENT_FORM.md)"
+    );
+    expect(w2InterviewQuestionnaire).toContain("핵심 질문 6문항");
+    expect(w2AnonymousQuoteConsentForm).toContain(
+      "이름, 연락처, 소속 회사·학교, SNS 계정"
+    );
+    expect(w2AnonymousQuoteConsentForm).toContain("익명 인용에 동의합니다");
+    expect(w2AnonymousQuoteConsentForm).toContain(
+      "원문 대화·스크린샷은 공개 저장소에 올리지 않음"
+    );
+    expect(w2AnonymousQuoteConsentForm).not.toContain("P-01 —");
   });
 
   it("keeps the KPI template explicit about actual measurement, denominators, exclusions, and small samples", () => {

@@ -68,6 +68,11 @@ type DemoCopy = {
   methodImplementationCheck: string;
   methodLimit: string;
   methodDisclaimer: string;
+  futureFeedbackTitle: string;
+  futureFeedbackBadge: string;
+  futureFeedbackDescription: string;
+  futureFeedbackItems: [string, string, string, string];
+  futureFeedbackBoundary: string;
 };
 
 const copy: Record<DemoLanguage, DemoCopy> = {
@@ -144,6 +149,18 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "실제 팹 로그로 정확도·오탐·미탐·사전 경고 시간을 검증한 상태는 아닙니다.",
     methodDisclaimer:
       "Isolation Forest 라이브러리나 사전 학습된 모델은 현재 사용하지 않습니다. 과거 로그 비교와 읽기 전용 파일럿 검증은 향후 승인 후 진행할 범위입니다.",
+    futureFeedbackTitle: "다음 주 반영 예정 · 인터뷰 기반 개선 미리보기",
+    futureFeedbackBadge: "준비 중",
+    futureFeedbackDescription:
+      "초기 인터뷰에서 나온 정보 이해·전달 요구를 바탕으로, 아래 항목을 시연 화면에 단계적으로 반영할 예정입니다. 현재 카드는 기능 동작이 아닌 개선 방향을 보여주는 미리보기입니다.",
+    futureFeedbackItems: [
+      "정상 범위와 변화 시점: 위험 점수 앞에 현재값·기준·상승 시작 시점을 함께 표시",
+      "센서 위치와 단위: 전류·온도·진동·소음의 측정 맥락과 단위 차이를 분리 표시",
+      "점수 근거: 각 센서의 편차가 위험 점수에 미친 영향을 근거와 함께 표시",
+      "안전한 판단 흐름: 이상 → 근거 → 가능한 원인 후보 → 승인된 확인 절차",
+    ],
+    futureFeedbackBoundary:
+      "이 항목은 초기 인터뷰 관찰을 시각화한 다음 주 개선 계획입니다. 실제 설비 제어·원인 확정·현장 효과를 의미하지 않습니다.",
   },
   en: {
     badge: "Read-only judge demo",
@@ -221,6 +238,18 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "Accuracy, false alarms, misses, and early-warning time have not yet been validated with actual fab logs.",
     methodDisclaimer:
       "No Isolation Forest library or pre-trained model is currently used. Historical-log comparison and read-only pilot validation are future work after approval.",
+    futureFeedbackTitle: "Planned next week · Interview-informed improvement preview",
+    futureFeedbackBadge: "In preparation",
+    futureFeedbackDescription:
+      "The items below are planned for staged refinement based on early interview observations about understanding and communicating equipment information. These cards preview improvement directions, not live features.",
+    futureFeedbackItems: [
+      "Baseline and change timing: show the current value, reference range, and start of escalation before the risk score",
+      "Sensor location and units: separate measurement context and unit differences for current, temperature, vibration, and noise",
+      "Score rationale: show each sensor's contribution to the risk score alongside its evidence",
+      "Safe reasoning flow: signal → evidence → possible cause candidates → approved verification steps",
+    ],
+    futureFeedbackBoundary:
+      "This is a next-week improvement plan visualized from early interview observations. It does not indicate equipment control, confirmed causes, or validated on-site outcomes.",
   },
   ja: {
     badge: "審査員向け読み取り専用デモ",
@@ -296,6 +325,18 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "実ファブログによる精度、誤報、見逃し、早期警告時間の検証はまだ行っていません。",
     methodDisclaimer:
       "Isolation Forestライブラリや事前学習済みモデルは現在使用していません。過去ログ比較と読み取り専用パイロット検証は、承認後の今後の範囲です。",
+    futureFeedbackTitle: "来週反映予定・インタビューに基づく改善プレビュー",
+    futureFeedbackBadge: "準備中",
+    futureFeedbackDescription:
+      "初期インタビューで得た情報理解・伝達に関する意見をもとに、以下の項目を段階的に反映する予定です。現在のカードは機能の動作ではなく、改善方向を示すプレビューです。",
+    futureFeedbackItems: [
+      "基準範囲と変化時点: リスクスコアの前に現在値・基準・上昇開始時点を併記",
+      "センサー位置と単位: 電流・温度・振動・騒音の測定文脈と単位の違いを分けて表示",
+      "スコアの根拠: 各センサーの偏差がリスクスコアに与えた影響を根拠とともに表示",
+      "安全な判断フロー: 信号 → 根拠 → 可能性のある原因候補 → 承認済み確認手順",
+    ],
+    futureFeedbackBoundary:
+      "これは初期インタビューの観察を可視化した来週の改善計画です。設備制御、原因の確定、現場効果の検証を意味するものではありません。",
   },
 };
 
@@ -560,6 +601,55 @@ export default function JudgeDemo() {
         >
           <span className="font-bold">{text.simulated} · </span>
           {text.privacy} {text.noControl}
+        </section>
+
+        <section
+          className="mb-5 overflow-hidden rounded-2xl border border-violet-300/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.10),rgba(139,92,246,0.12),rgba(15,23,42,0.8))] p-4 shadow-xl shadow-violet-950/15 sm:p-5"
+          aria-labelledby="judge-demo-feedback-preview-title"
+          aria-describedby="judge-demo-feedback-preview-boundary"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-violet-200/45 bg-violet-300/10 px-2.5 py-1 text-[10px] font-black tracking-wide text-violet-100">
+                  {text.futureFeedbackBadge}
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100/75">
+                  SemiGuard AI
+                </span>
+              </div>
+              <h2
+                id="judge-demo-feedback-preview-title"
+                className="mt-3 text-sm font-black text-slate-50 sm:text-base"
+              >
+                {text.futureFeedbackTitle}
+              </h2>
+              <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-300">
+                {text.futureFeedbackDescription}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {text.futureFeedbackItems.map((item, index) => (
+              <article
+                key={item}
+                className="rounded-xl border border-slate-600/70 bg-slate-950/50 p-3"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-cyan-200/35 bg-cyan-300/10 text-[9px] font-black text-cyan-100">
+                  {index + 1}
+                </span>
+                <p className="mt-2 text-[11px] leading-5 text-slate-200">{item}</p>
+              </article>
+            ))}
+          </div>
+
+          <p
+            id="judge-demo-feedback-preview-boundary"
+            className="mt-3 rounded-lg border border-amber-200/25 bg-amber-300/8 px-3 py-2 text-[10px] leading-4 text-amber-50/90"
+          >
+            {text.futureFeedbackBoundary}
+          </p>
         </section>
 
         <section className="mb-5" aria-labelledby="judge-demo-method-title">
