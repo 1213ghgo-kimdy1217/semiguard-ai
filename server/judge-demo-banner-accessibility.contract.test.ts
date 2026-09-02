@@ -18,6 +18,6 @@ describe("judge demo banner accessibility contract", () => {
 
   it("keeps decorative header and banner status dots out of the accessible name", () => {
     expect(source).toContain('<span aria-hidden="true">●</span>{" "}');
-    expect(source).toContain('aria-hidden="true" className="mt-0.5 flex h-5 w-5');
+    expect(source).toContain('aria-hidden="true" className="mt-0.5 text-xs font-black text-amber-300"');
   });
 });
