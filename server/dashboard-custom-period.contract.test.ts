@@ -14,7 +14,9 @@ describe("custom dashboard period server contract", () => {
 
   it("uses both start and end conditions for anomaly and visitor aggregation", () => {
     expect(dbSource).toContain('export type DashboardPeriod = "day" | "week" | "month" | "custom"');
-    expect(dbSource).toContain("and(gte(anomalyLogs.timestamp, startAt), lte(anomalyLogs.timestamp, endAt))");
+    expect(dbSource).toContain("eq(anomalyLogs.userId, userId)");
+    expect(dbSource).toContain("gte(anomalyLogs.timestamp, startAt)");
+    expect(dbSource).toContain("lte(anomalyLogs.timestamp, endAt)");
     expect(dbSource).toContain("and(gte(visitorStats.date, startDate), lte(visitorStats.date, endDate))");
     expect(dbSource).toContain("endAt,");
   });

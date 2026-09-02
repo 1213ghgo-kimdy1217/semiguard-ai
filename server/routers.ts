@@ -502,7 +502,7 @@ export const appRouter = router({
           logId: z.number().int().positive().optional(),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { current, temperature, vibration, noise, anomalyScore, riskLevel, lang, logId } = input;
 
         const riskLabelKo = riskLevel === "danger" ? "위험" : riskLevel === "warning" ? "경고" : riskLevel === "caution" ? "주의" : "정상";
