@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetSavedCost, getDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getAnomalyLogById, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange, getOnboardingProgress, saveOnboardingProgress, getFirstUseFeedback, saveFirstUseFeedback, getPreviousComparableRange } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetUserSavedCost, getUserDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getAnomalyLogById, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange, getOnboardingProgress, saveOnboardingProgress, getFirstUseFeedback, saveFirstUseFeedback, getPreviousComparableRange } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
 import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
@@ -231,14 +231,14 @@ export const appRouter = router({
           previous: { ...previous, startAt: previousRange.startAt.toISOString(), endAt: previousRange.endAt.toISOString() },
         };
       }),
-    injectNormal: protectedProcedure.mutation(async () => {
+    injectNormal: protectedProcedure.mutation(async ({ ctx }) => {
     const dbThresholds = await getThresholds();
     const data = generateNormalData();
     const result = analyzeData(data);
     const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
     await incrementSampleCount();
     const logId = await insertAnomalyLog({
-      userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
+      userId: ctx.user.id,
       current: data.current,
       temperature: data.temperature,
       vibration: data.vibration,
@@ -250,14 +250,14 @@ export const appRouter = router({
     return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
   }),
 
-    injectAnomaly: protectedProcedure.mutation(async () => {
+    injectAnomaly: protectedProcedure.mutation(async ({ ctx }) => {
       const dbThresholds = await getThresholds();
       const data = generateAnomalyData();
       const result = analyzeData(data);
       const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       const logId = await insertAnomalyLog({
-        userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
+        userId: ctx.user.id,
         current: data.current,
         temperature: data.temperature,
         vibration: data.vibration,
@@ -269,14 +269,14 @@ export const appRouter = router({
       return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
     }),
 
-    injectCaution: protectedProcedure.mutation(async () => {
+    injectCaution: protectedProcedure.mutation(async ({ ctx }) => {
       const dbThresholds = await getThresholds();
       const data = generateCautionData();
       const result = analyzeData(data);
       const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       const logId = await insertAnomalyLog({
-        userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
+        userId: ctx.user.id,
         current: data.current,
         temperature: data.temperature,
         vibration: data.vibration,
@@ -288,14 +288,14 @@ export const appRouter = router({
       return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
     }),
 
-    injectWarning: protectedProcedure.mutation(async () => {
+    injectWarning: protectedProcedure.mutation(async ({ ctx }) => {
       const dbThresholds = await getThresholds();
       const data = generateWarningData();
       const result = analyzeData(data);
       const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       const logId = await insertAnomalyLog({
-        userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
+        userId: ctx.user.id,
         current: data.current,
         temperature: data.temperature,
         vibration: data.vibration,
@@ -307,7 +307,7 @@ export const appRouter = router({
       return { ...result, riskLevel, isAnomaly: riskLevel === "danger", logId: logId ?? undefined };
     }),
 
-    autoFetch: protectedProcedure.mutation(async () => {
+    autoFetch: protectedProcedure.mutation(async ({ ctx }) => {
       // 자동 폴링: 80% 정상, 10% 약한 주의, 10% 약한 경고
       const roll = Math.random();
       const data = roll < 0.80
@@ -320,7 +320,7 @@ export const appRouter = router({
       const riskLevel = getRiskLevel(result.anomalyScore, dbThresholds) as RiskLevel;
       await incrementSampleCount();
       const logId = await insertAnomalyLog({
-        userId: 1, // 기본 사용자 ID (나중에 ctx.user.id로 변경)
+        userId: ctx.user.id,
         current: data.current,
         temperature: data.temperature,
         vibration: data.vibration,
@@ -334,8 +334,8 @@ export const appRouter = router({
 
     getLogs: protectedProcedure
       .input(z.object({ limit: z.number().optional().default(50) }))
-      .query(async ({ input }) => {
-        const logs = await getRecentAnomalyLogs(input.limit);
+      .query(async ({ input, ctx }) => {
+        const logs = await getRecentAnomalyLogs(ctx.user.id, input.limit);
           return logs.map(l => ({
           id: l.id,
           timestamp: l.timestamp.toISOString(),
@@ -354,8 +354,8 @@ export const appRouter = router({
 
     getLogById: protectedProcedure
       .input(z.object({ id: z.number().int().positive() }))
-      .query(async ({ input }) => {
-        const log = await getAnomalyLogById(input.id);
+      .query(async ({ input, ctx }) => {
+        const log = await getAnomalyLogById(input.id, ctx.user.id);
         if (!log) return null;
         return {
           id: log.id,
@@ -373,10 +373,9 @@ export const appRouter = router({
         };
       }),
 
-    clearLogs: protectedProcedure.mutation(async () => {
-    await clearAnomalyLogs();
-    // 로그 초기화 시 danger_reset_offset도 0으로 리셋
-    await resetSavedCost(0);
+    clearLogs: protectedProcedure.mutation(async ({ ctx }) => {
+    await clearAnomalyLogs(ctx.user.id);
+    await resetUserSavedCost(ctx.user.id, 0);
     return { success: true };
   }),
 
@@ -387,14 +386,14 @@ export const appRouter = router({
       return { todayCount, totalCount };
     }),
 
-    getStats: protectedProcedure.query(async () => {
+    getStats: protectedProcedure.query(async ({ ctx }) => {
       const [stats, totalVisitors] = await Promise.all([
-        getAnomalyStats(),
+        getAnomalyStats(ctx.user.id),
         getTotalVisitors(),
       ]);
       const [totalSamples, dangerOffset] = await Promise.all([
         getTotalSamples(),
-        getDangerResetOffset(),
+        getUserDangerResetOffset(ctx.user.id),
       ]);
       const uptimePct = totalSamples > 0
         ? Math.round(((totalSamples - stats.anomalyCount) / totalSamples) * 100)
@@ -413,14 +412,14 @@ export const appRouter = router({
       };
     }),
 
-    resetSavedCost: protectedProcedure.mutation(async () => {
-      const stats = await getAnomalyStats();
-      await resetSavedCost(stats.dangerCount);
+    resetSavedCost: protectedProcedure.mutation(async ({ ctx }) => {
+      const stats = await getAnomalyStats(ctx.user.id);
+      await resetUserSavedCost(ctx.user.id, stats.dangerCount);
       return { success: true };
     }),
 
-    getDailyMaxRisk: protectedProcedure.query(async () => {
-      return getDailyMaxRisk();
+    getDailyMaxRisk: protectedProcedure.query(async ({ ctx }) => {
+      return getDailyMaxRisk(ctx.user.id);
     }),
 
     getThresholds: protectedProcedure.query(async () => {
@@ -440,8 +439,8 @@ export const appRouter = router({
 
     getRecentScores: protectedProcedure
       .input(z.object({ limit: z.number().optional().default(50) }))
-      .query(async ({ input }) => {
-        const rows = await getRecentScores(input.limit);
+      .query(async ({ input, ctx }) => {
+        const rows = await getRecentScores(ctx.user.id, input.limit);
         return rows.map(r => ({
           timestamp: r.timestamp.toISOString(),
           score: r.score,
@@ -463,8 +462,9 @@ export const appRouter = router({
           path: ["endAt"],
         }),
       ]))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         const overview = await getPeriodDashboardOverview(
+          ctx.user.id,
           input.period,
           input.period === "custom" ? { startAt: new Date(input.startAt), endAt: new Date(input.endAt) } : undefined,
         );
@@ -587,7 +587,7 @@ export const appRouter = router({
 
         // 생성 시점의 정확한 로그 ID와 관측값이 일치할 때만 분석을 저장합니다.
         // 최신 로그를 다시 조회하면 다음 자동 폴링의 로그에 분석이 잘못 연결될 수 있습니다.
-        const targetLog = logId ? await getAnomalyLogById(logId) : null;
+        const targetLog = logId ? await getAnomalyLogById(logId, ctx.user.id) : null;
         const matchesTargetLog = targetLog
           && Math.abs(Number(targetLog.current) - current) < 0.0001
           && Math.abs(Number(targetLog.temperature) - temperature) < 0.0001
@@ -596,7 +596,7 @@ export const appRouter = router({
           && Number(targetLog.anomalyScore) === anomalyScore
           && targetLog.riskLevel === riskLevel;
         if (matchesTargetLog && logId) {
-          await updateAnomalyLogLlm(logId, JSON.stringify(koData), JSON.stringify(enData), JSON.stringify(jaData));
+          await updateAnomalyLogLlm(logId, ctx.user.id, JSON.stringify(koData), JSON.stringify(enData), JSON.stringify(jaData));
         }
 
         // 현재 선택 언어 결과와 세 언어 응답을 함께 반환한다. 클라이언트 언어 전환·비동기 렌더링 중에도
@@ -699,8 +699,8 @@ export const appRouter = router({
           return fallback;
         }
       }),
-    getLlmHistory: protectedProcedure.query(async () => {
-      return getLlmHistory(5);
+    getLlmHistory: protectedProcedure.query(async ({ ctx }) => {
+      return getLlmHistory(ctx.user.id, 5);
     }),
 
     chatWithAi: protectedProcedure
