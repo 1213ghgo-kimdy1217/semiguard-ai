@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, lte, sql, count as drizzleCount } from "drizzle-orm";
-import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, productActivityEvents, userOnboardingProgress, firstUseFeedback, type FirstUseFeedbackDifficultStep, type InsertAnomalyLog, type ProductActivityEventType } from "../drizzle/schema";
+import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, productActivityEvents, userOnboardingProgress, firstUseFeedback, userStats, type FirstUseFeedbackDifficultStep, type InsertAnomalyLog, type ProductActivityEventType } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
@@ -10,21 +10,28 @@ export async function insertAnomalyLog(entry: InsertAnomalyLog) {
 }
 
 // 특정 로그에 LLM 분석 결과 업데이트 (3개 언어)
-export async function updateAnomalyLogLlm(id: number, ko: string, en: string, ja: string) {
+export async function updateAnomalyLogLlm(id: number, userId: number, ko: string, en: string, ja: string) {
   const db = await getDb();
   if (!db) return;
-  await db.update(anomalyLogs).set({ llmAnalysisKo: ko, llmAnalysisEn: en, llmAnalysisJa: ja }).where(eq(anomalyLogs.id, id));
+  await db
+    .update(anomalyLogs)
+    .set({ llmAnalysisKo: ko, llmAnalysisEn: en, llmAnalysisJa: ja })
+    .where(and(eq(anomalyLogs.id, id), eq(anomalyLogs.userId, userId)));
 }
 
-export async function getAnomalyLogById(id: number) {
+export async function getAnomalyLogById(id: number, userId: number) {
   const db = await getDb();
   if (!db) return null;
-  const rows = await db.select().from(anomalyLogs).where(eq(anomalyLogs.id, id)).limit(1);
+  const rows = await db
+    .select()
+    .from(anomalyLogs)
+    .where(and(eq(anomalyLogs.id, id), eq(anomalyLogs.userId, userId)))
+    .limit(1);
   return rows[0] ?? null;
 }
 
 // LLM 분석 결과가 있는 최근 로그 N건 조회 (히스토리 패널용) - 3개 언어
-export async function getLlmHistory(limit = 5): Promise<{ id: number; timestamp: Date; riskLevel: string; anomalyScore: number; llmAnalysisKo: string | null; llmAnalysisEn: string | null; llmAnalysisJa: string | null }[]> {
+export async function getLlmHistory(userId: number, limit = 5): Promise<{ id: number; timestamp: Date; riskLevel: string; anomalyScore: number; llmAnalysisKo: string | null; llmAnalysisEn: string | null; llmAnalysisJa: string | null }[]> {
   const db = await getDb();
   if (!db) return [];
   const rows = await db.select({
@@ -36,22 +43,30 @@ export async function getLlmHistory(limit = 5): Promise<{ id: number; timestamp:
     llmAnalysisEn: anomalyLogs.llmAnalysisEn,
     llmAnalysisJa: anomalyLogs.llmAnalysisJa,
   }).from(anomalyLogs)
-    .where(sql`llm_analysis_ko IS NOT NULL OR llm_analysis_en IS NOT NULL`)
+    .where(and(
+      eq(anomalyLogs.userId, userId),
+      sql`(llm_analysis_ko IS NOT NULL OR llm_analysis_en IS NOT NULL OR llm_analysis_ja IS NOT NULL)`,
+    ))
     .orderBy(desc(anomalyLogs.timestamp))
     .limit(limit);
   return rows;
 }
 
-export async function getRecentAnomalyLogs(limit = 50) {
+export async function getRecentAnomalyLogs(userId: number, limit = 50) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(anomalyLogs).orderBy(desc(anomalyLogs.timestamp)).limit(limit);
+  return db
+    .select()
+    .from(anomalyLogs)
+    .where(eq(anomalyLogs.userId, userId))
+    .orderBy(desc(anomalyLogs.timestamp))
+    .limit(limit);
 }
 
-export async function clearAnomalyLogs() {
+export async function clearAnomalyLogs(userId: number) {
   const db = await getDb();
   if (!db) return;
-  await db.delete(anomalyLogs);
+  await db.delete(anomalyLogs).where(eq(anomalyLogs.userId, userId));
 }
 
 // 전체 샘플 카운터 증가
@@ -70,20 +85,25 @@ export async function getTotalSamples(): Promise<number> {
   return Number(rows[0]?.value ?? 0);
 }
 
-// 절감 비용 리셋 오프셋 저장 (리셋 시점의 dangerCount를 저장)
-export async function resetSavedCost(currentDangerCount: number): Promise<void> {
+// 사용자별 절감 비용 리셋 오프셋 저장
+export async function resetUserSavedCost(userId: number, currentDangerCount: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  await db.insert(sampleStats).values({ key: "danger_reset_offset", value: currentDangerCount })
-    .onDuplicateKeyUpdate({ set: { value: currentDangerCount } });
+  await db
+    .insert(userStats)
+    .values({ userId, dangerResetOffset: currentDangerCount })
+    .onDuplicateKeyUpdate({ set: { dangerResetOffset: currentDangerCount } });
 }
 
-// 절감 비용 리셋 오프셋 조회
-export async function getDangerResetOffset(): Promise<number> {
+// 사용자별 절감 비용 리셋 오프셋 조회
+export async function getUserDangerResetOffset(userId: number): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
-  const rows = await db.select().from(sampleStats).where(eq(sampleStats.key, "danger_reset_offset")).limit(1);
-  return Number(rows[0]?.value ?? 0);
+  const rows = await db.select({ dangerResetOffset: userStats.dangerResetOffset })
+    .from(userStats)
+    .where(eq(userStats.userId, userId))
+    .limit(1);
+  return Number(rows[0]?.dangerResetOffset ?? 0);
 }
 
 // 오늘 방문자 수 증가 (upsert)
@@ -238,10 +258,9 @@ export async function getFirstUseFeedbackMetrics(startAt: Date, endAt: Date) {
 }
 
 // 날짜별 최고 위험도 집계 (히트맵용)
-export async function getDailyMaxRisk(): Promise<{ date: string; riskLevel: string }[]> {
+export async function getDailyMaxRisk(userId: number): Promise<{ date: string; riskLevel: string }[]> {
   const db = await getDb();
   if (!db) return [];
-  // 완전한 raw SQL — CASE 구문을 Drizzle 컬럼 참조 없이 순수 문자열로 처리
   const rows = await db.execute<{ date: string; maxRiskOrder: number }>(
     sql`SELECT DATE(timestamp) AS date,
         MAX(CASE risk_level
@@ -251,6 +270,7 @@ export async function getDailyMaxRisk(): Promise<{ date: string; riskLevel: stri
           ELSE 1
         END) AS maxRiskOrder
         FROM anomaly_logs
+        WHERE user_id = ${userId}
         GROUP BY DATE(timestamp)
         ORDER BY DATE(timestamp) ASC`
   );
@@ -262,14 +282,15 @@ export async function getDailyMaxRisk(): Promise<{ date: string; riskLevel: stri
 }
 
 // 이상 탐지 통계
-export async function getAnomalyStats(): Promise<{ total: number; dangerCount: number; anomalyCount: number }> {
+export async function getAnomalyStats(userId: number): Promise<{ total: number; dangerCount: number; anomalyCount: number }> {
   const db = await getDb();
   if (!db) return { total: 0, dangerCount: 0, anomalyCount: 0 };
-  const totalRows = await db.select({ cnt: sql<number>`COUNT(*)` }).from(anomalyLogs);
+  const totalRows = await db.select({ cnt: sql<number>`COUNT(*)` }).from(anomalyLogs)
+    .where(eq(anomalyLogs.userId, userId));
   const dangerRows = await db.select({ cnt: sql<number>`COUNT(*)` }).from(anomalyLogs)
-    .where(eq(anomalyLogs.riskLevel, "danger"));
+    .where(and(eq(anomalyLogs.userId, userId), eq(anomalyLogs.riskLevel, "danger")));
   const anomalyRows = await db.select({ cnt: sql<number>`COUNT(*)` }).from(anomalyLogs)
-    .where(eq(anomalyLogs.isAnomaly, 1));
+    .where(and(eq(anomalyLogs.userId, userId), eq(anomalyLogs.isAnomaly, 1)));
   return {
     total: Number(totalRows[0]?.cnt ?? 0),
     dangerCount: Number(dangerRows[0]?.cnt ?? 0),
@@ -295,14 +316,17 @@ export async function saveThresholds(normal: number, caution: number, warning: n
 }
 
 // 위험도 추이 (최근 N개 점수, 시간 오름차순)
-export async function getRecentScores(limit = 50): Promise<{ timestamp: Date; score: number; riskLevel: string }[]> {
+export async function getRecentScores(userId: number, limit = 50): Promise<{ timestamp: Date; score: number; riskLevel: string }[]> {
   const db = await getDb();
   if (!db) return [];
   const rows = await db.select({
     timestamp: anomalyLogs.timestamp,
     score: anomalyLogs.anomalyScore,
     riskLevel: anomalyLogs.riskLevel,
-  }).from(anomalyLogs).orderBy(desc(anomalyLogs.timestamp)).limit(limit);
+  }).from(anomalyLogs)
+    .where(eq(anomalyLogs.userId, userId))
+    .orderBy(desc(anomalyLogs.timestamp))
+    .limit(limit);
   return rows.reverse(); // 시간 오름차순으로 반환
 }
 
@@ -325,7 +349,7 @@ export function resolveDashboardPeriodRange(period: DashboardPeriod, customRange
   return { startAt, endAt };
 }
 
-export async function getPeriodDashboardOverview(period: DashboardPeriod, customRange?: { startAt: Date; endAt: Date }) {
+export async function getPeriodDashboardOverview(userId: number, period: DashboardPeriod, customRange?: { startAt: Date; endAt: Date }) {
   const db = await getDb();
   const { startAt, endAt } = resolveDashboardPeriodRange(period, customRange);
   const startDate = startAt.toISOString().slice(0, 10);
@@ -360,7 +384,11 @@ export async function getPeriodDashboardOverview(period: DashboardPeriod, custom
       score: anomalyLogs.anomalyScore,
       riskLevel: anomalyLogs.riskLevel,
       isAnomaly: anomalyLogs.isAnomaly,
-    }).from(anomalyLogs).where(and(gte(anomalyLogs.timestamp, startAt), lte(anomalyLogs.timestamp, endAt))).orderBy(desc(anomalyLogs.timestamp)).limit(300),
+    }).from(anomalyLogs).where(and(
+      eq(anomalyLogs.userId, userId),
+      gte(anomalyLogs.timestamp, startAt),
+      lte(anomalyLogs.timestamp, endAt),
+    )).orderBy(desc(anomalyLogs.timestamp)).limit(300),
     db.select({ total: sql<number>`COALESCE(SUM(${visitorStats.count}), 0)` }).from(visitorStats).where(and(gte(visitorStats.date, startDate), lte(visitorStats.date, endDate))),
   ]);
 
