@@ -2420,3 +2420,6 @@
 - [x] 심사 코멘트 반영 뒤 보고된 공개 데모 오류와 배포 실패 상태를 런타임·코드·인프라 원인으로 분리 점검하고 사용자 영향 여부 확인 (개발 로그에 새 예외·4xx/5xx 없음, 공개 `/demo`은 초기 준비 화면 뒤 정상 렌더링과 인터뷰 기반 개선 패널 표시 확인; 일시적 관리형 배포 서비스 할당량 실패는 코드 실패와 분리해 `DEPLOYMENT_INCIDENT_2026-08-31.md`에 기록)
 - [x] GitHub 공개 문서 반영과 공개 데모 변경 위치가 사용자 화면에서 확인되지 않는 문제를 외부 주소 기준으로 재점검하고, 누락·가시성 차이가 있으면 보완 (GitHub main에서 동의 양식 파일·README 링크 확인, 공개 `/demo?lang=ko&release=4d8d886f`에서 초기 준비 화면 뒤 ‘다음 주 반영 예정 · 인터뷰 기반 개선 미리보기’ 패널 4개 카드 표시 확인)
 - [x] ChatGPT 이전용 프로젝트 인수인계 패키지 작성 (대회 W1·W2 상태, 코드·문서 구조, 핵심 제약, 다음 작업, 업로드 순서, 비밀·인터뷰 원문 제외 원칙 포함; `CHATGPT_HANDOVER.md`·`CHATGPT_START_PROMPT.md`·README 링크·문서 회귀 계약 추가, TypeScript·Vitest 275개 파일/663개 테스트·프로덕션 빌드 통과, `ChatGPT_이전_핵심문서.zip`·`SemiGuard_AI_소스코드_안전사본.zip` 생성 시 `.env`·`node_modules`·`.git`·로그·비공개 인터뷰 작업본 제외 검증)
+- [x] ChatGPT 이전용 OAuth 설정 가이드·환경변수 이름 예시·전체 다운로드 패키지 안내 작성 (실제 API·OAuth 비밀값·세션 정보는 제외; `OAUTH_SETUP_GUIDE.md`·`ENVIRONMENT_VARIABLE_TEMPLATE.md` 작성, 콜백 경로·변수명·안전한 설정 순서 문서화)
+- [x] ChatGPT 이전용 전체 다운로드 파일 목록·업로드 순서·대회 진행 맥락 안내를 재점검하고, 바로 전달 가능한 패키지로 정리 (`CHATGPT_UPLOAD_CHECKLIST.md`에 핵심 문서·소스·OAuth 안내·선택 문서 순서, 대회 현황, 업로드 제외 항목 명시)
+- [x] 사용자가 직접 제공·허용한 개인 프로필 정보와 ChatGPT 공유 주의사항을 인수인계 문서·압축본에 반영 (비밀번호·API/OAuth 비밀값·세션·제3자 개인정보는 제외; 비공개 별도 `CHATGPT_PRIVATE_PROFILE_ADDENDUM.md`에 이름·학교·학년·역할·이메일과 공유 주의사항만 기록)
