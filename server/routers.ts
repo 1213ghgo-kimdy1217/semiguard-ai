@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
-import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, getTotalSamples, resetUserSavedCost, getUserDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getAnomalyLogById, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange, getOnboardingProgress, saveOnboardingProgress, getFirstUseFeedback, saveFirstUseFeedback, getPreviousComparableRange } from "./semiguardDb";
+import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, resetUserSavedCost, getUserDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getAnomalyLogById, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange, getOnboardingProgress, saveOnboardingProgress, getFirstUseFeedback, saveFirstUseFeedback, getPreviousComparableRange } from "./semiguardDb";
 import { getRiskLevel } from "../shared/semiguard";
 import { users } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
@@ -391,12 +391,9 @@ export const appRouter = router({
         getAnomalyStats(ctx.user.id),
         getTotalVisitors(),
       ]);
-      const [totalSamples, dangerOffset] = await Promise.all([
-        getTotalSamples(),
-        getUserDangerResetOffset(ctx.user.id),
-      ]);
-      const uptimePct = totalSamples > 0
-        ? Math.round(((totalSamples - stats.anomalyCount) / totalSamples) * 100)
+      const dangerOffset = await getUserDangerResetOffset(ctx.user.id);
+      const uptimePct = stats.total > 0
+        ? Math.round(((stats.total - stats.anomalyCount) / stats.total) * 100)
         : 100;
       // 절감 비용: 위험 단계 탐지 1회 = 약 5천만 원 절감
       // dangerOffset은 리셋 시점의 dangerCount이므로, 그 이후 새로 증가한 건수만 카운트
