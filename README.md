@@ -11,6 +11,7 @@
 
 - [프로젝트 개요](#프로젝트-개요) · [1주차 팀 목표](#1주차-팀-목표) · [빠른 안내](#빠른-안내) · [문제와 해결 방식](#문제와-해결-방식) · [핵심 기능](#핵심-기능)
 - [시스템 구조](#시스템-구조) · [탐지 방식과 검증 상태](#탐지-방식과-검증-상태) · [개발 과정과 실증 증거](#개발-과정과-실증-증거) · [AI 활용과 안전 원칙](#ai-활용과-안전-원칙) · [실제 팹 도입 경로](#실제-팹-도입-경로) · [실행 방법](#실행-방법) · [테스트](#테스트)
+- [AI 사용 내역](#ai-사용-내역) · [AI 안전 원칙](#ai-안전-원칙) · [오픈소스 및 주요 기술](#오픈소스-및-주요-기술) · [외부 인터뷰 및 자문](#외부-인터뷰-및-자문)
 - [기술 참고 문서](TECHNICAL_REFERENCE.md) · [AI 활용 문서](AI_USAGE.md) · [ChatGPT 이전 안내](CHATGPT_HANDOVER.md) · [ChatGPT 시작 프롬프트](CHATGPT_START_PROMPT.md) · [ChatGPT 업로드 체크리스트](CHATGPT_UPLOAD_CHECKLIST.md) · [OAuth 설정 가이드](OAUTH_SETUP_GUIDE.md) · [환경변수 이름 템플릿](ENVIRONMENT_VARIABLE_TEMPLATE.md) · [실증 검증 계획](VALIDATION_PLAN.md) · [W1 팀 목표 제출 초안](W1_TEAM_GOALS_SUBMISSION_DRAFT.md) · [주차별 과제 제출 점검](WEEKLY_SUBMISSION_AUDIT.md) · [W2 인터뷰 진행 가이드](W2_INTERVIEW_RUNBOOK.md) · [W2 인터뷰 질문지 초안](W2_INTERVIEW_QUESTIONNAIRE_DRAFT.md) · [W2 익명 인용 동의 양식](W2_ANONYMOUS_QUOTE_CONSENT_FORM.md) · [개발 과정 타임라인](COACHING_PROGRESS_TIMELINE.md) · [임팩트 증거 스코어카드](IMPACT_EVIDENCE_SCORECARD.md) · [위험 기준 보정 변경관리 템플릿](RISK_CALIBRATION_CHANGE_CONTROL_TEMPLATE.md) · [제출 증거 등록부 템플릿](EVIDENCE_REGISTER_TEMPLATE.md) · [외부 자문 기록 템플릿](EXTERNAL_ADVISOR_REVIEW_TEMPLATE.md) · [KPI 측정·보고 템플릿](KPI_MEASUREMENT_TEMPLATE.md) · [사용자 인터뷰·문제 정의 템플릿](USER_INTERVIEW_TEMPLATE.md) · [첫 사용자 모집·이탈 관찰 템플릿](FIRST_USER_OBSERVATION_TEMPLATE.md) · [과거 로그 파일럿 검증 템플릿](PILOT_LOG_VALIDATION_TEMPLATE.md) · [IT/OT 읽기 전용 파일럿 체크리스트](IT_OT_READ_ONLY_PILOT_CHECKLIST.md) · [현장 파일럿 담당자 검토 템플릿](FIELD_PILOT_REVIEW_TEMPLATE.md) · [기간 보고서 브라우저 검증 안내](PERIOD_REPORT_BROWSER_VALIDATION.md) · [의존성 보안 검토](DEPENDENCY_SECURITY_REVIEW.md) · [모바일 소셜 로그인 검증](MOBILE_SOCIAL_LOGIN_VALIDATION.md) · [발표 시연 스크립트](PRESENTATION_DEMO_SCRIPT.md) · [10분 발표 대본](PRESENTATION_10_MIN_SCRIPT.md) · [3분 피치 영상 스토리보드](PITCH_VIDEO_STORYBOARD.md) · [3분 영상 녹화 체크리스트](DEMO_RECORDING_CHECKLIST.md) · [런타임 점검 메모](RUNTIME_CHECK_NOTES.md) · [작업 기록](todo.md) · [MIT 라이선스](LICENSE)
 
 > 전이 의존성 패치를 실제로 검토할 때는 [의존성 호환성 검증 템플릿](DEPENDENCY_COMPATIBILITY_VALIDATION_TEMPLATE.md)의 후보별 회귀 흐름과 롤백 기준을 사용합니다. 이 템플릿은 패치 승인을 의미하지 않습니다.
@@ -143,7 +144,30 @@ SemiGuard AI는 전류·온도·진동·소음 데이터에서 위험 신호를 
 
 ## AI 활용과 안전 원칙
 
+### AI 사용 내역
+
+현재 위험 신호는 학습된 AI 모델이 아닌 **z-score 기반 규칙형 계산**으로 산출합니다. AI는 계산된 결과를 바탕으로 다음 내용을 설명하는 보조 역할을 합니다.
+
+- 센서값과 정상 기준의 차이 및 센서 근거
+- 관찰된 사실
+- 가능한 원인 후보
+- 권장 확인 순서
+
+AI는 위험 점수를 직접 계산하거나 임의로 변경하지 않으며, 특정 고장을 확정하거나 실제 반도체 설비를 제어하지 않습니다. 장비의 자동 정지·운전이나 최종 점검·안전 판단도 대신 수행하지 않습니다.
+
+현재 공개 데모는 **가상 센서 데이터를 사용하는 교육·시연용 시스템**입니다. 실제 반도체 팹에서의 고장 예측 정확도·오탐률·미탐률·비용 절감 효과는 검증되지 않았습니다.
+
 AI는 센서 수치와 위험 단계에 근거한 **설명 보조 도구**입니다. AI가 특정 고장을 확정하거나 설비를 제어하지 않으며, 실제 점검·운전 판단은 담당자의 현장 검증과 안전 절차를 따릅니다. AI 서비스가 지연되거나 불가한 경우에는 센서 편차와 위험 단계에 기반한 다국어 규칙 요약으로 전환되며, 대체 분석의 제목·근거·권장 조치는 현재 선택한 한국어·영어·일본어로 표시됩니다.
+
+### AI 안전 원칙
+
+> **이상 신호 ≠ 고장 확정**
+
+시스템은 사용자가 다음 순서로 센서 근거를 이해하고 확인하도록 돕습니다.
+
+`이상 신호 → 정상 상태와의 차이 → 센서 근거 → 관찰된 사실 → 가능한 원인 후보 → 권장 확인 순서`
+
+AI의 설명은 참고 정보이며, 실제 점검과 조치는 담당자가 승인된 현장 절차에 따라 수행해야 합니다.
 
 첫 분석 안내를 마친 사용자는 사용 편의 평점과 가장 어려웠던 단계를 **선택형 항목**으로 남길 수 있습니다. 이 피드백은 사용자별 최신 응답 1건의 평점·단계·시각만 저장하며, 이름·연락처·설비 데이터·자유 입력은 수집하지 않습니다. 관리자 화면은 응답 수, 평균 편의, 단계별 어려움 신호를 선택 기간의 **집계값만** 표시합니다.
 
@@ -257,6 +281,33 @@ todo.md                 기능·검증·보류 항목의 누적 작업 기록
 
 ## 라이선스와 외부 자원
 
-이 프로젝트는 [MIT License](LICENSE)를 따릅니다. React, tRPC, Drizzle ORM, Recharts, Tailwind CSS, shadcn/ui, Vitest, jsPDF 등 공개 라이선스 패키지를 사용합니다. 센서 기준 설정에는 충남반도체마이스터고등학교 장비과 담당 교사의 도메인 자문을 참고했습니다.
+이 프로젝트는 [MIT License](LICENSE)를 따릅니다.
+
+### 오픈소스 및 주요 기술
+
+아래 표는 [package.json](package.json)의 직접 의존성 및 개발 의존성 중 주요 패키지를 선정한 것입니다. 버전은 [pnpm-lock.yaml](pnpm-lock.yaml)에 고정된 버전이며, 라이선스는 각 버전의 npm 공식 레지스트리 배포 메타데이터의 `license` 필드를 확인했습니다. 각 라이선스 링크에서 확인 근거를 볼 수 있습니다.
+
+| 기술 / 패키지 | 확인 버전 | 사용 목적 | 라이선스 및 확인 근거 |
+| --- | --- | --- | --- |
+| React (`react`) | 19.2.1 | 웹 사용자 인터페이스 | [MIT](https://registry.npmjs.org/react/19.2.1) |
+| React DOM (`react-dom`) | 19.2.1 | 브라우저 DOM 렌더링 | [MIT](https://registry.npmjs.org/react-dom/19.2.1) |
+| TypeScript (`typescript`) | 5.9.3 | 정적 타입 검사 및 개발 | [Apache-2.0](https://registry.npmjs.org/typescript/5.9.3) |
+| Tailwind CSS (`tailwindcss`) | 4.1.14 | UI 스타일링 | [MIT](https://registry.npmjs.org/tailwindcss/4.1.14) |
+| Recharts (`recharts`) | 2.15.4 | 센서 데이터 차트 | [MIT](https://registry.npmjs.org/recharts/2.15.4) |
+| Express (`express`) | 4.21.2 | HTTP 서버 및 API 요청 처리 | [MIT](https://registry.npmjs.org/express/4.21.2) |
+| tRPC Client (`@trpc/client`) | 11.18.0 | 타입 안전한 API 호출 | [MIT](https://registry.npmjs.org/@trpc/client/11.18.0) |
+| tRPC React Query (`@trpc/react-query`) | 11.18.0 | React에서 tRPC API 연동 | [MIT](https://registry.npmjs.org/@trpc/react-query/11.18.0) |
+| tRPC Server (`@trpc/server`) | 11.18.0 | 타입 안전한 서버 API 정의 | [MIT](https://registry.npmjs.org/@trpc/server/11.18.0) |
+| Drizzle ORM (`drizzle-orm`) | 0.45.2 | 데이터베이스 스키마 및 쿼리 연동 | [Apache-2.0](https://registry.npmjs.org/drizzle-orm/0.45.2) |
+| Vitest (`vitest`) | 2.1.9 | 자동화 테스트 | [MIT](https://registry.npmjs.org/vitest/2.1.9) |
+| jsPDF (`jspdf`) | 4.2.1 | PDF 보고서 생성 | [MIT](https://registry.npmjs.org/jspdf/4.2.1) |
+
+전체 직접 의존성은 `package.json`, 전이 의존성을 포함한 고정 버전은 `pnpm-lock.yaml`에서 확인할 수 있습니다. 위 표는 주요 패키지의 라이선스 요약이며 전체 전이 의존성의 라이선스 목록은 아닙니다. 각 패키지의 라이선스와 저작권 고지는 해당 배포물의 조건을 따릅니다.
+
+### 외부 인터뷰 및 자문
+
+SemiGuard AI의 문제 정의와 제품 방향 개선을 위해 현직 반도체·제조 분야 종사자 및 반도체 전공자를 대상으로 진행한 인터뷰를 참고했습니다. 인터뷰는 제품 방향 개선을 위한 참고 자료이며, **특정 기업의 공식 인증이나 실제 현장 성능 검증을 의미하지 않습니다.**
+
+센서 기준 설정에는 충남반도체마이스터고등학교 장비과 담당 교사의 도메인 자문을 참고했습니다.
 
 ---
