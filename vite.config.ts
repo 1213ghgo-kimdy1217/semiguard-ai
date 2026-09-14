@@ -150,7 +150,10 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+// Manus editor instrumentation is only needed inside its authoring environment.
+const plugins = [react(), tailwindcss(), ...(process.env.MANUS_RUNTIME === "1"
+  ? [jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()]
+  : [])];
 
 export default defineConfig({
   plugins,

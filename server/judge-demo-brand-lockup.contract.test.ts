@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(
   resolve(process.cwd(), "client/src/pages/JudgeDemo.tsx"),
   "utf8"
-);
+).replace(/\r\n/g, "\n");
 
 describe("judge demo brand lockup contract", () => {
   it("keeps a compact, noninteractive SemiGuard AI brand lockup before the demo badges", () => {

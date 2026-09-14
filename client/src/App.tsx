@@ -6,11 +6,13 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Login } from "./pages/Login";
 import Signup from "./pages/Signup";
+import Welcome from "./pages/Welcome";
 import { useAuth } from "./_core/hooks/useAuth";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));
+const Training = lazy(() => import("./pages/Training"));
 
 type LoadingLanguage = "ko" | "en" | "ja";
 type LoadingCopy = {
@@ -241,23 +243,35 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function HomeRoute() {
+  const { user } = useAuth();
+  return user ? (
+    <Suspense fallback={<DashboardModuleLoading />}><Training /></Suspense>
+  ) : <Welcome />;
+}
+
 function Router() {
   return (
     <Switch>
+      <Route path={"/training"}>
+        <Suspense fallback={<DashboardModuleLoading />}><Training /></Suspense>
+      </Route>
       <Route path={"/signup"} component={Signup} />
       <Route path={"/login"} component={Login} />
+      <Route path={"/welcome"} component={Welcome} />
       <Route path={"/demo"}>
         <Suspense fallback={<DashboardModuleLoading />}>
           <JudgeDemo />
         </Suspense>
       </Route>
-      <Route path={"/"}>
+      <Route path={"/dashboard"}>
         <ProtectedRoute>
           <Suspense fallback={<DashboardModuleLoading />}>
             <Dashboard />
           </Suspense>
         </ProtectedRoute>
       </Route>
+      <Route path={"/"} component={HomeRoute} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
