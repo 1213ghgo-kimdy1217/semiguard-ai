@@ -7,7 +7,7 @@ const signupSource = readFileSync(resolve(process.cwd(), "client/src/pages/Signu
 
 describe("authentication main landmark contract", () => {
   it("exposes the Login form as the page main content landmark", () => {
-    expect(loginSource).toContain('<main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900');
+    expect(loginSource).toMatch(/<main\b[^>]*>/);
     expect(loginSource).toContain("</main>");
   });
 

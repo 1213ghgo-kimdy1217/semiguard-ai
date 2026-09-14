@@ -6,6 +6,13 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+} from "framer-motion";
 
 type DemoLanguage = "ko" | "en" | "ja";
 type DemoStep = 1 | 2 | 3;
@@ -40,8 +47,14 @@ type DemoCopy = {
   privacy: string;
   noControl: string;
   sensorLabels: [string, string, string, string];
+  currentLabel: string;
+  normalRangeLabel: string;
+  contributionLabel: string;
   mockTrace: string;
   evidenceLabel: string;
+  observationLabel: string;
+  causeCandidateLabel: string;
+  causeCandidate: string;
   currentEvidence: string;
   vibrationEvidence: string;
   scoreEvidence: string;
@@ -68,20 +81,15 @@ type DemoCopy = {
   methodImplementationCheck: string;
   methodLimit: string;
   methodDisclaimer: string;
-  futureFeedbackTitle: string;
-  futureFeedbackBadge: string;
-  futureFeedbackDescription: string;
-  futureFeedbackItems: [string, string, string, string];
-  futureFeedbackBoundary: string;
 };
 
 const copy: Record<DemoLanguage, DemoCopy> = {
   ko: {
-    badge: "심사위원 읽기 전용 데모",
-    title: "30초로 확인하는 SemiGuard AI 안전 분석",
+    badge: "공개 시뮬레이션",
+    title: "이상 신호의 근거부터 다음 확인까지",
     subtitle:
       "실제 설비·계정 데이터 없이, 위험 신호에서 점검 순서까지의 판단 흐름을 체험합니다.",
-    brandConsole: "안전 분석 콘솔",
+    brandConsole: "설비 이상 대응 가이드",
     readOnly: "읽기 전용",
     simulated: "시뮬레이션 데이터",
     languageLabel: "언어 선택",
@@ -96,7 +104,7 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "가상 진공 펌프의 위험도 점수가 상승했습니다. 이 화면은 교육·심사용 시뮬레이션이며 실제 설비 제어를 수행하지 않습니다.",
     evidenceTitle: "2. 센서 근거를 함께 확인합니다",
     evidenceDescription:
-      "AI 판단은 수치만으로 고장을 단정하지 않습니다. 편차가 큰 센서를 먼저 보여 주고, 현장 점검과 매뉴얼 확인을 요청합니다.",
+      "현재 관측값과 기준의 차이를 먼저 보여 주고, 확인되지 않은 원인은 추정으로 분리합니다.",
     safeNextStep: "안전한 다음 점검",
     actionTitle: "3. 권장 점검 순서를 확인합니다",
     actionDescription:
@@ -111,9 +119,16 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     noControl:
       "설정 변경, 데이터 주입, 내보내기, 상담 기록 저장은 제공하지 않습니다.",
     sensorLabels: ["전류", "온도", "진동", "소음"],
+    currentLabel: "현재값",
+    normalRangeLabel: "정상 범위",
+    contributionLabel: "점수 기여",
     mockTrace: "시뮬레이션 30분 추이 · 12개 관측값",
     evidenceLabel: "센서 근거",
-    currentEvidence: "기준 대비 +3.7 A",
+    observationLabel: "관찰된 사실",
+    causeCandidateLabel: "가능한 원인 후보 · 추정",
+    causeCandidate:
+      "전류와 진동이 함께 상승한 패턴입니다. 부하 변화나 회전체 상태를 후보로 볼 수 있지만, 현재 값만으로 원인을 확정할 수 없습니다.",
+    currentEvidence: "정상 상한 대비 +1.0 A",
     vibrationEvidence: "최근 30분 상승 추세",
     scoreEvidence: "위험도 67/100 · 경고",
     futurePilot: "실제 팹 파일럿 연동",
@@ -149,25 +164,13 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "실제 팹 로그로 정확도·오탐·미탐·사전 경고 시간을 검증한 상태는 아닙니다.",
     methodDisclaimer:
       "Isolation Forest 라이브러리나 사전 학습된 모델은 현재 사용하지 않습니다. 과거 로그 비교와 읽기 전용 파일럿 검증은 향후 승인 후 진행할 범위입니다.",
-    futureFeedbackTitle: "다음 주 반영 예정 · 인터뷰 기반 개선 미리보기",
-    futureFeedbackBadge: "준비 중",
-    futureFeedbackDescription:
-      "초기 인터뷰에서 나온 정보 이해·전달 요구를 바탕으로, 아래 항목을 시연 화면에 단계적으로 반영할 예정입니다. 현재 카드는 기능 동작이 아닌 개선 방향을 보여주는 미리보기입니다.",
-    futureFeedbackItems: [
-      "정상 범위와 변화 시점: 위험 점수 앞에 현재값·기준·상승 시작 시점을 함께 표시",
-      "센서 위치와 단위: 전류·온도·진동·소음의 측정 맥락과 단위 차이를 분리 표시",
-      "점수 근거: 각 센서의 편차가 위험 점수에 미친 영향을 근거와 함께 표시",
-      "안전한 판단 흐름: 이상 → 근거 → 가능한 원인 후보 → 승인된 확인 절차",
-    ],
-    futureFeedbackBoundary:
-      "이 항목은 초기 인터뷰 관찰을 시각화한 다음 주 개선 계획입니다. 실제 설비 제어·원인 확정·현장 효과를 의미하지 않습니다.",
   },
   en: {
-    badge: "Read-only judge demo",
-    title: "See SemiGuard AI safety analysis in 30 seconds",
+    badge: "Public simulation",
+    title: "From anomaly evidence to the next safe check",
     subtitle:
       "Experience the path from a risk signal to an inspection sequence without real equipment or account data.",
-    brandConsole: "Safety analysis console",
+    brandConsole: "Equipment anomaly response guide",
     readOnly: "Read only",
     simulated: "Simulated data",
     languageLabel: "Language",
@@ -182,7 +185,7 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "The risk score of a simulated vacuum pump has risen. This is an education and judging simulation; it never controls real equipment.",
     evidenceTitle: "2. Review the sensor evidence",
     evidenceDescription:
-      "AI does not diagnose a failure from numbers alone. It highlights the largest deviations first and asks for on-site and manual verification.",
+      "It shows the gap between current observations and baselines first, while keeping unverified causes clearly labeled as inference.",
     safeNextStep: "Safe next step",
     actionTitle: "3. Review the recommended inspection order",
     actionDescription:
@@ -199,9 +202,16 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     noControl:
       "Settings, data injection, export, and consultation history saving are unavailable.",
     sensorLabels: ["Current", "Temperature", "Vibration", "Noise"],
+    currentLabel: "Current",
+    normalRangeLabel: "Normal range",
+    contributionLabel: "Score contribution",
     mockTrace: "Simulated 30-minute trace · 12 observations",
     evidenceLabel: "Sensor evidence",
-    currentEvidence: "+3.7 A from baseline",
+    observationLabel: "Observed facts",
+    causeCandidateLabel: "Possible cause candidate · inference",
+    causeCandidate:
+      "Current and vibration are rising together. Load change or rotating-component condition may be candidates, but these values cannot confirm a cause.",
+    currentEvidence: "+1.0 A above the normal upper bound",
     vibrationEvidence: "Upward trend over 30 minutes",
     scoreEvidence: "Risk score 67/100 · Warning",
     futurePilot: "Actual fab pilot integration",
@@ -238,25 +248,13 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "Accuracy, false alarms, misses, and early-warning time have not yet been validated with actual fab logs.",
     methodDisclaimer:
       "No Isolation Forest library or pre-trained model is currently used. Historical-log comparison and read-only pilot validation are future work after approval.",
-    futureFeedbackTitle: "Planned next week · Interview-informed improvement preview",
-    futureFeedbackBadge: "In preparation",
-    futureFeedbackDescription:
-      "The items below are planned for staged refinement based on early interview observations about understanding and communicating equipment information. These cards preview improvement directions, not live features.",
-    futureFeedbackItems: [
-      "Baseline and change timing: show the current value, reference range, and start of escalation before the risk score",
-      "Sensor location and units: separate measurement context and unit differences for current, temperature, vibration, and noise",
-      "Score rationale: show each sensor's contribution to the risk score alongside its evidence",
-      "Safe reasoning flow: signal → evidence → possible cause candidates → approved verification steps",
-    ],
-    futureFeedbackBoundary:
-      "This is a next-week improvement plan visualized from early interview observations. It does not indicate equipment control, confirmed causes, or validated on-site outcomes.",
   },
   ja: {
-    badge: "審査員向け読み取り専用デモ",
-    title: "30秒で確認するSemiGuard AI安全分析",
+    badge: "公開シミュレーション",
+    title: "異常信号の根拠から次の安全確認まで",
     subtitle:
       "実際の設備・アカウントデータなしで、危険信号から点検順序までの判断フローを体験できます。",
-    brandConsole: "安全分析コンソール",
+    brandConsole: "設備異常対応ガイド",
     readOnly: "読み取り専用",
     simulated: "シミュレーションデータ",
     languageLabel: "言語選択",
@@ -271,7 +269,7 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "仮想真空ポンプのリスクスコアが上昇しました。この画面は教育・審査用シミュレーションであり、実際の設備を制御しません。",
     evidenceTitle: "2. センサー根拠を確認します",
     evidenceDescription:
-      "AIは数値だけで故障を断定しません。偏差の大きいセンサーを先に示し、現地点検とマニュアル確認を求めます。",
+      "現在の観測値と基準との差を先に示し、未確認の原因は推定として明確に分けます。",
     safeNextStep: "安全な次の点検",
     actionTitle: "3. 推奨点検順序を確認します",
     actionDescription:
@@ -286,9 +284,16 @@ const copy: Record<DemoLanguage, DemoCopy> = {
     noControl:
       "設定変更、データ注入、エクスポート、相談履歴保存は提供しません。",
     sensorLabels: ["電流", "温度", "振動", "騒音"],
+    currentLabel: "現在値",
+    normalRangeLabel: "正常範囲",
+    contributionLabel: "スコア寄与",
     mockTrace: "シミュレーション30分推移・12観測値",
     evidenceLabel: "センサー根拠",
-    currentEvidence: "基準比 +3.7 A",
+    observationLabel: "観察された事実",
+    causeCandidateLabel: "可能性のある原因候補・推定",
+    causeCandidate:
+      "電流と振動が同時に上昇しています。負荷変化や回転部品の状態が候補ですが、現在値だけでは原因を確定できません。",
+    currentEvidence: "正常上限比 +1.0 A",
     vibrationEvidence: "直近30分の上昇傾向",
     scoreEvidence: "リスクスコア 67/100・警告",
     futurePilot: "実ファブのパイロット連携",
@@ -325,41 +330,29 @@ const copy: Record<DemoLanguage, DemoCopy> = {
       "実ファブログによる精度、誤報、見逃し、早期警告時間の検証はまだ行っていません。",
     methodDisclaimer:
       "Isolation Forestライブラリや事前学習済みモデルは現在使用していません。過去ログ比較と読み取り専用パイロット検証は、承認後の今後の範囲です。",
-    futureFeedbackTitle: "来週反映予定・インタビューに基づく改善プレビュー",
-    futureFeedbackBadge: "準備中",
-    futureFeedbackDescription:
-      "初期インタビューで得た情報理解・伝達に関する意見をもとに、以下の項目を段階的に反映する予定です。現在のカードは機能の動作ではなく、改善方向を示すプレビューです。",
-    futureFeedbackItems: [
-      "基準範囲と変化時点: リスクスコアの前に現在値・基準・上昇開始時点を併記",
-      "センサー位置と単位: 電流・温度・振動・騒音の測定文脈と単位の違いを分けて表示",
-      "スコアの根拠: 各センサーの偏差がリスクスコアに与えた影響を根拠とともに表示",
-      "安全な判断フロー: 信号 → 根拠 → 可能性のある原因候補 → 承認済み確認手順",
-    ],
-    futureFeedbackBoundary:
-      "これは初期インタビューの観察を可視化した来週の改善計画です。設備制御、原因の確定、現場効果の検証を意味するものではありません。",
   },
 };
 
 const sensorData = [
-  { value: "8.7 A", normal: "5.0 ± 0.5 A", accent: "#f59e0b" },
-  { value: "51.2 °C", normal: "45 ± 3 °C", accent: "#38bdf8" },
-  { value: "0.81 mm/s", normal: "2.0 ± 0.3 mm/s", accent: "#fb7185" },
-  { value: "57.4 dB", normal: "55 ± 4 dB", accent: "#a78bfa" },
+  { value: "6.5 A", normal: "4.5–5.5 A", contribution: 24, accent: "#f59e0b" },
+  { value: "50.0 °C", normal: "42–48 °C", contribution: 13, accent: "#38bdf8" },
+  { value: "1.10 mm/s", normal: "1.7–2.3 mm/s", contribution: 24, accent: "#fb7185" },
+  { value: "57.8 dB", normal: "51–59 dB", contribution: 6, accent: "#a78bfa" },
 ];
 
 const mockSensorTrace = [
   { minute: "−30", current: 5.1, vibration: 0.22, risk: 22 },
-  { minute: "−27", current: 5.4, vibration: 0.24, risk: 30 },
-  { minute: "−24", current: 5.3, vibration: 0.25, risk: 26 },
-  { minute: "−21", current: 5.8, vibration: 0.31, risk: 42 },
-  { minute: "−18", current: 6.1, vibration: 0.36, risk: 49 },
-  { minute: "−15", current: 6.5, vibration: 0.42, risk: 55 },
-  { minute: "−12", current: 6.9, vibration: 0.51, risk: 61 },
-  { minute: "−9", current: 7.3, vibration: 0.59, risk: 68 },
-  { minute: "−6", current: 7.8, vibration: 0.67, risk: 74 },
-  { minute: "−3", current: 8.2, vibration: 0.74, risk: 81 },
-  { minute: "−1", current: 8.0, vibration: 0.77, risk: 76 },
-  { minute: "now", current: 8.7, vibration: 0.81, risk: 88 },
+  { minute: "−27", current: 5.2, vibration: 0.24, risk: 24 },
+  { minute: "−24", current: 5.3, vibration: 0.28, risk: 25 },
+  { minute: "−21", current: 5.4, vibration: 0.34, risk: 30 },
+  { minute: "−18", current: 5.6, vibration: 0.42, risk: 34 },
+  { minute: "−15", current: 5.7, vibration: 0.51, risk: 38 },
+  { minute: "−12", current: 5.9, vibration: 0.61, risk: 43 },
+  { minute: "−9", current: 6.0, vibration: 0.72, risk: 49 },
+  { minute: "−6", current: 6.2, vibration: 0.84, risk: 54 },
+  { minute: "−3", current: 6.3, vibration: 0.93, risk: 59 },
+  { minute: "−1", current: 6.4, vibration: 1.02, risk: 63 },
+  { minute: "now", current: 6.5, vibration: 1.1, risk: 67 },
 ];
 
 function getInitialLanguage(): DemoLanguage {
@@ -375,6 +368,12 @@ function getInitialLanguage(): DemoLanguage {
 }
 
 export default function JudgeDemo() {
+  const prefersReducedMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll();
+  const smoothScrollProgress = useSpring(scrollYProgress, {
+    stiffness: 240,
+    damping: 32,
+  });
   const [lang, setLang] = useState<DemoLanguage>(getInitialLanguage);
   const [step, setStep] = useState<DemoStep>(1);
   const [showDemoBanner, setShowDemoBanner] = useState(true);
@@ -474,24 +473,34 @@ export default function JudgeDemo() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(6,182,212,0.22),transparent_38%),linear-gradient(135deg,#07111f,#0f172a_55%,#111827)] px-4 py-5 text-slate-100 sm:px-7 sm:py-8">
+    <main className="min-h-screen bg-[#0d1117] px-4 py-5 text-slate-100 sm:px-7 sm:py-8">
+      <motion.div
+        aria-hidden="true"
+        className="fixed inset-x-0 top-0 z-[70] h-0.5 origin-left bg-amber-300"
+        style={{ scaleX: smoothScrollProgress }}
+      />
       <div className="mx-auto max-w-5xl">
-        <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-cyan-200/20 bg-slate-950/45 p-4 backdrop-blur sm:flex-row sm:items-start sm:justify-between sm:p-5">
+        <motion.header
+          initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4, ease: "easeOut" }}
+          className="mb-5 flex flex-col gap-4 border-b border-slate-700 pb-5 sm:flex-row sm:items-start sm:justify-between"
+        >
           <div className="min-w-0">
             <div className="mb-3 flex items-center gap-2.5" aria-label="SemiGuard AI">
-              <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-200/55 bg-cyan-300/10 text-[10px] font-black tracking-tight text-cyan-100 shadow-[0_0_20px_rgba(34,211,238,0.13)]">
+              <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center border border-amber-300/70 bg-amber-300/10 text-[10px] font-black tracking-tight text-amber-100">
                 SG
               </span>
               <span className="min-w-0 leading-none">
-                <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">SemiGuard AI</span>
+                <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-100">SemiGuard AI</span>
                 <span className="mt-1 block text-[9px] font-semibold tracking-wide text-slate-400">{text.brandConsole}</span>
               </span>
             </div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-cyan-200/45 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-bold tracking-wide text-cyan-100">
+              <span className="border-l-2 border-amber-300 pl-2 text-[10px] font-bold tracking-wide text-amber-100">
                 {text.badge}
               </span>
-              <span className="rounded-full border border-amber-200/35 bg-amber-300/10 px-2.5 py-1 text-[10px] font-bold text-amber-100">
+              <span className="text-[10px] font-bold text-slate-400">
                 {text.readOnly}
               </span>
             </div>
@@ -514,7 +523,7 @@ export default function JudgeDemo() {
               id="judge-demo-language"
               value={lang}
               onChange={event => setLang(event.target.value as DemoLanguage)}
-              className="h-9 rounded-lg border border-slate-600 bg-slate-900 px-2 text-xs font-bold text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+              className="h-9 rounded border border-slate-600 bg-[#151b23] px-2 text-xs font-bold text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300"
             >
               <option value="ko">한국어</option>
               <option value="en">English</option>
@@ -525,7 +534,7 @@ export default function JudgeDemo() {
               onClick={resetDemo}
               aria-label={text.reset}
               title={text.reset}
-              className="h-9 rounded-lg border border-slate-600 bg-slate-900 px-3 text-xs font-bold text-slate-200 transition hover:border-cyan-300 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+              className="h-9 rounded border border-slate-600 bg-[#151b23] px-3 text-xs font-bold text-slate-200 transition hover:border-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-300"
             >
               ↺ <span className="hidden sm:inline">{text.reset}</span>
             </button>
@@ -534,7 +543,7 @@ export default function JudgeDemo() {
               onClick={() => void copyShareLink()}
               aria-label={text.share}
               title={text.share}
-              className="h-9 rounded-lg border border-slate-600 bg-slate-900 px-3 text-xs font-bold text-slate-200 transition hover:border-cyan-300 hover:text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+              className="h-9 rounded border border-slate-600 bg-[#151b23] px-3 text-xs font-bold text-slate-200 transition hover:border-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-300"
             >
               <span aria-hidden="true">⧉</span>
               <span className="hidden sm:ml-1 sm:inline">{text.share}</span>
@@ -545,7 +554,7 @@ export default function JudgeDemo() {
                 onClick={() => setShowDemoBanner(true)}
                 title={text.showDemoMode}
                 aria-label={text.showDemoMode}
-                className="flex h-9 items-center rounded-lg border border-amber-200/60 bg-amber-300/15 px-2.5 text-xs font-bold text-amber-50 transition hover:bg-amber-300/25 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                className="flex h-9 items-center rounded border border-amber-300/60 bg-amber-300/10 px-2.5 text-xs font-bold text-amber-50 transition hover:bg-amber-300/20 focus:outline-none focus:ring-2 focus:ring-amber-200"
               >
                 <span aria-hidden="true">●</span>{" "}
                 <span className="hidden sm:ml-1 sm:inline">
@@ -556,29 +565,29 @@ export default function JudgeDemo() {
             <Link
               href="/login"
               aria-label={text.login}
-              className="flex h-9 items-center rounded-lg border border-cyan-300/55 bg-cyan-300/10 px-3 text-xs font-bold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+              className="flex h-9 items-center rounded border border-amber-300/70 bg-amber-300 px-3 text-xs font-black text-slate-950 transition hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-100"
             >
               <span className="sm:hidden">{text.loginShort}</span>
               <span className="hidden sm:inline">{text.login}</span>
             </Link>
           </div>
-        </header>
+        </motion.header>
 
         {showDemoBanner && (
           <section
-            className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-xl border border-amber-200/75 bg-[linear-gradient(100deg,rgba(14,116,144,0.68),rgba(8,145,178,0.48),rgba(245,158,11,0.28))] px-3 py-2 text-xs shadow-lg shadow-cyan-950/40"
+            className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border border-amber-300/45 border-l-4 bg-[#171a1f] px-3 py-2 text-xs"
             role="status"
             aria-live="polite"
             aria-atomic="true"
           >
             <div className="flex min-w-0 items-start gap-2">
-              <span aria-hidden="true" className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-[10px] font-black text-slate-900">
+              <span aria-hidden="true" className="mt-0.5 text-xs font-black text-amber-300">
                 ●
               </span>
               <span className="shrink-0 font-black tracking-wide text-white">
                 {text.demoMode}
               </span>
-              <span className="text-cyan-50/95">
+              <span className="text-slate-300">
                 {text.demoModeDescription}
               </span>
             </div>
@@ -587,7 +596,7 @@ export default function JudgeDemo() {
               onClick={() => setShowDemoBanner(false)}
               title={text.closeDemoMode}
               aria-label={text.closeDemoMode}
-              className="flex h-7 w-7 shrink-0 items-center justify-center gap-1 rounded-md border border-white/30 bg-slate-950/20 text-sm font-bold text-white transition hover:bg-slate-950/45 focus:outline-none focus:ring-2 focus:ring-amber-100 sm:w-auto sm:px-2"
+              className="flex h-7 w-7 shrink-0 items-center justify-center gap-1 rounded border border-slate-600 bg-transparent text-sm font-bold text-slate-200 transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-100 sm:w-auto sm:px-2"
             >
               <span aria-hidden="true">×</span>
               <span className="hidden text-xs sm:inline">{text.close}</span>
@@ -596,64 +605,15 @@ export default function JudgeDemo() {
         )}
 
         <section
-          className="mb-5 rounded-xl border border-amber-200/35 bg-amber-300/10 p-3 text-xs text-amber-50"
+          className="mb-5 border-l-2 border-slate-500 bg-[#121820] p-3 text-xs text-slate-300"
           role="note"
         >
           <span className="font-bold">{text.simulated} · </span>
           {text.privacy} {text.noControl}
         </section>
 
-        <section
-          className="mb-5 overflow-hidden rounded-2xl border border-violet-300/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.10),rgba(139,92,246,0.12),rgba(15,23,42,0.8))] p-4 shadow-xl shadow-violet-950/15 sm:p-5"
-          aria-labelledby="judge-demo-feedback-preview-title"
-          aria-describedby="judge-demo-feedback-preview-boundary"
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-violet-200/45 bg-violet-300/10 px-2.5 py-1 text-[10px] font-black tracking-wide text-violet-100">
-                  {text.futureFeedbackBadge}
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100/75">
-                  SemiGuard AI
-                </span>
-              </div>
-              <h2
-                id="judge-demo-feedback-preview-title"
-                className="mt-3 text-sm font-black text-slate-50 sm:text-base"
-              >
-                {text.futureFeedbackTitle}
-              </h2>
-              <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-300">
-                {text.futureFeedbackDescription}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            {text.futureFeedbackItems.map((item, index) => (
-              <article
-                key={item}
-                className="rounded-xl border border-slate-600/70 bg-slate-950/50 p-3"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-cyan-200/35 bg-cyan-300/10 text-[9px] font-black text-cyan-100">
-                  {index + 1}
-                </span>
-                <p className="mt-2 text-[11px] leading-5 text-slate-200">{item}</p>
-              </article>
-            ))}
-          </div>
-
-          <p
-            id="judge-demo-feedback-preview-boundary"
-            className="mt-3 rounded-lg border border-amber-200/25 bg-amber-300/8 px-3 py-2 text-[10px] leading-4 text-amber-50/90"
-          >
-            {text.futureFeedbackBoundary}
-          </p>
-        </section>
-
         <section className="mb-5" aria-labelledby="judge-demo-method-title">
-          <details className="group overflow-hidden rounded-xl border border-cyan-200/25 bg-slate-950/55 shadow-lg shadow-cyan-950/15">
+          <details className="group overflow-hidden border border-slate-700 bg-[#121820]">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200 sm:p-4">
               <div className="min-w-0">
                 <h2
@@ -685,7 +645,7 @@ export default function JudgeDemo() {
                 ].map(item => (
                   <p
                     key={item}
-                    className="rounded-lg border border-slate-700/80 bg-slate-900/75 p-3 text-xs leading-5 text-slate-200"
+                    className="border-l-2 border-slate-600 bg-[#151b23] p-3 text-xs leading-5 text-slate-200"
                   >
                     {item}
                   </p>
@@ -702,7 +662,7 @@ export default function JudgeDemo() {
         </section>
 
         <section
-          className="rounded-2xl border border-slate-700/90 bg-slate-950/65 p-4 shadow-2xl shadow-cyan-950/20 sm:p-6"
+          className="border border-slate-700 bg-[#11161d] p-4 sm:p-6"
           aria-labelledby="judge-demo-flow-title"
         >
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -757,15 +717,21 @@ export default function JudgeDemo() {
             </div>
           </div>
 
-          <div
-            id="judge-demo-step-panel"
-            role="tabpanel"
-            aria-labelledby={`judge-demo-step-tab-${step}`}
-            className="min-h-[300px]"
-          >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              id="judge-demo-step-panel"
+              role="tabpanel"
+              aria-labelledby={`judge-demo-step-tab-${step}`}
+              className="min-h-[300px]"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={prefersReducedMotion ? undefined : { opacity: 0, y: -10 }}
+              transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.32, ease: "easeOut" }}
+            >
             {step === 1 && (
               <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="rounded-xl border border-amber-300/40 bg-[linear-gradient(135deg,rgba(245,158,11,0.16),rgba(15,23,42,0.72))] p-5">
+                <div className="border border-amber-300/35 border-l-4 bg-[#171a1f] p-5">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">
                     {text.riskLabel}
                   </p>
@@ -778,7 +744,12 @@ export default function JudgeDemo() {
                     </span>
                   </div>
                   <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-800">
-                    <div className="h-full w-[67%] rounded-full bg-gradient-to-r from-cyan-400 via-amber-300 to-rose-400" />
+                    <motion.div
+                      className="h-full origin-left rounded-full bg-amber-300"
+                      initial={prefersReducedMotion ? false : { scaleX: 0 }}
+                      animate={{ scaleX: 0.67 }}
+                      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.8, ease: "easeOut" }}
+                    />
                   </div>
                   <p className="mt-5 text-sm leading-6 text-slate-200">
                     {text.riskDescription}
@@ -786,23 +757,47 @@ export default function JudgeDemo() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {sensorData.map((sensor, index) => (
-                    <article
+                    <motion.article
                       key={sensor.value}
-                      className="rounded-xl border border-slate-700 bg-slate-900/65 p-3"
+                      initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.28, delay: index * 0.06 }}
+                      className="border border-slate-700 bg-[#151b23] p-3 transition-colors hover:border-slate-500"
                     >
                       <p className="text-[10px] font-bold text-slate-400">
                         {text.sensorLabels[index]}
                       </p>
-                      <p
-                        className="mt-2 font-mono text-xl font-black"
-                        style={{ color: sensor.accent }}
-                      >
-                        {sensor.value}
-                      </p>
-                      <p className="mt-2 text-[10px] text-slate-500">
-                        {sensor.normal}
-                      </p>
-                    </article>
+                      <div className="mt-2 flex items-baseline justify-between gap-2">
+                        <span className="text-[9px] font-bold uppercase tracking-wide text-slate-500">
+                          {text.currentLabel}
+                        </span>
+                        <p
+                          className="font-mono text-xl font-black"
+                          style={{ color: sensor.accent }}
+                        >
+                          {sensor.value}
+                        </p>
+                      </div>
+                      <div className="mt-3 border-t border-slate-700/80 pt-2 text-[10px]">
+                        <div className="flex items-center justify-between gap-2 text-slate-400">
+                          <span>{text.normalRangeLabel}</span>
+                          <span className="font-mono text-slate-300">{sensor.normal}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2 text-slate-400">
+                          <span>{text.contributionLabel}</span>
+                          <span className="font-mono font-bold text-slate-200">{sensor.contribution}/25</span>
+                        </div>
+                        <div className="mt-1.5 h-1 overflow-hidden bg-slate-800">
+                          <motion.div
+                            className="h-full origin-left"
+                            style={{ backgroundColor: sensor.accent }}
+                            initial={prefersReducedMotion ? false : { scaleX: 0 }}
+                            animate={{ scaleX: sensor.contribution / 25 }}
+                            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.55, delay: 0.18 + index * 0.06 }}
+                          />
+                        </div>
+                      </div>
+                    </motion.article>
                   ))}
                 </div>
               </div>
@@ -810,7 +805,7 @@ export default function JudgeDemo() {
 
             {step === 2 && (
               <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="rounded-xl border border-rose-300/35 bg-rose-300/5 p-5">
+                <div className="border border-slate-700 bg-[#151b23] p-5">
                   <p className="text-xs font-bold text-rose-200">
                     {text.sensorLabels[0]} · {text.sensorLabels[2]}
                   </p>
@@ -822,14 +817,16 @@ export default function JudgeDemo() {
                     className="mt-3 flex h-36 items-end gap-2"
                     aria-label={`${text.mockTrace}: ${text.sensorLabels[0]} and ${text.sensorLabels[2]} trend`}
                   >
-                    {mockSensorTrace.map(point => (
-                      <span
+                    {mockSensorTrace.map((point, index) => (
+                      <motion.span
                         key={point.minute}
-                        className="group relative flex-1 rounded-t bg-gradient-to-t from-rose-500/45 to-amber-300/90 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                        className="group relative flex-1 rounded-t bg-amber-300/80 focus:outline-none focus:ring-2 focus:ring-amber-100"
                         tabIndex={0}
                         title={`${point.minute} min · ${text.sensorLabels[0]} ${point.current.toFixed(1)} A · ${text.sensorLabels[2]} ${point.vibration.toFixed(2)} mm/s`}
                         aria-label={`${point.minute} min, ${text.sensorLabels[0]} ${point.current.toFixed(1)} A, ${text.sensorLabels[2]} ${point.vibration.toFixed(2)} mm/s`}
-                        style={{ height: `${point.risk}%` }}
+                        initial={prefersReducedMotion ? false : { height: 0, opacity: 0.45 }}
+                        animate={{ height: `${point.risk}%`, opacity: 1 }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.45, delay: index * 0.035, ease: "easeOut" }}
                       />
                     ))}
                   </div>
@@ -842,28 +839,39 @@ export default function JudgeDemo() {
                     {text.evidenceDescription}
                   </p>
                 </div>
-                <aside className="rounded-xl border border-cyan-300/30 bg-cyan-300/5 p-5">
-                  <p className="text-xs font-bold text-cyan-100">
+                <aside className="border border-slate-700 bg-[#121820] p-5">
+                  <h3 className="text-sm font-bold text-slate-100">
                     {text.evidenceLabel}
+                  </h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-amber-200">
+                    {text.observationLabel}
                   </p>
                   <ul className="mt-4 space-y-3 text-xs leading-5 text-slate-300">
-                    <li className="rounded-lg bg-slate-900/75 p-3">
+                    <li className="border-l-2 border-amber-300/70 bg-[#171d25] p-3">
                       • {text.sensorLabels[0]}: {text.currentEvidence}
                     </li>
-                    <li className="rounded-lg bg-slate-900/75 p-3">
+                    <li className="border-l-2 border-amber-300/70 bg-[#171d25] p-3">
                       • {text.sensorLabels[2]}: {text.vibrationEvidence}
                     </li>
-                    <li className="rounded-lg bg-slate-900/75 p-3">
+                    <li className="border-l-2 border-amber-300/70 bg-[#171d25] p-3">
                       • {text.scoreEvidence}
                     </li>
                   </ul>
+                  <div className="mt-5 border-t border-slate-700 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      {text.causeCandidateLabel}
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-slate-300">
+                      {text.causeCandidate}
+                    </p>
+                  </div>
                 </aside>
               </div>
             )}
 
             {step === 3 && (
               <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-                <div className="rounded-xl border border-emerald-300/35 bg-emerald-300/5 p-5">
+                <div className="border border-emerald-300/30 border-l-4 bg-[#141b18] p-5">
                   <p className="text-xs font-bold text-emerald-100">
                     {text.safeNextStep}
                   </p>
@@ -915,9 +923,9 @@ export default function JudgeDemo() {
                     (action, index) => (
                       <li
                         key={action}
-                        className="flex gap-3 rounded-xl border border-slate-700 bg-slate-900/65 p-4"
+                        className="flex gap-3 border border-slate-700 bg-[#151b23] p-4"
                       >
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-300/15 text-xs font-black text-cyan-100">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center border border-amber-300/60 text-xs font-black text-amber-100">
                           {index + 1}
                         </span>
                         <p className="pt-0.5 text-sm leading-6 text-slate-200">
@@ -929,7 +937,8 @@ export default function JudgeDemo() {
                 </ol>
               </div>
             )}
-          </div>
+            </motion.div>
+          </AnimatePresence>
 
           <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-800 pt-4">
             <button
@@ -944,7 +953,7 @@ export default function JudgeDemo() {
               <button
                 type="button"
                 onClick={advance}
-                className="h-10 rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-4 text-xs font-bold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                className="h-10 rounded border border-amber-300 bg-amber-300 px-4 text-xs font-black text-slate-950 transition hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-100"
               >
                 {text.start}
               </button>
@@ -952,14 +961,14 @@ export default function JudgeDemo() {
               <button
                 type="button"
                 onClick={advance}
-                className="h-10 rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-4 text-xs font-bold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                className="h-10 rounded border border-amber-300 bg-amber-300 px-4 text-xs font-black text-slate-950 transition hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-100"
               >
                 {text.next}
               </button>
             ) : (
               <Link
                 href="/login"
-                className="flex h-10 items-center rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-4 text-xs font-bold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                className="flex h-10 items-center rounded border border-amber-300 bg-amber-300 px-4 text-xs font-black text-slate-950 transition hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-100"
               >
                 {text.login}
               </Link>

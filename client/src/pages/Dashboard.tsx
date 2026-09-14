@@ -1315,15 +1315,15 @@ export default function Dashboard() {
   }, [lang]);
   // ─── 테마 색상 팔레트 ─────────────────────────────────────────────────────
   const th = {
-    bg:        isDark ? "oklch(0.10 0.01 240)"   : "oklch(0.97 0.005 240)",
-    bgCard:    isDark ? "oklch(0.13 0.015 240)"  : "oklch(0.99 0.003 240)",
-    bgCard2:   isDark ? "oklch(0.115 0.015 240)" : "oklch(0.96 0.005 240)",
-    border:    isDark ? "oklch(0.20 0.02 240)"   : "oklch(0.85 0.01 240)",
-    border2:   isDark ? "oklch(0.25 0.02 240)"   : "oklch(0.80 0.01 240)",
-    text:      isDark ? "oklch(0.90 0.01 240)"   : "oklch(0.15 0.01 240)",
-    textMuted: isDark ? "oklch(0.50 0.01 240)"   : "oklch(0.45 0.01 240)",
-    accent:    "oklch(0.65 0.18 200)",
-    header:    isDark ? "oklch(0.115 0.015 240)" : "oklch(0.98 0.005 240)",
+    bg:        isDark ? "#101516" : "#eef1eb",
+    bgCard:    isDark ? "#18201f" : "#ffffff",
+    bgCard2:   isDark ? "#141b19" : "#e8eee6",
+    border:    isDark ? "#334139" : "#ced8cd",
+    border2:   isDark ? "#48594c" : "#b4c4b4",
+    text:      isDark ? "#e9eee8" : "#1b2b20",
+    textMuted: isDark ? "#9aada0" : "#526856",
+    accent:    isDark ? "#e4aa55" : "#91611d",
+    header:    isDark ? "#141c18" : "#f7f9f4",
   };
 
   // ─── 위험도 임계값 state (클라이언트 전용) ───────────────────────────────────
@@ -4051,10 +4051,7 @@ export default function Dashboard() {
       <header className="sticky top-0 z-50 border-b flex items-center justify-between px-3 sm:px-5 py-3"
         style={{ background: th.header, borderColor: th.border, transition: "background 0.3s ease" }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl font-bold"
-            style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.20 220))" }}>
-            🛡
-          </div>
+          <a href="/welcome" aria-label={lang === "ko" ? "SemiGuard AI 홈페이지" : "SemiGuard AI home"} className="w-9 h-9 rounded-full border flex items-center justify-center text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4" style={{ borderColor: th.border2, color: th.accent }}>SG</a>
           <div>
             <h1 className="text-sm font-bold tracking-wide">{t.appTitle}</h1>
             <h2 className="text-[10px] text-muted-foreground leading-tight m-0 font-normal">{t.appSubtitle}</h2>

@@ -9,6 +9,30 @@
 
 ## 문서 안내
 
+### SemiGuard 2.0 · 현재 MVP
+
+현재 우선 제품은 가상 센서 데이터로 판단 과정을 연습하는 Scenario 01입니다. [훈련 시작](https://semiguard-ai-five.vercel.app/training)에서 정상 범위 비교 → 변화 시점 선택 → 근거 구분 → 확인 순서 구성 → 설명 작성 → 피드백을 체험할 수 있습니다. 힌트와 피드백은 사전 작성된 교육용 규칙이며 AI 생성·현장 진단·학습 효과 검증이 아닙니다. 답안은 현재 탭의 sessionStorage에만 보관되고 계정에 동기화되지 않습니다.
+
+아래 기존 대시보드·대회·파일럿 문서는 개발 이력과 참고 자료로 보존합니다. 현재 MVP의 제공 범위와 구분해서 읽어 주세요.
+
+### Vercel 배포
+
+기존 저장소의 `vercel.json`으로 프런트엔드와 `api/index.mjs`의 Express API를 함께 배포합니다. 새 홈페이지는 `/welcome`, 공개 시뮬레이션은 `/demo`, 로그인은 `/login`, 계정 대시보드는 `/dashboard`입니다. `/`는 비로그인 사용자에게 홈페이지를, 로그인 사용자에게 훈련 화면을 표시합니다. 공개 훈련은 `/training`에서 이용합니다.
+
+배포 설정: **Vite**, 빌드 `pnpm build`, 출력 `dist/public`, 설치 `pnpm install --frozen-lockfile`. `main` 병합 전에 `pnpm check` → `pnpm test` → `pnpm build`를 통과해야 합니다.
+
+계정 기능에는 Vercel의 Settings → Environment Variables에서 `DATABASE_URL`, `JWT_SECRET`, `VITE_APP_ID`를 설정해야 합니다. 기존 계정·기록을 유지하려면 기존 MySQL/TiDB 연결을 사용하고 스키마와 접속 허용 여부를 확인합니다. `VITE_APP_ID`는 로컬 계정용 프로젝트 식별자로도 사용하므로 Manus OAuth 미사용 환경에서도 필요합니다. 미설정 상태에서는 홈페이지·공개 데모만 이용 가능하며, 계정 변경 API는 503으로 차단됩니다. `/api/health`의 `capabilities.accounts`는 설정 존재 여부이며 DB 접속 성공을 보장하지 않습니다.
+
+소셜 로그인은 서버의 각 제공자 ID·비밀값과 클라이언트의 `VITE_GOOGLE_CLIENT_ID`, `VITE_NAVER_CLIENT_ID`, `VITE_KAKAO_CLIENT_ID`, 그리고 새 주소의 callback 등록이 필요합니다. AI 설명은 현재 `BUILT_IN_FORGE_API_URL`·`BUILT_IN_FORGE_API_KEY`에 의존합니다. 이 연결의 이전 또는 대체 모델 연결은 별도 설정이 필요합니다. 실제 비밀값은 GitHub나 대화에 기록하지 않습니다.
+
+Manus 편집기용 삽입 스크립트는 기본 비활성화했습니다. 해당 편집 환경이 필요한 경우에만 `MANUS_RUNTIME=1`로 사용합니다. 미설정 분석 스크립트와 HTML 템플릿 주석도 제거했습니다.
+
+| 정리 분류 | 대상과 근거 |
+| --- | --- |
+| 필수 | `client`, `server`, `shared`, `api`, `drizzle`, 패키지·빌드 설정, 라이선스. 기능·API·DB·배포에 사용 |
+| 보류 | 인수인계·대회·실증·검증 문서. README 또는 문서 검증 테스트에서 참조되며 제출 용도 확인 필요 |
+| 삭제 가능 → 삭제 | 루트 `.gitkeep`는 빈 디렉터리 유지 목적이 불필요. `template.json`은 초기 예제 코드 사본이며 import·빌드·테스트·문서 참조 없음. `full-test-result.json`은 재생성 가능한 임시 테스트 출력으로 저장소에서 제외 |
+
 - [프로젝트 개요](#프로젝트-개요) · [1주차 팀 목표](#1주차-팀-목표) · [빠른 안내](#빠른-안내) · [문제와 해결 방식](#문제와-해결-방식) · [핵심 기능](#핵심-기능)
 - [시스템 구조](#시스템-구조) · [탐지 방식과 검증 상태](#탐지-방식과-검증-상태) · [개발 과정과 실증 증거](#개발-과정과-실증-증거) · [AI 활용과 안전 원칙](#ai-활용과-안전-원칙) · [실제 팹 도입 경로](#실제-팹-도입-경로) · [실행 방법](#실행-방법) · [테스트](#테스트)
 - [AI 사용 내역](#ai-사용-내역) · [AI 안전 원칙](#ai-안전-원칙) · [오픈소스 및 주요 기술](#오픈소스-및-주요-기술) · [외부 인터뷰 및 자문](#외부-인터뷰-및-자문)
@@ -281,8 +305,7 @@ todo.md                 기능·검증·보류 항목의 누적 작업 기록
 
 ## 라이선스와 외부 자원
 
-이 프로젝트는 [MIT License](LICENSE)를 따릅니다.
-
+이 프로젝트는 [MIT License](LICENSE)를 따릅니다. React, tRPC, Drizzle ORM, Recharts, Tailwind CSS, shadcn/ui, Vitest, jsPDF 등 공개 라이선스 패키지를 사용합니다. 센서 기준 설정에는 충남반도체마이스터고등학교 장비과 담당 교사의 도메인 자문을 참고했습니다.
 ### 오픈소스 및 주요 기술
 
 아래 표는 [package.json](package.json)의 직접 의존성 및 개발 의존성 중 주요 패키지를 선정한 것입니다. 버전은 [pnpm-lock.yaml](pnpm-lock.yaml)에 고정된 버전이며, 라이선스는 각 버전의 npm 공식 레지스트리 배포 메타데이터의 `license` 필드를 확인했습니다. 각 라이선스 링크에서 확인 근거를 볼 수 있습니다.

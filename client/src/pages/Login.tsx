@@ -8,6 +8,7 @@ import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "reac
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
+import { WaferGraphic } from "./Welcome";
 
 export function Login() {
   const [, setLocation] = useLocation();
@@ -66,7 +67,7 @@ export function Login() {
           }
         : {
             locale: "ko-KR",
-            title: "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템",
+            title: "SemiGuard AI — 센서 근거 기반 교육·점검 보조",
             description: "SemiGuard AI는 반도체 장비의 전류·온도·진동·소음 편차를 z-score 기반 위험 신호로 정리하고, 읽기 전용 환경에서 LLM 보조 점검 설명을 제공하는 예지안전 시스템입니다.",
             keywords: "SemiGuard AI, 반도체 예지보전, 이상탐지, 센서 모니터링, 예지안전 시스템",
           };
@@ -97,6 +98,17 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [accountServiceReady, setAccountServiceReady] = useState<boolean | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/health", { signal: controller.signal })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        if (typeof data?.capabilities?.accounts === "boolean") setAccountServiceReady(data.capabilities.accounts);
+      })
+      .catch(() => { /* Existing deployments may not expose capabilities. */ });
+    return () => controller.abort();
+  }, []);
   const oauthError = new URLSearchParams(window.location.search).get("oauth_error");
   const oauthParts = oauthError?.split("_") ?? [];
   const oauthProvider = oauthParts[0];
@@ -231,7 +243,7 @@ export function Login() {
           judgeDemoHint: "로그인 없이 · 읽기 전용 · 가상 데이터",
           terms: "로그인하면 서비스 이용약관에 동의하는 것입니다.",
         };
-  const isOauthEnabled = !import.meta.env.DEV;
+  const isOauthEnabled = !import.meta.env.DEV && accountServiceReady !== false;
   const handleSocialLogin = (start: () => void) => {
     if (!isOauthEnabled) {
       toast.info(loginMessages.previewSocialDisabled);
@@ -326,8 +338,15 @@ export function Login() {
   };
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 px-4 py-8 sm:py-12">
-      <Card className="w-full max-w-md p-6 sm:p-8 bg-slate-800/90 border-slate-700 shadow-2xl">
+    <main className="sg-login">
+      <section className="sg-login-intro">
+        <a href="/welcome" className="sg-brand"><span className="sg-brand-symbol">S<span>G</span></span><span>SemiGuard<span className="sg-brand-ai"> AI</span></span></a>
+        <p className="sg-eyebrow">YOUR INSPECTION WORKSPACE</p>
+        <h2>{loginLanguage === "ko" ? <>관찰을 기록하고,<br /><span>판단을 이어갑니다.</span></> : loginLanguage === "ja" ? <>観察を記録し、<br /><span>判断につなげる。</span></> : <>Observe clearly.<br /><span>Decide thoughtfully.</span></>}</h2>
+        <WaferGraphic />
+        <p>{loginLanguage === "ko" ? "센서 근거와 점검 기록을 한곳에서. 사용자별 작업 공간에서 다음 확인 순서를 이어가세요." : loginLanguage === "ja" ? "センサーの根拠と点検記録を一か所に。自分のワークスペースで次の確認へ。" : "Sensor evidence and inspection records, together in your personal workspace."}</p>
+      </section>
+      <Card className="sg-login-card">
         <div className="space-y-6">
           <div className="flex justify-end" role="group" aria-label={loginLanguage === "ja" ? "表示言語" : loginLanguage === "en" ? "Display language" : "표시 언어"}>
             <div className="inline-flex rounded-lg border border-slate-700 bg-slate-900/60 p-1">
@@ -353,9 +372,6 @@ export function Login() {
 
           {/* Header */}
           <div className="text-center space-y-3">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-2xl shadow-lg">
-              <span aria-hidden="true">🛡️</span>
-            </div>
             <div className="space-y-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">SemiGuard AI</h1>
               <h2 className="text-slate-400 text-xs sm:text-sm font-normal m-0">{loginUi.subtitle}</h2>
@@ -401,6 +417,7 @@ export function Login() {
           )}
 
           {/* Login Form */}
+          {accountServiceReady === false && <p role="status" className="rounded border border-amber-400/40 bg-amber-400/10 p-3 text-xs leading-6 text-amber-100">{loginLanguage === "ko" ? "계정 서비스 연결을 준비 중입니다. 현재는 공개 데모를 이용할 수 있습니다." : loginLanguage === "ja" ? "アカウント接続を準備中です。公開デモをご利用ください。" : "Account services are being connected. The public demo is available now."}</p>}
           <form onSubmit={handleLogin} className="space-y-4" aria-busy={isLoading}>
             {isLoading && <p id="login-submit-status" className="sr-only" role="status" aria-live="polite" aria-atomic="true">{loginUi.signingIn}</p>}
             {authError && <p id="login-auth-error" className="rounded-lg border border-rose-400/45 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-200" role="alert" aria-atomic="true">{authError}</p>}
@@ -479,7 +496,7 @@ export function Login() {
             {/* Login Button */}
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || accountServiceReady === false}
               aria-busy={isLoading || undefined}
               className="w-full h-12 bg-cyan-500 hover:bg-cyan-600 text-white font-bold text-base transition-transform duration-150 active:scale-[0.98]"
             >
@@ -522,7 +539,7 @@ export function Login() {
 
           {!isOauthEnabled && (
             <div id="preview-social-login-notice" className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-xs leading-relaxed text-cyan-100" role="status" aria-live="polite" aria-atomic="true">
-              {loginUi.previewSocialNotice}
+              {accountServiceReady === false ? (loginLanguage === "ko" ? "계정 서비스 연결 후 소셜 로그인을 이용할 수 있습니다." : loginLanguage === "ja" ? "アカウント接続後にソーシャルログインをご利用いただけます。" : "Social sign-in will be available after account services are connected.") : loginUi.previewSocialNotice}
             </div>
           )}
 
@@ -532,7 +549,7 @@ export function Login() {
             <Button
               type="button"
               onClick={() => handleSocialLogin(startGoogleLogin)}
-              disabled={!isOauthEnabled}
+              disabled={!isOauthEnabled || !import.meta.env.VITE_GOOGLE_CLIENT_ID}
               aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`group h-[3.25rem] w-full justify-start gap-3 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-lg hover:shadow-slate-950/20 focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
@@ -550,7 +567,7 @@ export function Login() {
             <Button
               type="button"
               onClick={() => handleSocialLogin(startNaverLogin)}
-              disabled={!isOauthEnabled}
+              disabled={!isOauthEnabled || !import.meta.env.VITE_NAVER_CLIENT_ID}
               aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`group h-[3.25rem] w-full justify-start gap-3 rounded-xl border border-emerald-300/50 bg-[#03C75A] px-4 text-sm font-bold text-white shadow-sm shadow-emerald-950/20 transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:bg-[#02B350] hover:shadow-lg hover:shadow-emerald-950/30 focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}
@@ -565,7 +582,7 @@ export function Login() {
             <Button
               type="button"
               onClick={() => handleSocialLogin(startKakaoLogin)}
-              disabled={!isOauthEnabled}
+              disabled={!isOauthEnabled || !import.meta.env.VITE_KAKAO_CLIENT_ID}
               aria-describedby={!isOauthEnabled ? "preview-social-login-notice" : undefined}
               title={!isOauthEnabled ? loginUi.publishedSiteOnly : undefined}
               className={`group h-[3.25rem] w-full justify-start gap-3 rounded-xl border border-[#ffe95c] bg-[#FEE500] px-4 text-sm font-bold text-[#191600] shadow-sm shadow-amber-950/20 transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5 hover:bg-[#F2DA00] hover:shadow-lg hover:shadow-amber-950/30 focus-visible:ring-2 focus-visible:ring-yellow-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50${!isOauthEnabled ? " opacity-50 grayscale cursor-not-allowed" : ""}`}

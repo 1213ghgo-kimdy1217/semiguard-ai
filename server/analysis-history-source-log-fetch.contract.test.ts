@@ -8,7 +8,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 describe("AI analysis history source-log fetch contract", () => {
   it("offers an authenticated single-log query with the same normalized fields as history logs", () => {
     expect(routerSource).toContain("getLogById: protectedProcedure");
-    expect(routerSource).toContain("getAnomalyLogById(input.id)");
+    expect(routerSource).toContain("getAnomalyLogById(input.id, ctx.user.id)");
     expect(routerSource).toContain("timestamp: log.timestamp.toISOString()");
   });
 

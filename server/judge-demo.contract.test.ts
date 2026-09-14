@@ -17,7 +17,8 @@ describe("read-only judge demo contract", () => {
       'const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));'
     );
     expect(appSource).toContain('<Route path={"/demo"}>');
-    expect(appSource).toContain('<Route path={"/"}>');
+    expect(appSource).toMatch(/<Route path=\{"\/dashboard"\}>\s*<ProtectedRoute>/);
+    expect(appSource).toContain('<Route path={"/"} component={HomeRoute} />');
   });
 
   it("guides judges through risk signal, sensor evidence, and recommended inspection steps", () => {

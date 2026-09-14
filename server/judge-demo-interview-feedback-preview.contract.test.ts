@@ -7,24 +7,24 @@ const demoSource = readFileSync(
   "utf8"
 );
 
-describe("judge-demo interview-feedback preview contract", () => {
-  it("shows an explicit, localized preview of next-week interview-informed improvements", () => {
-    expect(demoSource).toContain("futureFeedbackTitle:");
-    expect(demoSource).toContain("다음 주 반영 예정 · 인터뷰 기반 개선 미리보기");
-    expect(demoSource).toContain(
-      "Planned next week · Interview-informed improvement preview"
-    );
-    expect(demoSource).toContain(
-      "来週反映予定・インタビューに基づく改善プレビュー"
-    );
-    expect(demoSource).toContain('id="judge-demo-feedback-preview-title"');
-    expect(demoSource).toContain("{text.futureFeedbackItems.map");
+describe("judge-demo evidence-first direction contract", () => {
+  it("implements the interview-informed fact and inference separation in all languages", () => {
+    expect(demoSource).toContain('observationLabel: "관찰된 사실"');
+    expect(demoSource).toContain('causeCandidateLabel: "가능한 원인 후보 · 추정"');
+    expect(demoSource).toContain('observationLabel: "Observed facts"');
+    expect(demoSource).toContain('causeCandidateLabel: "Possible cause candidate · inference"');
+    expect(demoSource).toContain('observationLabel: "観察された事実"');
+    expect(demoSource).toContain('causeCandidateLabel: "可能性のある原因候補・推定"');
+    expect(demoSource).toContain("{text.observationLabel}");
+    expect(demoSource).toContain("{text.causeCandidateLabel}");
+    expect(demoSource).toContain("{text.causeCandidate}");
   });
 
-  it("keeps the preview distinct from implemented safety functions and avoids exposing interview evidence", () => {
-    expect(demoSource).toContain("현재 카드는 기능 동작이 아닌 개선 방향을 보여주는 미리보기입니다.");
-    expect(demoSource).toContain("실제 설비 제어·원인 확정·현장 효과를 의미하지 않습니다.");
-    expect(demoSource).toContain("가능한 원인 후보");
+  it("removes the obsolete next-week preview and avoids exposing interview evidence", () => {
+    expect(demoSource).not.toContain("futureFeedbackTitle");
+    expect(demoSource).not.toContain("다음 주 반영 예정");
+    expect(demoSource).not.toContain("Planned next week");
+    expect(demoSource).not.toContain("来週反映予定");
     expect(demoSource).not.toContain("P-01 —");
     expect(demoSource).not.toContain("삼성SDI");
     expect(demoSource).not.toContain("SFA반도체");

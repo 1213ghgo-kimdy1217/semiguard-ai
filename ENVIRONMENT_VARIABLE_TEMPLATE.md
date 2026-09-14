@@ -6,21 +6,24 @@
 # 데이터베이스·세션 — 실제 값을 ChatGPT·GitHub에 올리지 않음
 DATABASE_URL=<mysql_or_tidb_connection_string>
 JWT_SECRET=<new_random_secret_per_environment>
+VITE_APP_ID=<project_identifier_for_local_account_sessions>
 
 # Google OAuth — 소셜 계정 연결 기능 사용 시
 GOOGLE_CLIENT_ID=<google_oauth_client_id>
 GOOGLE_CLIENT_SECRET=<google_oauth_client_secret>
+VITE_GOOGLE_CLIENT_ID=<same_google_client_id>
 
 # Naver OAuth — 소셜 계정 연결 기능 사용 시
 NAVER_CLIENT_ID=<naver_oauth_client_id>
 NAVER_CLIENT_SECRET=<naver_oauth_client_secret>
+VITE_NAVER_CLIENT_ID=<same_naver_client_id>
 
 # Kakao OAuth — 소셜 계정 연결 기능 사용 시
 KAKAO_CLIENT_ID=<kakao_oauth_client_id>
 KAKAO_CLIENT_SECRET=<kakao_oauth_client_secret>
+VITE_KAKAO_CLIENT_ID=<same_kakao_client_id>
 
 # Manus 관리형 환경에서만 제공되는 값
-VITE_APP_ID=<manus_oauth_app_id_if_using_manus>
 OAUTH_SERVER_URL=<manus_oauth_server_url_if_using_manus>
 BUILT_IN_FORGE_API_URL=<manus_forge_api_url_if_using_manus>
 BUILT_IN_FORGE_API_KEY=<manus_forge_api_key_if_using_manus>

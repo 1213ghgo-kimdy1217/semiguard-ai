@@ -9,7 +9,9 @@ describe("로그인 제출 상태 접근성 계약", () => {
     expect(loginSource).toContain('<form onSubmit={handleLogin} className="space-y-4" aria-busy={isLoading}>');
   });
 
-  it("로그인 제목 주변의 방패 아이콘은 장식으로 처리한다", () => {
-    expect(loginSource).toContain('<span aria-hidden="true">🛡️</span>');
+  it("로그인 화면의 웨이퍼 도형은 장식으로 처리한다", () => {
+    expect(loginSource).toContain('<WaferGraphic />');
+    const welcomeSource = readFileSync(resolve(process.cwd(), "client/src/pages/Welcome.tsx"), "utf8");
+    expect(welcomeSource).toMatch(/<svg className="sg-wafer"[^>]*aria-hidden="true"/);
   });
 });
