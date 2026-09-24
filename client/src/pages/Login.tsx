@@ -326,7 +326,7 @@ export function Login() {
       toast.success(loginMessages.succeeded);
       // 캐시를 무효화하고 대시보드로 이동
       await utils.auth.me.invalidate();
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     } catch (error) {
       console.error("Login error:", error);
       setAuthError(loginMessages.failed);

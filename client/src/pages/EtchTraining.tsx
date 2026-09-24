@@ -96,12 +96,12 @@ export default function EtchTraining() {
   };
   return <div className="et-app">
     <a className="et-skip" href="#etch-main">훈련 내용으로 이동</a>
-    <header className="et-header"><Link className="et-brand" href="/training" onClick={() => move("home")}><b>SG</b> SemiGuard <small>TRAINING LAB</small></Link><nav aria-label="제품 메뉴"><Link href="/learn">8대 공정 학습</Link><Button variant="ghost" onClick={() => move("home")}>훈련 홈</Button><Link href="/live">실시간 자유 분석</Link><Link href="/welcome">소개</Link></nav></header>
+    <header className="et-header"><Link className="et-brand" href="/training" onClick={() => move("home")}><b>SG</b> SemiGuard <small>TRAINING LAB</small></Link><nav aria-label="제품 메뉴"><Link href="/learn">8대 공정 학습</Link><Button variant="ghost" onClick={() => move("home")}>선택 화면</Button><Link href="/live">실시간 자유 분석</Link><Link href="/welcome">소개</Link></nav></header>
     <main className="et-main" id="etch-main">
       <div className="et-meta"><span>PLASMA ETCH / SCENARIO 01</span><span>교육용 가상 장비 · 실제 제어 없음</span></div>
       <p className="et-storage">이 훈련 기록은 현재 탭에만 임시 저장됩니다. 계정 저장·기기 간 동기화는 아직 지원하지 않습니다.</p>
       {storageWarning ? <p role="alert" className="et-alert">{storageWarning}</p> : null}
-      {stage === "home" ? <><h1 ref={heading} tabIndex={-1}>장비 데이터를 보고, 판단을 연습하세요.</h1><p className="et-lead">관찰 → 근거 기록 → 판단 → 타임라인 복기. 공정 강의가 아닌, 교육용 가상 장비에서의 판단 연습입니다.</p><div className="et-columns">
+      {stage === "home" ? <><p className="et-eyebrow">STEP 03 / CHOOSE YOUR PRACTICE</p><h1 ref={heading} tabIndex={-1}>연습 방식을 선택하세요.</h1><p className="et-lead">시나리오로 관찰 → 근거 기록 → 판단 → 복기를 따라가거나, 같은 가상 신호를 자유롭게 살펴보세요. 실제 장비 데이터나 제어 기능은 없습니다.</p><div className="et-columns">
         <section className="et-panel"><BookOpen aria-hidden="true" /><p className="et-eyebrow">GUIDED TRAINING</p><h2>챔버 A — 이전 실행과 달라진 기록</h2><p>같은 공정 단계의 기록을 비교하고, 관찰한 사실과 아직 모르는 것을 구분하세요.</p><div className="et-tags"><span>가상 식각 챔버</span><span>시나리오 1개</span><span>약 5분</span></div><Button className="et-primary" onClick={() => move(attempt.submitted ? "review" : attempt.elapsed > 0 ? "observe" : "brief")}>{attempt.submitted ? "내 복기 보기" : attempt.elapsed > 0 ? "훈련 이어하기" : "시나리오 시작"}<ArrowRight /></Button></section>
         <section className="et-panel et-navy"><Activity aria-hidden="true" /><p className="et-eyebrow">LIVE ANALYSIS</p><h2>실시간 자유 분석</h2><p>같은 가상 식각 챔버에서 센서를 비교하고 여러 시점의 근거 메모를 남기세요. 시나리오를 먼저 완료하지 않아도 이용할 수 있습니다.</p><p className="et-caption">Scenario 01과 동일한 신호의 독립 실행입니다. 로그인 없이 이용하며 훈련 답안과 분리됩니다.</p><Link className="et-linkbutton" href="/live">자유 관찰 시작 <ArrowRight size={18} /></Link></section>
       </div></> : null}

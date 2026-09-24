@@ -152,7 +152,7 @@ describe("social OAuth callbacks", () => {
       const response = await requestCallback(provider, state, cookie);
 
       expect(response.status).toBe(302);
-      expect(response.headers.get("location")).toBe("http://localhost:3000/");
+      expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard");
       expect(response.headers.get("set-cookie")).toContain(COOKIE_NAME);
       expect(db.getUserById).toHaveBeenCalledWith(42);
       expect(db.touchUser).toHaveBeenCalledWith(42);
@@ -173,7 +173,7 @@ describe("social OAuth callbacks", () => {
       const response = await requestCallback(provider, state, cookie);
 
       expect(response.status).toBe(302);
-      expect(response.headers.get("location")).toBe(`http://localhost:3000/?social_linked=${provider}`);
+      expect(response.headers.get("location")).toBe(`http://localhost:3000/dashboard?social_linked=${provider}`);
       expect(response.headers.get("set-cookie")).toBeNull();
       expect(db.createSocialAccountLink).toHaveBeenCalledWith({
         userId: 42,
@@ -200,7 +200,7 @@ describe("social OAuth callbacks", () => {
     const response = await requestCallback("kakao", state, cookie);
 
     expect(response.status).toBe(302);
-    expect(response.headers.get("location")).toBe("http://localhost:3000/?social_linked=kakao");
+    expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard?social_linked=kakao");
     expect(db.createSocialAccountLink).toHaveBeenCalledWith({
       userId: 42,
       provider: "kakao",

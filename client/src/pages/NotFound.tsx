@@ -73,7 +73,7 @@ export default function NotFound() {
   }, []);
 
   const handleGoHome = () => {
-    setLocation(user ? "/" : "/login");
+    setLocation(user ? "/dashboard" : "/login");
   };
 
   const handleGoDemo = () => {

@@ -178,9 +178,9 @@ async function handleSocialLogin(
     console.info("[Social OAuth] Account linked", {
       provider: userInfo.provider,
       hasProviderId: Boolean(userInfo.id),
-      redirect: "/?social_linked=true",
+      redirect: "/dashboard?social_linked=true",
     });
-    res.redirect(302, `${origin}/?social_linked=${userInfo.provider}`);
+    res.redirect(302, `${origin}/dashboard?social_linked=${userInfo.provider}`);
     return;
   }
 
@@ -203,13 +203,13 @@ async function handleSocialLogin(
   console.info("[Social OAuth] Session established", {
     provider: userInfo.provider,
     hasProviderId: Boolean(userInfo.id),
-    redirect: "/",
+    redirect: "/dashboard",
     cookieSecure: cookieOptions.secure,
     cookieSameSite: cookieOptions.sameSite,
   });
 
   const origin = new URL(redirectUri).origin;
-  res.redirect(302, `${origin}/`);
+  res.redirect(302, `${origin}/dashboard`);
 }
 
 export function registerSocialOAuthRoutes(app: Express) {

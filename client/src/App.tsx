@@ -256,13 +256,6 @@ function TrainingModuleLoading() {
   );
 }
 
-function HomeRoute() {
-  const { user } = useAuth();
-  return user ? (
-    <Suspense fallback={<TrainingModuleLoading />}><Training /></Suspense>
-  ) : <Welcome />;
-}
-
 function Router() {
   return (
     <Switch>
@@ -290,7 +283,7 @@ function Router() {
           </Suspense>
         </ProtectedRoute>
       </Route>
-      <Route path={"/"} component={HomeRoute} />
+      <Route path={"/"} component={Welcome} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

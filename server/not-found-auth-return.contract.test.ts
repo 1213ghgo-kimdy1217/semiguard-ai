@@ -7,7 +7,7 @@ const notFoundSource = readFileSync(resolve(process.cwd(), "client/src/pages/Not
 describe("not-found authenticated return contract", () => {
   it("uses authentication state to choose the actual return route", () => {
     expect(notFoundSource).toContain('const { user } = useAuth();');
-    expect(notFoundSource).toContain('setLocation(user ? "/" : "/login");');
+    expect(notFoundSource).toContain('setLocation(user ? "/dashboard" : "/login");');
   });
 
   it("labels the unauthenticated return action in all supported languages", () => {

@@ -26,6 +26,7 @@
 .sg-button-primary:hover { background: #f0bc70; }
 .sg-text-link { display: inline-flex; align-items: center; gap: 12px; font-size: 12px; color: #c1c9c4; }
 .sg-quiet { margin-top: 17px; font-size: 10px; color: #89948f; }
+.sg-quiet a { color: #e4aa55; text-decoration: underline; text-underline-offset: 3px; }
 .sg-hero-visual { position: relative; align-self: stretch; display: flex; align-items: center; min-width: 0; }
 .sg-wafer { width: 100%; max-width: 620px; overflow: visible; }
 .sg-wafer-disc { transform-origin: 280px 280px; animation: sg-float 9s ease-in-out infinite; }

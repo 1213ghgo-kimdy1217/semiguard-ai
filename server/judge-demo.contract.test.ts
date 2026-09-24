@@ -18,7 +18,7 @@ describe("read-only judge demo contract", () => {
     );
     expect(appSource).toContain('<Route path={"/demo"}>');
     expect(appSource).toMatch(/<Route path=\{"\/dashboard"\}>\s*<ProtectedRoute>/);
-    expect(appSource).toContain('<Route path={"/"} component={HomeRoute} />');
+    expect(appSource).toContain('<Route path={"/"} component={Welcome} />');
   });
 
   it("guides judges through risk signal, sensor evidence, and recommended inspection steps", () => {

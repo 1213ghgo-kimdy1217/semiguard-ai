@@ -3558,9 +3558,9 @@ export default function Dashboard() {
 
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
-      <aside className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-600 bg-slate-900 px-5 py-3 text-sm text-slate-100" aria-label="자유 분석 안내">
-        <p>{lang === "ko" ? "실시간 자유 분석 · 기존 가상 센서 데모입니다. 식각 챔버 시나리오와 다른 데이터이며 훈련 채점은 하지 않습니다." : lang === "ja" ? "自由分析 · 既存の仮想センサーデモです。エッチング訓練とは異なるデータで、訓練の採点は行いません。" : "Free analysis · Legacy simulated sensors, separate from the etch scenario. This view does not grade training."}</p>
-        <Link href="/training" className="rounded border border-slate-400 px-3 py-2 text-white focus-visible:outline focus-visible:outline-2">{lang === "ko" ? "← 시나리오 훈련으로" : lang === "ja" ? "← シナリオ訓練へ" : "← Scenario training"}</Link>
+      <aside className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-300/25 bg-slate-900 px-5 py-4 text-sm text-slate-100" aria-label="대시보드와 학습 경로 안내">
+        <div><p className="mb-1 text-xs font-semibold tracking-[0.16em] text-amber-300">STEP 02 / DASHBOARD</p><p>{lang === "ko" ? "로그인 대시보드입니다. 아래는 기존 4센서 가상 데이터이며 식각 챔버 훈련과 별개입니다. 준비되면 연습 방식을 선택하세요." : lang === "ja" ? "ログイン済みダッシュボードです。以下は従来の4センサー仮想データで、エッチング訓練とは別です。準備ができたら練習方法を選んでください。" : "Signed-in dashboard. The four simulated sensors below are separate from etch training. Choose a practice mode when ready."}</p></div>
+        <Link href="/training" className="rounded border border-amber-300/70 bg-amber-300/10 px-4 py-2 font-semibold text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{lang === "ko" ? "시나리오·자유 분석 선택 →" : lang === "ja" ? "シナリオ・自由分析を選択 →" : "Choose scenario or free analysis →"}</Link>
       </aside>
       <a
         href="#dashboard-main"
