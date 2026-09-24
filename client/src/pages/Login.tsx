@@ -9,9 +9,11 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { WaferGraphic } from "./Welcome";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export function Login() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
   const loginLanguageOptions = ["ko", "en", "ja"] as const;
   const loginLanguageButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -179,6 +181,8 @@ export function Login() {
         capsLockWarning: "Caps Lockがオンになっています。",
         signingIn: "ログイン中…",
         signIn: "ログイン",
+        alreadySignedIn: "すでにログインしています。",
+        continueDashboard: "ダッシュボードへ進む",
         noAccount: "アカウントをお持ちでないですか?",
         signUp: "新規登録",
         linkedSocialLogin: "連携済みソーシャルアカウントでログイン",
@@ -205,6 +209,8 @@ export function Login() {
           capsLockWarning: "Caps Lock is on.",
           signingIn: "Signing in…",
           signIn: "Sign in",
+          alreadySignedIn: "You're already signed in.",
+          continueDashboard: "Continue to dashboard",
           noAccount: "Don't have an account?",
           signUp: "Sign up",
           linkedSocialLogin: "Sign in with a linked social account",
@@ -230,6 +236,8 @@ export function Login() {
           capsLockWarning: "Caps Lock이 켜져 있습니다.",
           signingIn: "로그인 중...",
           signIn: "로그인",
+          alreadySignedIn: "이미 로그인되어 있습니다.",
+          continueDashboard: "대시보드로 계속하기",
           noAccount: "계정이 없으신가요?",
           signUp: "회원가입",
           linkedSocialLogin: "연결된 소셜 계정으로 로그인",
@@ -417,6 +425,14 @@ export function Login() {
           )}
 
           {/* Login Form */}
+          {isAuthenticated && (
+            <div className="rounded-lg border border-cyan-400/40 bg-cyan-400/10 p-4 text-center text-sm text-cyan-100" role="status">
+              <p>{loginUi.alreadySignedIn}</p>
+              <Button type="button" onClick={() => setLocation("/dashboard")} className="mt-3 bg-cyan-500 font-bold text-slate-950 hover:bg-cyan-400">
+                {loginUi.continueDashboard}
+              </Button>
+            </div>
+          )}
           {accountServiceReady === false && <p role="status" className="rounded border border-amber-400/40 bg-amber-400/10 p-3 text-xs leading-6 text-amber-100">{loginLanguage === "ko" ? "계정 서비스 연결을 준비 중입니다. 현재는 공개 데모를 이용할 수 있습니다." : loginLanguage === "ja" ? "アカウント接続を準備中です。公開デモをご利用ください。" : "Account services are being connected. The public demo is available now."}</p>}
           <form onSubmit={handleLogin} className="space-y-4" aria-busy={isLoading}>
             {isLoading && <p id="login-submit-status" className="sr-only" role="status" aria-live="polite" aria-atomic="true">{loginUi.signingIn}</p>}

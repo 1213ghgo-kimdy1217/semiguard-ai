@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("public introduction to dashboard to training choice", () => {
+describe("public introduction to login to dashboard to training choice", () => {
   it("always starts at the introduction and keeps the dashboard protected", () => {
     const app = source("client/src/App.tsx");
     expect(app).toContain('<Route path={"/"} component={Welcome} />');
@@ -23,10 +23,14 @@ describe("public introduction to dashboard to training choice", () => {
 
   it("offers the next step in each screen without removing public previews", () => {
     const welcome = source("client/src/pages/Welcome.tsx");
+    const login = source("client/src/pages/Login.tsx");
     const dashboard = source("client/src/pages/Dashboard.tsx");
     const training = source("client/src/pages/EtchTraining.tsx");
-    expect(welcome).toContain('href="/dashboard">대시보드로 시작하기');
+    expect(welcome).toContain('href="/login">로그인하고 시작하기');
+    expect(welcome).not.toContain('href="/dashboard"');
     expect(welcome).toContain('href="/training">로그인 없이 미리보기');
+    expect(login).toContain('isAuthenticated &&');
+    expect(login).toContain('onClick={() => setLocation("/dashboard")}');
     expect(dashboard).toContain('href="/training"');
     expect(dashboard).toContain("시나리오·자유 분석 선택");
     expect(training).toContain("연습 방식을 선택하세요.");
