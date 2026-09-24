@@ -3559,7 +3559,7 @@ export default function Dashboard() {
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
       <aside className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-300/25 bg-slate-900 px-5 py-4 text-sm text-slate-100" aria-label="대시보드와 학습 경로 안내">
-        <div><p className="mb-1 text-xs font-semibold tracking-[0.16em] text-amber-300">STEP 02 / DASHBOARD</p><p>{lang === "ko" ? "로그인 대시보드입니다. 아래는 기존 4센서 가상 데이터이며 식각 챔버 훈련과 별개입니다. 준비되면 연습 방식을 선택하세요." : lang === "ja" ? "ログイン済みダッシュボードです。以下は従来の4センサー仮想データで、エッチング訓練とは別です。準備ができたら練習方法を選んでください。" : "Signed-in dashboard. The four simulated sensors below are separate from etch training. Choose a practice mode when ready."}</p></div>
+        <div><p className="mb-1 text-xs font-semibold tracking-[0.16em] text-amber-300">LEGACY / FOUR-SENSOR DASHBOARD</p><p>{lang === "ko" ? "기존 4센서 가상 데이터 화면이며 식각 챔버 훈련과 별개입니다. 새 연습은 선택 화면에서 시작하세요." : lang === "ja" ? "従来の4センサー仮想データ画面で、エッチング訓練とは別です。新しい練習は選択画面から始めてください。" : "This four-sensor simulation is separate from etch training. Start the new practice from the choice screen."}</p></div>
         <Link href="/training" className="rounded border border-amber-300/70 bg-amber-300/10 px-4 py-2 font-semibold text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{lang === "ko" ? "시나리오·자유 분석 선택 →" : lang === "ja" ? "シナリオ・自由分析を選択 →" : "Choose scenario or free analysis →"}</Link>
       </aside>
       <a

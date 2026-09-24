@@ -203,13 +203,13 @@ async function handleSocialLogin(
   console.info("[Social OAuth] Session established", {
     provider: userInfo.provider,
     hasProviderId: Boolean(userInfo.id),
-    redirect: "/dashboard",
+    redirect: "/training",
     cookieSecure: cookieOptions.secure,
     cookieSameSite: cookieOptions.sameSite,
   });
 
   const origin = new URL(redirectUri).origin;
-  res.redirect(302, `${origin}/dashboard`);
+  res.redirect(302, `${origin}/training`);
 }
 
 export function registerSocialOAuthRoutes(app: Express) {

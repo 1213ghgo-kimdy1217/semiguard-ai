@@ -152,7 +152,7 @@ describe("social OAuth callbacks", () => {
       const response = await requestCallback(provider, state, cookie);
 
       expect(response.status).toBe(302);
-      expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard");
+      expect(response.headers.get("location")).toBe("http://localhost:3000/training");
       expect(response.headers.get("set-cookie")).toContain(COOKIE_NAME);
       expect(db.getUserById).toHaveBeenCalledWith(42);
       expect(db.touchUser).toHaveBeenCalledWith(42);

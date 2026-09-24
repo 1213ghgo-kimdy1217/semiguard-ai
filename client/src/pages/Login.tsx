@@ -182,7 +182,7 @@ export function Login() {
         signingIn: "ログイン中…",
         signIn: "ログイン",
         alreadySignedIn: "すでにログインしています。",
-        continueDashboard: "ダッシュボードへ進む",
+        continuePractice: "練習方法を選ぶ",
         noAccount: "アカウントをお持ちでないですか?",
         signUp: "新規登録",
         linkedSocialLogin: "連携済みソーシャルアカウントでログイン",
@@ -210,7 +210,7 @@ export function Login() {
           signingIn: "Signing in…",
           signIn: "Sign in",
           alreadySignedIn: "You're already signed in.",
-          continueDashboard: "Continue to dashboard",
+          continuePractice: "Choose a practice mode",
           noAccount: "Don't have an account?",
           signUp: "Sign up",
           linkedSocialLogin: "Sign in with a linked social account",
@@ -237,7 +237,7 @@ export function Login() {
           signingIn: "로그인 중...",
           signIn: "로그인",
           alreadySignedIn: "이미 로그인되어 있습니다.",
-          continueDashboard: "대시보드로 계속하기",
+          continuePractice: "연습 방식 선택하기",
           noAccount: "계정이 없으신가요?",
           signUp: "회원가입",
           linkedSocialLogin: "연결된 소셜 계정으로 로그인",
@@ -334,7 +334,7 @@ export function Login() {
       toast.success(loginMessages.succeeded);
       // 캐시를 무효화하고 대시보드로 이동
       await utils.auth.me.invalidate();
-      window.location.href = "/dashboard";
+      window.location.href = "/training";
     } catch (error) {
       console.error("Login error:", error);
       setAuthError(loginMessages.failed);
@@ -428,8 +428,8 @@ export function Login() {
           {isAuthenticated && (
             <div className="rounded-lg border border-cyan-400/40 bg-cyan-400/10 p-4 text-center text-sm text-cyan-100" role="status">
               <p>{loginUi.alreadySignedIn}</p>
-              <Button type="button" onClick={() => setLocation("/dashboard")} className="mt-3 bg-cyan-500 font-bold text-slate-950 hover:bg-cyan-400">
-                {loginUi.continueDashboard}
+              <Button type="button" onClick={() => setLocation("/training")} className="mt-3 bg-cyan-500 font-bold text-slate-950 hover:bg-cyan-400">
+                {loginUi.continuePractice}
               </Button>
             </div>
           )}

@@ -24,7 +24,7 @@ const NOT_FOUND_COPY: Record<
     title: "페이지를 찾을 수 없습니다",
     description: "요청하신 페이지가 존재하지 않습니다.",
     moved: "주소가 변경되었거나 삭제되었을 수 있습니다.",
-    goHome: "대시보드로 이동",
+    goHome: "연습 방식 선택으로 이동",
     goLogin: "로그인으로 이동",
     goDemo: "심사위원 데모 열기",
   },
@@ -33,7 +33,7 @@ const NOT_FOUND_COPY: Record<
     title: "Page Not Found",
     description: "Sorry, the page you are looking for doesn't exist.",
     moved: "It may have been moved or deleted.",
-    goHome: "Go Home",
+    goHome: "Choose a practice mode",
     goLogin: "Go to Login",
     goDemo: "Open Judge Demo",
   },
@@ -42,7 +42,7 @@ const NOT_FOUND_COPY: Record<
     title: "ページが見つかりません",
     description: "お探しのページは存在しません。",
     moved: "ページのアドレスが変更または削除された可能性があります。",
-    goHome: "ダッシュボードへ移動",
+    goHome: "練習方法の選択へ",
     goLogin: "ログインへ移動",
     goDemo: "審査員デモを開く",
   },
@@ -73,7 +73,7 @@ export default function NotFound() {
   }, []);
 
   const handleGoHome = () => {
-    setLocation(user ? "/dashboard" : "/login");
+    setLocation(user ? "/training" : "/login");
   };
 
   const handleGoDemo = () => {

@@ -88,7 +88,7 @@ export default function Welcome() {
           <h1>이상 대응,<br /><span>판단하는 법을 훈련합니다.</span></h1>
           <p className="sg-intro">작은 센서 변화에서, 다음 확인까지.<br />반도체 장비의 이상 신호를 이해하는<br className="sg-mobile-break" /> 새로운 점검 경험.</p>
           <div className="sg-hero-actions"><Link className="sg-button sg-button-primary" href="/login">로그인하고 시작하기 <ArrowUpRight size={18} /></Link><a href="#workflow" className="sg-text-link">어떻게 작동하나요 <ArrowDown size={16} /></a></div>
-          <p className="sg-quiet">소개 → 로그인 → 대시보드 → 연습 방식 선택 · <Link href="/training">로그인 없이 미리보기</Link></p>
+          <p className="sg-quiet">소개 → 로그인 → 연습 방식 선택 · <Link href="/training">로그인 없이 미리보기</Link></p>
         </div>
         <div className="sg-hero-visual">
           <span className="sg-visual-index">FIG. 01 / SIGNAL OBSERVATION</span>
@@ -132,7 +132,7 @@ export default function Welcome() {
         ].map(([number, title, body]) => <article key={number}><span className="sg-mono">{number}</span><div><h3>{title}</h3><p>{body}</p></div><Check size={17} /></article>)}</div>
       </section>
 
-      <section className="sg-final-cta" data-reveal><p className="sg-eyebrow">YOUR NEXT CHECK STARTS HERE</p><h2>이제, 신호를<br /><span>직접 읽어보세요.</span></h2><Link href="/login" className="sg-button sg-button-primary">로그인하고 대시보드로 <ArrowUpRight size={20} /></Link><p>로그인 후 시나리오 훈련과 자유 분석 중 선택할 수 있습니다.</p></section>
+      <section className="sg-final-cta" data-reveal><p className="sg-eyebrow">YOUR NEXT CHECK STARTS HERE</p><h2>이제, 신호를<br /><span>직접 읽어보세요.</span></h2><Link href="/login" className="sg-button sg-button-primary">로그인하고 연습 선택하기 <ArrowUpRight size={20} /></Link><p>로그인 후 시나리오 훈련과 자유 분석 중 선택할 수 있습니다.</p></section>
       <footer className="sg-footer"><span>SemiGuard AI</span><p>반도체 장비 교육·점검 보조 시스템</p><Link href="/login">로그인 <ArrowUpRight size={14} /></Link></footer>
     </main>
   );
