@@ -15,7 +15,8 @@ describe("live observation integration", () => {
     expect(page).toContain("탭을 닫으면 사라질 수 있으니");
     expect(page).toContain("visibilitychange");
     expect(page).toContain("기록 파일 내려받기");
-    expect(page).toContain("같은 패턴");
+    expect(page).toContain("freeSignalSamples(selected, elapsed, seed, time)");
+    expect(page).toContain("실행마다 신호가 달라지는");
   });
   it("links training to the same equipment's live page", () => {
     const training = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");

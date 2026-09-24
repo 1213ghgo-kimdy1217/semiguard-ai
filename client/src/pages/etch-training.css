@@ -82,10 +82,20 @@
   background:#101816;border-color:#657367;color:#edf0eb;
 }
 .et-form input::placeholder,.et-form textarea::placeholder{color:#9aab9c}
+.sensor-file>label{display:block;margin:22px 0;color:#edf0eb;font-weight:600}
+.sensor-file input[type=file],.sensor-file select{display:block;width:100%;max-width:650px;margin-top:8px;padding:11px;border:1px solid #657367;border-radius:5px;background:#101816;color:#edf0eb;font:inherit}
+.sensor-file .et-chart{height:260px;margin:20px 0}
+.sensor-file .et-sensors{grid-template-columns:minmax(0,300px);margin-top:22px}
+.sensor-file .et-sensor{cursor:default}
+.sensor-file .et-form{margin:28px 0;max-width:none}
+.sensor-file-notes{padding-left:24px}
+.sensor-file-notes li{border-top:1px solid #435447;padding:16px 0;overflow-wrap:anywhere}
+.sensor-file :is(select,input[type=file]):focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
 .et-inspect{background:#1d2a24;border-color:#516454;color:#edf0eb}
 .et-inspect .et-table th,.et-inspect .et-table td{border-color:#516454}
 .et-marker-picker{border-color:#526255}
 .et-marker-picker input{accent-color:#e4aa55}
+.et-marker-picker input[type=number]{max-width:200px;min-height:44px;margin:8px 0 16px;padding:9px 12px;border:1px solid #657367;border-radius:5px;background:#101816;color:#edf0eb;font:inherit}
 .et-feedback{border-color:#435447}
 .et-good{background:#213b2f;color:#b8e2c3}
 .et-revisit{background:#413526;color:#f4cb8f}
