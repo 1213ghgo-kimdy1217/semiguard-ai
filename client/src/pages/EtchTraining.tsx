@@ -16,8 +16,8 @@ function readAttempt() {
 }
 const clock = (t: number) => `${Math.floor(t / 60).toString().padStart(2, "0")}:${(t % 60).toString().padStart(2, "0")}`;
 
-export function SignalChart({ signal, until, marker, review = false }: { signal: EtchSignal; until: number; marker: number | null; review?: boolean }) {
-  const samples = etchSamples(signal, until);
+export function SignalChart({ signal, until, marker, review = false, sampleStep = 1 }: { signal: EtchSignal; until: number; marker: number | null; review?: boolean; sampleStep?: number }) {
+  const samples = etchSamples(signal, until).filter(sample => sample.time % sampleStep === 0);
   const definition = etchSignals.find(s => s.id === signal)!;
   return <div className="et-chart" role="img" aria-label={`${definition.name}, ${clock(until)}까지의 가상 상대지수. 실선은 현재 기록, 점선은 같은 단계의 정상 참고 기록입니다. 상세 수치는 관측값 표에서 확인할 수 있습니다.`}>
     <ResponsiveContainer width="100%" height={240}>

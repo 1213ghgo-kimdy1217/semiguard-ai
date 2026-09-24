@@ -9,9 +9,9 @@ describe("dashboard document locale contract", () => {
     expect(dashboardSource).toContain('locale: "ko-KR"');
     expect(dashboardSource).toContain('locale: "en-US"');
     expect(dashboardSource).toContain('locale: "ja-JP"');
-    expect(dashboardSource).toContain('title: "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템"');
-    expect(dashboardSource).toContain('title: "SemiGuard AI | Read-Only Semiconductor Safety Dashboard"');
-    expect(dashboardSource).toContain('title: "SemiGuard AI｜半導体設備の読み取り専用予知安全ダッシュボード"');
+    expect(dashboardSource).toContain('title: "SemiGuard AI | 기존 4센서 가상 데이터 화면"');
+    expect(dashboardSource).toContain('title: "SemiGuard AI | Legacy Four-Sensor Simulation"');
+    expect(dashboardSource).toContain('title: "SemiGuard AI｜旧4センサーシミュレーション"');
     expect(dashboardSource).toContain("metaDesc.setAttribute('content', metadata.description);");
     expect(dashboardSource).toContain("metaKw.setAttribute('content', metadata.keywords);");
     expect(dashboardSource).toContain("document.documentElement.lang = metadata.locale;");

@@ -11,6 +11,7 @@ import { useAuth } from "./_core/hooks/useAuth";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const EtchOperations = lazy(() => import("./pages/EtchOperations"));
 const EtchLive = lazy(() => import("./pages/EtchLive"));
 const LearningHub = lazy(() => import("./pages/LearningHub"));
 const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));
@@ -256,6 +257,11 @@ function TrainingModuleLoading() {
   );
 }
 
+function OperationsForCurrentUser() {
+  const { user } = useAuth();
+  return user ? <EtchOperations key={user.id} userId={user.id} /> : null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -276,10 +282,17 @@ function Router() {
           <JudgeDemo />
         </Suspense>
       </Route>
-      <Route path={"/dashboard"}>
+      <Route path={"/dashboard/legacy"}>
         <ProtectedRoute>
           <Suspense fallback={<DashboardModuleLoading />}>
             <Dashboard />
+          </Suspense>
+        </ProtectedRoute>
+      </Route>
+      <Route path={"/dashboard"}>
+        <ProtectedRoute>
+          <Suspense fallback={<DashboardModuleLoading />}>
+            <OperationsForCurrentUser />
           </Suspense>
         </ProtectedRoute>
       </Route>

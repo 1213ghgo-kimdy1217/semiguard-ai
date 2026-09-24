@@ -57,7 +57,7 @@ export default function EtchLive() {
   }
   return <div className="et-app">
     <a className="et-skip" href="#live-main">자유 관찰 내용으로 이동</a>
-    <header className="et-header"><a className="et-brand" href="/training"><b>SG</b> SemiGuard</a><nav aria-label="제품 메뉴"><a href="/learn">8대 공정 학습</a><a href="/training">시나리오 훈련</a><a href="/dashboard">기존 4센서 데모</a></nav></header>
+    <header className="et-header"><a className="et-brand" href="/training"><b>SG</b> SemiGuard</a><nav aria-label="제품 메뉴"><a href="/learn">8대 공정 학습</a><a href="/training">시나리오 훈련</a><a href="/dashboard">장비 관찰 작업대</a></nav></header>
     <main id="live-main" className="et-main">
       <div className="et-meta"><span>LIVE LAB / PLASMA ETCH</span><span>교육용 가상 장비 · 실제 제어 없음</span></div>
       <div className="et-workhead"><div><h1>식각 챔버 자유 관찰</h1><p>정답 제출 없이 신호를 비교하고, 여러 시점의 근거를 기록하세요.</p></div><div className="et-clock"><strong>{clock(elapsed)}</strong><span>{elapsed === ETCH_DURATION ? "실행 완료" : active ? "1초마다 갱신 중" : elapsed === 0 ? "시작 전" : "일시정지"}</span></div></div>

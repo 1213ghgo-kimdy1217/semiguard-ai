@@ -2725,22 +2725,22 @@ export default function Dashboard() {
     const metadata = lang === "ja"
       ? {
           locale: "ja-JP",
-          title: "SemiGuard AI｜半導体設備の読み取り専用予知安全ダッシュボード",
-          description: "SemiGuard AIは半導体設備の電流・温度・振動・騒音の変化をz-scoreベースのリスクスコアで整理し、センサー根拠とAI補助点検説明を提供する読み取り専用の予知安全システムです。",
-          keywords: "SemiGuard AI,半導体予知保全,異常検知,センサーモニタリング,予知安全システム",
+          title: "SemiGuard AI｜旧4センサーシミュレーション",
+          description: "電流・温度・振動・騒音の仮想データを表示する旧ダッシュボードです。リスクスコアはルールベースで、実設備の制御や性能検証は行っていません。",
+          keywords: "SemiGuard AI,旧ダッシュボード,仮想センサーデータ",
         }
       : lang === "en"
         ? {
             locale: "en-US",
-            title: "SemiGuard AI | Read-Only Semiconductor Safety Dashboard",
-            description: "SemiGuard AI organizes current, temperature, vibration, and noise deviations into z-score risk scores, connecting sensor evidence with AI-assisted inspection guidance in a read-only semiconductor safety dashboard.",
-            keywords: "SemiGuard AI, semiconductor predictive maintenance, anomaly detection, sensor monitoring, safety dashboard",
+            title: "SemiGuard AI | Legacy Four-Sensor Simulation",
+            description: "Legacy dashboard with simulated current, temperature, vibration, and noise data. Risk scores are rule-based; no equipment control or fab performance has been validated.",
+            keywords: "SemiGuard AI, legacy dashboard, simulated sensor data",
           }
         : {
             locale: "ko-KR",
-            title: "SemiGuard AI - 반도체 장비 실시간 AI 예지보전 및 이상탐지 시스템",
-            description: "SemiGuard AI는 반도체 장비의 전류·온도·진동·소음 편차를 z-score 기반 위험 점수로 정리하고, 센서 근거와 AI 보조 점검 설명을 제공하는 읽기 전용 예지안전 시스템입니다.",
-            keywords: "SemiGuard AI, 반도체 예지보전, 이상탐지, 센서 모니터링, 예지안전 시스템",
+            title: "SemiGuard AI | 기존 4센서 가상 데이터 화면",
+            description: "전류·온도·진동·소음의 가상 데이터를 보여주는 기존 화면입니다. z-score 기반 위험 점수는 규칙으로 계산하며 실제 설비 제어·현장 성능 검증은 하지 않았습니다.",
+            keywords: "SemiGuard AI, 기존 대시보드, 가상 센서 데이터",
           };
 
     document.title = metadata.title;
@@ -3559,8 +3559,8 @@ export default function Dashboard() {
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
       <aside className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-300/25 bg-slate-900 px-5 py-4 text-sm text-slate-100" aria-label="대시보드와 학습 경로 안내">
-        <div><p className="mb-1 text-xs font-semibold tracking-[0.16em] text-amber-300">LEGACY / FOUR-SENSOR DASHBOARD</p><p>{lang === "ko" ? "기존 4센서 가상 데이터 화면이며 식각 챔버 훈련과 별개입니다. 새 연습은 선택 화면에서 시작하세요." : lang === "ja" ? "従来の4センサー仮想データ画面で、エッチング訓練とは別です。新しい練習は選択画面から始めてください。" : "This four-sensor simulation is separate from etch training. Start the new practice from the choice screen."}</p></div>
-        <Link href="/training" className="rounded border border-amber-300/70 bg-amber-300/10 px-4 py-2 font-semibold text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{lang === "ko" ? "시나리오·자유 분석 선택 →" : lang === "ja" ? "シナリオ・自由分析を選択 →" : "Choose scenario or free analysis →"}</Link>
+        <div><p className="mb-1 text-xs font-semibold tracking-[0.16em] text-amber-300">LEGACY / FOUR-SENSOR DASHBOARD</p><p>{lang === "ko" ? "기존 4센서 가상 데이터와 계정·과거 기록을 보관한 화면입니다. 새 장비 관찰은 별도 작업대에서 시작하세요." : lang === "ja" ? "従来の4センサー仮想データとアカウント・過去の記録を残した画面です。新しい観察は専用画面から始めてください。" : "This legacy simulation preserves account settings and past records. Start the new observation in its dedicated workspace."}</p></div>
+        <div className="flex flex-wrap gap-2"><Link href="/dashboard" className="rounded border border-amber-300/70 bg-amber-300/10 px-4 py-2 font-semibold text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{lang === "ko" ? "장비 관찰 작업대로 →" : lang === "ja" ? "装置観察画面へ →" : "Open observation workspace →"}</Link><Link href="/training" className="rounded border border-amber-300/70 bg-amber-300/10 px-4 py-2 font-semibold text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{lang === "ko" ? "시나리오·자유 분석 선택 →" : lang === "ja" ? "シナリオ・自由分析を選択 →" : "Choose scenario or free analysis →"}</Link></div>
       </aside>
       <a
         href="#dashboard-main"

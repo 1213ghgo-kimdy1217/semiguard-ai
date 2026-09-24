@@ -1,0 +1,28 @@
+.op-app .et-main{max-width:1440px}
+.op-app .et-workhead{align-items:flex-end;margin:26px 0 18px}
+.op-app .et-workhead h1{margin:4px 0 10px}
+.op-app .et-lead{max-width:750px;margin:0}
+.op-context{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#3e4b42;border:1px solid #3e4b42;border-radius:7px;overflow:hidden;margin:28px 0}
+.op-context>div{background:#1a2521;padding:18px 22px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.op-label{font:600 11px/1.5 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#d7af73}
+.op-context strong{font-size:18px;font-weight:560;overflow-wrap:anywhere}
+.op-context small{font-size:12px;color:#aebdb1}
+.op-grid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,1fr);gap:20px;align-items:start;margin-bottom:20px}
+.op-monitor{min-width:0}
+.op-app .et-sensors{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:18px}
+.op-app .et-sensor{display:flex;flex-direction:column;min-width:0}
+.op-app .et-sensor strong{font-size:25px;margin:4px 0}
+.op-app .et-sensor em{font-size:12px;font-style:normal;font-weight:650;margin-top:8px}
+.op-within{color:#b2d6bb}.op-outside{color:#f3bd86}
+.op-section-head{display:flex;justify-content:space-between;align-items:start;gap:14px}
+.op-evidence h2:not(:first-of-type){border-top:1px solid #3b4a3e;padding-top:18px;margin-top:24px}
+.op-evidence ol{padding-left:20px}.op-evidence li{margin:10px 0}
+.op-evidence .et-table{margin:22px 0}.op-evidence table{font-size:12px}
+.op-evidence caption{text-align:left;color:#b8c8b9;margin-bottom:8px}
+.op-notes{margin-top:20px}.op-notes .et-form{max-width:none;margin:0}
+.op-history{padding-left:22px}.op-history li{padding:0 0 18px;border-bottom:1px solid #425348;margin-bottom:18px}
+.op-history p{margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere}.op-history b{color:#e3ba7e}
+.op-message{padding:15px 18px;border:1px solid #876d45;background:#2a2920;color:#efddbf;border-radius:6px;margin:20px 0}
+.op-message a{color:#f3c988;text-decoration:underline}
+@media(max-width:1040px){.op-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.op-context{grid-template-columns:1fr}.op-app .et-workhead{align-items:start}.op-app .et-sensors{grid-template-columns:1fr}.op-app .et-clock{text-align:left}.op-section-head{display:block}}
