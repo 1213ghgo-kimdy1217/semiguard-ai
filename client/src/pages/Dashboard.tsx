@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
@@ -3558,6 +3558,10 @@ export default function Dashboard() {
 
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
+      <aside className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-600 bg-slate-900 px-5 py-3 text-sm text-slate-100" aria-label="자유 분석 안내">
+        <p>{lang === "ko" ? "실시간 자유 분석 · 기존 가상 센서 데모입니다. 식각 챔버 시나리오와 다른 데이터이며 훈련 채점은 하지 않습니다." : lang === "ja" ? "自由分析 · 既存の仮想センサーデモです。エッチング訓練とは異なるデータで、訓練の採点は行いません。" : "Free analysis · Legacy simulated sensors, separate from the etch scenario. This view does not grade training."}</p>
+        <Link href="/training" className="rounded border border-slate-400 px-3 py-2 text-white focus-visible:outline focus-visible:outline-2">{lang === "ko" ? "← 시나리오 훈련으로" : lang === "ja" ? "← シナリオ訓練へ" : "← Scenario training"}</Link>
+      </aside>
       <a
         href="#dashboard-main"
         className="sr-only z-[1200] rounded-b-lg bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 focus:not-sr-only focus:absolute focus:left-4 focus:top-0 focus:outline-none focus:ring-2 focus:ring-cyan-100"

@@ -11,8 +11,10 @@ import { useAuth } from "./_core/hooks/useAuth";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const EtchLive = lazy(() => import("./pages/EtchLive"));
+const LearningHub = lazy(() => import("./pages/LearningHub"));
 const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));
-const Training = lazy(() => import("./pages/Training"));
+const Training = lazy(() => import("./pages/EtchTraining"));
 
 type LoadingLanguage = "ko" | "en" | "ja";
 type LoadingCopy = {
@@ -243,18 +245,35 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function TrainingModuleLoading() {
+  return (
+    <div role="status" aria-live="polite" className="flex min-h-screen items-center justify-center bg-[#101516] px-6 text-[#edf0eb]">
+      <div className="border-l-2 border-[#e4aa55] pl-5">
+        <p className="mb-2 font-mono text-xs tracking-[0.18em] text-[#e4aa55]">SEMIGUARD / TRAINING</p>
+        <p className="text-lg">학습 화면을 불러오는 중입니다.</p>
+      </div>
+    </div>
+  );
+}
+
 function HomeRoute() {
   const { user } = useAuth();
   return user ? (
-    <Suspense fallback={<DashboardModuleLoading />}><Training /></Suspense>
+    <Suspense fallback={<TrainingModuleLoading />}><Training /></Suspense>
   ) : <Welcome />;
 }
 
 function Router() {
   return (
     <Switch>
+      <Route path={"/live"}>
+        <Suspense fallback={<TrainingModuleLoading />}><EtchLive /></Suspense>
+      </Route>
+      <Route path={"/learn"}>
+        <Suspense fallback={<TrainingModuleLoading />}><LearningHub /></Suspense>
+      </Route>
       <Route path={"/training"}>
-        <Suspense fallback={<DashboardModuleLoading />}><Training /></Suspense>
+        <Suspense fallback={<TrainingModuleLoading />}><Training /></Suspense>
       </Route>
       <Route path={"/signup"} component={Signup} />
       <Route path={"/login"} component={Login} />
