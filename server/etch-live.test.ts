@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addLiveNote } from "../shared/etchLive";
+import { addLiveNote, emptyLiveSession, restoreLiveSession } from "../shared/etchLive";
 
 describe("free observation notes", () => {
   it("keeps selected time separate from recording time and permits repeated notes", () => {
@@ -21,5 +21,30 @@ describe("free observation notes", () => {
     expect(addLiveNote(notes, 0, 0, "pressure", "초과")).toBe(notes);
     const next = addLiveNote(notes.slice(1), 0, 0, "pressure", "새 기록");
     expect(next.at(-1)?.id).toBe(31);
+  });
+});
+
+describe("free observation tab session", () => {
+  it("restores a bounded run and its notes after a page reload", () => {
+    const notes = addLiveNote([], 70, 95, "pressure", "같은 단계의 압력 기록을 비교합니다.");
+    const session = { version: 1, elapsed: 95, selected: "pressure", inspection: 70, notes };
+    expect(restoreLiveSession(JSON.stringify(session))).toEqual(session);
+    expect(emptyLiveSession()).toEqual({ version: 1, elapsed: 0, selected: "pressure", inspection: null, notes: [] });
+  });
+
+  it("rejects malformed or future observations instead of restoring them", () => {
+    const valid = { version: 1, elapsed: 95, selected: "pressure", inspection: 70, notes: addLiveNote([], 70, 95, "pressure", "근거") };
+    for (const invalid of [
+      null,
+      "not json",
+      JSON.stringify({ ...valid, version: 2 }),
+      JSON.stringify({ ...valid, elapsed: 181 }),
+      JSON.stringify({ ...valid, selected: "unknown" }),
+      JSON.stringify({ ...valid, inspection: 96 }),
+      JSON.stringify({ ...valid, notes: [{ ...valid.notes[0], time: 96 }] }),
+      JSON.stringify({ ...valid, notes: [{ ...valid.notes[0], recordedAt: 69 }] }),
+      JSON.stringify({ ...valid, notes: [valid.notes[0], valid.notes[0]] }),
+      JSON.stringify({ ...valid, notes: [{ ...valid.notes[0], text: " " }] }),
+    ]) expect(restoreLiveSession(invalid)).toBeNull();
   });
 });

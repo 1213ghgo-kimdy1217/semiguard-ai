@@ -1,25 +1,35 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ETCH_DURATION, etchSignals, etchSample, etchPhase, type EtchSignal } from "../../../shared/etchScenario";
-import { addLiveNote, type LiveNote } from "../../../shared/etchLive";
+import { addLiveNote, emptyLiveSession, restoreLiveSession, type LiveNote } from "../../../shared/etchLive";
 import { SignalChart, EvidenceSnapshot } from "./EtchTraining";
 import "./etch-training.css";
 
 const clock = (t: number) => `${Math.floor(t / 60).toString().padStart(2, "0")}:${(t % 60).toString().padStart(2, "0")}`;
+const STORAGE_KEY = "semiguard-etch-live-v1";
 
 export default function EtchLive() {
-  const [elapsed, setElapsed] = useState(0);
+  const [initial] = useState(() => {
+    try { return restoreLiveSession(sessionStorage.getItem(STORAGE_KEY)) ?? emptyLiveSession(); }
+    catch { return emptyLiveSession(); }
+  });
+  const [elapsed, setElapsed] = useState(initial.elapsed);
   const [running, setRunning] = useState(false);
-  const [selected, setSelected] = useState<EtchSignal>("pressure");
-  const [inspection, setInspection] = useState<number | null>(null);
-  const [notes, setNotes] = useState<LiveNote[]>([]);
+  const [selected, setSelected] = useState<EtchSignal>(initial.selected);
+  const [inspection, setInspection] = useState<number | null>(initial.inspection);
+  const [notes, setNotes] = useState<LiveNote[]>(initial.notes);
   const [draft, setDraft] = useState("");
   const [notice, setNotice] = useState("");
+  const [storageWarning, setStorageWarning] = useState("");
   const [resetPrompt, setResetPrompt] = useState(false);
   const time = inspection ?? elapsed;
   const active = running && elapsed < ETCH_DURATION;
   const signal = etchSignals.find(s => s.id === selected)!;
   useEffect(() => { document.title = "SemiGuard — 식각 챔버 자유 관찰"; }, []);
+  useEffect(() => {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, elapsed, selected, inspection, notes })); }
+    catch { setStorageWarning("이 브라우저에서는 임시 저장을 사용할 수 없습니다. 화면을 떠나기 전에 기록 파일을 내려받으세요."); }
+  }, [elapsed, selected, inspection, notes]);
   useEffect(() => {
     if (!active) return;
     const id = window.setInterval(() => setElapsed(t => Math.min(ETCH_DURATION, t + 1)), 1000);
@@ -33,11 +43,11 @@ export default function EtchLive() {
   }, [active]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (notes.length || draft.trim()) { event.preventDefault(); event.returnValue = ""; }
+      if (draft.trim()) { event.preventDefault(); event.returnValue = ""; }
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [notes.length, draft]);
+  }, [draft]);
   function exportNotes() {
     const data = { kind: "semiguard-etch-free-observation", version: 1, simulated: true, elapsed, notes };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
@@ -52,13 +62,14 @@ export default function EtchLive() {
       <div className="et-meta"><span>LIVE LAB / PLASMA ETCH</span><span>교육용 가상 장비 · 실제 제어 없음</span></div>
       <div className="et-workhead"><div><h1>식각 챔버 자유 관찰</h1><p>정답 제출 없이 신호를 비교하고, 여러 시점의 근거를 기록하세요.</p></div><div className="et-clock"><strong>{clock(elapsed)}</strong><span>{elapsed === ETCH_DURATION ? "실행 완료" : active ? "1초마다 갱신 중" : elapsed === 0 ? "시작 전" : "일시정지"}</span></div></div>
       <p className="et-caption">Scenario 01과 같은 180초 가상 신호를 별도로 재생합니다. 훈련 이어하기가 아니며 매번 같은 패턴입니다. 새로운 문제·실제 장비 스트림·AI 채점이 아닙니다.</p>
-      <p className="et-storage">기록은 이 화면을 떠나거나 새로고침하면 사라집니다. 이동 전에 기록 파일을 내려받으세요. 훈련 답안은 변경하지 않습니다.</p>
+      <p className="et-storage">실행과 메모는 현재 브라우저 탭에 임시 저장되어 새로고침하거나 다른 화면에 다녀와도 유지됩니다. 탭을 닫으면 사라질 수 있으니 필요한 기록은 파일로 내려받으세요. 계정 저장·기기 간 동기화는 지원하지 않으며 훈련 답안은 변경하지 않습니다.</p>
+      {storageWarning ? <p role="alert" className="et-storage">{storageWarning}</p> : null}
       <div className="et-actions">
         <Button className="et-primary" disabled={elapsed === ETCH_DURATION} onClick={() => setRunning(v => !v)}>{active ? "일시정지" : elapsed === 0 ? "관찰 시작" : "재개"}</Button>
         <Button variant="outline" onClick={() => { setRunning(false); setResetPrompt(true); }}>처음부터 다시</Button>
         <Button variant="outline" disabled={!notes.length} onClick={exportNotes}>기록 파일 내려받기</Button>
       </div>
-      {resetPrompt ? <section className="et-panel" aria-label="다시 시작 확인"><p>현재 실행과 메모 {notes.length}개를 지우고 다시 시작할까요? 기존 시나리오 답안은 유지됩니다.</p><div className="et-actions"><Button onClick={() => { setElapsed(0); setInspection(null); setNotes([]); setDraft(""); setResetPrompt(false); setNotice("새 관찰을 준비했습니다."); }}>기록 지우고 다시 준비</Button><Button variant="outline" onClick={() => setResetPrompt(false)}>취소</Button></div></section> : null}
+      {resetPrompt ? <section className="et-panel" aria-label="다시 시작 확인"><p>현재 실행과 메모 {notes.length}개를 지우고 다시 시작할까요? 기존 시나리오 답안은 유지됩니다.</p><div className="et-actions"><Button onClick={() => { setElapsed(0); setSelected("pressure"); setInspection(null); setNotes([]); setDraft(""); setResetPrompt(false); setNotice("새 관찰을 준비했습니다."); }}>기록 지우고 다시 준비</Button><Button variant="outline" onClick={() => setResetPrompt(false)}>취소</Button></div></section> : null}
       <section className="et-monitor" aria-label="식각 센서 모니터">
         <div className="et-sensors">{etchSignals.map(s => { const p = etchSample(s.id, time); return <button className="et-sensor" key={s.id} aria-pressed={selected === s.id} onClick={() => setSelected(s.id)}><span>{s.name}</span><strong>{p.value.toFixed(1)} <small>상대지수</small></strong><span>단계 {p.phase} 기준 {p.low}–{p.high}</span></button>; })}</div>
         <h2>{signal.name} · {clock(time)} · 단계 {etchPhase(time)}</h2><p className="et-caption">{signal.location}</p>

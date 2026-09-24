@@ -9,6 +9,9 @@ describe("live observation integration", () => {
     const page = readFileSync("client/src/pages/EtchLive.tsx", "utf8");
     expect(page).not.toContain("ETCH_STORAGE_KEY");
     expect(page).not.toContain("localStorage");
+    expect(page).toContain("restoreLiveSession(sessionStorage.getItem(STORAGE_KEY))");
+    expect(page).toContain("sessionStorage.setItem(STORAGE_KEY");
+    expect(page).toContain("탭을 닫으면 사라질 수 있으니");
     expect(page).toContain("visibilitychange");
     expect(page).toContain("기록 파일 내려받기");
     expect(page).toContain("같은 패턴");
