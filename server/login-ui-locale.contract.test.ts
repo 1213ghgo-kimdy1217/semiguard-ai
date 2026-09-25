@@ -6,7 +6,7 @@ const loginSource = readFileSync(resolve(process.cwd(), "client/src/pages/Login.
 
 describe("login UI locale contract", () => {
   it("provides Japanese and English text for the static login UI", () => {
-    expect(loginSource).toContain('subtitle: "半導体装置予知安全システム"');
+    expect(loginSource).toContain('subtitle: "半導体装置の信号判断訓練"');
     expect(loginSource).toContain('employeeLogin: "Badge number sign-in"');
     expect(loginSource).toContain('googleLogin: "Googleでログイン"');
     expect(loginSource).toContain('naverLogin: "Continue with Naver"');

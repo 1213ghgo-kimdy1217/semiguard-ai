@@ -28,9 +28,9 @@ describe("product-scope copy contract", () => {
     expect(dashboardSource).not.toContain("handleResetCost");
     expect(dashboardSource).not.toContain("displayedSavedCost");
     expect(dashboardSource).not.toContain("Isolation Forest AI");
-    expect(loginSource).toContain("z-score 기반 위험 신호");
-    expect(loginSource).toContain("z-score risk signals");
-    expect(loginSource).toContain("z-scoreベースの危険信号");
+    expect(loginSource).toContain("가상 센서 신호와 규칙 기반 위험 점수");
+    expect(loginSource).toContain("synthetic sensor signals and rule-based risk scores");
+    expect(loginSource).toContain("仮想センサー信号とルールベースのリスク点数");
     expect(loginSource).not.toContain("Isolation Forest AI");
     expect(routerSource).toContain("위험 점수는 이미 규칙으로 계산되었으며 AI가 다시 산정하지 않습니다");
     expect(routerSource).toContain("실제 설비 제어, 정지, 분해 또는 현장 조작 방법은 제시하지 마세요");

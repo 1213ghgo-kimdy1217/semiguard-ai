@@ -22,6 +22,15 @@ describe("signup locale contract", () => {
     expect(signupSource).toContain("toast.success(copy.success);");
   });
 
+  it("describes sensor-reasoning practice without predictive-safety claims in all three languages", () => {
+    expect(signupSource).toContain('pageTitle: "SemiGuard AI | 센서 판단 훈련 회원가입"');
+    expect(signupSource).toContain('pageTitle: "SemiGuard AI | Sensor reasoning training sign up"');
+    expect(signupSource).toContain('pageTitle: "SemiGuard AI | 信号判断訓練のアカウント登録"');
+    expect(signupSource).not.toContain("예지안전");
+    expect(signupSource).not.toContain("predictive safety");
+    expect(signupSource).not.toContain("予知安全");
+  });
+
   it("guides mobile keyboards through the registration fields in order", () => {
     expect(signupSource).toContain('id="badgeNumber" name="badgeNumber" type="text"');
     expect(signupSource).toContain('inputMode="text" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next"');

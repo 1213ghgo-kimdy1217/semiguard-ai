@@ -11,9 +11,10 @@ describe("loading brand identity contract", () => {
     expect((appSource.match(/<LoadingBrand context=/g) ?? [])).toHaveLength(2);
   });
 
-  it("provides Korean, English, and Japanese predictive-safety context", () => {
-    expect(appSource).toContain("반도체 장비 예지안전 시스템");
-    expect(appSource).toContain("Semiconductor equipment predictive safety system");
-    expect(appSource).toContain("半導体装置の予知安全システム");
+  it("provides Korean, English, and Japanese sensor-reasoning context", () => {
+    expect(appSource).toContain("반도체 장비 센서 판단 교육·점검 보조");
+    expect(appSource).toContain("Semiconductor sensor reasoning and inspection aid");
+    expect(appSource).toContain("半導体装置の信号判断学習・点検支援");
+    expect(appSource).not.toContain("predictive safety system");
   });
 });
