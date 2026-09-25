@@ -26,9 +26,9 @@ describe("public introduction to login to training choice", () => {
     const login = source("client/src/pages/Login.tsx");
     const dashboard = source("client/src/pages/Dashboard.tsx");
     const training = source("client/src/pages/EtchTraining.tsx");
-    expect(welcome).toContain('href="/login">로그인하고 시작하기');
+    expect(welcome).toContain('href="/login">{t.start}');
     expect(welcome).not.toContain('href="/dashboard"');
-    expect(welcome).toContain('href="/training">로그인 없이 미리보기');
+    expect(welcome).toContain('href="/training">{t.preview}');
     expect(login).toContain('isAuthenticated &&');
     expect(login).toContain('onClick={() => setLocation("/training")}');
     expect(dashboard).toContain('href="/training"');

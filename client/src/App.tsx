@@ -8,6 +8,7 @@ import { Login } from "./pages/Login";
 import Signup from "./pages/Signup";
 import Welcome from "./pages/Welcome";
 import { useAuth } from "./_core/hooks/useAuth";
+import { readProductLanguage, tr } from "./lib/productLanguage";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -247,11 +248,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function TrainingModuleLoading() {
+  const language = readProductLanguage();
   return (
     <div role="status" aria-live="polite" className="flex min-h-screen items-center justify-center bg-[#101516] px-6 text-[#edf0eb]">
       <div className="border-l-2 border-[#e4aa55] pl-5">
         <p className="mb-2 font-mono text-xs tracking-[0.18em] text-[#e4aa55]">SEMIGUARD / TRAINING</p>
-        <p className="text-lg">학습 화면을 불러오는 중입니다.</p>
+        <p className="text-lg">{tr(language, "학습 화면을 불러오는 중입니다.", "Loading the learning workspace.", "学習画面を読み込み中です。")}</p>
       </div>
     </div>
   );
