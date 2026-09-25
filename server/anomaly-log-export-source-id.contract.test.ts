@@ -14,7 +14,7 @@ describe("anomaly-log export source traceability", () => {
 
   it("states that period aggregates do not contain individual log IDs in Korean, English, and Japanese", () => {
     expect(dashboard).toContain("개별 관측 로그 ID는 이상 이력 CSV에서 확인할 수 있습니다");
-    expect(dashboard).toContain("individual observation log IDs are available in the anomaly-history CSV");
+    expect(dashboard).toContain("Individual observation log IDs are available in the anomaly-history CSV");
     expect(dashboard).toContain("個別の観測ログIDは異常履歴CSVで確認できます");
   });
 });

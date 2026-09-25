@@ -11,9 +11,9 @@ describe("dashboard statistics initial-loading contract", () => {
     expect(dashboardSource).toContain("isLoading={statsInitialLoading}");
   });
 
-  it("keeps KPI and savings cards accessible while statistics are pending", () => {
+  it("keeps observation KPI cards accessible while statistics are pending", () => {
     expect(dashboardSource).toContain('aria-busy={isLoading || undefined}');
     expect(dashboardSource).toContain('{isLoading ? "—"');
-    expect(dashboardSource).toContain("periodOverviewQuery.isError || statsInitialLoading ? \"—\"");
+    expect(dashboardSource).toContain('periodOverviewQuery.isError || !selectedPeriodStats?.totalDetections ? "—"');
   });
 });

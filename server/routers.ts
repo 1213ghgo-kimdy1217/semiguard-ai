@@ -85,24 +85,22 @@ function buildEvidenceGate(sensorContext: {
 }
 
 function formatEvidenceGate(gate: ReturnType<typeof buildEvidenceGate>, lang: ChatLanguage) {
-  if (lang === "ko") return `\n\n---\n**[서버 검증 게이트]**\n- **근거 센서:** ${gate.evidence.join(" · ")}\n- **신뢰도:** ${gate.confidence} — 현재 실시간 수치와 규칙 기반 위험 점수에 근거함\n- **추가 확인 필요:** ${gate.followUp}`;
-  if (lang === "ja") return `\n\n---\n**[サーバー検証ゲート]**\n- **根拠センサー:** ${gate.evidence.join(" · ")}\n- **信頼度:** ${gate.confidence} — 現在の実測値とルールベースのリスクスコアに基づく\n- **追加確認事項:** ${gate.followUp}`;
-  return `\n\n---\n**[Server Validation Gate]**\n- **Evidence sensors:** ${gate.evidence.join(" · ")}\n- **Confidence:** ${gate.confidence} — based on live measurements and the rule-based risk score\n- **Further verification:** ${gate.followUp}`;
+  if (lang === "ko") return `\n\n---\n**[규칙 근거 확인]**\n- **근거 센서:** ${gate.evidence.join(" · ")}\n- **근거 수준:** ${gate.confidence} — 교육용 가상 수치와 규칙 기반 점수의 설명 범위이며 진단 신뢰도가 아님\n- **추가 확인 필요:** ${gate.followUp}`;
+  if (lang === "ja") return `\n\n---\n**[ルール根拠の確認]**\n- **根拠センサー:** ${gate.evidence.join(" · ")}\n- **根拠の範囲:** ${gate.confidence} — 教育用の仮想値とルールベースのスコアに基づき、診断の信頼度ではありません\n- **追加確認事項:** ${gate.followUp}`;
+  return `\n\n---\n**[Rule Evidence Check]**\n- **Evidence sensors:** ${gate.evidence.join(" · ")}\n- **Evidence scope:** ${gate.confidence} — based on synthetic values and rule-based scores, not diagnostic confidence\n- **Further verification:** ${gate.followUp}`;
 }
 
 function buildSafeFallbackDiagnostic(sensorContext: {
   current: number; temperature: number; vibration: number; noise: number; anomalyScore: number; riskLevel: string;
 }, lang: ChatLanguage) {
   const gate = buildEvidenceGate(sensorContext, lang);
-  const requiresUrgentReview = sensorContext.anomalyScore >= 70;
-
   if (lang === "ko") {
-    return `**[기본 안전 진단]**\nAI 상담 서비스를 일시적으로 사용할 수 없어, 현재 실시간 센서와 규칙 기반 위험 판정으로 안전 진단을 제공합니다.\n\n**[현재 상태]**\n- 규칙 기반 위험 단계: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- 주요 편차: ${gate.evidence.join(" · ")}\n\n**[권장 조치]**\n1. ${requiresUrgentReview ? "현장 담당자에게 즉시 보고하고, 규정된 안전 절차에 따라 점검 준비를 진행하세요." : "최근 추이와 설비 점검 이력을 확인한 뒤, 다음 정기 점검에서 주요 편차 센서를 우선 확인하세요."}\n2. 현재 수치만으로 고장 원인을 단정하지 말고, 관련 매뉴얼과 현장 점검 결과를 함께 확인하세요.${formatEvidenceGate(gate, lang)}`;
+    return `**[규칙 기반 근거 요약]**\nAI 설명 서비스를 사용할 수 없어, 교육용 가상 센서와 규칙 기반 점수를 근거로 관찰 내용을 요약합니다. 실제 설비의 안전 진단이 아닙니다.\n\n**[관찰된 사실]**\n- 규칙 기반 위험 단계: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- 주요 편차: ${gate.evidence.join(" · ")}\n\n**[다음 확인]**\n1. 같은 구간의 추세와 다른 가상 센서 기록을 비교하세요.\n2. 가능한 원인은 미확정으로 두고, 실제 판단에는 해당 설비의 승인된 자료와 담당자 검토가 필요합니다.${formatEvidenceGate(gate, lang)}`;
   }
   if (lang === "ja") {
-    return `**[基本安全診断]**\nAI相談サービスを一時的に利用できないため、現在の実測センサー値とルールベースの危険判定に基づく安全診断を提供します。\n\n**[現在の状態]**\n- ルールベースの危険度: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- 主な偏差: ${gate.evidence.join(" · ")}\n\n**[推奨対応]**\n1. ${requiresUrgentReview ? "現場担当者へ直ちに報告し、定められた安全手順に従って点検の準備を進めてください。" : "最近の推移と設備点検履歴を確認し、次回点検では主要な偏差センサーを優先して確認してください。"}\n2. 現在の数値だけで故障原因を断定せず、関連マニュアルと現地点検の結果を併せて確認してください。${formatEvidenceGate(gate, lang)}`;
+    return `**[ルールベースの根拠要約]**\nAI説明サービスを利用できないため、教育用の仮想センサー値とルールベースのスコアから観測内容を整理します。実設備の安全診断ではありません。\n\n**[観測された事実]**\n- ルールベースの危険度: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- 主な偏差: ${gate.evidence.join(" · ")}\n\n**[次の確認]**\n1. 同じ区間の傾向と他の仮想センサー記録を比較してください。\n2. 原因は未確定として扱い、実際の判断には承認済み資料と担当者の確認が必要です。${formatEvidenceGate(gate, lang)}`;
   }
-  return `**[Baseline Safety Diagnosis]**\nThe AI consultation service is temporarily unavailable, so this safety diagnosis uses the current live sensor values and the rule-based risk assessment.\n\n**[Current Status]**\n- Rule-based risk level: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- Primary deviations: ${gate.evidence.join(" · ")}\n\n**[Recommended Actions]**\n1. ${requiresUrgentReview ? "Report to the responsible operator immediately and prepare inspection under the approved safety procedure." : "Review recent trends and inspection history, then prioritize the sensors with the largest deviations at the next inspection."}\n2. Do not conclude a failure cause from current values alone; verify the relevant manual and on-site inspection findings.${formatEvidenceGate(gate, lang)}`;
+  return `**[Rule-based Evidence Summary]**\nThe AI explanation service is unavailable, so this summarizes synthetic sensor values and rule-based scores. It is not a safety diagnosis of real equipment.\n\n**[Observed Facts]**\n- Rule-based risk level: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- Primary deviations: ${gate.evidence.join(" · ")}\n\n**[Next Checks]**\n1. Compare the same time window with other synthetic sensor records.\n2. Keep possible causes unconfirmed; real decisions require approved equipment information and a responsible operator's review.${formatEvidenceGate(gate, lang)}`;
 }
 
 export const appRouter = router({
@@ -618,20 +616,21 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { lang, periodLabel, totalDetections, anomalyCount, dangerCount, uptimePct, sensors, scoreHistory } = input;
         const copy = lang === "ko"
-          ? { headline: "기간 데이터 안전 요약", fallback: "AI 분석을 사용할 수 없어 수집된 기간 통계에 기반한 요약입니다.", recommendation: "관련 설비 매뉴얼과 최근 점검 이력을 함께 검토하세요.", normal: "정상", caution: "주의", warning: "경고", danger: "위험" }
+          ? { headline: "가상 센서 기간 요약", fallback: "AI 설명을 사용할 수 없어 교육용 가상 기록을 규칙에 따라 요약합니다.", recommendation: "같은 기간의 가상 센서 추세와 기록을 비교하세요.", normal: "정상", caution: "주의", warning: "경고", danger: "위험" }
           : lang === "ja"
-            ? { headline: "期間データの安全サマリー", fallback: "AI分析を利用できないため、収集した期間統計に基づく要約です。", recommendation: "関連設備マニュアルと直近の点検履歴を併せて確認してください。", normal: "正常", caution: "注意", warning: "警告", danger: "危険" }
-            : { headline: "Period data safety summary", fallback: "AI analysis is unavailable, so this is based on collected period statistics.", recommendation: "Review the relevant equipment manual and recent inspection history together.", normal: "Normal", caution: "Caution", warning: "Warning", danger: "Danger" };
+            ? { headline: "仮想センサー期間サマリー", fallback: "AI説明を利用できないため、教育用の仮想記録をルールに従って要約します。", recommendation: "同じ期間の仮想センサーの傾向と記録を比較してください。", normal: "正常", caution: "注意", warning: "警告", danger: "危険" }
+            : { headline: "Synthetic sensor period summary", fallback: "AI explanation is unavailable, so this summarizes synthetic educational records using rules.", recommendation: "Compare synthetic sensor trends and records from the same period.", normal: "Normal", caution: "Caution", warning: "Warning", danger: "Danger" };
         const riskLabel = (level: "normal" | "caution" | "warning" | "danger") => copy[level];
         const peakRisk = scoreHistory.reduce<"normal" | "caution" | "warning" | "danger">((current, point) => {
           const order = { normal: 0, caution: 1, warning: 2, danger: 3 } as const;
           return order[point.riskLevel] > order[current] ? point.riskLevel : current;
         }, "normal");
+        const recordRate = totalDetections > 0 ? `${uptimePct.toFixed(0)}%` : "—";
         const fallbackSummary = lang === "ko"
-          ? `${copy.fallback} ${periodLabel} 동안 기록 ${totalDetections}건, 이상 ${anomalyCount}건, 위험 ${dangerCount}건, 정상 가동률 ${uptimePct.toFixed(0)}%가 확인되었습니다. 관측된 최고 위험 단계는 ${riskLabel(peakRisk)}입니다.`
+          ? `${copy.fallback} ${periodLabel} 동안 가상 관측 기록 ${totalDetections}건, 이상 판정 ${anomalyCount}건, 위험 단계 ${dangerCount}건, 이상 미판정 비율 ${recordRate}입니다. 기록상 최고 위험 단계는 ${riskLabel(peakRisk)}입니다. 이 비율은 실제 설비 가동률이 아닙니다.`
           : lang === "ja"
-            ? `${copy.fallback} ${periodLabel}の記録${totalDetections}件、異常${anomalyCount}件、危険${dangerCount}件、稼働率${uptimePct.toFixed(0)}%が確認されました。観測された最高リスクは${riskLabel(peakRisk)}です。`
-            : `${copy.fallback} During ${periodLabel}, ${totalDetections} records, ${anomalyCount} anomalies, ${dangerCount} danger detections, and ${uptimePct.toFixed(0)}% uptime were recorded. Highest observed risk level was ${riskLabel(peakRisk)}.`;
+            ? `${copy.fallback} ${periodLabel}の仮想観測記録${totalDetections}件、異常判定${anomalyCount}件、危険レベル${dangerCount}件、異常未判定の割合${recordRate}です。記録上の最高リスクは${riskLabel(peakRisk)}です。この割合は実設備の稼働率ではありません。`
+            : `${copy.fallback} During ${periodLabel}, there were ${totalDetections} synthetic observation records, ${anomalyCount} marked anomalous, ${dangerCount} at danger level, and a ${recordRate} share without anomaly. The highest recorded risk level was ${riskLabel(peakRisk)}. This is not actual equipment uptime.`;
         const recentScores = scoreHistory.slice(-8).map(point => point.score);
         const scoreTrend = recentScores.length >= 2 ? recentScores[recentScores.length - 1] - recentScores[0] : 0;
         const forecastLevel: "normal" | "caution" | "warning" | "danger" = peakRisk === "danger" || dangerCount > 0 ? "danger" : peakRisk === "warning" || scoreTrend >= 18 ? "warning" : peakRisk === "caution" || scoreTrend >= 8 ? "caution" : "normal";
@@ -674,15 +673,15 @@ export const appRouter = router({
         const average = sensors.average;
         const peak = sensors.peak;
         const prompt = lang === "ko"
-          ? `분석 기간: ${periodLabel}. 기록 ${totalDetections}건, 이상 ${anomalyCount}건, 위험 ${dangerCount}건, 가동률 ${uptimePct.toFixed(0)}%. 센서 평균: 전류 ${average.current.toFixed(2)}A, 온도 ${average.temperature.toFixed(1)}°C, 진동 ${average.vibration.toFixed(2)}mm/s, 소음 ${average.noise.toFixed(1)}dB. 센서 최고값: 전류 ${peak.current.toFixed(2)}A, 온도 ${peak.temperature.toFixed(1)}°C, 진동 ${peak.vibration.toFixed(2)}mm/s, 소음 ${peak.noise.toFixed(1)}dB. 최고 위험도: ${riskLabel(peakRisk)}, 최근 점수 변화 ${scoreTrend.toFixed(0)}점. 데이터에 근거한 2~3문장 요약, 권장 조치, 다음 기간 위험 전망(forecastLevel), 신뢰도(confidence), 근거(evidence), 경고 필요 여부(alert)를 JSON으로 반환하세요. 특정 고장 원인을 단정하거나 안전을 보장하지 마세요.`
+          ? `교육용 가상 센서 분석 기간: ${periodLabel}. 관측 기록 ${totalDetections}건, 이상 판정 ${anomalyCount}건, 위험 단계 ${dangerCount}건, 이상 미판정 비율 ${recordRate}(실제 설비 가동률이 아님). 센서 평균: 전류 ${average.current.toFixed(2)}A, 온도 ${average.temperature.toFixed(1)}°C, 진동 ${average.vibration.toFixed(2)}mm/s, 소음 ${average.noise.toFixed(1)}dB. 센서 최고값: 전류 ${peak.current.toFixed(2)}A, 온도 ${peak.temperature.toFixed(1)}°C, 진동 ${peak.vibration.toFixed(2)}mm/s, 소음 ${peak.noise.toFixed(1)}dB. 최고 규칙 기반 위험 단계: ${riskLabel(peakRisk)}, 최근 점수 변화 ${scoreTrend.toFixed(0)}점. 데이터에 근거한 2~3문장 요약과 다음 비교 순서, 참고용 다음 기간 신호 전망(forecastLevel), 근거 수준(confidence), 근거(evidence), 주의 표시(alert)를 JSON으로 반환하세요. AI가 위험 점수를 계산하거나 실제 고장을 진단했다고 주장하지 마세요. 실제 설비 제어 방법을 제시하지 마세요.`
           : lang === "ja"
-            ? `分析期間: ${periodLabel}。記録${totalDetections}件、異常${anomalyCount}件、危険${dangerCount}件、稼働率${uptimePct.toFixed(0)}%。センサー平均: 電流${average.current.toFixed(2)}A、温度${average.temperature.toFixed(1)}°C、振動${average.vibration.toFixed(2)}mm/s、騒音${average.noise.toFixed(1)}dB。最大値: 電流${peak.current.toFixed(2)}A、温度${peak.temperature.toFixed(1)}°C、振動${peak.vibration.toFixed(2)}mm/s、騒音${peak.noise.toFixed(1)}dB。最高リスク: ${riskLabel(peakRisk)}、直近のスコア変化${scoreTrend.toFixed(0)}点。データに基づく2〜3文の要約、推奨措置、次期間のリスク見通し(forecastLevel)、信頼度(confidence)、根拠(evidence)、警告の必要性(alert)をJSONで返してください。特定の故障原因を断定したり、安全を保証したりしないでください。`
-            : `Analysis period: ${periodLabel}. ${totalDetections} records, ${anomalyCount} anomalies, ${dangerCount} danger detections, and ${uptimePct.toFixed(0)}% uptime. Sensor averages: current ${average.current.toFixed(2)}A, temperature ${average.temperature.toFixed(1)}°C, vibration ${average.vibration.toFixed(2)}mm/s, noise ${average.noise.toFixed(1)}dB. Peaks: current ${peak.current.toFixed(2)}A, temperature ${peak.temperature.toFixed(1)}°C, vibration ${peak.vibration.toFixed(2)}mm/s, noise ${peak.noise.toFixed(1)}dB. Highest risk: ${riskLabel(peakRisk)} and recent score change ${scoreTrend.toFixed(0)}. Return a data-grounded 2–3 sentence summary, recommendation, next-period risk outlook (forecastLevel), confidence, evidence, and whether an alert is warranted (alert) as JSON. Do not diagnose a specific failure or guarantee safety.`;
+            ? `教育用仮想センサーの分析期間: ${periodLabel}。観測記録${totalDetections}件、異常判定${anomalyCount}件、危険レベル${dangerCount}件、異常未判定の割合${recordRate}（実設備の稼働率ではない）。センサー平均: 電流${average.current.toFixed(2)}A、温度${average.temperature.toFixed(1)}°C、振動${average.vibration.toFixed(2)}mm/s、騒音${average.noise.toFixed(1)}dB。最大値: 電流${peak.current.toFixed(2)}A、温度${peak.temperature.toFixed(1)}°C、振動${peak.vibration.toFixed(2)}mm/s、騒音${peak.noise.toFixed(1)}dB。ルールベースの最高リスク: ${riskLabel(peakRisk)}、直近のスコア変化${scoreTrend.toFixed(0)}点。根拠に基づく2〜3文の要約、次の比較順序、参考用の次期間見通し(forecastLevel)、根拠の範囲(confidence)、根拠(evidence)、注意表示(alert)をJSONで返してください。AIがスコアを算出したり、実際の故障を診断したと主張しないでください。実設備の操作方法は示さないでください。`
+            : `Synthetic educational sensor analysis period: ${periodLabel}. ${totalDetections} observation records, ${anomalyCount} marked anomalous, ${dangerCount} at danger level, and a ${recordRate} share without anomaly (not actual equipment uptime). Sensor averages: current ${average.current.toFixed(2)}A, temperature ${average.temperature.toFixed(1)}°C, vibration ${average.vibration.toFixed(2)}mm/s, noise ${average.noise.toFixed(1)}dB. Peaks: current ${peak.current.toFixed(2)}A, temperature ${peak.temperature.toFixed(1)}°C, vibration ${peak.vibration.toFixed(2)}mm/s, noise ${peak.noise.toFixed(1)}dB. Highest rule-based risk: ${riskLabel(peakRisk)} and recent score change ${scoreTrend.toFixed(0)}. Return a data-grounded 2–3 sentence summary, next comparison steps, reference-only next-period outlook (forecastLevel), evidence scope (confidence), evidence, and caution flag (alert) as JSON. Do not claim the AI calculated the score or diagnosed a real failure. Do not give real equipment operation instructions.`;
         try {
           const response = await invokeLLM({
             model: "gpt-5-mini",
             messages: [
-              { role: "system", content: lang === "ko" ? "당신은 반도체 설비 안전 보고서 분석 AI입니다. 제공된 숫자만 근거로 하고, 특정 고장 원인을 단정하지 마세요. JSON만 반환하세요." : lang === "ja" ? "あなたは半導体設備安全レポートの分析AIです。与えられた数値だけを根拠にし、特定の故障原因を断定しないでください。JSONのみを返してください。" : "You analyze semiconductor equipment safety reports. Use only supplied numbers and do not diagnose a specific hardware failure. Return JSON only." },
+              { role: "system", content: lang === "ko" ? "당신은 교육용 가상 센서 기록의 근거 설명 보조 AI입니다. 제공된 숫자만 근거로 하고, 실제 고장 진단·설비 가동률·설비 제어로 표현하지 마세요. JSON만 반환하세요." : lang === "ja" ? "教育用仮想センサー記録の根拠説明を補助するAIです。提供された数値のみを根拠とし、実際の故障診断・設備稼働率・設備制御と表現しないでください。JSONのみを返してください。" : "You explain evidence from synthetic educational sensor records. Use only supplied numbers; do not describe real failure diagnosis, actual uptime, or equipment control. Return JSON only." },
               { role: "user", content: prompt },
             ],
             response_format: schema,
@@ -764,56 +763,44 @@ export const appRouter = router({
           compressedSummary = lang === "ko" ? summaryKo : lang === "ja" ? summaryJa : summaryEn;
         }
         
-        const systemPromptKo = `당신은 반도체 설비 예지보전 및 이상 진단 수석 엔지니어 AI(SemiGuard Expert)입니다.
-[현재 진단 대상 센서 데이터 및 로그 ID: #${sensorContext.logId ?? '실시간 수치'}]
+        const systemPromptKo = `당신은 SemiGuard의 교육용 가상 센서 근거 설명 보조 AI입니다. 실제 설비 데이터나 검증된 고장 진단 결과로 표현하지 마세요.
+[가상 센서 데이터 및 로그 ID: #${sensorContext.logId ?? '현재 화면'}]
 - 전류: ${sensorContext.current}A (정상 5.0A 편차 ±0.5)
 - 온도: ${sensorContext.temperature}°C (정상 45°C 편차 ±3)
 - 진동: ${sensorContext.vibration}mm/s (정상 2.0mm/s 편차 ±0.3)
 - 소음: ${sensorContext.noise}dB (정상 55dB 편차 ±4)
-- 이상 점수: ${sensorContext.anomalyScore}/100, 위험 단계: ${sensorContext.riskLevel}
+- 규칙 기반 이상 점수: ${sensorContext.anomalyScore}/100, 위험 단계: ${sensorContext.riskLevel}
 
 응답 지침 및 구조:
-1. 고정 템플릿 답변을 절대 금지하고, 실제 센서 수치와 기준값의 구체적인 편차(예: 온도 +12°C 초과, 진동 +1.8mm/s 상승 등)를 반드시 계산하여 근거를 제시하세요.
-2. 답변은 다음 구조로 명확하게 작성해 주세요:
-   - [현재 상태 요약 및 주요 이상 센서]: 편차가 가장 큰 센서 지목
-   - [원인 추론 및 영향 분석]: 해당 편차가 반도체 공정(식각/증착/이송 등)에 미치는 영향
-   - [추천 점검 부품 및 단계별 조치 순서]: 베어링, 인버터, 쿨링팬, 가스 밸브 등 구체적 부품 점검법
-   - [진단 신뢰도 (Confidence)] 및 [장비 즉시 중지 조건 (Shutdown Criteria)]
-3. 전문적이고 신뢰감 있는 반도체 수석 엔지니어 톤을 유지하며, 임의로 시스템 임계값을 변경하거나 장비를 강제 제어할 수 없음을 인지하고 안전 조치에 집중하세요.`;
+1. 제공된 가상 수치와 정상 기준의 차이만 계산해 근거를 제시하세요. 위험 점수는 이미 규칙으로 계산되었으며 AI가 다시 산정하지 않습니다.
+2. [관찰된 사실], [가능한 원인 후보—미확정], [다음 확인 순서], [판단에 부족한 정보]를 구분하세요.
+3. 실제 고장·공정 영향·진단 신뢰도를 단정하지 마세요. 실제 설비 제어, 정지, 분해 또는 현장 조작 방법은 제시하지 마세요. 실제 판단은 승인된 설비 자료와 담당자 검토가 필요합니다.`;
 
-        const systemPromptEn = `You are an expert AI senior engineer for semiconductor equipment predictive maintenance (SemiGuard Expert).
-[Target Sensor Data & Log ID: #${sensorContext.logId ?? 'Live'}]
+        const systemPromptEn = `You are SemiGuard's evidence explanation assistant for synthetic educational sensor data. Do not present it as real equipment data or a validated diagnosis.
+[Synthetic Sensor Data & Log ID: #${sensorContext.logId ?? 'current view'}]
 - Current: ${sensorContext.current}A (Normal 5.0A ±0.5)
 - Temperature: ${sensorContext.temperature}°C (Normal 45°C ±3)
 - Vibration: ${sensorContext.vibration}mm/s (Normal 2.0mm/s ±0.3)
 - Noise: ${sensorContext.noise}dB (Normal 55dB ±4)
-- Anomaly Score: ${sensorContext.anomalyScore}/100, Risk Level: ${sensorContext.riskLevel}
+- Rule-based Anomaly Score: ${sensorContext.anomalyScore}/100, Risk Level: ${sensorContext.riskLevel}
 
 Guidelines:
-1. Avoid fixed templates; calculate exact deviations from normal baselines (e.g., +12°C over normal) and state evidence clearly.
-2. Structure your response with:
-   - [Status Summary & Key Anomalous Sensor]
-   - [Root Cause & Process Impact Analysis]
-   - [Recommended Inspection Parts & Step-by-Step Recovery]
-   - [Confidence Level] & [Immediate Shutdown Criteria]
-3. Maintain a professional senior engineer tone focusing on safety and root-cause troubleshooting.`;
+1. Calculate only deviations between supplied synthetic readings and baselines. The risk score was already calculated by rules; do not recalculate or claim the AI produced it.
+2. Separate [Observed Facts], [Possible Causes—Unconfirmed], [Next Comparison Steps], and [Missing Information].
+3. Do not assert a real failure, process impact, or diagnostic confidence. Do not provide real equipment control, shutdown, disassembly, or field-operation instructions. Real decisions require approved equipment information and an authorized person's review.`;
 
-        const systemPromptJa = `あなたは半導体設備の予知保全および異常診断のシニアエンジニアAI（SemiGuard Expert）です。
-[対象センサーデータ・ログID: #${sensorContext.logId ?? 'リアルタイム'}]
+        const systemPromptJa = `あなたはSemiGuardの教育用仮想センサー根拠説明を補助するAIです。実設備のデータや検証済みの故障診断として扱わないでください。
+[仮想センサーデータ・ログID: #${sensorContext.logId ?? '現在の画面'}]
 - 電流: ${sensorContext.current}A (正常5.0A ±0.5)
 - 温度: ${sensorContext.temperature}°C (正常45°C ±3)
 - 振動: ${sensorContext.vibration}mm/s (正常2.0mm/s ±0.3)
 - 騒音: ${sensorContext.noise}dB (正常55dB ±4)
-- 異常スコア: ${sensorContext.anomalyScore}/100, 危険度: ${sensorContext.riskLevel}
+- ルールベースの異常スコア: ${sensorContext.anomalyScore}/100, 危険度: ${sensorContext.riskLevel}
 
 ガイドライン:
-1. 固定テンプレートを避け、正常基準値からの具体的なセンサー偏差（例：温度+12°C超過）を計算して根拠を示してください。
-2. 以下の構成で分かりやすく回答してください:
-   - [状態要約および主要異常センサー]
-   - [原因推論および影響分析]
-   - [推奨点検部品と段階的復旧手順]
-   - [信頼度 (Confidence)] および [設備即時停止条件 (Shutdown Criteria)]
-3. 専門的で信頼性の高いシニアエンジニアのトーンを維持してください。`;
+1. 提供された仮想値と正常基準との差のみを根拠として示してください。リスクスコアは既にルールで算出されており、AIが再計算したと主張しないでください。
+2. [観測された事実]、[考えられる原因候補—未確定]、[次の比較順序]、[不足している情報]を分けてください。
+3. 実際の故障、工程への影響、診断の確実性を断定しないでください。実設備の制御・停止・分解・現場操作の方法は示さず、承認済み資料と担当者の確認を求めてください。`;
 
         const systemPrompt = lang === "ko" ? systemPromptKo : lang === "ja" ? systemPromptJa : systemPromptEn;
         
@@ -823,11 +810,11 @@ Guidelines:
           if (dislikes.length > 0) {
             const reasons = dislikes.map((d: { type: string; reason?: string }) => d.reason).filter(Boolean).join(", ");
             if (lang === "ko") {
-              feedbackContext = `\n[사용자 피드백 학습 지침]: 최근 사용자가 이전 답변에 대해 '아쉬움'을 표시했습니다 (사유: ${reasons || '설명 보완 필요'}). 다음 답변에서는 더 구체적인 원인과 근거를 제시하고 해당 지적 사항이 반복되지 않도록 유의하세요.`;
+              feedbackContext = `\n[사용자 피드백 참고]: 최근 사용자가 이전 답변에 대해 '아쉬움'을 표시했습니다 (사유: ${reasons || '설명 보완 필요'}). 다음 답변에서는 관찰된 근거와 미확정 원인 후보를 더 명확히 구분하세요.`;
             } else if (lang === "ja") {
-              feedbackContext = `\n[ユーザーフィードバック学習指示]: ユーザーが以前の回答に「イマイチ」と評価しました（理由: ${reasons || '説明の補足が必要'}）。次の回答では、より具体的な原因と根拠を示し、同様の指摘が繰り返されないように注意してください。`;
+              feedbackContext = `\n[ユーザーフィードバック参考]: 以前の回答への指摘（理由: ${reasons || '説明の補足が必要'}）を踏まえ、観測された根拠と未確定の原因候補を明確に区別してください。`;
             } else {
-              feedbackContext = `\n[User Feedback Learning Directive]: The user expressed dissatisfaction with recent answers (Reason: ${reasons || 'needs more clarity'}). Ensure subsequent answers provide deeper root-cause evidence and avoid previous shortcomings.`;
+              feedbackContext = `\n[User feedback context]: A previous answer received feedback (Reason: ${reasons || 'needs more clarity'}). Distinguish observed evidence from unconfirmed possible causes more clearly.`;
             }
           }
         }

@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { startGoogleLink, startNaverLink, startKakaoLink } from "@/const";
 import { Tooltip as AppTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-const FALLBACK_DIAGNOSTIC_MARKERS = ["[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;
+const FALLBACK_DIAGNOSTIC_MARKERS = ["[규칙 기반 근거 요약]", "[ルールベースの根拠要約]", "[Rule-based Evidence Summary]", "[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;
 const CUSTOM_PERIOD_PRESETS_KEY = "semiguard_custom_period_presets";
 const MAX_CUSTOM_PERIOD_PRESETS = 8;
 const FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY = "semiguard_first_use_feedback_prompt_dismissed";
@@ -311,13 +311,13 @@ async function downloadSensorTrendChartImage(history: PeriodOverviewData["scoreH
 function exportPeriodOverviewToCsv(overview: PeriodOverviewData, lang: Lang, periodLabel: string) {
   const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
   const labels = lang === "ko"
-    ? { metric: "지표", value: "값", period: "분석 기간", visitors: "방문 수", detections: "총 탐지", anomalies: "이상 탐지", danger: "위험 탐지", uptime: "정상 가동률", savings: "예상 절감 비용(시연 가정·미검증)", sourceScope: "출처 범위", sourceScopeNote: "기간별 집계이며 개별 관측 로그 ID는 이상 이력 CSV에서 확인할 수 있습니다.", sensor: "센서", average: "평균", peak: "최고", time: "시각", score: "위험도 점수", level: "위험 단계" }
+    ? { metric: "지표", value: "값", period: "분석 기간", visitors: "사이트 방문 수", detections: "관측 기록 수", anomalies: "이상 판정 기록", danger: "위험 단계 기록", uptime: "이상 미판정 비율", sourceScope: "출처 범위", sourceScopeNote: "교육용 가상 센서 기록의 기간별 집계입니다. 실제 가동률·절감액을 뜻하지 않습니다. 개별 관측 로그 ID는 이상 이력 CSV에서 확인할 수 있습니다.", sensor: "센서", average: "평균", peak: "최고", time: "시각", score: "위험도 점수", level: "위험 단계" }
     : lang === "ja"
-      ? { metric: "指標", value: "値", period: "分析期間", visitors: "訪問数", detections: "総検知", anomalies: "異常検知", danger: "危険検知", uptime: "稼働率", savings: "予想削減コスト（デモ仮定・未検証）", sourceScope: "出典範囲", sourceScopeNote: "期間別の集計であり、個別の観測ログIDは異常履歴CSVで確認できます。", sensor: "センサー", average: "平均", peak: "最大", time: "時刻", score: "リスクスコア", level: "リスクレベル" }
-      : { metric: "Metric", value: "Value", period: "Analysis period", visitors: "Visitors", detections: "Total detections", anomalies: "Anomalies", danger: "Danger detections", uptime: "Uptime", savings: "Expected savings (demo assumption; unvalidated)", sourceScope: "Source scope", sourceScopeNote: "This is a period aggregate; individual observation log IDs are available in the anomaly-history CSV.", sensor: "Sensor", average: "Average", peak: "Peak", time: "Time", score: "Risk score", level: "Risk level" };
+      ? { metric: "指標", value: "値", period: "分析期間", visitors: "サイト訪問数", detections: "観測記録数", anomalies: "異常判定の記録", danger: "危険レベルの記録", uptime: "異常未判定の割合", sourceScope: "出典範囲", sourceScopeNote: "教育用の仮想センサー記録の期間集計です。実際の稼働率・削減額を示しません。個別の観測ログIDは異常履歴CSVで確認できます。", sensor: "センサー", average: "平均", peak: "最大", time: "時刻", score: "リスクスコア", level: "リスクレベル" }
+      : { metric: "Metric", value: "Value", period: "Analysis period", visitors: "Site visits", detections: "Observation records", anomalies: "Records marked anomalous", danger: "Danger-level records", uptime: "Records without anomaly", sourceScope: "Source scope", sourceScopeNote: "Period aggregate of synthetic sensor records, not actual uptime or savings. Individual observation log IDs are available in the anomaly-history CSV.", sensor: "Sensor", average: "Average", peak: "Peak", time: "Time", score: "Risk score", level: "Risk level" };
   const metrics = [
     [labels.period, periodLabel], [labels.visitors, overview.totalVisitors], [labels.detections, overview.totalDetections],
-    [labels.anomalies, overview.anomalyCount], [labels.danger, overview.dangerCount], [labels.uptime, `${overview.uptimePct}%`], [labels.savings, `₩${overview.savedCost.toLocaleString(locale)}`], [labels.sourceScope, labels.sourceScopeNote],
+    [labels.anomalies, overview.anomalyCount], [labels.danger, overview.dangerCount], [labels.uptime, overview.totalDetections > 0 ? `${overview.uptimePct}%` : "—"], [labels.sourceScope, labels.sourceScopeNote],
   ];
   const sensors = [
     [lang === "ko" ? "전류 (A)" : lang === "ja" ? "電流 (A)" : "Current (A)", overview.sensors.average.current, overview.sensors.peak.current],
@@ -358,16 +358,16 @@ function escapeReportHtml(value: string | number) {
 function openStructuredPeriodReport(overview: PeriodOverviewData, lang: Lang, periodLabel: string, aiSummary?: PeriodReportAiSummary, preparedWindow?: Window | null) {
   const locale = lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
   const copy = lang === "ko"
-    ? { title: "SemiGuard AI 기간별 안전 운영 보고서", subtitle: "반도체 장비 예지안전 분석", generated: "생성 시각", period: "분석 기간", metrics: "핵심 운영 통계", sensors: "센서 요약", trend: "최근 위험도 추이", aiSummary: "AI 센서 추세 요약", aiFallback: "근거 기반 대체 요약", outlook: "다음 기간 위험 전망", confidence: "신뢰도", evidence: "판단 근거", alert: "주의 알림", recommendation: "권장 조치", visitors: "방문 수", detections: "총 탐지", anomalies: "이상 탐지", danger: "위험 탐지", uptime: "정상 가동률", savings: "예상 절감 비용(시연 가정)", savingsNote: "위험 탐지 건수를 기준으로 산정한 참고값이며, 실제 절감액은 아직 검증되지 않았습니다.", sourceScope: "출처 범위", sourceScopeNote: "이 보고서는 기간별 집계입니다. 개별 관측 로그 ID는 이상 이력 CSV에서 확인할 수 있습니다.", average: "평균", peak: "최고", time: "시각", score: "점수", level: "단계", printHint: "브라우저 인쇄 창에서 ‘PDF로 저장’을 선택하면 구조화된 보고서를 파일로 저장할 수 있습니다." }
+    ? { title: "SemiGuard AI 가상 센서 기록 보고서", subtitle: "규칙 기반 신호 비교 · 실제 설비 성능 미검증", generated: "생성 시각", period: "분석 기간", metrics: "가상 관측 통계", sensors: "센서 요약", trend: "최근 위험도 추이", aiSummary: "AI 센서 근거 요약", aiFallback: "근거 기반 대체 요약", outlook: "다음 기간 신호 참고 전망", confidence: "근거 수준", evidence: "판단 근거", alert: "주의 알림", recommendation: "권장 확인", visitors: "사이트 방문 수", detections: "관측 기록 수", anomalies: "이상 판정 기록", danger: "위험 단계 기록", uptime: "이상 미판정 비율", savings: "비율 해석", savingsNote: "이상 미판정 비율은 가상 관측 기록의 비율이지 실제 설비 가동률이 아닙니다.", sourceScope: "출처 범위", sourceScopeNote: "교육용 가상 센서 기록의 기간별 집계이며 실제 가동률·절감액을 뜻하지 않습니다. 개별 로그 ID는 이상 이력 CSV에서 확인할 수 있습니다.", average: "평균", peak: "최고", time: "시각", score: "점수", level: "단계", printHint: "브라우저 인쇄 창에서 ‘PDF로 저장’을 선택하면 구조화된 보고서를 파일로 저장할 수 있습니다." }
     : lang === "ja"
-      ? { title: "SemiGuard AI 期間別安全運用レポート", subtitle: "半導体装置の予知安全分析", generated: "作成時刻", period: "分析期間", metrics: "主要運用統計", sensors: "センサー要約", trend: "直近のリスクスコア推移", aiSummary: "AIセンサー傾向サマリー", aiFallback: "根拠ベースの代替サマリー", outlook: "次期間のリスク見通し", confidence: "信頼度", evidence: "判断根拠", alert: "注意アラート", recommendation: "推奨措置", visitors: "訪問数", detections: "総検知", anomalies: "異常検知", danger: "危険検知", uptime: "稼働率", savings: "予想削減コスト（デモ仮定）", savingsNote: "危険検知件数を基準に算定した参考値であり、実際の削減額は未検証です。", sourceScope: "出典範囲", sourceScopeNote: "このレポートは期間別の集計です。個別の観測ログIDは異常履歴CSVで確認できます。", average: "平均", peak: "最大", time: "時刻", score: "スコア", level: "レベル", printHint: "ブラウザーの印刷画面で「PDFに保存」を選択すると、構造化されたレポートを保存できます。" }
-      : { title: "SemiGuard AI Period Safety Operations Report", subtitle: "Semiconductor equipment predictive safety analysis", generated: "Generated", period: "Analysis period", metrics: "Key operating statistics", sensors: "Sensor summary", trend: "Recent risk score trend", aiSummary: "AI sensor trend summary", aiFallback: "Evidence-based fallback summary", outlook: "Next-period risk outlook", confidence: "Confidence", evidence: "Evidence", alert: "Caution alert", recommendation: "Recommended action", visitors: "Visitors", detections: "Total detections", anomalies: "Anomalies", danger: "Danger detections", uptime: "Uptime", savings: "Expected savings (demo assumption)", savingsNote: "This is a reference estimate based on danger detections; actual savings have not yet been validated.", sourceScope: "Source scope", sourceScopeNote: "This report is a period aggregate. Individual observation log IDs are available in the anomaly-history CSV.", average: "Average", peak: "Peak", time: "Time", score: "Score", level: "Level", printHint: "Choose ‘Save as PDF’ in the browser print dialog to save this structured report." };
+      ? { title: "SemiGuard AI 仮想センサー記録レポート", subtitle: "ルールベースの信号比較・実際の装置性能は未検証", generated: "作成時刻", period: "分析期間", metrics: "仮想観測統計", sensors: "センサー要約", trend: "直近のリスクスコア推移", aiSummary: "AIによるセンサー根拠の要約", aiFallback: "根拠ベースの代替サマリー", outlook: "次期間の信号参考見通し", confidence: "根拠の範囲", evidence: "判断根拠", alert: "注意アラート", recommendation: "推奨確認", visitors: "サイト訪問数", detections: "観測記録数", anomalies: "異常判定の記録", danger: "危険レベルの記録", uptime: "異常未判定の割合", savings: "割合の解釈", savingsNote: "異常未判定の割合は仮想観測記録の割合であり、実際の設備稼働率ではありません。", sourceScope: "出典範囲", sourceScopeNote: "教育用の仮想センサー記録の期間集計であり、実際の稼働率・削減額を示しません。個別のログIDは異常履歴CSVで確認できます。", average: "平均", peak: "最大", time: "時刻", score: "スコア", level: "レベル", printHint: "ブラウザーの印刷画面で「PDFに保存」を選択すると、構造化されたレポートを保存できます。" }
+      : { title: "SemiGuard AI Synthetic Sensor Report", subtitle: "Rule-based signal comparison · real equipment performance unvalidated", generated: "Generated", period: "Analysis period", metrics: "Synthetic observation statistics", sensors: "Sensor summary", trend: "Recent risk score trend", aiSummary: "AI sensor evidence summary", aiFallback: "Evidence-based fallback summary", outlook: "Next-period signal outlook (reference)", confidence: "Evidence scope", evidence: "Evidence", alert: "Caution alert", recommendation: "Next checks", visitors: "Site visits", detections: "Observation records", anomalies: "Records marked anomalous", danger: "Danger-level records", uptime: "Records without anomaly", savings: "Interpreting the rate", savingsNote: "The share of records without anomaly is based on synthetic observations, not actual equipment uptime.", sourceScope: "Source scope", sourceScopeNote: "Period aggregate of synthetic sensor records, not actual uptime or savings. Individual log IDs are available in the anomaly-history CSV.", average: "Average", peak: "Peak", time: "Time", score: "Score", level: "Level", printHint: "Choose ‘Save as PDF’ in the browser print dialog to save this structured report." };
   const reportWindow = preparedWindow ?? window.open("", "_blank", "width=1000,height=800");
   if (!reportWindow) throw new Error(copy.printHint);
   const riskColor = (level: string) => level === "danger" ? "#b91c1c" : level === "warning" ? "#c2410c" : level === "caution" ? "#a16207" : "#15803d";
   const metricRows = [
     [copy.visitors, overview.totalVisitors.toLocaleString(locale)], [copy.detections, overview.totalDetections.toLocaleString(locale)], [copy.anomalies, overview.anomalyCount.toLocaleString(locale)],
-    [copy.danger, overview.dangerCount.toLocaleString(locale)], [copy.uptime, `${overview.uptimePct}%`], [copy.savings, `₩${overview.savedCost.toLocaleString(locale)}`],
+    [copy.danger, overview.dangerCount.toLocaleString(locale)], [copy.uptime, overview.totalDetections > 0 ? `${overview.uptimePct}%` : "—"],
   ];
   const sensorRows = [
     [lang === "ko" ? "전류 (A)" : lang === "ja" ? "電流 (A)" : "Current (A)", overview.sensors.average.current, overview.sensors.peak.current],
@@ -651,32 +651,6 @@ function RiskGauge({ score, riskLevel, t }: { score: number; riskLevel: RiskLeve
 }
 
 // ─── Heartbeat 인디케이터 ───────────────────────────────────────────────────
-
-// ─── 카운트업 애니메이션 훅 ──────────────────────────────────────────────────
-function useCountUp(target: number, duration = 800) {
-  const [display, setDisplay] = useState(target);
-  const prevRef = useRef(target);
-  const rafRef = useRef<number | null>(null);
-  useEffect(() => {
-    const from = prevRef.current;
-    const to = target;
-    if (from === to) return;
-    prevRef.current = to;
-    const start = performance.now();
-    const animate = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(from + (to - from) * eased));
-      if (progress < 1) rafRef.current = requestAnimationFrame(animate);
-    };
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(animate);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [target, duration]);
-  return display;
-}
 
 // ─── 경고 패널 ──────────────────────────────────────────────────────────────
 function AlertPanel({ riskLevel, relayTripped, t }: { riskLevel: RiskLevel; relayTripped: boolean; t: Translation }) {
@@ -1812,10 +1786,10 @@ export default function Dashboard() {
     {
       role: "assistant",
       content: lang === "ko"
-        ? "안녕하세요! 반도체 설비 예지안전 수석 엔지니어 AI입니다. 현재 센서 상태와 이상 이력에 대해 무엇이든 물어보세요. 점검 순서나 즉시 조치법을 안내해 드립니다."
+        ? "안녕하세요! 가상 센서의 관찰 사실과 가능한 설명을 구분해 정리하는 AI 도우미입니다. 위험 점수는 규칙 기반이며, 실제 설비의 고장 진단이나 조작 지침은 제공하지 않습니다."
         : lang === "ja"
-        ? "こんにちは！半導体設備予知保全シニアエンジニアAIです。現在のセンサー状態や異常履歴について何でもご質問ください。"
-        : "Hello! I am your senior predictive maintenance AI engineer. Ask me anything about current sensor states or troubleshooting steps.",
+        ? "こんにちは。仮想センサーの観測事実と可能な説明を整理するAI補助です。リスクスコアはルールベースであり、実設備の故障診断や操作指示は行いません。"
+        : "Hello. I help organize observed facts and possible explanations for synthetic sensor data. Risk scores are rule-based; I do not diagnose or control real equipment.",
       timestamp: Date.now(),
     },
   ]);
@@ -2065,7 +2039,7 @@ export default function Dashboard() {
       const exportedAtLabel = lang === "ko" ? "내보낸 시각" : lang === "ja" ? "エクスポート時刻" : "Exported at";
       const updatedAtLabel = lang === "ko" ? "현재 대화 시각" : lang === "ja" ? "現在の会話時刻" : "Current conversation time";
       const userLabel = lang === "ko" ? "사용자" : lang === "ja" ? "ユーザー" : "User";
-      const assistantLabel = lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Senior Engineer";
+      const assistantLabel = lang === "ko" ? "SemiGuard AI 근거 정리 도우미" : lang === "ja" ? "SemiGuard AI 根拠整理アシスタント" : "SemiGuard AI Evidence Assistant";
       const markdown = [
         `# ${title}`,
         "",
@@ -2115,7 +2089,7 @@ export default function Dashboard() {
       const exportedAtLabel = lang === "ko" ? "내보낸 시각" : lang === "ja" ? "エクスポート時刻" : "Exported at";
       const updatedAtLabel = lang === "ko" ? "최근 갱신" : lang === "ja" ? "最終更新" : "Last updated";
       const userLabel = lang === "ko" ? "사용자" : lang === "ja" ? "ユーザー" : "User";
-      const assistantLabel = lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Senior Engineer";
+      const assistantLabel = lang === "ko" ? "SemiGuard AI 근거 정리 도우미" : lang === "ja" ? "SemiGuard AI 根拠整理アシスタント" : "SemiGuard AI Evidence Assistant";
       const markdown = [
         `# ${title}`,
         "",
@@ -2791,7 +2765,6 @@ export default function Dashboard() {
   const injectCaution = trpc.semiguard.injectCaution.useMutation();
   const injectWarning = trpc.semiguard.injectWarning.useMutation();
   const autoFetch = trpc.semiguard.autoFetch.useMutation();
-  const resetCostMutation = trpc.semiguard.resetSavedCost.useMutation();
   const analyzeAnomalyMutation = trpc.semiguard.analyzeAnomaly.useMutation();
   const trackProductActivityMutation = trpc.semiguard.trackProductActivity.useMutation();
   const summarizePeriodForReportMutation = trpc.semiguard.summarizePeriodForReport.useMutation();
@@ -3049,22 +3022,22 @@ export default function Dashboard() {
         ? (lang === "ko" ? "AI 센서 추세 요약을 포함한 보고서를 준비했습니다. 인쇄 창에서 PDF로 저장하세요." : lang === "ja" ? "AIセンサー傾向サマリーを含むレポートを準備しました。印刷画面でPDFとして保存してください。" : "Report with AI sensor trend summary is ready. Save it as PDF from the print dialog.")
         : (lang === "ko" ? "AI 요약 대신 근거 기반 요약을 포함한 보고서를 준비했습니다." : lang === "ja" ? "AI要約の代わりに根拠ベースの要約を含むレポートを準備しました。" : "Report with an evidence-based fallback summary is ready."), { id: loadingToast });
       if (aiSummary.alert) {
-        toast.warning(lang === "ko" ? `다음 기간 ${localizeRiskLevel(aiSummary.forecastLevel, lang)} 전망입니다. 보고서의 근거와 권장 조치를 우선 검토하세요.` : lang === "ja" ? `次期間は${localizeRiskLevel(aiSummary.forecastLevel, lang)}の見通しです。レポートの根拠と推奨措置を優先して確認してください。` : `Next-period outlook is ${localizeRiskLevel(aiSummary.forecastLevel, lang)}. Prioritize the report evidence and recommended action.`);
+        toast.warning(lang === "ko" ? `가상 기록의 다음 기간 참고 신호는 ${localizeRiskLevel(aiSummary.forecastLevel, lang)}입니다. 실제 예측이 아니므로 보고서의 근거를 확인하세요.` : lang === "ja" ? `仮想記録の次期間の参考信号は${localizeRiskLevel(aiSummary.forecastLevel, lang)}です。実際の予測ではないため、レポートの根拠を確認してください。` : `The synthetic-record next-period reference signal is ${localizeRiskLevel(aiSummary.forecastLevel, lang)}. This is not a real prediction; review the report evidence.`);
       }
     } catch (error) {
       console.error("Structured PDF report error:", error);
       const fallbackForecastLevel: PeriodReportAiSummary["forecastLevel"] = selectedPeriodStats.dangerCount > 0 ? "danger" : selectedPeriodStats.anomalyCount > 0 ? "caution" : "normal";
       const fallbackAlert = fallbackForecastLevel === "danger";
       const fallback: PeriodReportAiSummary = lang === "ko"
-        ? { headline: "기간 데이터 안전 요약", summary: `AI 분석 서비스를 연결하지 못해 기간 통계로 대체했습니다. 기록 ${selectedPeriodStats.totalDetections}건 중 이상 ${selectedPeriodStats.anomalyCount}건, 위험 ${selectedPeriodStats.dangerCount}건이 확인되었습니다.`, recommendation: "관련 설비 매뉴얼과 최근 점검 이력을 함께 검토하세요.", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "AI 연결 실패 시점의 이상·위험 탐지 수를 기준으로 했습니다.", alert: fallbackAlert, source: "fallback" }
+        ? { headline: "가상 센서 기간 요약", summary: `AI 설명 서비스를 연결하지 못해 교육용 가상 기록을 규칙에 따라 요약했습니다. 기록 ${selectedPeriodStats.totalDetections}건 중 이상 판정 ${selectedPeriodStats.anomalyCount}건, 위험 단계 ${selectedPeriodStats.dangerCount}건입니다.`, recommendation: "같은 기간의 가상 센서 추세와 기록을 비교하세요.", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "AI 연결 실패 시점의 이상 판정·위험 단계 기록 수를 기준으로 했습니다.", alert: fallbackAlert, source: "fallback" }
         : lang === "ja"
-          ? { headline: "期間データの安全サマリー", summary: `AI分析サービスに接続できないため、期間統計で代替しました。記録${selectedPeriodStats.totalDetections}件のうち、異常${selectedPeriodStats.anomalyCount}件、危険${selectedPeriodStats.dangerCount}件が確認されました。`, recommendation: "関連設備マニュアルと直近の点検履歴を併せて確認してください。", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "AI接続失敗時点の異常・危険検知数を基準にしました。", alert: fallbackAlert, source: "fallback" }
-          : { headline: "Period data safety summary", summary: `The AI analysis service could not be reached, so this uses period statistics. ${selectedPeriodStats.anomalyCount} anomalies and ${selectedPeriodStats.dangerCount} danger detections were observed across ${selectedPeriodStats.totalDetections} records.`, recommendation: "Review the relevant equipment manual and recent inspection history together.", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "Based on anomaly and danger detections when the AI connection failed.", alert: fallbackAlert, source: "fallback" };
+          ? { headline: "仮想センサー期間サマリー", summary: `AI説明サービスに接続できないため、教育用の仮想記録をルールに従って要約しました。記録${selectedPeriodStats.totalDetections}件のうち、異常判定${selectedPeriodStats.anomalyCount}件、危険レベル${selectedPeriodStats.dangerCount}件です。`, recommendation: "同じ期間の仮想センサーの傾向と記録を比較してください。", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "AI接続失敗時点の異常判定・危険レベルの記録数に基づきます。", alert: fallbackAlert, source: "fallback" }
+          : { headline: "Synthetic sensor period summary", summary: `The AI explanation service was unavailable, so this rule-based summary uses synthetic educational records. ${selectedPeriodStats.anomalyCount} records were marked anomalous and ${selectedPeriodStats.dangerCount} were at danger level among ${selectedPeriodStats.totalDetections} records.`, recommendation: "Compare synthetic sensor trends and records from the same period.", forecastLevel: fallbackForecastLevel, confidence: "low", evidence: "Based on records marked anomalous and at danger level when the AI connection failed.", alert: fallbackAlert, source: "fallback" };
       try {
         openStructuredPeriodReport(selectedPeriodStats, lang, selectedPeriodLabel, fallback, reportWindow);
         toast.warning(lang === "ko" ? "AI 요약 대신 근거 기반 요약으로 보고서를 준비했습니다." : lang === "ja" ? "AI要約の代わりに根拠ベースの要約でレポートを準備しました。" : "The report uses an evidence-based fallback summary.", { id: loadingToast });
         if (fallback.alert) {
-          toast.warning(lang === "ko" ? `다음 기간 ${localizeRiskLevel(fallback.forecastLevel, lang)} 전망입니다. 보고서의 근거와 권장 조치를 우선 검토하세요.` : lang === "ja" ? `次期間は${localizeRiskLevel(fallback.forecastLevel, lang)}の見通しです。レポートの根拠と推奨措置を優先して確認してください。` : `Next-period outlook is ${localizeRiskLevel(fallback.forecastLevel, lang)}. Prioritize the report evidence and recommended action.`);
+          toast.warning(lang === "ko" ? `가상 기록의 다음 기간 참고 신호는 ${localizeRiskLevel(fallback.forecastLevel, lang)}입니다. 실제 예측이 아니므로 보고서의 근거를 확인하세요.` : lang === "ja" ? `仮想記録の次期間の参考信号は${localizeRiskLevel(fallback.forecastLevel, lang)}です。実際の予測ではないため、レポートの根拠を確認してください。` : `The synthetic-record next-period reference signal is ${localizeRiskLevel(fallback.forecastLevel, lang)}. This is not a real prediction; review the report evidence.`);
         }
       } catch {
         reportWindow.close();
@@ -3074,7 +3047,6 @@ export default function Dashboard() {
       setPdfExporting(false);
     }
   };
-  const displayedSavedCost = useCountUp(selectedPeriodStats?.savedCost ?? 0, 1000);
   const selectedPeriodLabel = dashboardPeriod === "custom"
     ? `${new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(`${appliedCustomRange.startDate}T00:00:00`))} – ${new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(`${appliedCustomRange.endDate}T00:00:00`))}`
     : dashboardPeriod === "day"
@@ -3082,11 +3054,6 @@ export default function Dashboard() {
     : dashboardPeriod === "week"
       ? (lang === "ko" ? "최근 7일" : lang === "ja" ? "直近7日間" : "Last 7 days")
       : (lang === "ko" ? "최근 30일" : lang === "ja" ? "直近30日間" : "Last 30 days");
-  const savingsScope = lang === "ko"
-    ? { badge: "시연 가정", note: "위험 탐지 건수를 기준으로 산정한 참고값이며, 실제 절감액은 아직 검증되지 않았습니다." }
-    : lang === "ja"
-      ? { badge: "デモ仮定", note: "危険検知件数を基準に算定した参考値であり、実際の削減額は未検証です。" }
-      : { badge: "Demo assumption", note: "This is a reference estimate based on danger detections; actual savings have not yet been validated." };
   const periodChartData = useMemo<ChartPoint[]>(() => (selectedPeriodStats?.scoreHistory ?? []).map(point => ({
     timestamp: new Date(point.timestamp).getTime(),
     label: new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(point.timestamp)),
@@ -3453,16 +3420,6 @@ export default function Dashboard() {
         triggerLlmAnalysis(result);
       }
       toast.warning(`🔶 ${t.injectWarning} 완료`);
-    } catch (e) {
-      toast.error(t.error);
-    }
-  };
-
-  const handleResetCost = async () => {
-    try {
-      await resetCostMutation.mutateAsync();
-      await utils.semiguard.getStats.invalidate();
-      toast.success("절감 비용이 초기화되었습니다.");
     } catch (e) {
       toast.error(t.error);
     }
@@ -4253,7 +4210,7 @@ export default function Dashboard() {
         type="button"
         ref={chatLaunchButtonRef}
         onClick={() => setIsChatOpen(true)}
-        aria-label={lang === "ko" ? "AI 수석 엔지니어 상담 열기" : lang === "ja" ? "AIシニアエンジニア相談を開く" : "Open AI expert chatbot"}
+        aria-label={lang === "ko" ? "AI 근거 정리 도우미 열기" : lang === "ja" ? "AI根拠整理アシスタントを開く" : "Open AI evidence assistant"}
         className="fixed bottom-5 right-4 sm:bottom-8 sm:right-8 z-[495] flex items-center gap-2 sm:gap-3 px-4 py-3 sm:px-7 sm:py-5 rounded-full shadow-2xl font-extrabold text-sm sm:text-base transition-transform duration-200 hover:scale-[1.04] active:scale-[0.97]"
         style={{
           bottom: isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined,
@@ -4269,9 +4226,9 @@ export default function Dashboard() {
         </span>
         <span className="flex flex-col items-start leading-tight text-left">
           <span className="sm:hidden whitespace-nowrap">{lang === "ko" ? "AI 상담" : lang === "ja" ? "AI相談" : "AI Chat"}</span>
-          <span className="hidden sm:inline whitespace-nowrap">{lang === "ko" ? "AI 수석 엔지니어 상담" : lang === "ja" ? "AIシニアエンジニア相談" : "AI Expert Chatbot"}</span>
+          <span className="hidden sm:inline whitespace-nowrap">{lang === "ko" ? "AI 근거 정리 도우미" : lang === "ja" ? "AI根拠整理アシスタント" : "AI Evidence Assistant"}</span>
           <span className="hidden sm:block text-xs font-semibold opacity-90 whitespace-nowrap">
-            {lang === "ko" ? "LLM 진단 활성화" : lang === "ja" ? "LLM診断を起動" : "Activate LLM diagnosis"}
+            {lang === "ko" ? "설명 보조 · 점수는 규칙 기반" : lang === "ja" ? "説明補助・スコアはルールベース" : "Explanation only · rule-based scores"}
           </span>
         </span>
       </button>
@@ -4298,7 +4255,7 @@ export default function Dashboard() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <h3 id="chat-dialog-title" className="text-xs sm:text-sm font-bold truncate" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
-                      {lang === "ko" ? "SemiGuard AI 수석 엔지니어" : lang === "ja" ? "SemiGuard AI シニアエンジニア" : "SemiGuard AI Expert Engineer"}
+                      {lang === "ko" ? "SemiGuard AI 근거 정리 도우미" : lang === "ja" ? "SemiGuard AI 根拠整理アシスタント" : "SemiGuard AI Evidence Assistant"}
                     </h3>
                     <span className="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono border whitespace-nowrap shrink-0" style={{ borderColor: "oklch(0.75 0.18 200 / 0.3)", background: "oklch(0.75 0.18 200 / 0.1)", color: "oklch(0.75 0.18 200)" }}>
                       {lang === "ko" ? `대화 ${chatMessages.length}` : lang === "ja" ? `会話 ${chatMessages.length}` : `Msgs ${chatMessages.length}`}
@@ -4307,7 +4264,7 @@ export default function Dashboard() {
                   <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
                     {chatMessages.length > 12
                       ? (lang === "ko" ? "⚡ 오래된 대화 요약 압축 중" : lang === "ja" ? "⚡ 古い会話を要約圧縮中" : "⚡ Older turns summarized")
-                      : (lang === "ko" ? "실시간 센서 기반 맞춤형 진단" : lang === "ja" ? "リアルタイムセンサーカスタム診断" : "Real-time custom diagnosis")}
+                      : (lang === "ko" ? "가상 센서 근거 설명 · 원인 미확정" : lang === "ja" ? "仮想センサーの根拠説明・原因は未確定" : "Synthetic sensor evidence · cause unconfirmed")}
                   </p>
                 </div>
                 <button
@@ -5868,7 +5825,7 @@ export default function Dashboard() {
                       {msg.usedFallback && (
                         <div role="status" aria-live="polite" aria-atomic="true" className="mb-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold"
                           style={{ background: "oklch(0.76 0.14 82 / 0.14)", color: isDark ? "oklch(0.84 0.13 82)" : "oklch(0.44 0.13 62)", border: "1px solid oklch(0.76 0.14 82 / 0.35)" }}>
-                          🛡 {lang === "ko" ? "실시간 수치 기반 기본 안전 진단" : lang === "ja" ? "リアルタイム数値に基づく基本安全診断" : "Live-measurement safety fallback"}
+                          🛡 {lang === "ko" ? "가상 센서 수치 기반 규칙 요약" : lang === "ja" ? "仮想センサー値に基づくルール要約" : "Rule summary from synthetic sensor values"}
                         </div>
                       )}
                       <p className="whitespace-pre-wrap break-words">{msg.content}</p>
@@ -6112,10 +6069,10 @@ export default function Dashboard() {
                     </div>
                     <span className="text-muted-foreground font-medium">
                       {lang === "ko"
-                        ? "수석 엔지니어 AI가 답변을 작성 중입니다..."
+                        ? "AI가 센서 근거 설명을 정리 중입니다..."
                         : lang === "ja"
-                        ? "シニアエンジニアAIが回答を作成中です..."
-                        : "Expert AI engineer is typing..."}
+                        ? "AIがセンサー根拠の説明を整理しています..."
+                        : "AI is organizing the sensor evidence..."}
                       {chatLoadingElapsedSeconds >= 5 && (
                         <span className="ml-1 text-[10px] opacity-75">
                           {lang === "ko" ? `${chatLoadingElapsedSeconds}초 경과` : lang === "ja" ? `${chatLoadingElapsedSeconds}秒経過` : `${chatLoadingElapsedSeconds}s elapsed`}
@@ -6314,7 +6271,7 @@ export default function Dashboard() {
             <div className="mb-4 flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between" style={{ background: th.bgCard, borderColor: th.border }}>
               <div className="min-w-0">
                 <p className="text-xs font-bold" style={{ color: th.text }}>{lang === "ko" ? "기간별 운영 분석" : lang === "ja" ? "期間別の運用分析" : "Period-based operations analysis"}</p>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">{lang === "ko" ? "선택한 기간의 센서 이력, 탐지·위험 통계와 시연 가정 기반 예상 절감 비용을 표시합니다." : lang === "ja" ? "選択した期間のセンサー履歴、検知・危険統計とデモ仮定に基づく予想削減コストを表示します。" : "Shows sensor history, detection and risk statistics, and expected savings based on a demo assumption."}</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">{lang === "ko" ? "선택한 기간의 교육용 가상 센서 기록과 규칙 기반 위험 신호를 표시합니다. 실제 가동률이나 절감액은 측정하지 않습니다." : lang === "ja" ? "選択期間の教育用仮想センサー記録とルールベースのリスク信号を表示します。実際の稼働率や削減額は測定していません。" : "Shows synthetic sensor records and rule-based risk signals for the selected period, not measured uptime or savings."}</p>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs font-semibold" style={{ color: th.text }}>
                 <label className="flex items-center gap-2">
@@ -6379,8 +6336,9 @@ export default function Dashboard() {
               <ImpactCard label={t.totalVisitors} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.totalVisitors ?? 0)} icon="👥" color="#38bdf8" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.totalVisitors}: ${(selectedPeriodStats?.totalVisitors ?? 0).toLocaleString()}`} />
               <ImpactCard label={t.totalDetections} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.totalDetections ?? 0)} icon="📊" color="#a78bfa" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.totalDetections}: ${(selectedPeriodStats?.totalDetections ?? 0).toLocaleString()} · ${lang === "ko" ? "이상" : lang === "ja" ? "異常" : "Anomalies"}: ${(selectedPeriodStats?.anomalyCount ?? 0).toLocaleString()}`} />
               <ImpactCard label={t.dangerCount} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.dangerCount}: ${(selectedPeriodStats?.dangerCount ?? 0).toLocaleString()}`} />
-              <ImpactCard label={t.uptimePct} value={periodOverviewQuery.isError ? "—" : `${selectedPeriodStats?.uptimePct ?? 100}%`} icon="✅" color="#22c55e" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.uptimePct}: ${selectedPeriodStats?.uptimePct ?? 100}%`} />
+              <ImpactCard label={t.uptimePct} value={periodOverviewQuery.isError || !selectedPeriodStats?.totalDetections ? "—" : `${selectedPeriodStats.uptimePct}%`} icon="✅" color="#22c55e" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${lang === "ko" ? "가상 관측 기록 중 규칙상 이상 미판정" : lang === "ja" ? "仮想観測記録のうちルール上異常未判定" : "Synthetic records not marked anomalous by the rule"}: ${selectedPeriodStats?.totalDetections ? `${selectedPeriodStats.uptimePct}%` : "—"}`} />
             </div>}
+            <p className="mb-6 text-xs text-muted-foreground" role="note">{lang === "ko" ? "이상 미판정 비율 = (관측 기록 수 − 이상 판정 기록 수) ÷ 관측 기록 수. 기록이 없으면 표시하지 않습니다. 실제 설비 가동률이 아닙니다." : lang === "ja" ? "異常未判定の割合 = (観測記録数 − 異常判定記録数) ÷ 観測記録数。記録がない場合は表示しません。実際の設備稼働率ではありません。" : "Records without anomaly = (observation records − records marked anomalous) ÷ observation records. No value is shown without records. This is not equipment uptime."}</p>
 
             {isUsageMetricsAdmin && <section className="mb-6 rounded-xl border p-3 sm:p-4" aria-labelledby="product-usage-metrics-title" style={{ borderColor: "oklch(0.64 0.15 285 / 0.40)", background: isDark ? "oklch(0.18 0.03 285 / 0.32)" : "oklch(0.97 0.02 285 / 0.38)" }}>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -6412,33 +6370,12 @@ export default function Dashboard() {
 
             {periodOverviewQuery.isError && (
               <div className="mb-6 flex flex-col items-start justify-between gap-2 rounded-xl border p-3 text-xs sm:flex-row sm:items-center" role="alert" aria-atomic="true" style={{ background: "oklch(0.65 0.20 25 / 0.08)", borderColor: "oklch(0.65 0.20 25 / 0.45)", color: th.textMuted }}>
-                <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "운영 통계를 불러오지 못했습니다. KPI와 예상 절감 비용은 최신 값이 아닐 수 있습니다." : lang === "ja" ? "運用統計を読み込めませんでした。KPIと予想削減コストは最新値ではない可能性があります。" : "Could not load operational statistics. KPI values and expected savings may not be current."}</p>
-                <button type="button" onClick={() => void periodOverviewQuery.refetch()} disabled={periodOverviewQuery.isFetching} aria-busy={periodOverviewQuery.isFetching || undefined} aria-label={periodOverviewQuery.isFetching ? (lang === "ko" ? "운영 통계 다시 불러오는 중" : lang === "ja" ? "運用統計を再読み込み中" : "Retrying operational statistics") : (lang === "ko" ? "운영 통계 다시 시도" : lang === "ja" ? "運用統計を再試行" : "Retry operational statistics")} className="shrink-0 rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
+                <p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "가상 관측 통계를 불러오지 못했습니다. 표시된 기록 수와 비율이 최신 값이 아닐 수 있습니다." : lang === "ja" ? "仮想観測統計を読み込めませんでした。表示中の記録数と割合が最新でない可能性があります。" : "Could not load synthetic observation statistics. Displayed record counts and rates may be outdated."}</p>
+                <button type="button" onClick={() => void periodOverviewQuery.refetch()} disabled={periodOverviewQuery.isFetching} aria-busy={periodOverviewQuery.isFetching || undefined} aria-label={periodOverviewQuery.isFetching ? (lang === "ko" ? "가상 관측 통계 다시 불러오는 중" : lang === "ja" ? "仮想観測統計を再読み込み中" : "Retrying synthetic observation statistics") : (lang === "ko" ? "가상 관측 통계 다시 시도" : lang === "ja" ? "仮想観測統計を再試行" : "Retry synthetic observation statistics")} className="shrink-0 rounded border px-2.5 py-1 text-[10px] font-bold disabled:opacity-45" style={{ borderColor: "oklch(0.65 0.20 25 / 0.45)", color: isDark ? "oklch(0.82 0.14 40)" : "oklch(0.48 0.18 25)" }}>
                   ↻ {periodOverviewQuery.isFetching ? (lang === "ko" ? "다시 불러오는 중..." : lang === "ja" ? "再読み込み中..." : "Retrying...") : (lang === "ko" ? "다시 시도" : lang === "ja" ? "再試行" : "Retry")}
                 </button>
               </div>
             )}
-
-            {/* 절감 비용 카드 */}
-            <div className="rounded-xl border p-4 sm:p-5 mb-6 flex flex-col gap-2"
-              style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.10), rgba(34,197,94,0.05))", borderColor: "rgba(34,197,94,0.30)" }}>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{t.savedCost} · {selectedPeriodLabel}</p>
-                <span className="rounded-full border px-1.5 py-0.5 text-[9px] font-bold" style={{ borderColor: "rgba(34,197,94,0.42)", color: isDark ? "oklch(0.81 0.14 150)" : "oklch(0.39 0.14 150)", background: "rgba(34,197,94,0.08)" }}>{savingsScope.badge}</span>
-                <AppTooltip delayDuration={160}>
-                  <TooltipTrigger asChild>
-                    <button type="button" aria-label={savingsScope.note} className="inline-flex h-5 w-5 items-center justify-center rounded-full border text-[11px] font-bold transition-colors hover:bg-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300" style={{ borderColor: "rgba(34,197,94,0.42)", color: isDark ? "oklch(0.81 0.14 150)" : "oklch(0.39 0.14 150)" }}>i</button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[17rem] border-emerald-400/30 bg-slate-950 px-3 py-2 text-xs text-slate-100 shadow-xl">{savingsScope.note}</TooltipContent>
-                </AppTooltip>
-              </div>
-              <div className="flex items-end gap-2">
-                <span className="text-3xl font-bold font-mono" style={{ color: "#22c55e" }}>
-                  {periodOverviewQuery.isError || statsInitialLoading ? "—" : `₩${displayedSavedCost.toLocaleString()}`}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2" role="note">{statsInitialLoading ? statsLoadingLabel : savingsScope.note}</p>
-            </div>
 
             {/* 메인 대시보드 그리드 */}
             <div id="pdf-capture-area" className="grid grid-cols-12 gap-4">
@@ -6813,14 +6750,6 @@ export default function Dashboard() {
                     </button>
                   </div>
                 </div>
-                {/* 절감 비용 리셋 버튼 */}
-                <button type="button" onClick={handleResetCost} disabled={resetCostMutation.isPending} aria-busy={resetCostMutation.isPending || undefined}
-                  className="w-full py-2 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-[0.97] disabled:opacity-40"
-                  style={{ background: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)", borderColor: th.border2, color: th.textMuted }}>
-                  {resetCostMutation.isPending
-                    ? <span className="flex items-center justify-center gap-1.5"><ButtonSpinner color="#6b7280" /><span>{t.processing}</span></span>
-                    : `↺ ${t.resetCost}`}
-                </button>
               </div>
             </div>
             {/* ── 월간 히트맵 캘린더 ── */}

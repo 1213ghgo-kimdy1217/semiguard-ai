@@ -32,7 +32,7 @@ describe("dashboard analysis and risk error accessibility contract", () => {
     expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? `“${historySessionLoadError.title}” 기록을 열지 못했습니다.`');
     expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "상담 기록을 불러오지 못했습니다."');
     expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "상담 기록 검색 결과를 불러오지 못했습니다."');
-    expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "운영 통계를 불러오지 못했습니다. KPI와 예상 절감 비용은 최신 값이 아닐 수 있습니다."');
+    expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "가상 관측 통계를 불러오지 못했습니다. 표시된 기록 수와 비율이 최신 값이 아닐 수 있습니다."');
     expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "위험도 점수 추이를 불러오지 못했습니다."');
     expect(dashboardSource).toContain('<p><span aria-hidden="true">⚠️</span>{" "}{lang === "ko" ? "이상 이력을 불러오지 못했습니다."');
   });

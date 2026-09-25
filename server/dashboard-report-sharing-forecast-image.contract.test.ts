@@ -42,8 +42,8 @@ describe("dashboard report sharing, forecast, and chart image export contract", 
     expect(routerSource).toContain("forecastLevel: { type: \"string\", enum:");
     expect(routerSource).toContain("confidence: { type: \"string\", enum:");
     expect(routerSource).toContain("alert: { type: \"boolean\" }");
-    expect(dashboardSource).toContain("다음 기간 위험 전망");
+    expect(dashboardSource).toContain("다음 기간 신호 참고 전망");
     expect(dashboardSource).toContain("if (aiSummary.alert)");
-    expect(dashboardSource).toContain("Prioritize the report evidence and recommended action.");
+    expect(dashboardSource).toContain("This is not a real prediction; review the report evidence.");
   });
 });
