@@ -12,6 +12,7 @@ describe("etch judgment training product direction", () => {
   it("does not equate retrospective markers with discovery time or claim live AI", () => {
     expect(page).toContain("과거를 표시했다고 그때 발견한 것은 아닙니다.");
     expect(page).toContain("AI 생성 답변이 아닙니다.");
-    expect(page).toContain("Scenario 01과 동일한 신호의 독립 실행입니다.");
+    expect(page).toContain("실행마다 다른 가상 신호이며 Scenario 01의 정답 데이터와 분리됩니다.");
+    expect(page).toContain("실제 팹 장비 연결은 아직 지원하지 않습니다.");
   });
 });

@@ -282,6 +282,13 @@ function Router() {
           <JudgeDemo />
         </Suspense>
       </Route>
+      <Route path={"/dashboard/simulation"}>
+        <ProtectedRoute>
+          <Suspense fallback={<DashboardModuleLoading />}>
+            <OperationsForCurrentUser />
+          </Suspense>
+        </ProtectedRoute>
+      </Route>
       <Route path={"/dashboard/legacy"}>
         <ProtectedRoute>
           <Suspense fallback={<DashboardModuleLoading />}>
@@ -292,7 +299,7 @@ function Router() {
       <Route path={"/dashboard"}>
         <ProtectedRoute>
           <Suspense fallback={<DashboardModuleLoading />}>
-            <OperationsForCurrentUser />
+            <Dashboard />
           </Suspense>
         </ProtectedRoute>
       </Route>
