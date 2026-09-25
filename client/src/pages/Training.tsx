@@ -36,7 +36,7 @@ export default function Training() {
   const results = submitted && isComplete(answer) ? evaluateAnswer(answer) : [];
   const reset = () => { setAnswer(emptyAnswer()); setSubmitted(false); setHintCount(0); setNotice(""); setStage("intro"); };
   return <div className="tr-app"><a className="tr-skip" href="#training-main">훈련 내용으로 이동</a>
-    <header className="tr-header"><Link href="/training" className="tr-brand" onClick={() => setStage("home")}><span>SG</span> SemiGuard <small>TRAINING LAB</small></Link><nav aria-label="훈련 메뉴"><button onClick={() => setStage("home")}>훈련 홈</button><Link href="/dashboard">장비 관찰 작업대</Link><Link href="/welcome">소개</Link></nav></header>
+    <header className="tr-header"><Link href="/training" className="tr-brand" onClick={() => setStage("home")}><span>SG</span> SemiGuard <small>TRAINING LAB</small></Link><nav aria-label="훈련 메뉴"><button onClick={() => setStage("home")}>훈련 홈</button><Link href="/dashboard">4센서 대시보드</Link><Link href="/welcome">소개</Link></nav></header>
     <main id="training-main" className="tr-main"><div className="tr-meta"><span>SEMIGUARD 2.0 / SCENARIO 01</span><span>교육용 시뮬레이션 데이터</span></div>
       <p className="tr-storage">답안은 현재 브라우저 탭에서만 임시 복구됩니다. 계정 저장·기기 간 동기화는 지원하지 않습니다.</p>
       {stage === "home" ? <><section className="tr-intro"><p className="tr-eyebrow">OBSERVE. REASON. REVIEW.</p><h1 ref={heading} tabIndex={-1}>고장을 외우는 교육에서,<br />이상을 판단하는 교육으로.</h1><p>센서에서 변화를 찾고, 근거를 선택하고, 다음 확인을 결정하세요.<br />정답보다 중요한 것은 그 판단에 도달한 과정입니다.</p></section>

@@ -17,10 +17,12 @@ describe("live observation integration", () => {
     expect(page).toContain("기록 파일 내려받기");
     expect(page).toContain("freeSignalSamples(selected, elapsed, seed, time)");
     expect(page).toContain("실행마다 신호가 달라지는");
+    expect(page).toContain('href="/dashboard">4센서 대시보드');
   });
   it("links training to the same equipment's live page", () => {
     const training = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");
     expect(training).toContain('href="/live"');
     expect(training).not.toContain('href="/dashboard"');
+    expect(training).toContain("별도의 가상 신호 또는 기록 CSV");
   });
 });

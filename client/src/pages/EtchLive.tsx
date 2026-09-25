@@ -79,7 +79,7 @@ export default function EtchLive() {
   }
   return <div className="et-app">
     <a className="et-skip" href="#live-main">자유 관찰 내용으로 이동</a>
-    <header className="et-header"><a className="et-brand" href="/training"><b>SG</b> SemiGuard</a><nav aria-label="제품 메뉴"><a href="/learn">8대 공정 학습</a><a href="/training">시나리오 훈련</a><a href="/dashboard">장비 관찰 작업대</a></nav></header>
+    <header className="et-header"><a className="et-brand" href="/training"><b>SG</b> SemiGuard</a><nav aria-label="제품 메뉴"><a href="/learn">8대 공정 학습</a><a href="/training">시나리오 훈련</a><a href="/dashboard">4센서 대시보드</a></nav></header>
     <main id="live-main" className="et-main">
       <div className="et-meta"><span>FREE ANALYSIS / DATA SOURCE</span><span>실제 장비 연결 및 제어 없음</span></div>
       <div className="et-actions" role="group" aria-label="분석할 데이터 선택"><Button variant={mode === "synthetic" ? "default" : "outline"} aria-pressed={mode === "synthetic"} onClick={() => setMode("synthetic")}>가변 가상 스트림</Button><Button variant={mode === "file" ? "default" : "outline"} aria-pressed={mode === "file"} onClick={() => { setRunning(false); setMode("file"); }}>기록 CSV 분석</Button></div>
