@@ -13,8 +13,11 @@ describe("login document locale contract", () => {
   });
 
   it("uses localized titles and descriptions instead of Korean metadata for every login language", () => {
-    expect(loginSource).toContain('title: "SemiGuard AI | Semiconductor Predictive Safety Monitoring"');
-    expect(loginSource).toContain('title: "SemiGuard AI | 半導体装置の予知安全モニタリング"');
+    expect(loginSource).toContain('title: "SemiGuard AI | Semiconductor sensor reasoning training"');
+    expect(loginSource).toContain('title: "SemiGuard AI | 半導体装置の信号判断訓練"');
+    expect(loginSource).not.toContain("예지안전");
+    expect(loginSource).not.toContain("Predictive Safety");
+    expect(loginSource).not.toContain("予知安全");
     expect(loginSource).toContain("metaDesc.setAttribute('content', metadata.description);");
     expect(loginSource).toContain("metaKw.setAttribute('content', metadata.keywords);");
   });

@@ -36,7 +36,7 @@ const dashboardLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
       "로딩이 평소보다 오래 걸리고 있습니다. 계속되면 새로고침해 주세요.",
     retry: "지금 새로고침",
     login: "로그인 화면으로 이동",
-    context: "반도체 장비 예지안전 시스템",
+    context: "반도체 장비 센서 판단 교육·점검 보조",
   },
   en: {
     title: "Preparing the SemiGuard AI dashboard…",
@@ -45,7 +45,7 @@ const dashboardLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
       "Loading is taking longer than usual. Refresh if it continues.",
     retry: "Refresh now",
     login: "Go to login",
-    context: "Semiconductor equipment predictive safety system",
+    context: "Semiconductor sensor reasoning and inspection aid",
   },
   ja: {
     title: "SemiGuard AIダッシュボードを準備しています。",
@@ -54,7 +54,7 @@ const dashboardLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
       "読み込みに通常より時間がかかっています。続く場合は更新してください。",
     retry: "今すぐ更新",
     login: "ログイン画面へ",
-    context: "半導体装置の予知安全システム",
+    context: "半導体装置の信号判断学習・点検支援",
   },
 };
 
@@ -66,7 +66,7 @@ const authLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
       "확인이 평소보다 오래 걸리고 있습니다. 계속되면 새로고침하거나 로그인 화면으로 이동해 주세요.",
     retry: "지금 새로고침",
     login: "로그인 화면으로 이동",
-    context: "반도체 장비 예지안전 시스템",
+    context: "반도체 장비 센서 판단 교육·점검 보조",
   },
   en: {
     title: "Verifying your secure sign-in…",
@@ -75,7 +75,7 @@ const authLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
       "Verification is taking longer than usual. Refresh or go to the login page.",
     retry: "Refresh now",
     login: "Go to login",
-    context: "Semiconductor equipment predictive safety system",
+    context: "Semiconductor sensor reasoning and inspection aid",
   },
   ja: {
     title: "安全なログイン状態を確認しています。",
@@ -84,7 +84,7 @@ const authLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
       "確認に通常より時間がかかっています。更新するか、ログイン画面へ移動してください。",
     retry: "今すぐ更新",
     login: "ログイン画面へ",
-    context: "半導体装置の予知安全システム",
+    context: "半導体装置の信号判断学習・点検支援",
   },
 };
 

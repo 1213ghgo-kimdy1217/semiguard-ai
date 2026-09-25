@@ -56,22 +56,22 @@ export function Login() {
     const metadata = loginLanguage === "ja"
       ? {
           locale: "ja-JP",
-          title: "SemiGuard AI | 半導体装置の予知安全モニタリング",
-          description: "SemiGuard AIは、半導体装置の電流・温度・振動・騒音の偏差をz-scoreベースの危険信号として整理し、読み取り専用でLLM補助の点検説明を提供します。",
-          keywords: "SemiGuard AI, 半導体予知保全, 異常検知, センサーモニタリング, 予知安全システム",
+          title: "SemiGuard AI | 半導体装置の信号判断訓練",
+          description: "SemiGuard AIは、仮想センサー信号とルールベースのリスク点数を用い、観察の根拠と次の確認を学ぶ教育・点検支援システムです。実際の装置は制御せず、製造現場での性能は未検証です。",
+          keywords: "SemiGuard AI, 半導体装置, センサー観察, 判断訓練, 点検支援",
         }
       : loginLanguage === "en"
         ? {
             locale: "en-US",
-            title: "SemiGuard AI | Semiconductor Predictive Safety Monitoring",
-            description: "SemiGuard AI organizes current, temperature, vibration, and noise deviations into z-score risk signals, with LLM-assisted inspection explanations in a read-only workflow.",
-            keywords: "SemiGuard AI, semiconductor predictive maintenance, anomaly detection, sensor monitoring, predictive safety",
+            title: "SemiGuard AI | Semiconductor sensor reasoning training",
+            description: "SemiGuard AI helps users practice interpreting synthetic sensor signals and rule-based risk scores, from observed evidence to the next check. It does not control equipment, and real-fab performance is unvalidated.",
+            keywords: "SemiGuard AI, semiconductor equipment, sensor observation, reasoning training, inspection aid",
           }
         : {
             locale: "ko-KR",
             title: "SemiGuard AI — 센서 근거 기반 교육·점검 보조",
-            description: "SemiGuard AI는 반도체 장비의 전류·온도·진동·소음 편차를 z-score 기반 위험 신호로 정리하고, 읽기 전용 환경에서 LLM 보조 점검 설명을 제공하는 예지안전 시스템입니다.",
-            keywords: "SemiGuard AI, 반도체 예지보전, 이상탐지, 센서 모니터링, 예지안전 시스템",
+            description: "SemiGuard AI는 가상 센서 신호와 규칙 기반 위험 점수로 관찰 근거와 다음 확인을 연습하는 교육·점검 보조 시스템입니다. 실제 설비를 제어하지 않으며 현장 성능은 검증되지 않았습니다.",
+            keywords: "SemiGuard AI, 반도체 장비, 센서 관찰, 판단 훈련, 점검 보조",
           };
 
     document.documentElement.lang = metadata.locale;
@@ -170,7 +170,7 @@ export function Login() {
         };
   const loginUi = loginLanguage === "ja"
     ? {
-        subtitle: "半導体装置予知安全システム",
+        subtitle: "半導体装置の信号判断訓練",
         employeeLogin: "社員証番号ログイン",
         badgeLabel: "社員証番号",
         badgePlaceholder: "例: EMP-2024-001",
@@ -198,7 +198,7 @@ export function Login() {
       }
     : loginLanguage === "en"
       ? {
-          subtitle: "Semiconductor Predictive Safety System",
+          subtitle: "Semiconductor sensor reasoning practice",
           employeeLogin: "Badge number sign-in",
           badgeLabel: "Company badge number",
           badgePlaceholder: "e.g. EMP-2024-001",
@@ -225,7 +225,7 @@ export function Login() {
           terms: "By signing in, you agree to the Terms of Service.",
         }
       : {
-          subtitle: "반도체 장비 예지안전 시스템",
+          subtitle: "반도체 장비 센서 판단 훈련",
           employeeLogin: "사번 로그인",
           badgeLabel: "회사 명찰 번호",
           badgePlaceholder: "예: EMP-2024-001",
