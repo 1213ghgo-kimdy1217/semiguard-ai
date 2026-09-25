@@ -29,6 +29,7 @@
   backdrop-filter:blur(16px);
 }
 .et-brand,.et-header nav a{color:#d4ddd5}
+.et-header .sg-language-select{color:#d4ddd5}
 .et-brand b{
   width:37px;height:37px;display:grid;place-items:center;
   border:1px solid #84918a;border-radius:50%;

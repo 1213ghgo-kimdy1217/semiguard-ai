@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 describe("learning navigation safeguards", () => {
   it("sets a distinct learning title", () => {
-    expect(readFileSync("client/src/pages/LearningHub.tsx", "utf8")).toContain('document.title = "SemiGuard — 8대 공정 학습"');
+    expect(readFileSync("client/src/pages/LearningHub.tsx", "utf8")).toContain('document.title = l("SemiGuard — 8대 공정 학습"');
   });
   it("warns on an unfinished draft while saved notes survive same-tab navigation", () => {
     const source = readFileSync("client/src/pages/EtchLive.tsx", "utf8");
