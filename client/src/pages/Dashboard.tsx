@@ -2524,22 +2524,22 @@ export default function Dashboard() {
     const metadata = lang === "ja"
       ? {
           locale: "ja-JP",
-          title: "SemiGuard AI｜旧4センサーシミュレーション",
-          description: "電流・温度・振動・騒音の仮想データを表示する旧ダッシュボードです。リスクスコアはルールベースで、実設備の制御や性能検証は行っていません。",
-          keywords: "SemiGuard AI,旧ダッシュボード,仮想センサーデータ",
+          title: "SemiGuard AI｜4センサー観測と判断根拠",
+          description: "電流・温度・振動・騒音の仮想データを比較し、観測の根拠を確認します。リスクスコアはルールベースで、実設備の制御や性能検証は行っていません。",
+          keywords: "SemiGuard AI,センサー観測,判断根拠,仮想センサーデータ",
         }
       : lang === "en"
         ? {
             locale: "en-US",
-            title: "SemiGuard AI | Legacy Four-Sensor Simulation",
-            description: "Legacy dashboard with simulated current, temperature, vibration, and noise data. Risk scores are rule-based; no equipment control or fab performance has been validated.",
-            keywords: "SemiGuard AI, legacy dashboard, simulated sensor data",
+            title: "SemiGuard AI | Four-Sensor Observation and Evidence",
+            description: "Compare simulated current, temperature, vibration, and noise readings and inspect the evidence. Risk scores are rule-based; no equipment control or fab performance has been validated.",
+            keywords: "SemiGuard AI, sensor observation, evidence, simulated sensor data",
           }
         : {
             locale: "ko-KR",
-            title: "SemiGuard AI | 기존 4센서 가상 데이터 화면",
-            description: "전류·온도·진동·소음의 가상 데이터를 보여주는 기존 화면입니다. z-score 기반 위험 점수는 규칙으로 계산하며 실제 설비 제어·현장 성능 검증은 하지 않았습니다.",
-            keywords: "SemiGuard AI, 기존 대시보드, 가상 센서 데이터",
+            title: "SemiGuard AI | 4센서 관측과 판단 근거",
+            description: "전류·온도·진동·소음의 가상 데이터를 비교하고 관측 근거를 확인합니다. z-score 기반 위험 점수는 규칙으로 계산하며 실제 설비 제어·현장 성능 검증은 하지 않았습니다.",
+            keywords: "SemiGuard AI, 센서 관측, 판단 근거, 가상 센서 데이터",
           };
 
     document.title = metadata.title;
