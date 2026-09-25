@@ -27,4 +27,18 @@ describe("operational read authorization", () => {
     await expect(caller.semiguard.getSensorThresholds()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     await expect(caller.semiguard.getLlmHistory()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
+
+  it("rejects global threshold changes from a signed-in non-admin before database access", async () => {
+    const caller = appRouter.createCaller({
+      ...createUnauthenticatedContext(),
+      user: { id: 42, role: "user" } as TrpcContext["user"],
+    });
+    await expect(caller.semiguard.saveThresholds({ normal: 29, caution: 49, warning: 69 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.semiguard.saveSensorThresholds({
+      currentCaution: 7, currentWarning: 9, currentDanger: 11,
+      tempCaution: 55, tempWarning: 70, tempDanger: 85,
+      vibCaution: 2.3, vibWarning: 2.6, vibDanger: 3,
+      noiseCaution: 65, noiseWarning: 75, noiseDanger: 85,
+    })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
 });

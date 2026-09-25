@@ -23,7 +23,8 @@ describe("product-scope copy contract", () => {
     expect(i18nSource).toContain('uptimePct: "異常未判定の割合"');
     expect(dashboardSource).toContain("실제 설비 가동률이 아닙니다");
     expect(dashboardSource).toContain("실제 가동률이나 절감액은 측정하지 않습니다");
-    expect(dashboardSource).toContain('selectedPeriodStats?.totalDetections ? `${selectedPeriodStats.uptimePct}%` : "—"');
+    expect(dashboardSource).toContain("비교 기준은 가상 데이터 생성 기준(mean ±1σ)입니다. 실제 장비의 정상 허용 범위가 아닙니다.");
+    expect(dashboardSource).not.toContain("<ImpactCard label={t.uptimePct}");
     expect(dashboardSource).not.toContain("handleResetCost");
     expect(dashboardSource).not.toContain("displayedSavedCost");
     expect(dashboardSource).not.toContain("Isolation Forest AI");
