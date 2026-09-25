@@ -19,11 +19,11 @@ describe("competition usage comparison contract", () => {
     expect(routerSource).toContain("getPreviousComparableRange(range.startAt, range.endAt)");
   });
 
-  it("shows completion, returning, and guide-rate changes with a small-sample warning", () => {
+  it("shows completion and returning changes with a small-sample warning", () => {
     expect(dashboardSource).toContain("개선 전후 비교");
     expect(dashboardSource).toContain("Before/after comparison");
     expect(dashboardSource).toContain("currentReturningRate");
-    expect(dashboardSource).toContain("onboardingCompletionRate");
+    expect(dashboardSource).not.toContain("onboardingCompletionRate");
     expect(dashboardSource).toContain("usageComparisonHasSmallSample");
     expect(dashboardSource).toContain("같은 길이의 기간만 비교합니다");
   });

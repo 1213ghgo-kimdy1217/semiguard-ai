@@ -28,12 +28,9 @@ describe("first analysis onboarding contract", () => {
     expect(dbSource).toContain("COUNT(DISTINCT ${userOnboardingProgress.userId})");
   });
 
-  it("provides three localized guidance steps, a review control, and an admin KPI", () => {
-    expect(dashboardSource).toContain('title: "첫 안전 분석 안내"');
-    expect(dashboardSource).toContain('title: "初回安全分析ガイド"');
-    expect(dashboardSource).toContain('title: "First safety analysis guide"');
-    expect(dashboardSource).toContain("onboardingCopy.review");
-    expect(dashboardSource).toContain("onboardingCompletionRate");
-    expect(dashboardSource).toContain('role="dialog"');
+  it("does not interrupt the observation workspace with the retired first-analysis guide", () => {
+    expect(dashboardSource).not.toContain("getOnboardingProgress.useQuery");
+    expect(dashboardSource).not.toContain('id="first-analysis-onboarding-title"');
+    expect(dashboardSource).not.toContain("onboardingCompletionRate");
   });
 });

@@ -13,7 +13,6 @@ import { Tooltip as AppTooltip, TooltipContent, TooltipTrigger } from "@/compone
 const FALLBACK_DIAGNOSTIC_MARKERS = ["[규칙 기반 근거 요약]", "[ルールベースの根拠要約]", "[Rule-based Evidence Summary]", "[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;
 const CUSTOM_PERIOD_PRESETS_KEY = "semiguard_custom_period_presets";
 const MAX_CUSTOM_PERIOD_PRESETS = 8;
-const FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY = "semiguard_first_use_feedback_prompt_dismissed";
 
 type CustomPeriodPreset = {
   id: string;
@@ -1081,173 +1080,6 @@ export default function Dashboard() {
   const trpcUtils = trpc.useUtils();
   const authMeQuery = trpc.auth.me.useQuery(undefined, { staleTime: 60_000 });
   const isUsageMetricsAdmin = authMeQuery.data?.role === "admin";
-  const onboardingProgressQuery = trpc.semiguard.getOnboardingProgress.useQuery(undefined, { staleTime: 60_000 });
-  const saveOnboardingProgressMutation = trpc.semiguard.saveOnboardingProgress.useMutation();
-  const firstUseFeedbackQuery = trpc.semiguard.getFirstUseFeedback.useQuery(undefined, { staleTime: 60_000 });
-  const saveFirstUseFeedbackMutation = trpc.semiguard.saveFirstUseFeedback.useMutation();
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3>(1);
-  const [isFirstUseFeedbackOpen, setIsFirstUseFeedbackOpen] = useState(false);
-  const [firstUseEaseRating, setFirstUseEaseRating] = useState(0);
-  const [firstUseDifficultStep, setFirstUseDifficultStep] = useState<"none" | "orientation" | "risk_review" | "analysis_review">("none");
-  const [firstUseFeedbackSaveError, setFirstUseFeedbackSaveError] = useState<string | null>(null);
-  const [isFirstUseFeedbackPromptDismissed, setIsFirstUseFeedbackPromptDismissed] = useState(() => readDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY) === "true");
-  const onboardingInitializedRef = useRef(false);
-  const feedbackPromptedRef = useRef(false);
-  const onboardingTriggerRef = useRef<HTMLButtonElement>(null);
-  const onboardingCloseButtonRef = useRef<HTMLButtonElement>(null);
-  const onboardingDialogRef = useRef<HTMLElement>(null);
-  const firstUseFeedbackTriggerRef = useRef<HTMLButtonElement>(null);
-  const firstUseFeedbackCloseButtonRef = useRef<HTMLButtonElement>(null);
-  const firstUseFeedbackDialogRef = useRef<HTMLElement>(null);
-  const onboardingCopy = lang === "ko"
-    ? { title: "첫 안전 분석 안내", subtitle: "3단계로 위험 신호부터 점검 순서까지 확인해 보세요.", steps: ["위험 신호", "AI 근거", "점검 순서"], risk: "대시보드 상단의 위험도 점수와 센서 카드에서 먼저 주의가 필요한 신호를 확인합니다.", evidence: "AI 분석 결과에서는 수치 편차와 확인이 필요한 근거를 함께 읽습니다. AI 판단만으로 고장을 단정하지 않습니다.", action: "권장 점검 순서를 확인하고, 실제 설비 작업은 승인된 현장 안전 절차에 따라 담당자가 진행합니다.", later: "나중에", previous: "이전", next: "다음", finish: "안내 완료", review: "첫 분석 안내 다시 보기", progress: "진행" }
-    : lang === "ja"
-      ? { title: "初回安全分析ガイド", subtitle: "3段階で危険信号から点検順序まで確認できます。", steps: ["危険信号", "AI根拠", "点検順序"], risk: "ダッシュボード上部のリスクスコアとセンサーカードから、注意が必要な信号を確認します。", evidence: "AI分析結果では数値の偏差と確認すべき根拠を併せて読みます。AIの判断だけで故障を断定しません。", action: "推奨点検順序を確認し、実際の設備作業は承認された現場安全手順に従って担当者が進めます。", later: "後で", previous: "前へ", next: "次へ", finish: "ガイド完了", review: "初回分析ガイドを再表示", progress: "進行" }
-      : { title: "First safety analysis guide", subtitle: "Use three steps to move from a risk signal to an inspection sequence.", steps: ["Risk signal", "AI evidence", "Inspection order"], risk: "Start with the risk score and sensor cards at the top of the dashboard to see which signal needs attention.", evidence: "Read measured deviations and evidence in the AI analysis. An AI assessment alone does not confirm a failure.", action: "Review the recommended inspection order. A responsible operator performs real equipment work under approved on-site safety procedures.", later: "Later", previous: "Previous", next: "Next", finish: "Finish guide", review: "Review first analysis guide", progress: "Progress" };
-  const firstUseFeedbackCopy = lang === "ko"
-    ? { title: "첫 사용 경험", subtitle: "선택 항목만 저장합니다. 이름·연락처·설비 데이터·자유 입력은 수집하지 않습니다.", ease: "첫 분석 안내를 사용하기 쉬웠나요?", difficult: "가장 확인하기 어려웠던 단계는 무엇이었나요?", ratings: ["매우 어려움", "어려움", "보통", "쉬움", "매우 쉬움"], steps: { none: "없음", orientation: "위험 신호 확인", risk_review: "위험도·센서 읽기", analysis_review: "AI 근거·점검 순서" }, later: "나중에", submit: "선택 응답 저장", saved: "첫 사용 피드백을 저장했습니다. 최신 응답으로 언제든 바꿀 수 있습니다.", edit: "첫 사용 경험 수정", response: "응답", average: "평균 편의" }
-    : lang === "ja"
-      ? { title: "初回利用の体験", subtitle: "選択項目のみを保存します。氏名・連絡先・設備データ・自由記述は収集しません。", ease: "初回分析ガイドは使いやすかったですか？", difficult: "最も確認しにくかった段階は何ですか？", ratings: ["とても難しい", "難しい", "普通", "簡単", "とても簡単"], steps: { none: "なし", orientation: "リスク信号の確認", risk_review: "リスク・センサーの確認", analysis_review: "AI根拠・点検順序" }, later: "後で", submit: "選択回答を保存", saved: "初回利用フィードバックを保存しました。いつでも最新の回答に更新できます。", edit: "初回利用の体験を編集", response: "回答", average: "平均の使いやすさ" }
-      : { title: "First-use experience", subtitle: "Only selected answers are stored. No name, contact details, equipment data, or free text is collected.", ease: "How easy was the first analysis guide to use?", difficult: "Which step was the hardest to review?", ratings: ["Very difficult", "Difficult", "Neutral", "Easy", "Very easy"], steps: { none: "None", orientation: "Finding risk signals", risk_review: "Reading risk and sensors", analysis_review: "AI evidence and inspection order" }, later: "Later", submit: "Save selected response", saved: "Saved your first-use feedback. You can update your latest response at any time.", edit: "Edit first-use experience", response: "Responses", average: "Average ease" };
-  useEffect(() => {
-    if (!onboardingProgressQuery.data || onboardingInitializedRef.current) return;
-    onboardingInitializedRef.current = true;
-    const currentStep = Math.min(3, Math.max(1, onboardingProgressQuery.data.currentStep)) as 1 | 2 | 3;
-    setOnboardingStep(currentStep);
-    if (!onboardingProgressQuery.data.completedAt) setIsOnboardingOpen(true);
-  }, [onboardingProgressQuery.data]);
-  useEffect(() => {
-    if (!onboardingProgressQuery.data?.completedAt || firstUseFeedbackQuery.isLoading || firstUseFeedbackQuery.data || feedbackPromptedRef.current || isFirstUseFeedbackPromptDismissed) return;
-    feedbackPromptedRef.current = true;
-    setIsFirstUseFeedbackOpen(true);
-  }, [firstUseFeedbackQuery.data, firstUseFeedbackQuery.isLoading, isFirstUseFeedbackPromptDismissed, onboardingProgressQuery.data?.completedAt]);
-  const closeOnboarding = () => {
-    setIsOnboardingOpen(false);
-    requestAnimationFrame(() => onboardingTriggerRef.current?.focus());
-  };
-  useEffect(() => {
-    if (!isOnboardingOpen) return;
-    onboardingCloseButtonRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeOnboarding();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusableControls = Array.from(onboardingDialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? []);
-      const firstControl = focusableControls[0];
-      const lastControl = focusableControls.at(-1);
-      if (!firstControl || !lastControl) return;
-      if (event.shiftKey && document.activeElement === firstControl) {
-        event.preventDefault();
-        lastControl.focus();
-      } else if (!event.shiftKey && document.activeElement === lastControl) {
-        event.preventDefault();
-        firstControl.focus();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOnboardingOpen]);
-
-  const closeFirstUseFeedback = () => {
-    persistDashboardPreference(FIRST_USE_FEEDBACK_PROMPT_DISMISSED_KEY, "true");
-    setIsFirstUseFeedbackPromptDismissed(true);
-    setFirstUseFeedbackSaveError(null);
-    setIsFirstUseFeedbackOpen(false);
-    requestAnimationFrame(() => firstUseFeedbackTriggerRef.current?.focus());
-  };
-  useEffect(() => {
-    if (!isFirstUseFeedbackOpen) return;
-    firstUseFeedbackCloseButtonRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeFirstUseFeedback();
-      if (event.key !== "Tab") return;
-      const focusableControls = Array.from(firstUseFeedbackDialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? []);
-      if (focusableControls.length === 0) return;
-      const firstControl = focusableControls[0];
-      const lastControl = focusableControls[focusableControls.length - 1];
-      if (event.shiftKey && document.activeElement === firstControl) {
-        event.preventDefault();
-        lastControl?.focus();
-      } else if (!event.shiftKey && document.activeElement === lastControl) {
-        event.preventDefault();
-        firstControl?.focus();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isFirstUseFeedbackOpen]);
-
-  useEffect(() => {
-    const dialog = firstUseFeedbackDialogRef.current;
-    if (!dialog) return;
-    dialog.setAttribute("aria-busy", saveFirstUseFeedbackMutation.isPending ? "true" : "false");
-  }, [isFirstUseFeedbackOpen, saveFirstUseFeedbackMutation.isPending]);
-
-  useEffect(() => {
-    if (!isFirstUseFeedbackOpen) return;
-    const dialog = firstUseFeedbackDialogRef.current;
-    if (!dialog) return;
-    const moveRadioSelection = (event: KeyboardEvent) => {
-      if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
-      const target = event.target;
-      if (!(target instanceof HTMLButtonElement) || target.getAttribute("role") !== "radio") return;
-      const group = target.closest('[role="radiogroup"]');
-      const radios = Array.from(group?.querySelectorAll<HTMLButtonElement>('[role="radio"]:not([disabled])') ?? []);
-      const currentIndex = radios.indexOf(target);
-      if (currentIndex < 0 || radios.length === 0) return;
-      event.preventDefault();
-      const nextIndex = event.key === "Home" ? 0
-        : event.key === "End" ? radios.length - 1
-          : (currentIndex + (event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1) + radios.length) % radios.length;
-      radios[nextIndex]?.click();
-      radios[nextIndex]?.focus();
-    };
-    dialog.addEventListener("keydown", moveRadioSelection);
-    return () => dialog.removeEventListener("keydown", moveRadioSelection);
-  }, [isFirstUseFeedbackOpen]);
-
-  useEffect(() => {
-    if (!isFirstUseFeedbackOpen || !firstUseFeedbackSaveError) return;
-    const dialog = firstUseFeedbackDialogRef.current;
-    if (!dialog) return;
-    const errorNode = document.createElement("p");
-    errorNode.id = "first-use-feedback-save-error";
-    errorNode.setAttribute("role", "alert");
-    errorNode.className = "mt-4 rounded-lg border border-rose-400/55 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-300";
-    errorNode.textContent = firstUseFeedbackSaveError;
-    dialog.insertBefore(errorNode, dialog.lastElementChild);
-    return () => errorNode.remove();
-  }, [firstUseFeedbackSaveError, isFirstUseFeedbackOpen]);
-
-  const persistOnboardingStep = async (nextStep: 1 | 2 | 3, completed = false) => {
-    setOnboardingStep(nextStep);
-    try {
-      await saveOnboardingProgressMutation.mutateAsync({ currentStep: nextStep, completed });
-      await onboardingProgressQuery.refetch();
-      if (completed) toast.success(lang === "ko" ? "첫 분석 안내를 완료했습니다." : lang === "ja" ? "初回分析ガイドを完了しました。" : "First analysis guide completed.");
-    } catch {
-      toast.error(lang === "ko" ? "안내 진행 상태를 저장하지 못했습니다." : lang === "ja" ? "ガイドの進行状況を保存できませんでした。" : "Could not save guide progress.");
-    }
-  };
-  const submitFirstUseFeedback = async () => {
-    if (firstUseEaseRating < 1) return;
-    setFirstUseFeedbackSaveError(null);
-    try {
-      await saveFirstUseFeedbackMutation.mutateAsync({ easeRating: firstUseEaseRating, difficultStep: firstUseDifficultStep });
-      await firstUseFeedbackQuery.refetch();
-      await trpcUtils.semiguard.getProductUsageMetrics.invalidate();
-      closeFirstUseFeedback();
-      toast.success(firstUseFeedbackCopy.saved);
-    } catch {
-      const errorMessage = lang === "ko" ? "첫 사용 피드백을 저장하지 못했습니다. 다시 시도해 주세요." : lang === "ja" ? "初回利用フィードバックを保存できませんでした。もう一度お試しください。" : "Could not save first-use feedback. Please try again.";
-      setFirstUseFeedbackSaveError(errorMessage);
-      toast.error(errorMessage);
-    }
-  };
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       void trpcUtils.auth.me.invalidate();
@@ -1264,10 +1096,7 @@ export default function Dashboard() {
     return next;
   });
   const isMobile = useIsMobile();
-  const hasCompletedFirstAnalysis = Boolean(onboardingProgressQuery.data?.completedAt);
-  const aiHistoryBottom = hasCompletedFirstAnalysis
-    ? (isMobile ? "max(8rem, calc(env(safe-area-inset-bottom) + 7.25rem))" : "7.5rem")
-    : (isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined);
+  const aiHistoryBottom = isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : "1.25rem";
   const [menuOpen, setMenuOpen] = useState(() =>
     import.meta.env.DEV && new URLSearchParams(window.location.search).get("menu") === "open",
   );
@@ -1341,7 +1170,6 @@ export default function Dashboard() {
   const lastUpdateRef = useRef<number>(Date.now());
   const [relayTripped, setRelayTripped] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "log">("dashboard");
-  const [showLanding, setShowLanding] = useState(true);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [dangerAlert, setDangerAlert] = useState(false);
@@ -1353,8 +1181,6 @@ export default function Dashboard() {
     setActiveDislikeIdx(null);
     setOtherReasonIdx(null);
     setShowAiHistory(false);
-    setIsOnboardingOpen(false);
-    setIsFirstUseFeedbackOpen(false);
     setDangerAlert(true);
   }, []);
   const acknowledgeDangerAlert = useCallback(() => {
@@ -3137,6 +2963,11 @@ export default function Dashboard() {
   const sensorData = current?.sensorData;
   const anomalyScore = current?.anomalyScore ?? 0;
   const riskLevel = current?.riskLevel ?? "normal";
+  const leadingSensorEvidence = sensorData
+    ? (["current", "temperature", "vibration", "noise"] as const)
+      .map(field => ({ field, value: sensorData[field], contribution: sensorScoreContribution(field, sensorData[field]) }))
+      .sort((a, b) => b.contribution - a.contribution)[0]
+    : null;
   const quickChatPrompts = getQuickChatPrompts(riskLevel, lang);
   const logs = logsData ?? [];
   // 새 기록 배너: logs 개수 증가 감지
@@ -4104,57 +3935,6 @@ export default function Dashboard() {
           </button>
         </div>
       </header>
-
-      {/* ── 랜딩 섹션 ── */}
-      {showLanding && (
-        <div className="border-b px-5 py-6" style={{ borderColor: th.border, background: isDark ? "linear-gradient(135deg, oklch(0.13 0.015 240), oklch(0.12 0.01 240))" : "linear-gradient(135deg, oklch(0.97 0.005 240), oklch(0.95 0.008 240))" }}>
-          <div className="max-w-4xl mx-auto flex items-start justify-between gap-6">
-            <div className="flex-1">
-              <div className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
-                style={{ background: "oklch(0.65 0.18 200 / 0.15)", color: "oklch(0.65 0.18 200)" }}>
-                {t.landingBadge}
-              </div>
-              <h2 className="text-xl font-bold mb-2">{t.landingTitle}</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">{t.landingDesc}</p>
-            </div>
-            <button type="button" onClick={() => setShowLanding(false)}
-              aria-label={lang === "ko" ? "서비스 소개 닫기" : lang === "ja" ? "サービス紹介を閉じる" : "Close service introduction"}
-              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-all duration-200 hover:opacity-70"
-              style={{ borderColor: th.border2, color: th.textMuted }}>
-              <span aria-hidden="true">✕</span>
-              <span className="hidden sm:inline">{lang === "ko" ? "닫기" : lang === "ja" ? "閉じる" : "Close"}</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── 플로팅 챗봇 버튼 ── */}
-      <button
-        type="button"
-        ref={chatLaunchButtonRef}
-        onClick={() => setIsChatOpen(true)}
-        aria-label={lang === "ko" ? "AI 근거 정리 도우미 열기" : lang === "ja" ? "AI根拠整理アシスタントを開く" : "Open AI evidence assistant"}
-        className="fixed bottom-5 right-4 sm:bottom-8 sm:right-8 z-[495] flex items-center gap-2 sm:gap-3 px-4 py-3 sm:px-7 sm:py-5 rounded-full shadow-2xl font-extrabold text-sm sm:text-base transition-transform duration-200 hover:scale-[1.04] active:scale-[0.97]"
-        style={{
-          bottom: isMobile ? "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" : undefined,
-          background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))",
-          color: "white",
-          border: "2px solid oklch(0.85 0.14 200 / 0.7)",
-          boxShadow: "0 18px 45px -10px rgba(0,0,0,0.45), 0 0 0 8px oklch(0.65 0.18 200 / 0.12)",
-          transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
-        }}>
-        <span className="relative flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-full text-xl sm:text-2xl shrink-0" style={{ background: "rgba(255,255,255,0.18)" }}>
-          🤖
-          <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full" style={{ background: "oklch(0.8 0.19 145)", border: "2px solid white" }} />
-        </span>
-        <span className="flex flex-col items-start leading-tight text-left">
-          <span className="sm:hidden whitespace-nowrap">{lang === "ko" ? "AI 상담" : lang === "ja" ? "AI相談" : "AI Chat"}</span>
-          <span className="hidden sm:inline whitespace-nowrap">{lang === "ko" ? "AI 근거 정리 도우미" : lang === "ja" ? "AI根拠整理アシスタント" : "AI Evidence Assistant"}</span>
-          <span className="hidden sm:block text-xs font-semibold opacity-90 whitespace-nowrap">
-            {lang === "ko" ? "설명 보조 · 점수는 규칙 기반" : lang === "ja" ? "説明補助・スコアはルールベース" : "Explanation only · rule-based scores"}
-          </span>
-        </span>
-      </button>
 
       {/* ── AI 챗봇 대화창 모달 ── */}
       {isChatOpen && (
@@ -6197,12 +5977,21 @@ export default function Dashboard() {
                   <p className="text-[11px] font-bold tracking-[0.18em] text-teal-200">SEMIGUARD / FOUR-SENSOR OBSERVATION</p>
                   <h1 id="observation-workspace-title" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{lang === "ko" ? "신호를 보고, 차이를 확인하고, 근거를 남깁니다." : lang === "ja" ? "信号を見て、差を確かめ、根拠を残します。" : "Observe signals, compare changes, preserve evidence."}</h1>
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{lang === "ko" ? "4개 가상 센서의 현재값과 비교 기준을 먼저 살펴보세요. 점수는 규칙 기반 참고값이며 원인 확정이나 실제 장비 제어를 뜻하지 않습니다." : lang === "ja" ? "4つの仮想センサーの現在値と比較基準を確認してください。スコアはルールベースの参考値であり、原因の確定や実機制御ではありません。" : "Compare four synthetic sensor readings with their reference bands. The rule-based score does not diagnose a cause or control equipment."}</p>
-                  <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-200"><span className="rounded-full border border-slate-500 px-3 py-1.5">01 {lang === "ko" ? "현재값 · 기준" : lang === "ja" ? "現在値・基準" : "Value · reference"}</span><span className="rounded-full border border-slate-500 px-3 py-1.5">02 {lang === "ko" ? "변화 추세" : lang === "ja" ? "変化の傾向" : "Trend"}</span><span className="rounded-full border border-slate-500 px-3 py-1.5">03 {lang === "ko" ? "이상 이력 확인" : lang === "ja" ? "異常履歴" : "History"}</span></div>
+                  <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-200">
+                    <a href="#sensor-evidence" className="rounded-full border border-slate-500 px-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-200">01 {lang === "ko" ? "현재값 · 기준" : lang === "ja" ? "現在値・基準" : "Value · reference"}</a>
+                    <a href="#sensor-trend" className="rounded-full border border-slate-500 px-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-200">02 {lang === "ko" ? "변화 추세" : lang === "ja" ? "変化の傾向" : "Trend"}</a>
+                    <button type="button" onClick={() => setActiveTab("log")} className="rounded-full border border-slate-500 px-3 py-1.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-200">03 {lang === "ko" ? "이상 이력 확인" : lang === "ja" ? "異常履歴" : "History"}</button>
+                  </div>
+                  <button ref={chatLaunchButtonRef} type="button" onClick={() => setIsChatOpen(true)} className="mt-5 rounded-lg border border-teal-300/60 bg-teal-300/10 px-4 py-2 text-xs font-semibold text-teal-100 transition hover:bg-teal-300/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-200">{lang === "ko" ? "AI에 관측 근거 질문하기 · 설명 보조" : lang === "ja" ? "AIに観測根拠を質問・説明補助" : "Ask AI about the evidence · explanation only"}</button>
                 </div>
                 <div className="flex flex-col justify-between rounded-xl border border-[#416375] bg-[#1b3248] p-5">
                   <p className="text-[11px] font-bold tracking-[0.13em] text-teal-200">{lang === "ko" ? "현재 가상 관측" : lang === "ja" ? "現在の仮想観測" : "CURRENT SYNTHETIC SAMPLE"}</p>
                   <div className="mt-3 flex items-baseline gap-3"><strong className="font-mono text-5xl tabular-nums text-white">{current ? anomalyScore : "—"}</strong><span className="text-sm text-slate-300">/ 100 · {current ? t[riskLevel] : (lang === "ko" ? "불러오는 중" : lang === "ja" ? "読み込み中" : "Loading")}</span></div>
-                  <p className="mt-3 text-xs leading-5 text-slate-300">{lang === "ko" ? "관측값 저장 → 기준과 비교 → 이력에서 같은 기록 확인" : lang === "ja" ? "観測値を保存 → 基準と比較 → 履歴で同じ記録を確認" : "Saved sample → reference comparison → same record in history"}</p>
+                  {leadingSensorEvidence && <div className="mt-4 border-t border-slate-500/50 pt-3 text-xs leading-5 text-slate-200">
+                    <p className="font-semibold text-teal-200">{lang === "ko" ? "현재 가장 큰 점수 기여" : lang === "ja" ? "現在最も大きいスコア寄与" : "Largest score contribution now"}</p>
+                    <p className="mt-1">{({ current: t.current, temperature: t.temperature, vibration: t.vibration, noise: t.noise })[leadingSensorEvidence.field]} · {Math.abs((leadingSensorEvidence.value - NORMAL_BASELINE[leadingSensorEvidence.field].mean) / NORMAL_BASELINE[leadingSensorEvidence.field].std).toFixed(1)}σ · {leadingSensorEvidence.contribution.toFixed(1)}/25</p>
+                    <p className="mt-1 text-slate-400">{lang === "ko" ? "관찰된 편차이며 고장 원인을 뜻하지 않습니다." : lang === "ja" ? "観測された偏差であり、故障原因を意味しません。" : "An observed deviation, not a diagnosed cause."}</p>
+                  </div>}
                 </div>
               </div>
             </section>
@@ -6287,21 +6076,18 @@ export default function Dashboard() {
                 </div>
                 <span className="rounded-full border px-2 py-1 text-[9px] font-bold" style={{ borderColor: "oklch(0.64 0.15 285 / 0.45)", color: isDark ? "oklch(0.82 0.12 285)" : "oklch(0.45 0.16 285)" }}>{lang === "ko" ? "관리자 전용" : lang === "ja" ? "管理者専用" : "Admin only"}</span>
               </div>
-              {productUsageMetricsQuery.isLoading ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-6" role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? "제품 사용 지표를 불러오는 중" : lang === "ja" ? "プロダクト利用指標を読み込み中" : "Loading product usage metrics"}>{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg border" style={{ borderColor: th.border, background: th.bgCard }} />)}</div> : productUsageMetricsQuery.isError ? <p className="rounded-lg border p-2 text-[10px]" role="alert" aria-atomic="true" style={{ borderColor: "oklch(0.65 0.20 25 / 0.42)", color: th.textMuted }}>{lang === "ko" ? "제품 사용 지표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : lang === "ja" ? "プロダクト利用指標を読み込めませんでした。しばらくしてから再試行してください。" : "Could not load product usage metrics. Please try again shortly."}</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
+              {productUsageMetricsQuery.isLoading ? <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? "제품 사용 지표를 불러오는 중" : lang === "ja" ? "プロダクト利用指標を読み込み中" : "Loading product usage metrics"}>{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-16 animate-pulse rounded-lg border" style={{ borderColor: th.border, background: th.bgCard }} />)}</div> : productUsageMetricsQuery.isError ? <p className="rounded-lg border p-2 text-[10px]" role="alert" aria-atomic="true" style={{ borderColor: "oklch(0.65 0.20 25 / 0.42)", color: th.textMuted }}>{lang === "ko" ? "제품 사용 지표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : lang === "ja" ? "プロダクト利用指標を読み込めませんでした。しばらくしてから再試行してください。" : "Could not load product usage metrics. Please try again shortly."}</p> : <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
                   { label: lang === "ko" ? "활성 사용자" : lang === "ja" ? "アクティブユーザー" : "Active users", value: productUsageMetricsQuery.data?.activeUsers ?? 0, detail: lang === "ko" ? "기간 내 방문" : lang === "ja" ? "期間内の訪問" : "Visited in range" },
                   { label: lang === "ko" ? "분석 시작" : lang === "ja" ? "分析開始" : "Analysis started", value: productUsageMetricsQuery.data?.analysisStartedUsers ?? 0, detail: lang === "ko" ? "AI 분석 요청" : lang === "ja" ? "AI分析リクエスト" : "AI analysis requested" },
                   { label: lang === "ko" ? "분석 완료율" : lang === "ja" ? "分析完了率" : "Analysis completion", value: `${productUsageMetricsQuery.data?.completionRate ?? 0}%`, detail: lang === "ko" ? "시작 대비 결과 확인" : lang === "ja" ? "開始に対する結果確認" : "Viewed after start" },
                   { label: lang === "ko" ? "재방문 사용자" : lang === "ja" ? "再訪問ユーザー" : "Returning users", value: productUsageMetricsQuery.data?.returningUsers ?? 0, detail: lang === "ko" ? "이전 방문 뒤 재방문" : lang === "ja" ? "以前の訪問後の再訪問" : "Visited before and in range" },
-                  { label: lang === "ko" ? "안내 완료율" : lang === "ja" ? "ガイド完了率" : "Guide completion", value: `${productUsageMetricsQuery.data?.onboardingCompletionRate ?? 0}%`, detail: lang === "ko" ? `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0}명 완료` : lang === "ja" ? `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0}人が完了` : `${productUsageMetricsQuery.data?.onboardingCompletedUsers ?? 0} completed` },
-                  { label: firstUseFeedbackCopy.response, value: productUsageMetricsQuery.data?.feedbackResponseCount ?? 0, detail: (productUsageMetricsQuery.data?.feedbackResponseCount ?? 0) > 0 ? `${firstUseFeedbackCopy.average} ${productUsageMetricsQuery.data?.averageEaseRating ?? 0}/5` : (lang === "ko" ? "선택 응답 없음" : lang === "ja" ? "選択回答なし" : "No selected response") },
                 ].map(metric => <div key={metric.label} className="rounded-lg border p-2.5" style={{ borderColor: th.border2, background: th.bgCard }}><p className="text-[10px] font-bold" style={{ color: th.textMuted }}>{metric.label}</p><p className="mt-1 text-xl font-bold font-mono" style={{ color: th.text }}>{metric.value}</p><p className="mt-0.5 text-[9px]" style={{ color: th.textMuted }}>{metric.detail}</p></div>)}
               </div>}
-              {!productUsageMetricsQuery.isLoading && !productUsageMetricsQuery.isError && (productUsageMetricsQuery.data?.feedbackResponseCount ?? 0) > 0 && <div className="mt-3 rounded-lg border p-2.5" role="note" style={{ borderColor: th.border2, background: th.bgCard }}><p className="text-[9px] font-bold" style={{ color: th.text }}>{lang === "ko" ? "선택 응답의 단계별 어려움 신호" : lang === "ja" ? "選択回答の段階別の難しさシグナル" : "Step-level difficulty signals from selected responses"}</p><div className="mt-2 flex flex-wrap gap-1.5">{(["orientation", "risk_review", "analysis_review"] as const).map(step => <span key={step} className="rounded-full border px-2 py-1 text-[9px]" style={{ borderColor: th.border2, color: th.textMuted }}>{firstUseFeedbackCopy.steps[step]} {productUsageMetricsQuery.data?.difficultStepCounts?.[step] ?? 0}</span>)}</div></div>}
               {!productUsageMetricsQuery.isLoading && !productUsageMetricsQuery.isError && currentUsageMetrics && previousUsageMetrics && <div className="mt-3 rounded-lg border p-3" style={{ borderColor: th.border2, background: isDark ? "oklch(0.16 0.02 240 / 0.70)" : "oklch(0.99 0.005 240)" }}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2"><p className="text-[10px] font-bold" style={{ color: th.text }}>{lang === "ko" ? "개선 전후 비교" : lang === "ja" ? "改善前後の比較" : "Before/after comparison"}</p><p className="text-[9px]" style={{ color: th.textMuted }}>{lang === "ko" ? "선택 기간과 길이가 같은 직전 기간" : lang === "ja" ? "選択期間と同じ長さの直前期間" : "Previous period of equal length"}</p></div>
-                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {[{ label: lang === "ko" ? "분석 완료율" : lang === "ja" ? "分析完了率" : "Analysis completion", current: currentUsageMetrics.completionRate, previous: previousUsageMetrics.completionRate }, { label: lang === "ko" ? "재방문율" : lang === "ja" ? "再訪問率" : "Returning rate", current: currentReturningRate, previous: previousReturningRate }, { label: lang === "ko" ? "안내 완료율" : lang === "ja" ? "ガイド完了率" : "Guide completion", current: currentUsageMetrics.onboardingCompletionRate, previous: previousUsageMetrics.onboardingCompletionRate }].map(metric => <div key={metric.label} className="rounded-md px-2.5 py-2" style={{ background: th.bgCard }}><p className="text-[9px] font-bold" style={{ color: th.textMuted }}>{metric.label}</p><p className="mt-0.5 text-sm font-bold font-mono" style={{ color: th.text }}>{metric.current}% <span className="text-[10px]" style={{ color: metric.current >= metric.previous ? "#22c55e" : "#f97316" }}>{formatMetricDelta(metric.current, metric.previous)}</span></p><p className="text-[9px]" style={{ color: th.textMuted }}>{lang === "ko" ? `직전 ${metric.previous}%` : lang === "ja" ? `直前 ${metric.previous}%` : `Previous ${metric.previous}%`}</p></div>)}
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {[{ label: lang === "ko" ? "분석 완료율" : lang === "ja" ? "分析完了率" : "Analysis completion", current: currentUsageMetrics.completionRate, previous: previousUsageMetrics.completionRate }, { label: lang === "ko" ? "재방문율" : lang === "ja" ? "再訪問率" : "Returning rate", current: currentReturningRate, previous: previousReturningRate }].map(metric => <div key={metric.label} className="rounded-md px-2.5 py-2" style={{ background: th.bgCard }}><p className="text-[9px] font-bold" style={{ color: th.textMuted }}>{metric.label}</p><p className="mt-0.5 text-sm font-bold font-mono" style={{ color: th.text }}>{metric.current}% <span className="text-[10px]" style={{ color: metric.current >= metric.previous ? "#22c55e" : "#f97316" }}>{formatMetricDelta(metric.current, metric.previous)}</span></p><p className="text-[9px]" style={{ color: th.textMuted }}>{lang === "ko" ? `직전 ${metric.previous}%` : lang === "ja" ? `直前 ${metric.previous}%` : `Previous ${metric.previous}%`}</p></div>)}
                 </div>
                 <p className="mt-2 text-[9px] leading-4" role="note" style={{ color: usageComparisonHasSmallSample ? (isDark ? "oklch(0.84 0.13 82)" : "oklch(0.46 0.13 62)") : th.textMuted }}>{usageComparisonHasSmallSample ? (lang === "ko" ? `표본 수가 작습니다(현재 ${currentUsageMetrics.activeUsers}명, 직전 ${previousUsageMetrics.activeUsers}명). 증감은 참고용이며 실제 사용자 검증을 더 수집하세요.` : lang === "ja" ? `標本数が少ないです（現在${currentUsageMetrics.activeUsers}人、直前${previousUsageMetrics.activeUsers}人）。増減は参考用であり、実ユーザー検証を追加してください。` : `The sample is small (current ${currentUsageMetrics.activeUsers}, previous ${previousUsageMetrics.activeUsers}). Treat changes as directional and collect more real-user evidence.`) : (lang === "ko" ? `분모: 각 기간의 활성 사용자 수(현재 ${currentUsageMetrics.activeUsers}명, 직전 ${previousUsageMetrics.activeUsers}명). 같은 길이의 기간만 비교합니다.` : lang === "ja" ? `分母: 各期間のアクティブユーザー数（現在${currentUsageMetrics.activeUsers}人、直前${previousUsageMetrics.activeUsers}人）。同じ長さの期間のみ比較します。` : `Denominator: active users in each period (current ${currentUsageMetrics.activeUsers}, previous ${previousUsageMetrics.activeUsers}). Only equal-length periods are compared.`)}</p>
               </div>}
@@ -6532,7 +6318,7 @@ export default function Dashboard() {
                 </div>
               </details>}
               {/* ── 관측 센서: 현재값, 비교 기준, 점수 기여도 ── */}
-              <div className="col-span-12">
+              <div id="sensor-evidence" className="col-span-12 scroll-mt-20">
               <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-bold" style={{ color: th.text }}>{lang === "ko" ? "센서별 관측 근거" : lang === "ja" ? "センサー別の観測根拠" : "Sensor evidence"}</h2><p className="mt-1 text-xs" style={{ color: th.textMuted }}>{lang === "ko" ? "비교 기준은 가상 데이터 생성 기준(mean ±1σ)입니다. 실제 장비의 정상 허용 범위가 아닙니다." : lang === "ja" ? "比較基準は仮想データ生成の基準(mean ±1σ)であり、実設備の許容範囲ではありません。" : "Reference bands use synthetic generation means ±1σ, not real equipment operating limits."}</p></div><span className="text-xs font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "4개 신호 · 서로 다른 단위" : lang === "ja" ? "4信号・異なる単位" : "4 signals · distinct units"}</span></div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {[
@@ -6578,7 +6364,7 @@ export default function Dashboard() {
               </div>
 
               {/* ── 가운데: 차트 ── */}
-              <div className="col-span-12 lg:col-span-9 flex flex-col gap-4" tabIndex={0} role="group" aria-label={lang === "ko" ? "센서 추이 차트 확대와 이동" : lang === "ja" ? "センサー推移チャートの拡大と移動" : "Sensor trend chart zoom and pan"} onKeyDown={handleSensorChartKeyDown} onWheel={event => { if (displayedSensorChartData.length > 2) { event.preventDefault(); zoomSensorChart(event.deltaY < 0 ? "in" : "out"); } }}>
+              <div id="sensor-trend" className="col-span-12 flex flex-col gap-4 scroll-mt-20 lg:col-span-9" tabIndex={0} role="group" aria-label={lang === "ko" ? "센서 추이 차트 확대와 이동" : lang === "ja" ? "センサー推移チャートの拡大と移動" : "Sensor trend chart zoom and pan"} onKeyDown={handleSensorChartKeyDown} onWheel={event => { if (displayedSensorChartData.length > 2) { event.preventDefault(); zoomSensorChart(event.deltaY < 0 ? "in" : "out"); } }}>
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "차트: 드래그로 구간 선택 · 휠로 확대 · ← →로 이동" : lang === "ja" ? "チャート: ドラッグで範囲選択 · ホイールで拡大 · ← →で移動" : "Chart: drag to select · wheel to zoom · ← → to pan"}</p>
                   <div className="flex items-center gap-1" role="group" aria-label={lang === "ko" ? "차트 확대 제어" : lang === "ja" ? "チャートの拡大操作" : "Chart zoom controls"}>
@@ -7029,24 +6815,6 @@ export default function Dashboard() {
         )}
         </div>
       </main>
-
-      {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && (
-        <button ref={onboardingTriggerRef} type="button" onClick={() => setIsOnboardingOpen(true)} className="fixed bottom-5 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.65 0.18 200 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.16 220)" }} aria-label={onboardingCopy.review}>ⓘ {onboardingCopy.review}</button>
-      )}
-      {!isOnboardingOpen && onboardingProgressQuery.data?.completedAt && <button ref={firstUseFeedbackTriggerRef} type="button" onClick={() => { const current = firstUseFeedbackQuery.data; setFirstUseEaseRating(current?.easeRating ?? 0); setFirstUseDifficultStep(current?.difficultStep ?? "none"); setFirstUseFeedbackSaveError(null); setIsFirstUseFeedbackOpen(true); }} className="fixed bottom-16 left-4 z-[470] rounded-full border px-3 py-2 text-[10px] font-bold shadow-lg transition hover:-translate-y-0.5 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: "oklch(0.70 0.15 85 / 0.55)", background: isDark ? "oklch(0.18 0.02 240 / 0.96)" : "white", color: isDark ? "oklch(0.86 0.13 85)" : "oklch(0.46 0.13 62)" }} aria-label={firstUseFeedbackCopy.edit}>★ {firstUseFeedbackCopy.edit}</button>}
-
-      {isOnboardingOpen && (
-        <div className="fixed inset-0 z-[650] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-analysis-onboarding-title" aria-describedby="first-analysis-onboarding-description">
-          <section ref={onboardingDialogRef} aria-busy={saveOnboardingProgressMutation.isPending || undefined} className="w-full max-w-lg rounded-2xl border p-5 shadow-2xl sm:p-6" style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.005 240)", color: th.text }}>
-            <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: "oklch(0.68 0.15 200)" }}>{onboardingCopy.progress} {onboardingStep}/3</p><h2 id="first-analysis-onboarding-title" className="mt-1 text-lg font-black">{onboardingCopy.title}</h2><p id="first-analysis-onboarding-description" className="mt-2 text-xs leading-5" style={{ color: th.textMuted }}>{onboardingCopy.subtitle}</p></div><button ref={onboardingCloseButtonRef} type="button" onClick={closeOnboarding} className="rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.textMuted }}>{onboardingCopy.later}</button></div>
-            <div className="mt-5 flex gap-2" role="tablist" aria-label={`${onboardingCopy.progress} ${onboardingStep}/3`} aria-orientation="horizontal">{onboardingCopy.steps.map((label, index) => { const step = (index + 1) as 1 | 2 | 3; return <button key={label} id={`first-analysis-onboarding-tab-${step}`} type="button" role="tab" aria-selected={onboardingStep === step} aria-controls="first-analysis-onboarding-content" tabIndex={onboardingStep === step ? 0 : -1} onClick={() => void persistOnboardingStep(step)} onKeyDown={(event) => { if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return; event.preventDefault(); const nextStep = event.key === "Home" ? 1 : event.key === "End" ? 3 : (((step - 1 + (event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1) + 3) % 3) + 1) as 1 | 2 | 3; void persistOnboardingStep(nextStep); const tabs = Array.from(event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? []); requestAnimationFrame(() => tabs[nextStep - 1]?.focus()); }} className="flex-1 rounded-lg border px-2 py-2 text-[10px] font-bold transition focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: onboardingStep === step ? "oklch(0.65 0.18 200 / 0.65)" : th.border2, background: onboardingStep === step ? "oklch(0.65 0.18 200 / 0.12)" : "transparent", color: onboardingStep === step ? "oklch(0.75 0.14 200)" : th.textMuted }}>{step}. {label}</button>; })}</div>
-            <article id="first-analysis-onboarding-content" role="tabpanel" aria-labelledby={`first-analysis-onboarding-tab-${onboardingStep}`} className="mt-4 rounded-xl border p-4" style={{ borderColor: th.border2, background: isDark ? "oklch(0.18 0.02 240)" : "oklch(0.96 0.01 240)" }}><p className="text-sm leading-6">{onboardingStep === 1 ? onboardingCopy.risk : onboardingStep === 2 ? onboardingCopy.evidence : onboardingCopy.action}</p></article>
-            <div className="mt-5 flex items-center justify-between gap-3"><button type="button" disabled={onboardingStep === 1 || saveOnboardingProgressMutation.isPending} onClick={() => void persistOnboardingStep((onboardingStep - 1) as 1 | 2 | 3)} className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.text }}>{onboardingCopy.previous}</button>{onboardingStep < 3 ? <button type="button" disabled={saveOnboardingProgressMutation.isPending} onClick={() => void persistOnboardingStep((onboardingStep + 1) as 1 | 2 | 3)} className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-45">{onboardingCopy.next}</button> : <button type="button" disabled={saveOnboardingProgressMutation.isPending} onClick={() => { void persistOnboardingStep(3, true); setIsOnboardingOpen(false); }} className="rounded-lg border border-emerald-300/60 bg-emerald-300/10 px-3 py-2 text-xs font-bold text-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:opacity-45">{onboardingCopy.finish}</button>}</div>
-          </section>
-        </div>
-      )}
-
-      {isFirstUseFeedbackOpen && <div className="fixed inset-0 z-[660] flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="first-use-feedback-title" aria-describedby="first-use-feedback-description"><section ref={firstUseFeedbackDialogRef} className="w-full max-w-lg rounded-2xl border p-5 shadow-2xl sm:p-6" style={{ borderColor: "oklch(0.70 0.15 85 / 0.45)", background: isDark ? "oklch(0.15 0.02 240)" : "oklch(0.99 0.005 240)", color: th.text }}><div className="flex items-start justify-between gap-2 sm:gap-3"><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: "oklch(0.78 0.14 85)" }}>{firstUseFeedbackCopy.response}</p><h2 id="first-use-feedback-title" className="mt-1 text-lg font-black">{firstUseFeedbackCopy.title}</h2><p id="first-use-feedback-description" className="mt-2 text-xs leading-5" style={{ color: th.textMuted }}>{firstUseFeedbackCopy.subtitle}</p></div><button ref={firstUseFeedbackCloseButtonRef} type="button" onClick={closeFirstUseFeedback} className="min-h-8 min-w-14 shrink-0 whitespace-nowrap rounded-lg border px-2 py-1 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.textMuted }}>{firstUseFeedbackCopy.later}</button></div><div className="mt-5"><p className="text-xs font-bold">{firstUseFeedbackCopy.ease}</p><div className="mt-2 grid grid-cols-5 gap-1.5" role="radiogroup" aria-label={firstUseFeedbackCopy.ease}>{firstUseFeedbackCopy.ratings.map((label, index) => { const rating = index + 1; const selected = firstUseEaseRating === rating; return <button key={label} type="button" role="radio" aria-checked={selected} tabIndex={selected || (firstUseEaseRating === 0 && rating === 1) ? 0 : -1} aria-label={`${rating}/5, ${label}`} onClick={() => setFirstUseEaseRating(rating)} onKeyDown={(event) => { if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return; event.preventDefault(); const nextRating = event.key === "Home" ? 1 : event.key === "End" ? 5 : ((rating - 1 + (event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1) + 5) % 5) + 1; setFirstUseEaseRating(nextRating); const radios = Array.from(event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]') ?? []); requestAnimationFrame(() => radios[nextRating - 1]?.focus()); }} className="min-h-12 rounded-lg border px-1 text-center text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: selected ? "oklch(0.76 0.16 85 / 0.8)" : th.border2, background: selected ? "oklch(0.76 0.16 85 / 0.15)" : th.bgCard2, color: selected ? (isDark ? "oklch(0.90 0.13 85)" : "oklch(0.42 0.13 62)") : th.textMuted }}><span className="block text-base">{rating}</span><span className="sr-only">{label}</span></button>; })}</div></div><div className="mt-5"><p className="text-xs font-bold">{firstUseFeedbackCopy.difficult}</p><div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label={firstUseFeedbackCopy.difficult}>{(["none", "orientation", "risk_review", "analysis_review"] as const).map(step => { const difficultSteps = ["none", "orientation", "risk_review", "analysis_review"] as const; const selected = firstUseDifficultStep === step; return <button key={step} type="button" role="radio" aria-checked={selected} tabIndex={selected ? 0 : -1} onClick={() => setFirstUseDifficultStep(step)} onKeyDown={(event) => { if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return; event.preventDefault(); const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? difficultSteps.length - 1 : (difficultSteps.indexOf(step) + (event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1) + difficultSteps.length) % difficultSteps.length; setFirstUseDifficultStep(difficultSteps[nextIndex]); const radios = Array.from(event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]') ?? []); requestAnimationFrame(() => radios[nextIndex]?.focus()); }} className="min-h-10 rounded-lg border px-3 py-2 text-left text-[11px] font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: selected ? "oklch(0.65 0.18 200 / 0.72)" : th.border2, background: selected ? "oklch(0.65 0.18 200 / 0.12)" : th.bgCard2, color: selected ? (isDark ? "oklch(0.82 0.14 200)" : "oklch(0.38 0.16 220)") : th.textMuted }}>{firstUseFeedbackCopy.steps[step]}</button>; })}</div></div><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={closeFirstUseFeedback} className="rounded-lg border px-3 py-2 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-cyan-300" style={{ borderColor: th.border2, color: th.text }}>{firstUseFeedbackCopy.later}</button><button type="button" disabled={firstUseEaseRating < 1 || saveFirstUseFeedbackMutation.isPending} aria-busy={saveFirstUseFeedbackMutation.isPending || undefined} onClick={() => void submitFirstUseFeedback()} className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-45">{saveFirstUseFeedbackMutation.isPending ? "…" : firstUseFeedbackCopy.submit}</button></div></section></div>}
 
       <style>{`
         @keyframes spin {
