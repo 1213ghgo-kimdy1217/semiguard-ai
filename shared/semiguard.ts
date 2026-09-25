@@ -34,6 +34,19 @@ export interface AnomalyLogEntry {
   llmAnalysisJa?: string | null;
 }
 
+// 교육용 가상 센서의 비교 기준입니다. 실측 장비의 허용 범위가 아닙니다.
+export const NORMAL_BASELINE = {
+  current: { mean: 5.0, std: 0.5 },
+  temperature: { mean: 45.0, std: 3.0 },
+  vibration: { mean: 2.0, std: 0.3 },
+  noise: { mean: 55.0, std: 4.0 },
+} as const;
+
+export function sensorScoreContribution(field: keyof typeof NORMAL_BASELINE, value: number): number {
+  const { mean, std } = NORMAL_BASELINE[field];
+  return Math.min(Math.abs((value - mean) / std) * 8, 25);
+}
+
 export const RISK_THRESHOLDS = {
   normal: 29,
   caution: 49,

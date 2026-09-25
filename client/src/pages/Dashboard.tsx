@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
-import type { RiskLevel, SensorData, AnomalyResult, AnomalyLogEntry } from "../../../shared/semiguard";
+import { NORMAL_BASELINE, sensorScoreContribution, type RiskLevel, type SensorData, type AnomalyResult, type AnomalyLogEntry } from "../../../shared/semiguard";
 import { MANUAL_CHUNK_LIMIT, MANUAL_CHUNK_WARNING_THRESHOLD, splitManualTextIntoChunks } from "../../../shared/ragManual";
 import { Brush, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { toast } from "sonner";
@@ -1341,7 +1341,6 @@ export default function Dashboard() {
   const lastUpdateRef = useRef<number>(Date.now());
   const [relayTripped, setRelayTripped] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "log">("dashboard");
-  const [initialized, setInitialized] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const autoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -2826,12 +2825,12 @@ export default function Dashboard() {
     ? (lang === "ko" ? "점검 필요" : lang === "ja" ? "確認が必要" : "Needs attention")
     : systemStatusKind === "syncing"
       ? (lang === "ko" ? "동기화 중" : lang === "ja" ? "同期中" : "Syncing")
-      : (lang === "ko" ? "정상 운영" : lang === "ja" ? "正常運用" : "Operational");
+      : (lang === "ko" ? "가상 관측 연결됨" : lang === "ja" ? "仮想観測に接続済み" : "Simulation connected");
   const systemStatusDescription = systemStatusKind === "attention"
     ? (lang === "ko" ? "하트비트 또는 핵심 안전 데이터에 점검이 필요합니다." : lang === "ja" ? "ハートビートまたは主要な安全データの確認が必要です。" : "Heartbeat or core safety data needs attention.")
     : systemStatusKind === "syncing"
       ? (lang === "ko" ? "핵심 안전 데이터를 동기화하거나 자동 재시도 중입니다." : lang === "ja" ? "主要な安全データを同期中、または自動再試行中です。" : "Core safety data is syncing or retrying automatically.")
-      : (lang === "ko" ? "하트비트와 핵심 안전 데이터가 정상입니다." : lang === "ja" ? "ハートビートと主要な安全データは正常です。" : "Heartbeat and core safety data are healthy.");
+      : (lang === "ko" ? "가상 관측 기록과 서버 연결이 정상입니다. 실제 장비 상태는 확인하지 않습니다." : lang === "ja" ? "仮想観測データとサーバー接続は正常です。実設備の状態は確認しません。" : "Synthetic records and the server are connected; real equipment is not monitored.");
   const systemStatusColor = systemStatusKind === "attention" ? "oklch(0.72 0.18 30)" : systemStatusKind === "syncing" ? "oklch(0.75 0.18 200)" : "oklch(0.70 0.18 145)";
   const systemStatusBorder = systemStatusKind === "attention" ? "oklch(0.72 0.18 30 / 0.55)" : systemStatusKind === "syncing" ? "oklch(0.75 0.18 200 / 0.55)" : "oklch(0.70 0.18 145 / 0.55)";
   const systemStatusBackground = systemStatusKind === "attention" ? "oklch(0.72 0.18 30 / 0.10)" : systemStatusKind === "syncing" ? "oklch(0.75 0.18 200 / 0.10)" : "oklch(0.70 0.18 145 / 0.10)";
@@ -3237,55 +3236,47 @@ export default function Dashboard() {
     };
   }, [demoRunning, demoSpeed]);
 
-  // 자동 폴링 (4초마다)
+  // 서버에 저장된 한 관측 결과를 센서 카드·차트·위험도에 함께 사용합니다.
   useEffect(() => {
-    if (!initialized) {
-      const initData = generateInitialData();
-      setCurrent(initData);
-      setChartData([{ ...initData.sensorData, label: "0s" }]);
-      setInitialized(true);
-    }
+    if (virtualFabDemoActive || demoRunning) return;
+    let active = true;
+    let inFlight = false;
 
     const runPollingCycle = () => {
+      if (!active || inFlight) return;
+      inFlight = true;
       const now = Date.now();
       const elapsed = Math.round((now - lastUpdateRef.current) / 1000);
-      // 자동 폴링: 80% 정상, 10% 주의, 10% 경고 (자연스러운 변동)
-      const roll = Math.random();
-      const newData = roll < 0.80
-        ? generateNormalData()
-        : roll < 0.90
-          ? generateSlightCautionData()
-          : generateSlightWarningData();
-      const result = analyzeData(newData);
-      // 서버 DB에도 저장 (fire-and-forget)
       autoFetch.mutate(undefined, {
-        onSuccess: () => {
+        onSuccess: (result) => {
+          inFlight = false;
+          if (!active) return;
           setAutoPollingRetryPending(false);
-          utils.semiguard.getLogs.invalidate();
-          utils.semiguard.getStats.invalidate();
+          setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
+          setCurrent(result);
+          setChartData(prev => [...prev, { ...result.sensorData, label: `${elapsed}s` }].slice(-MAX_CHART_POINTS));
+          setHeartbeatAlive(true);
+          void utils.semiguard.getLogs.invalidate();
+          void utils.semiguard.getStats.invalidate();
+          void utils.semiguard.getPeriodOverview.invalidate();
+          if (result.riskLevel === "danger") {
+            setRelayTripped(true);
+            requestDangerAlert();
+            setDangerFlash(true);
+            setTimeout(() => setDangerFlash(false), 600);
+            playAlert();
+            setTimeout(() => setRelayTripped(false), 2000);
+            triggerLlmAnalysis(result);
+          }
         },
         onError: (error) => {
-          // 개발 서버 재시작·일시 네트워크 지연은 다음 4초 폴링 주기에서 자동 복구한다.
+          inFlight = false;
+          if (!active) return;
+          // 실패 시 화면에 새 측정값을 만들어 보여주지 않고 다음 주기에 재시도합니다.
           setAutoPollingRetryPending(true);
           console.warn("Auto polling will retry on the next interval:", error);
         }
       });
-      setScoreHistory(prev => [...prev.slice(-19), result.anomalyScore]);
-      setCurrent(result);
-      setChartData(prev => {
-        const updated = [...prev, { ...result.sensorData, label: `${elapsed}s` }];
-        return updated.slice(-MAX_CHART_POINTS);
-      });
-      setHeartbeatAlive(true);
-      if (result.riskLevel === "danger") {
-        setRelayTripped(true);
-        requestDangerAlert();
-        setDangerFlash(true);
-        setTimeout(() => setDangerFlash(false), 600);
-        playAlert();
-        setTimeout(() => setRelayTripped(false), 2000);
-        triggerLlmAnalysis(result);
-      }
     };
     const stopAutoPolling = () => {
       if (autoPollingRef.current) {
@@ -3306,13 +3297,15 @@ export default function Dashboard() {
       }
     };
 
+    runPollingCycle();
     startAutoPolling();
     document.addEventListener("visibilitychange", handlePollingVisibilityChange);
     return () => {
+      active = false;
       stopAutoPolling();
       document.removeEventListener("visibilitychange", handlePollingVisibilityChange);
     };
-  }, [initialized, virtualFabDemoActive]);
+  }, [virtualFabDemoActive, demoRunning]);
 
   // LLM 이상 원인 분석 트리거 (30초 throttle)
   const lastLlmCallRef = useRef<number>(0);
@@ -3436,76 +3429,6 @@ export default function Dashboard() {
     }
   };
 
-  // 임시 데이터 생성 함수 (서버 함수와 동일)
-  function generateInitialData(): AnomalyResult {
-    return {
-      sensorData: { current: 5.0, temperature: 45.0, vibration: 2.0, noise: 55.0, timestamp: Date.now() },
-      anomalyScore: 10,
-      riskLevel: "normal",
-      isAnomaly: false,
-    };
-  }
-
-  function generateNormalData(): SensorData {
-    return {
-      current: 5.0 + (Math.random() - 0.5) * 0.5,
-      temperature: 45.0 + (Math.random() - 0.5) * 2,
-      vibration: 2.0 + (Math.random() - 0.5) * 0.3,
-      noise: 55.0 + (Math.random() - 0.5) * 3,
-      timestamp: Date.now(),
-    };
-  }
-
-  // 자동 폴링용 약한 주의 데이터 (점수 25~40)
-  function generateSlightCautionData(): SensorData {
-    const rand = (mean: number, std: number) =>
-      mean + std * (1.2 + Math.random() * 0.8) * (Math.random() > 0.5 ? 1 : -1);
-    return {
-      current: parseFloat(rand(5.0, 0.5).toFixed(2)),
-      temperature: parseFloat(rand(45.0, 3.0).toFixed(1)),
-      vibration: parseFloat(rand(2.0, 0.3).toFixed(2)),
-      noise: parseFloat(rand(55.0, 4.0).toFixed(1)),
-      timestamp: Date.now(),
-    };
-  }
-
-  // 자동 폴링용 약한 경고 데이터 (점수 45~60)
-  function generateSlightWarningData(): SensorData {
-    const rand = (mean: number, std: number) =>
-      mean + std * (2.0 + Math.random() * 0.8) * (Math.random() > 0.5 ? 1 : -1);
-    return {
-      current: parseFloat(rand(5.0, 0.5).toFixed(2)),
-      temperature: parseFloat(rand(45.0, 3.0).toFixed(1)),
-      vibration: parseFloat(rand(2.0, 0.3).toFixed(2)),
-      noise: parseFloat(rand(55.0, 4.0).toFixed(1)),
-      timestamp: Date.now(),
-    };
-  }
-
-  function analyzeData(data: SensorData): AnomalyResult {
-    const currentMean = 5.0, currentStd = 0.3;
-    const tempMean = 45.0, tempStd = 3.0;
-    const vibMean = 2.0, vibStd = 0.4;
-    const noiseMean = 55.0, noiseStd = 4.0;
-
-    const zCurrent = Math.abs((data.current - currentMean) / currentStd);
-    const zTemp = Math.abs((data.temperature - tempMean) / tempStd);
-    const zVib = Math.abs((data.vibration - vibMean) / vibStd);
-    const zNoise = Math.abs((data.noise - noiseMean) / noiseStd);
-
-    // 서버와 동일한 점수 계산: 각 센서 z-score에 8을 곱하고 25로 cap (최대 100)
-    const score = Math.min(100, Math.round(
-      Math.min(zCurrent * 8, 25) +
-      Math.min(zTemp * 8, 25) +
-      Math.min(zVib * 8, 25) +
-      Math.min(zNoise * 8, 25)
-    ));
-    const riskLevel: RiskLevel = score <= 29 ? "normal" : score <= 49 ? "caution" : score <= 69 ? "warning" : "danger";
-    const isAnomaly = score > thresholds.warning;
-
-    return { sensorData: data, anomalyScore: score, riskLevel, isAnomaly };
-  }
-
   const socialProviderItems: Array<{ provider: "google" | "naver" | "kakao"; label: string; start: () => void }> = [
     { provider: "google", label: "Google", start: startGoogleLink },
     { provider: "naver", label: "Naver", start: startNaverLink },
@@ -3515,9 +3438,9 @@ export default function Dashboard() {
 
   return (
     <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
-      <aside className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-300/25 bg-slate-900 px-5 py-4 text-sm text-slate-100" aria-label="대시보드와 학습 경로 안내">
-        <div><p className="mb-1 text-xs font-semibold tracking-[0.16em] text-amber-300">FOUR-SENSOR DASHBOARD / SIMULATED DATA</p><p>{lang === "ko" ? "기존 4센서 차트·기록·분석 이력을 유지합니다. 현재 신호는 가상 데이터이며 실제 팹 장비에 연결되지 않았습니다." : lang === "ja" ? "従来の4センサーのグラフと記録を維持しています。現在の信号は仮想データで、実際の装置には接続されていません。" : "The original four-sensor charts and history remain available. Current signals are simulated, not connected to fab equipment."}</p></div>
-        <div className="flex flex-wrap gap-2"><Link href="/live" className="rounded border border-amber-300/70 bg-amber-300/10 px-4 py-2 font-semibold text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{lang === "ko" ? "자유 관찰 →" : lang === "ja" ? "自由観察へ →" : "Open free observation →"}</Link><Link href="/dashboard/simulation" className="rounded border border-amber-300/70 bg-amber-300/10 px-4 py-2 font-semibold text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{lang === "ko" ? "식각 가상 작업대 →" : lang === "ja" ? "エッチング仮想画面へ →" : "Open etch simulation →"}</Link><Link href="/training" className="rounded border border-amber-300/70 bg-amber-300/10 px-4 py-2 font-semibold text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">{lang === "ko" ? "시나리오·자유 분석 선택 →" : lang === "ja" ? "シナリオ・自由分析を選択 →" : "Choose scenario or free analysis →"}</Link></div>
+      <aside className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-600/40 bg-[#102235] px-5 py-3 text-xs text-slate-200" aria-label="대시보드와 학습 경로 안내">
+        <p><span className="mr-2 font-bold tracking-[0.16em] text-teal-200">SIMULATED / 04 SIGNALS</span>{lang === "ko" ? "가상 센서 관찰 화면 · 실제 팹 장비 연결 없음" : lang === "ja" ? "仮想センサー観察画面・実設備への接続なし" : "Synthetic sensor observation · no fab equipment connection"}</p>
+        <div className="flex flex-wrap gap-2"><Link href="/live" className="rounded border border-slate-500/70 px-3 py-1.5 font-semibold text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200">{lang === "ko" ? "식각 자유 관찰" : lang === "ja" ? "エッチング自由観察" : "Etch observation"}</Link><Link href="/training" className="rounded border border-teal-300/60 bg-teal-300/10 px-3 py-1.5 font-semibold text-teal-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200">{lang === "ko" ? "시나리오 선택 →" : lang === "ja" ? "シナリオを選択 →" : "Choose scenario →"}</Link></div>
       </aside>
       <a
         href="#dashboard-main"
@@ -6268,6 +6191,24 @@ export default function Dashboard() {
         <div id={`dashboard-panel-${activeTab}`} role="tabpanel" aria-labelledby={`dashboard-tab-${activeTab}`}>
         {activeTab === "dashboard" ? (
           <>
+            <section className="mb-5 overflow-hidden rounded-2xl border border-[#3c6370] bg-[#102235] text-slate-100 shadow-[0_18px_50px_rgba(7,22,37,0.14)]" aria-labelledby="observation-workspace-title">
+              <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.52fr)]">
+                <div>
+                  <p className="text-[11px] font-bold tracking-[0.18em] text-teal-200">SEMIGUARD / FOUR-SENSOR OBSERVATION</p>
+                  <h1 id="observation-workspace-title" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{lang === "ko" ? "신호를 보고, 차이를 확인하고, 근거를 남깁니다." : lang === "ja" ? "信号を見て、差を確かめ、根拠を残します。" : "Observe signals, compare changes, preserve evidence."}</h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{lang === "ko" ? "4개 가상 센서의 현재값과 비교 기준을 먼저 살펴보세요. 점수는 규칙 기반 참고값이며 원인 확정이나 실제 장비 제어를 뜻하지 않습니다." : lang === "ja" ? "4つの仮想センサーの現在値と比較基準を確認してください。スコアはルールベースの参考値であり、原因の確定や実機制御ではありません。" : "Compare four synthetic sensor readings with their reference bands. The rule-based score does not diagnose a cause or control equipment."}</p>
+                  <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-200"><span className="rounded-full border border-slate-500 px-3 py-1.5">01 {lang === "ko" ? "현재값 · 기준" : lang === "ja" ? "現在値・基準" : "Value · reference"}</span><span className="rounded-full border border-slate-500 px-3 py-1.5">02 {lang === "ko" ? "변화 추세" : lang === "ja" ? "変化の傾向" : "Trend"}</span><span className="rounded-full border border-slate-500 px-3 py-1.5">03 {lang === "ko" ? "이상 이력 확인" : lang === "ja" ? "異常履歴" : "History"}</span></div>
+                </div>
+                <div className="flex flex-col justify-between rounded-xl border border-[#416375] bg-[#1b3248] p-5">
+                  <p className="text-[11px] font-bold tracking-[0.13em] text-teal-200">{lang === "ko" ? "현재 가상 관측" : lang === "ja" ? "現在の仮想観測" : "CURRENT SYNTHETIC SAMPLE"}</p>
+                  <div className="mt-3 flex items-baseline gap-3"><strong className="font-mono text-5xl tabular-nums text-white">{current ? anomalyScore : "—"}</strong><span className="text-sm text-slate-300">/ 100 · {current ? t[riskLevel] : (lang === "ko" ? "불러오는 중" : lang === "ja" ? "読み込み中" : "Loading")}</span></div>
+                  <p className="mt-3 text-xs leading-5 text-slate-300">{lang === "ko" ? "관측값 저장 → 기준과 비교 → 이력에서 같은 기록 확인" : lang === "ja" ? "観測値を保存 → 基準と比較 → 履歴で同じ記録を確認" : "Saved sample → reference comparison → same record in history"}</p>
+                </div>
+              </div>
+            </section>
+            <details className="mb-5 rounded-xl border p-3 sm:p-4" style={{ borderColor: th.border, background: th.bgCard }}>
+              <summary className="cursor-pointer text-sm font-semibold" style={{ color: th.text }}>{lang === "ko" ? "기간별 기록·보고서 도구" : lang === "ja" ? "期間別の記録・レポート" : "Period records and reports"}<span className="ml-2 text-xs font-normal" style={{ color: th.textMuted }}>{selectedPeriodLabel}</span></summary>
+              <div className="mt-4">
             <div className="mb-4 flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between" style={{ background: th.bgCard, borderColor: th.border }}>
               <div className="min-w-0">
                 <p className="text-xs font-bold" style={{ color: th.text }}>{lang === "ko" ? "기간별 운영 분석" : lang === "ja" ? "期間別の運用分析" : "Period-based operations analysis"}</p>
@@ -6328,17 +6269,15 @@ export default function Dashboard() {
             </div>
             {/* 임팩트 통계 섹션 */}
             {showPeriodSkeleton ? (
-              <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? "선택한 기간의 통계를 불러오는 중" : lang === "ja" ? "選択した期間の統計を読み込み中" : "Loading statistics for the selected period"}>
-                {Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-[102px] animate-pulse rounded-xl border p-4" style={{ borderColor: th.border, background: th.bgCard }}><div className="h-2.5 w-16 rounded-full" style={{ background: th.border2 }} /><div className="mt-5 h-7 w-20 rounded-md" style={{ background: th.border2 }} /><div className="mt-3 h-2 w-24 rounded-full" style={{ background: th.border }} /></div>)}
+              <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3" role="status" aria-live="polite" aria-atomic="true" aria-label={lang === "ko" ? "선택한 기간의 통계를 불러오는 중" : lang === "ja" ? "選択した期間の統計を読み込み中" : "Loading statistics for the selected period"}>
+                {Array.from({ length: 3 }).map((_, index) => <div key={index} className="h-[102px] animate-pulse rounded-xl border p-4" style={{ borderColor: th.border, background: th.bgCard }}><div className="h-2.5 w-16 rounded-full" style={{ background: th.border2 }} /><div className="mt-5 h-7 w-20 rounded-md" style={{ background: th.border2 }} /><div className="mt-3 h-2 w-24 rounded-full" style={{ background: th.border }} /></div>)}
                 <span className="sr-only">{lang === "ko" ? "기간별 통계를 불러오는 중입니다." : lang === "ja" ? "期間別統計を読み込んでいます。" : "Loading period statistics."}</span>
               </div>
-            ) : <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <ImpactCard label={t.totalVisitors} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.totalVisitors ?? 0)} icon="👥" color="#38bdf8" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.totalVisitors}: ${(selectedPeriodStats?.totalVisitors ?? 0).toLocaleString()}`} />
+            ) : <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <ImpactCard label={t.totalDetections} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.totalDetections ?? 0)} icon="📊" color="#a78bfa" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.totalDetections}: ${(selectedPeriodStats?.totalDetections ?? 0).toLocaleString()} · ${lang === "ko" ? "이상" : lang === "ja" ? "異常" : "Anomalies"}: ${(selectedPeriodStats?.anomalyCount ?? 0).toLocaleString()}`} />
+              <ImpactCard label={lang === "ko" ? "이상 판정 기록" : lang === "ja" ? "異常判定記録" : "Anomaly records"} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.anomalyCount ?? 0)} icon="◉" color="#f0a45c" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${lang === "ko" ? "이상 판정 기록" : lang === "ja" ? "異常判定記録" : "Anomaly records"}: ${(selectedPeriodStats?.anomalyCount ?? 0).toLocaleString()}`} />
               <ImpactCard label={t.dangerCount} value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.dangerCount ?? 0)} icon="⚠️" color="#ef4444" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${t.dangerCount}: ${(selectedPeriodStats?.dangerCount ?? 0).toLocaleString()}`} />
-              <ImpactCard label={t.uptimePct} value={periodOverviewQuery.isError || !selectedPeriodStats?.totalDetections ? "—" : `${selectedPeriodStats.uptimePct}%`} icon="✅" color="#22c55e" isLoading={statsInitialLoading} loadingLabel={statsLoadingLabel} detail={`${selectedPeriodLabel} · ${lang === "ko" ? "가상 관측 기록 중 규칙상 이상 미판정" : lang === "ja" ? "仮想観測記録のうちルール上異常未判定" : "Synthetic records not marked anomalous by the rule"}: ${selectedPeriodStats?.totalDetections ? `${selectedPeriodStats.uptimePct}%` : "—"}`} />
             </div>}
-            <p className="mb-6 text-xs text-muted-foreground" role="note">{lang === "ko" ? "이상 미판정 비율 = (관측 기록 수 − 이상 판정 기록 수) ÷ 관측 기록 수. 기록이 없으면 표시하지 않습니다. 실제 설비 가동률이 아닙니다." : lang === "ja" ? "異常未判定の割合 = (観測記録数 − 異常判定記録数) ÷ 観測記録数。記録がない場合は表示しません。実際の設備稼働率ではありません。" : "Records without anomaly = (observation records − records marked anomalous) ÷ observation records. No value is shown without records. This is not equipment uptime."}</p>
 
             {isUsageMetricsAdmin && <section className="mb-6 rounded-xl border p-3 sm:p-4" aria-labelledby="product-usage-metrics-title" style={{ borderColor: "oklch(0.64 0.15 285 / 0.40)", background: isDark ? "oklch(0.18 0.03 285 / 0.32)" : "oklch(0.97 0.02 285 / 0.38)" }}>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -6377,9 +6316,15 @@ export default function Dashboard() {
               </div>
             )}
 
+              </div>
+            </details>
+
             {/* 메인 대시보드 그리드 */}
             <div id="pdf-capture-area" className="grid grid-cols-12 gap-4">
-              {/* ── 임계값 설정 패널 (전체 너비) ── */}
+              {isUsageMetricsAdmin && <details className="order-last col-span-12 rounded-xl border p-3" style={{ borderColor: th.border, background: th.bgCard }}>
+                <summary className="cursor-pointer text-xs font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "관리자 도구 · 전역 위험 기준" : lang === "ja" ? "管理者ツール・全体リスク基準" : "Admin tools · global risk criteria"}</summary>
+                <div className="mt-3 grid grid-cols-12 gap-3">
+              {/* ── 관리자 전용 전역 설정 ── */}
               <div className="col-span-12 mb-2">
                 <div className="rounded-xl border overflow-hidden" style={{ borderColor: "oklch(0.20 0.02 240)" }}>
                   <button
@@ -6584,54 +6529,47 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* ── 왼쪽: 센서 카드 (재배치) ── */}
-              <div className="col-span-12 lg:col-span-3">
-              <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
+                </div>
+              </details>}
+              {/* ── 관측 센서: 현재값, 비교 기준, 점수 기여도 ── */}
+              <div className="col-span-12">
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-lg font-bold" style={{ color: th.text }}>{lang === "ko" ? "센서별 관측 근거" : lang === "ja" ? "センサー別の観測根拠" : "Sensor evidence"}</h2><p className="mt-1 text-xs" style={{ color: th.textMuted }}>{lang === "ko" ? "비교 기준은 가상 데이터 생성 기준(mean ±1σ)입니다. 실제 장비의 정상 허용 범위가 아닙니다." : lang === "ja" ? "比較基準は仮想データ生成の基準(mean ±1σ)であり、実設備の許容範囲ではありません。" : "Reference bands use synthetic generation means ±1σ, not real equipment operating limits."}</p></div><span className="text-xs font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "4개 신호 · 서로 다른 단위" : lang === "ja" ? "4信号・異なる単位" : "4 signals · distinct units"}</span></div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {[
-                  { label: t.current,     value: sensorData?.current     ?? 5.0,  unit: t.unitA,   color: "#38bdf8", icon: "⚡", sensorKey: "current" },
-                  { label: t.temperature, value: sensorData?.temperature ?? 45.0, unit: t.unitC,   color: "#fb923c", icon: "🌡", sensorKey: "temp" },
-                  { label: t.vibration,   value: sensorData?.vibration   ?? 2.0,  unit: t.unitMms, color: "#a78bfa", icon: "📳", sensorKey: "vib" },
-                  { label: t.noise,       value: sensorData?.noise       ?? 55.0, unit: t.unitDb,  color: "#34d399", icon: "🔊", sensorKey: "noise" },
+                  { label: t.current,     value: sensorData?.current ?? null, unit: t.unitA, color: "#38bdf8", icon: "⚡", sensorKey: "current" },
+                  { label: t.temperature, value: sensorData?.temperature ?? null, unit: t.unitC, color: "#fb923c", icon: "🌡", sensorKey: "temperature" },
+                  { label: t.vibration,   value: sensorData?.vibration ?? null, unit: t.unitMms, color: "#a78bfa", icon: "📳", sensorKey: "vibration" },
+                  { label: t.noise,       value: sensorData?.noise ?? null, unit: t.unitDb, color: "#34d399", icon: "🔊", sensorKey: "noise" },
                 ].map(card => {
-                  const alertLevel = (() => {
-                    const v = card.value;
-                    const k = card.sensorKey;
-                    const danger = sensorThresh[`${k}Danger` as keyof typeof sensorThresh];
-                    const warning = sensorThresh[`${k}Warning` as keyof typeof sensorThresh];
-                    const caution = sensorThresh[`${k}Caution` as keyof typeof sensorThresh];
-                    if (v >= danger) return "danger";
-                    if (v >= warning) return "warning";
-                    if (v >= caution) return "caution";
-                    return "normal";
-                  })();
-                  const blinkBorderColor = alertLevel === "danger" ? "#ef4444" : alertLevel === "warning" ? "#f97316" : alertLevel === "caution" ? "#eab308" : `${card.color}35`;
-                  const blinkAnim = alertLevel !== "normal" ? "sensorBlink 1s ease-in-out infinite" : "none";
-                  const currentScore = scoreHistory.at(-1) ?? 0;
-                  const minScore = Math.min(...scoreHistory);
-                  const maxScore = Math.max(...scoreHistory);
-                  const overviewSensorKey = card.sensorKey === "temp" ? "temperature" : card.sensorKey === "vib" ? "vibration" : card.sensorKey === "noise" ? "noise" : "current";
+                  const overviewSensorKey = card.sensorKey as keyof typeof NORMAL_BASELINE;
+                  const baseline = NORMAL_BASELINE[overviewSensorKey];
+                  const sensorTrend = displayedSensorChartData.map(point => point[overviewSensorKey]);
+                  const contribution = card.value === null ? null : sensorScoreContribution(overviewSensorKey, card.value);
+                  const outsideReference = card.value !== null && Math.abs(card.value - baseline.mean) > baseline.std;
                   const periodAverage = selectedPeriodStats?.sensors.average[overviewSensorKey];
                   const periodPeak = selectedPeriodStats?.sensors.peak[overviewSensorKey];
                   const scoreTrendSummary = lang === "ko"
-                    ? `${card.label} 점수 추이. 현재 ${currentScore}, 최저 ${minScore}, 최고 ${maxScore}`
+                    ? `${card.label} 센서값 추이. 현재 ${card.value ?? "미수신"}, 최저 ${sensorTrend.length ? Math.min(...sensorTrend) : "없음"}, 최고 ${sensorTrend.length ? Math.max(...sensorTrend) : "없음"}`
                     : lang === "ja"
-                      ? `${card.label}のスコア推移。現在 ${currentScore}、最小 ${minScore}、最大 ${maxScore}`
-                      : `${card.label} score trend. Current ${currentScore}, minimum ${minScore}, maximum ${maxScore}`;
+                      ? `${card.label}のセンサー値推移。現在 ${card.value ?? "未受信"}、最小 ${sensorTrend.length ? Math.min(...sensorTrend) : "なし"}、最大 ${sensorTrend.length ? Math.max(...sensorTrend) : "なし"}`
+                      : `${card.label} sensor values. Current ${card.value ?? "pending"}, minimum ${sensorTrend.length ? Math.min(...sensorTrend) : "none"}, maximum ${sensorTrend.length ? Math.max(...sensorTrend) : "none"}`;
                   return (
-                  <div key={card.label} className="rounded-xl p-4 border flex flex-col gap-2 transition-all duration-300"
-                    style={{ background: "rgba(255,255,255,0.025)", borderColor: blinkBorderColor, animation: blinkAnim, borderWidth: alertLevel !== "normal" ? "2px" : "1px" }}>
+                  <div key={card.label} className="rounded-xl border p-4 transition-colors duration-300"
+                    style={{ background: th.bgCard, borderColor: outsideReference ? "#c88748" : th.border }}>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{card.label}</span>
+                      <span className="text-xs font-semibold" style={{ color: th.textMuted }}>{card.label}</span>
                       <span aria-hidden="true" className="text-base opacity-70">{card.icon}</span>
                     </div>
-                    <div className="flex items-end gap-1.5">
-                      <span className="text-3xl font-bold font-mono leading-none" style={{ color: card.color }}>{card.value.toFixed(1)}</span>
-                      <span className="text-xs text-muted-foreground mb-0.5">{card.unit}</span>
+                    <div className="mt-3 flex items-end gap-1.5">
+                      <span className="font-mono text-3xl font-bold leading-none tabular-nums" style={{ color: card.color }}>{card.value === null ? "—" : card.value.toFixed(overviewSensorKey === "current" || overviewSensorKey === "vibration" ? 2 : 1)}</span>
+                      <span className="mb-0.5 text-xs" style={{ color: th.textMuted }}>{card.unit}</span>
                     </div>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[9px] text-muted-foreground opacity-60">{lang === "ko" ? `점수 추이 · ${selectedPeriodLabel}` : lang === "ja" ? `スコア推移・${selectedPeriodLabel}` : `Score trend · ${selectedPeriodLabel}`}</span>
-                      <Sparkline data={scoreHistory} color={card.color} label={scoreTrendSummary} />
+                    <p className="mt-3 text-[11px]" style={{ color: th.textMuted }}>{lang === "ko" ? "가상 비교 기준" : lang === "ja" ? "仮想比較基準" : "Synthetic reference"} <strong style={{ color: th.text }}>{(baseline.mean - baseline.std).toFixed(1)}–{(baseline.mean + baseline.std).toFixed(1)} {card.unit}</strong></p>
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: th.border }}>
+                      <span className="text-[10px] font-semibold" style={{ color: outsideReference ? "#d08b4e" : th.textMuted }}>{card.value === null ? (lang === "ko" ? "관측 대기" : lang === "ja" ? "観測待ち" : "Awaiting sample") : outsideReference ? (lang === "ko" ? "비교 기준 밖" : lang === "ja" ? "比較基準外" : "Outside reference") : (lang === "ko" ? "비교 기준 안" : lang === "ja" ? "比較基準内" : "Within reference")}</span>
+                      <span className="font-mono text-[11px]" style={{ color: th.text }}>{lang === "ko" ? "점수 기여" : lang === "ja" ? "スコア寄与" : "Score share"} {contribution === null ? "—" : contribution.toFixed(1)} / 25</span>
                     </div>
+                    <div className="mt-2 flex items-center justify-between"><span className="text-[10px]" style={{ color: th.textMuted }}>{lang === "ko" ? `센서값 추이 · ${selectedPeriodLabel}` : lang === "ja" ? `センサー値推移・${selectedPeriodLabel}` : `Sensor trend · ${selectedPeriodLabel}`}</span><Sparkline data={sensorTrend} color={card.color} label={scoreTrendSummary} /></div>
                     {periodAverage !== undefined && periodPeak !== undefined && <p className="text-[9px] text-muted-foreground">{lang === "ko" ? `${selectedPeriodLabel} 평균 ${periodAverage.toFixed(1)} · 최고 ${periodPeak.toFixed(1)}` : lang === "ja" ? `${selectedPeriodLabel} 平均 ${periodAverage.toFixed(1)} · 最大 ${periodPeak.toFixed(1)}` : `${selectedPeriodLabel} avg ${periodAverage.toFixed(1)} · peak ${periodPeak.toFixed(1)}`}</p>}
                   </div>
                   );
@@ -6640,7 +6578,7 @@ export default function Dashboard() {
               </div>
 
               {/* ── 가운데: 차트 ── */}
-              <div className="col-span-12 lg:col-span-6 flex flex-col gap-4" tabIndex={0} role="group" aria-label={lang === "ko" ? "센서 추이 차트 확대와 이동" : lang === "ja" ? "センサー推移チャートの拡大と移動" : "Sensor trend chart zoom and pan"} onKeyDown={handleSensorChartKeyDown} onWheel={event => { if (displayedSensorChartData.length > 2) { event.preventDefault(); zoomSensorChart(event.deltaY < 0 ? "in" : "out"); } }}>
+              <div className="col-span-12 lg:col-span-9 flex flex-col gap-4" tabIndex={0} role="group" aria-label={lang === "ko" ? "센서 추이 차트 확대와 이동" : lang === "ja" ? "センサー推移チャートの拡大と移動" : "Sensor trend chart zoom and pan"} onKeyDown={handleSensorChartKeyDown} onWheel={event => { if (displayedSensorChartData.length > 2) { event.preventDefault(); zoomSensorChart(event.deltaY < 0 ? "in" : "out"); } }}>
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "차트: 드래그로 구간 선택 · 휠로 확대 · ← →로 이동" : lang === "ja" ? "チャート: ドラッグで範囲選択 · ホイールで拡大 · ← →で移動" : "Chart: drag to select · wheel to zoom · ← → to pan"}</p>
                   <div className="flex items-center gap-1" role="group" aria-label={lang === "ko" ? "차트 확대 제어" : lang === "ja" ? "チャートの拡大操作" : "Chart zoom controls"}>
@@ -6654,43 +6592,45 @@ export default function Dashboard() {
                     <button type="button" onClick={() => void exportCurrentSensorRangeImage("jpeg")} disabled={sensorImageExporting !== null || displayedSensorChartData.length === 0} aria-busy={sensorImageExporting === "jpeg" || undefined} className="h-7 rounded border px-1.5 text-[9px] font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={sensorImageExporting === "jpeg" ? (lang === "ko" ? "JPEG 이미지 저장 준비 중" : lang === "ja" ? "JPEG画像を保存する準備中" : "Preparing JPEG image export") : (lang === "ko" ? "현재 확대 구간을 JPEG 이미지로 저장" : lang === "ja" ? "現在の拡大範囲をJPEG画像で保存" : "Save current zoom range as JPEG")}>{sensorImageExporting === "jpeg" ? "…" : "JPEG"}</button>
                   </div>
                 </div>
-                {/* 전류 + 온도 */}
+                {/* 전류와 온도는 단위가 다르므로 각자의 축을 사용합니다. */}
                 <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-                    {t.current} <span aria-hidden="true" className="text-[#38bdf8]">●</span> / {t.temperature} <span aria-hidden="true" className="text-[#fb923c]">●</span>
+                    {t.current} ({t.unitA}) <span aria-hidden="true" className="text-[#38bdf8]">●</span> / {t.temperature} ({t.unitC}) <span aria-hidden="true" className="text-[#fb923c]">●</span>
                   </p>
-                  <ResponsiveContainer width="100%" height={150}>
-                    <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
+                  <ResponsiveContainer width="100%" height={190}>
+                    <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                       <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#4b5563" }} interval="preserveStartEnd" />
-                      <YAxis tick={{ fontSize: 9, fill: "#4b5563" }} />
+                      <YAxis yAxisId="current" width={34} tick={{ fontSize: 9, fill: "#38bdf8" }} domain={["auto", "auto"]} />
+                      <YAxis yAxisId="temperature" orientation="right" width={34} tick={{ fontSize: 9, fill: "#fb923c" }} domain={["auto", "auto"]} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Line type="monotone" dataKey="current"     stroke="#38bdf8" strokeWidth={2} dot={false} isAnimationActive={false} name={t.current} />
-                      <Line type="monotone" dataKey="temperature" stroke="#fb923c" strokeWidth={2} dot={false} isAnimationActive={false} name={t.temperature} />
+                      <Line yAxisId="current" type="monotone" dataKey="current" stroke="#38bdf8" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.current} (${t.unitA})`} />
+                      <Line yAxisId="temperature" type="monotone" dataKey="temperature" stroke="#fb923c" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.temperature} (${t.unitC})`} />
                       <Brush dataKey="label" height={22} stroke={isDark ? "#38bdf8" : "#0284c7"} fill={isDark ? "#102a43" : "#eaf4f7"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                {/* 진동 + 소음 */}
+                {/* 진동과 소음도 각각의 단위 축을 사용합니다. */}
                 <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
-                    {t.vibration} <span aria-hidden="true" className="text-[#a78bfa]">●</span> / {t.noise} <span aria-hidden="true" className="text-[#34d399]">●</span>
+                    {t.vibration} ({t.unitMms}) <span aria-hidden="true" className="text-[#a78bfa]">●</span> / {t.noise} ({t.unitDb}) <span aria-hidden="true" className="text-[#34d399]">●</span>
                   </p>
-                  <ResponsiveContainer width="100%" height={150}>
-                    <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 8, left: -24, bottom: 0 }}>
+                  <ResponsiveContainer width="100%" height={190}>
+                    <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                       <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#4b5563" }} interval="preserveStartEnd" />
-                      <YAxis tick={{ fontSize: 9, fill: "#4b5563" }} />
+                      <YAxis yAxisId="vibration" width={34} tick={{ fontSize: 9, fill: "#a78bfa" }} domain={["auto", "auto"]} />
+                      <YAxis yAxisId="noise" orientation="right" width={34} tick={{ fontSize: 9, fill: "#34d399" }} domain={["auto", "auto"]} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Line type="monotone" dataKey="vibration" stroke="#a78bfa" strokeWidth={2} dot={false} isAnimationActive={false} name={t.vibration} />
-                      <Line type="monotone" dataKey="noise"     stroke="#34d399" strokeWidth={2} dot={false} isAnimationActive={false} name={t.noise} />
+                      <Line yAxisId="vibration" type="monotone" dataKey="vibration" stroke="#a78bfa" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.vibration} (${t.unitMms})`} />
+                      <Line yAxisId="noise" type="monotone" dataKey="noise" stroke="#34d399" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.noise} (${t.unitDb})`} />
                       <Brush dataKey="label" height={22} stroke={isDark ? "#38bdf8" : "#0284c7"} fill={isDark ? "#102a43" : "#eaf4f7"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* ── 오른쪽: 위험도 + 시뮬레이터 ── */}
+              {/* ── 오른쪽: 규칙 점수와 선택형 시뮬레이션 도구 ── */}
               <div className="col-span-12 lg:col-span-3 flex flex-col gap-4">
                 {/* 위험도 게이지 */}
                 <div className="rounded-xl border p-5 flex flex-col items-center gap-4 transition-all duration-500"
@@ -6699,13 +6639,14 @@ export default function Dashboard() {
                     borderColor: RISK_BORDER[riskLevel],
                     boxShadow: riskLevel === "danger" ? `0 0 30px ${RISK_COLORS.danger}25` : "none",
                   }}>
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest self-start">{t.riskLevel}</p>
-                  <RiskGauge score={anomalyScore} riskLevel={riskLevel} t={t} />
+                  <p className="self-start text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{lang === "ko" ? "규칙 기반 위험 점수" : lang === "ja" ? "ルールベースのリスクスコア" : "Rule-based risk score"}</p>
+                  {current ? <RiskGauge score={anomalyScore} riskLevel={riskLevel} t={t} /> : <p className="py-8 text-sm" style={{ color: th.textMuted }}>{lang === "ko" ? "첫 관측값을 기다리는 중" : lang === "ja" ? "最初の観測値を待機中" : "Waiting for first sample"}</p>}
                 </div>
 
-                {/* 시뮬레이터 - 4단계 버튼 */}
-                <div className="rounded-xl border p-4 flex flex-col gap-2.5"
+                <details className="rounded-xl border"
                   style={{ background: th.bgCard, borderColor: th.border }}>
+                  <summary className="cursor-pointer px-4 py-3 text-xs font-semibold">{lang === "ko" ? "가상 신호 주입 · 선택 도구" : lang === "ja" ? "仮想信号の投入・任意ツール" : "Inject synthetic signals · optional"}</summary>
+                  <div className="flex flex-col gap-2.5 border-t p-4" style={{ borderColor: th.border }}>
                   <div className="flex items-center justify-between mb-0.5">
                     <p className="text-xs font-semibold">{t.simulatorTitle}</p>
                     {lastInjectedMode && (
@@ -6749,7 +6690,8 @@ export default function Dashboard() {
                         : `⚠ ${t.injectAnomaly}`}
                     </button>
                   </div>
-                </div>
+                  </div>
+                </details>
               </div>
             </div>
             {/* ── 월간 히트맵 캘린더 ── */}

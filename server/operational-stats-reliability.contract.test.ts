@@ -7,7 +7,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 describe("operational statistics reliability contract", () => {
   it("does not present failed KPI data as current zero-valued statistics", () => {
     expect(dashboardSource).toContain('value={periodOverviewQuery.isError ? "—"');
-    expect(dashboardSource).toContain('value={periodOverviewQuery.isError || !selectedPeriodStats?.totalDetections ? "—"');
+    expect(dashboardSource).toContain('value={periodOverviewQuery.isError ? "—" : (selectedPeriodStats?.anomalyCount ?? 0)}');
     expect(dashboardSource).toContain("표시된 기록 수와 비율이 최신 값이 아닐 수 있습니다.");
   });
 

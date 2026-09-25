@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { computeAnomalyScore } from "./semiguard";
+import { NORMAL_BASELINE, sensorScoreContribution } from "../shared/semiguard";
 
 describe("SemiGuard risk-score methodology", () => {
   it("calculates an additive z-score risk from the documented baseline", () => {
@@ -30,6 +31,14 @@ describe("SemiGuard risk-score methodology", () => {
     expect(normal).toBe(0);
     expect(oneSensorDeviation).toBe(24);
     expect(cappedExtreme).toBe(100);
+  });
+
+  it("uses the same baseline and per-sensor contributions as the observation dashboard", () => {
+    const sample = { current: 6.2, temperature: 47.4, vibration: 2.5, noise: 57.8, timestamp: Date.now() };
+    const contributions = (Object.keys(NORMAL_BASELINE) as (keyof typeof NORMAL_BASELINE)[])
+      .map(field => sensorScoreContribution(field, sample[field]));
+    expect(contributions.every(score => score >= 0 && score <= 25)).toBe(true);
+    expect(Math.round(contributions.reduce((sum, score) => sum + score, 0))).toBe(computeAnomalyScore(sample));
   });
 
   it("keeps public demo and submission documents transparent about the current scope", () => {

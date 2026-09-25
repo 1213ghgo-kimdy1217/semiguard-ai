@@ -1,13 +1,8 @@
 // SemiGuard AI - z-score 기반 규칙형 위험 점수 엔진
-import { getRiskLevel, type RiskLevel, type SensorData } from "../shared/semiguard";
+import { getRiskLevel, NORMAL_BASELINE, sensorScoreContribution, type RiskLevel, type SensorData } from "../shared/semiguard";
 
 // ─── 현재 시뮬레이션 기준값 (실제 설비 학습값 아님) ───────────────────────────
-export const NORMAL_BASELINE = {
-  current:     { mean: 5.0,  std: 0.5 },
-  temperature: { mean: 45.0, std: 3.0 },
-  vibration:   { mean: 2.0,  std: 0.3 },
-  noise:       { mean: 55.0, std: 4.0 },
-};
+export { NORMAL_BASELINE } from "../shared/semiguard";
 
 // ─── 독립 z-score 합산 방식 (서버 사이드) ─────────────────────────────────────
 // 각 센서의 정상 기준에서 벗어난 정도를 표준편차 단위(|z|)로 계산합니다.
@@ -18,12 +13,7 @@ export function computeAnomalyScore(data: SensorData): number {
   let totalScore = 0;
 
   for (const field of fields) {
-    const { mean, std } = NORMAL_BASELINE[field];
-    const value = data[field];
-    // z-score 절댓값 계산
-    const z = Math.abs((value - mean) / std);
-    // 각 센서의 기여도 합산 (최대 25점씩, 총 100점)
-    totalScore += Math.min(z * 8, 25);
+    totalScore += sensorScoreContribution(field, data[field]);
   }
 
   return Math.min(Math.round(totalScore), 100);

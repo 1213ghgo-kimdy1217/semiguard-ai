@@ -7,7 +7,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 describe("dashboard header status summary contract", () => {
   it("summarizes healthy, syncing, and attention states instead of repeating normal indicators", () => {
     expect(dashboardSource).toContain('const systemStatusKind = safetyMonitoringHasError || !heartbeatAlive ? "attention"');
-    expect(dashboardSource).toContain('lang === "ko" ? "정상 운영"');
+    expect(dashboardSource).toContain('lang === "ko" ? "가상 관측 연결됨"');
     expect(dashboardSource).toContain('lang === "ko" ? "동기화 중"');
     expect(dashboardSource).toContain('lang === "ko" ? "점검 필요"');
     expect(dashboardSource).toContain('if (!hasAttention) return null;');

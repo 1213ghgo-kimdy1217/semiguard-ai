@@ -427,7 +427,8 @@ export const appRouter = router({
         caution: z.number().int().min(2).max(98),
         warning: z.number().int().min(3).max(98),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "관리자만 전역 위험도 기준을 변경할 수 있습니다." });
         await saveThresholds(input.normal, input.caution, input.warning);
         return { success: true };
       }),
@@ -483,7 +484,8 @@ export const appRouter = router({
         vibCaution: z.number(), vibWarning: z.number(), vibDanger: z.number(),
         noiseCaution: z.number(), noiseWarning: z.number(), noiseDanger: z.number(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "관리자만 전역 센서 기준을 변경할 수 있습니다." });
         await saveSensorThresholds(input);
         return { success: true };
       }),
