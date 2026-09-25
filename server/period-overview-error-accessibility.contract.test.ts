@@ -12,8 +12,8 @@ describe("period overview load error accessibility contract", () => {
     expect(dashboardSource).toMatch(
       /\{periodOverviewQuery\.isError && \(\s*<div[^>]*role="alert"[^>]*aria-atomic="true"/
     );
-    expect(dashboardSource).toContain("운영 통계를 불러오지 못했습니다");
-    expect(dashboardSource).toContain("運用統計を読み込めませんでした");
-    expect(dashboardSource).toContain("Could not load operational statistics");
+    expect(dashboardSource).toContain("가상 관측 통계를 불러오지 못했습니다");
+    expect(dashboardSource).toContain("仮想観測統計を読み込めませんでした");
+    expect(dashboardSource).toContain("Could not load synthetic observation statistics");
   });
 });

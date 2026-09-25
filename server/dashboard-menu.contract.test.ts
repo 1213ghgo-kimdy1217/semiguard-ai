@@ -81,7 +81,7 @@ describe("dashboard slide menu interaction contract", () => {
     expect(dashboardSource).toContain('<button type="button" onClick={handleInjectCaution}');
     expect(dashboardSource).toContain('<button type="button" onClick={handleInjectWarning}');
     expect(dashboardSource).toContain('<button type="button" onClick={handleInjectAnomaly}');
-    expect(dashboardSource).toContain('<button type="button" onClick={handleResetCost}');
+    expect(dashboardSource).not.toContain('onClick={handleResetCost}');
   });
 
   it("labels anomaly history date filters in every supported language", () => {

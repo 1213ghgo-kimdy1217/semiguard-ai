@@ -28,10 +28,10 @@ describe("dashboard period presets, zoom, and AI report contract", () => {
   it("adds a data-grounded AI report summary with a server-side fallback", () => {
     expect(routerSource).toContain("summarizePeriodForReport: protectedProcedure");
     expect(routerSource).toContain('model: "gpt-5-mini"');
-    expect(routerSource).toContain("Use only supplied numbers and do not diagnose a specific hardware failure.");
+    expect(routerSource).toContain("Use only supplied numbers; do not describe real failure diagnosis, actual uptime, or equipment control.");
     expect(routerSource).toContain('source: "fallback" as const');
     expect(routerSource).toContain("const fallbackSummary = lang === \"ko\"");
-    expect(routerSource).toContain("期間データの安全サマリー");
+    expect(routerSource).toContain("仮想センサー期間サマリー");
     expect(dashboardSource).toContain("summarizePeriodForReportMutation");
     expect(dashboardSource).toContain("AI 센서 추세 요약");
     expect(dashboardSource).toContain("preparedWindow?: Window | null");

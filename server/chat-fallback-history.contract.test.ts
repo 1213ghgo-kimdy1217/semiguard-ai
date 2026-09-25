@@ -6,7 +6,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 
 describe("chat fallback history contract", () => {
   it("restores saved fallback messages in every supported language", () => {
-    expect(dashboardSource).toContain('const FALLBACK_DIAGNOSTIC_MARKERS = ["[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;');
+    expect(dashboardSource).toContain('const FALLBACK_DIAGNOSTIC_MARKERS = ["[규칙 기반 근거 요약]", "[ルールベースの根拠要約]", "[Rule-based Evidence Summary]", "[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;');
     expect(dashboardSource).toContain('message.role === "assistant" && FALLBACK_DIAGNOSTIC_MARKERS.some(marker => message.content.includes(marker))');
   });
 });

@@ -8,12 +8,12 @@ const dashboardSource = readFileSync(
 );
 
 describe("virtual fab controls busy accessibility contract", () => {
-  it("announces busy state for every injection mode and expected-savings reset", () => {
+  it("announces busy state for every injection mode without an estimated-savings reset", () => {
     expect(dashboardSource).toContain('aria-busy={injectNormal.isPending || undefined}');
     expect(dashboardSource).toContain('aria-busy={injectCaution.isPending || undefined}');
     expect(dashboardSource).toContain('aria-busy={injectWarning.isPending || undefined}');
     expect(dashboardSource).toContain('aria-busy={injectAnomaly.isPending || undefined}');
-    expect(dashboardSource).toContain('aria-busy={resetCostMutation.isPending || undefined}');
+    expect(dashboardSource).not.toContain('resetCostMutation');
     expect(dashboardSource).toContain('role="status" aria-live="polite" aria-atomic="true"');
   });
 });

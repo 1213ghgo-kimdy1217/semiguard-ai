@@ -28,8 +28,8 @@ describe("chat fallback status contract", () => {
       "isTemporaryServiceReply || res.usedFallback ? text.trim() : undefined"
     );
     expect(dashboardSource).toContain('role="status" aria-live="polite"');
-    expect(dashboardSource).toContain("실시간 수치 기반 기본 안전 진단");
-    expect(dashboardSource).toContain("リアルタイム数値に基づく基本安全診断");
-    expect(dashboardSource).toContain("Live-measurement safety fallback");
+    expect(dashboardSource).toContain("가상 센서 수치 기반 규칙 요약");
+    expect(dashboardSource).toContain("仮想センサー値に基づくルール要約");
+    expect(dashboardSource).toContain("Rule summary from synthetic sensor values");
   });
 });

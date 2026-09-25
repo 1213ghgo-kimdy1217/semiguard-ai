@@ -7,7 +7,7 @@ const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Da
 describe("dashboard retry controls accessibility contract", () => {
   it("announces localized progress and busy state for core dashboard data retries", () => {
     expect(dashboardSource).toContain("aria-busy={periodOverviewQuery.isFetching || undefined}");
-    expect(dashboardSource).toContain('"Retrying operational statistics"');
+    expect(dashboardSource).toContain('"Retrying synthetic observation statistics"');
     expect(dashboardSource).toContain("aria-busy={getRecentScoresQuery.isFetching || undefined}");
     expect(dashboardSource).toContain('"Retrying risk score trends"');
     expect(dashboardSource).toContain("aria-busy={getDailyMaxRisk.isFetching || undefined}");
