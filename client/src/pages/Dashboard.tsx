@@ -9,6 +9,7 @@ import { Brush, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Responsiv
 import { toast } from "sonner";
 import { startGoogleLink, startNaverLink, startKakaoLink } from "@/const";
 import { Tooltip as AppTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import "./dashboard-observation.css";
 
 const FALLBACK_DIAGNOSTIC_MARKERS = ["[규칙 기반 근거 요약]", "[ルールベースの根拠要約]", "[Rule-based Evidence Summary]", "[기본 안전 진단]", "[基本安全診断]", "[Baseline Safety Diagnosis]"] as const;
 const CUSTOM_PERIOD_PRESETS_KEY = "semiguard_custom_period_presets";
@@ -3268,14 +3269,14 @@ export default function Dashboard() {
   const linkedProviders = new Set((socialLinksQuery.data ?? []).map((link) => link.provider));
 
   return (
-    <div id="dashboard-root" className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
-      <aside className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-600/40 bg-[#102235] px-5 py-3 text-xs text-slate-200" aria-label="대시보드와 학습 경로 안내">
-        <p><span className="mr-2 font-bold tracking-[0.16em] text-teal-200">SIMULATED / 04 SIGNALS</span>{lang === "ko" ? "가상 센서 관찰 화면 · 실제 팹 장비 연결 없음" : lang === "ja" ? "仮想センサー観察画面・実設備への接続なし" : "Synthetic sensor observation · no fab equipment connection"}</p>
-        <div className="flex flex-wrap gap-2"><Link href="/live" className="rounded border border-slate-500/70 px-3 py-1.5 font-semibold text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200">{lang === "ko" ? "식각 자유 관찰" : lang === "ja" ? "エッチング自由観察" : "Etch observation"}</Link><Link href="/training" className="rounded border border-teal-300/60 bg-teal-300/10 px-3 py-1.5 font-semibold text-teal-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200">{lang === "ko" ? "시나리오 선택 →" : lang === "ja" ? "シナリオを選択 →" : "Choose scenario →"}</Link></div>
+    <div id="dashboard-root" data-theme={isDark ? "dark" : "light"} className="min-h-screen flex flex-col" style={{ background: th.bg, color: th.text, transition: "background 0.3s ease, color 0.3s ease" }}>
+      <aside className="sg-routebar flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3 text-xs" aria-label="대시보드와 학습 경로 안내">
+        <p><strong className="mr-2 font-semibold">SIMULATED / 04 SIGNALS</strong>{lang === "ko" ? "가상 센서 관찰 화면 · 실제 팹 장비 연결 없음" : lang === "ja" ? "仮想センサー観察画面・実設備への接続なし" : "Synthetic sensor observation · no fab equipment connection"}</p>
+        <div className="flex flex-wrap gap-2"><Link href="/live" className="px-3 py-1.5 font-semibold">{lang === "ko" ? "식각 자유 관찰" : lang === "ja" ? "エッチング自由観察" : "Etch observation"}</Link><Link href="/training" className="sg-routebar-primary px-3 py-1.5">{lang === "ko" ? "시나리오 선택 →" : lang === "ja" ? "シナリオを選択 →" : "Choose scenario →"}</Link></div>
       </aside>
       <a
         href="#dashboard-main"
-        className="sr-only z-[1200] rounded-b-lg bg-cyan-300 px-4 py-2 text-sm font-bold text-slate-950 focus:not-sr-only focus:absolute focus:left-4 focus:top-0 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+        className="sr-only z-[1200] rounded-b-lg bg-[#e4aa55] px-4 py-2 text-sm font-bold text-[#17201b] focus:not-sr-only focus:absolute focus:left-4 focus:top-0 focus:outline-none focus:ring-2 focus:ring-[#f0bc70]"
       >
         {lang === "ko" ? "대시보드 콘텐츠로 건너뛰기" : lang === "ja" ? "ダッシュボードのコンテンツへ移動" : "Skip to dashboard content"}
       </a>
@@ -3946,21 +3947,21 @@ export default function Dashboard() {
             aria-labelledby="chat-dialog-title"
             className="relative flex h-[100dvh] min-h-0 w-full flex-col overflow-hidden border shadow-2xl sm:h-[min(600px,90vh)] sm:w-[95vw] sm:max-w-lg sm:rounded-2xl"
             style={{
-              background: isDark ? "oklch(0.13 0.015 240)" : "oklch(0.99 0.003 240)",
-              borderColor: "oklch(0.75 0.18 200 / 0.4)",
+              background: th.bgCard,
+              borderColor: th.border2,
             }}>
             {/* 챗봇 헤더 */}
-            <div className="flex flex-col gap-2 border-b px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 sm:py-4" style={{ borderColor: th.border, background: "oklch(0.75 0.18 200 / 0.08)" }}>
+            <div className="flex flex-col gap-2 border-b px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5 sm:py-4" style={{ borderColor: th.border, background: th.bgCard2 }}>
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0" style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))", color: "white" }}>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded flex items-center justify-center text-base sm:text-lg font-bold shrink-0" style={{ background: th.accent, color: isDark ? "#17201b" : "#ffffff" }}>
                   🤖
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <h3 id="chat-dialog-title" className="text-xs sm:text-sm font-bold truncate" style={{ color: isDark ? "oklch(0.92 0.01 240)" : "oklch(0.12 0.01 240)" }}>
+                    <h3 id="chat-dialog-title" className="text-xs sm:text-sm font-bold truncate" style={{ color: th.text }}>
                       {lang === "ko" ? "SemiGuard AI 근거 정리 도우미" : lang === "ja" ? "SemiGuard AI 根拠整理アシスタント" : "SemiGuard AI Evidence Assistant"}
                     </h3>
-                    <span className="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono border whitespace-nowrap shrink-0" style={{ borderColor: "oklch(0.75 0.18 200 / 0.3)", background: "oklch(0.75 0.18 200 / 0.1)", color: "oklch(0.75 0.18 200)" }}>
+                    <span className="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono border whitespace-nowrap shrink-0" style={{ borderColor: th.border2, background: th.bgCard, color: th.accent }}>
                       {lang === "ko" ? `대화 ${chatMessages.length}` : lang === "ja" ? `会話 ${chatMessages.length}` : `Msgs ${chatMessages.length}`}
                     </span>
                   </div>
@@ -5512,7 +5513,7 @@ export default function Dashboard() {
                       }`}
                       style={
                         msg.role === "user"
-                          ? { background: "oklch(0.65 0.18 200)", color: "white" }
+                          ? { background: th.accent, color: isDark ? "#17201b" : "#ffffff" }
                           : {
                               background: isDark ? "oklch(0.17 0.015 240)" : "oklch(0.95 0.005 240)",
                               borderColor: th.border2,
@@ -5879,8 +5880,8 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => void handleSendChatMessage()}
                 disabled={isChatLoading || !chatInput.trim()}
-                className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-xs font-bold text-white transition-all hover:opacity-95 active:scale-95 disabled:opacity-40 sm:w-auto sm:py-2"
-                style={{ background: "linear-gradient(135deg, oklch(0.65 0.18 200), oklch(0.55 0.22 240))" }}>
+                className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded px-4 py-3 text-xs font-bold transition-all hover:opacity-95 active:scale-95 disabled:opacity-40 sm:w-auto sm:py-2"
+                style={{ background: th.accent, color: isDark ? "#17201b" : "#ffffff" }}>
                 <span>{lang === "ko" ? "전송" : lang === "ja" ? "送信" : "Send"}</span>
                 <span>📤</span>
               </button>
@@ -5959,8 +5960,8 @@ export default function Dashboard() {
             }}
             className="px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 mr-1"
             style={{
-              borderColor: activeTab === tab ? "oklch(0.65 0.18 200)" : "transparent",
-              color: activeTab === tab ? "oklch(0.65 0.18 200)" : "oklch(0.50 0.01 240)",
+              borderColor: activeTab === tab ? th.accent : "transparent",
+              color: activeTab === tab ? th.accent : th.textMuted,
             }}>
             {tab === "dashboard" ? t.dashboard : t.anomalyLog}
           </button>
@@ -5971,26 +5972,26 @@ export default function Dashboard() {
         <div id={`dashboard-panel-${activeTab}`} role="tabpanel" aria-labelledby={`dashboard-tab-${activeTab}`}>
         {activeTab === "dashboard" ? (
           <>
-            <section className="mb-5 overflow-hidden rounded-2xl border border-[#3c6370] bg-[#102235] text-slate-100 shadow-[0_18px_50px_rgba(7,22,37,0.14)]" aria-labelledby="observation-workspace-title">
+            <section className="sg-observation-hero mb-5 overflow-hidden" aria-labelledby="observation-workspace-title">
               <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.52fr)]">
                 <div>
-                  <p className="text-[11px] font-bold tracking-[0.18em] text-teal-200">SEMIGUARD / FOUR-SENSOR OBSERVATION</p>
+                  <p className="sg-eyebrow text-[11px] font-semibold">SEMIGUARD / FOUR-SENSOR OBSERVATION</p>
                   <h1 id="observation-workspace-title" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{lang === "ko" ? "신호를 보고, 차이를 확인하고, 근거를 남깁니다." : lang === "ja" ? "信号を見て、差を確かめ、根拠を残します。" : "Observe signals, compare changes, preserve evidence."}</h1>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{lang === "ko" ? "4개 가상 센서의 현재값과 비교 기준을 먼저 살펴보세요. 점수는 규칙 기반 참고값이며 원인 확정이나 실제 장비 제어를 뜻하지 않습니다." : lang === "ja" ? "4つの仮想センサーの現在値と比較基準を確認してください。スコアはルールベースの参考値であり、原因の確定や実機制御ではありません。" : "Compare four synthetic sensor readings with their reference bands. The rule-based score does not diagnose a cause or control equipment."}</p>
-                  <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-200">
-                    <a href="#sensor-evidence" className="rounded-full border border-slate-500 px-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-200">01 {lang === "ko" ? "현재값 · 기준" : lang === "ja" ? "現在値・基準" : "Value · reference"}</a>
-                    <a href="#sensor-trend" className="rounded-full border border-slate-500 px-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-200">02 {lang === "ko" ? "변화 추세" : lang === "ja" ? "変化の傾向" : "Trend"}</a>
-                    <button type="button" onClick={() => setActiveTab("log")} className="rounded-full border border-slate-500 px-3 py-1.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-200">03 {lang === "ko" ? "이상 이력 확인" : lang === "ja" ? "異常履歴" : "History"}</button>
+                  <p className="sg-observation-lead mt-3 max-w-2xl text-sm leading-6">{lang === "ko" ? "4개 가상 센서의 현재값과 비교 기준을 먼저 살펴보세요. 점수는 규칙 기반 참고값이며 원인 확정이나 실제 장비 제어를 뜻하지 않습니다." : lang === "ja" ? "4つの仮想センサーの現在値と比較基準を確認してください。スコアはルールベースの参考値であり、原因の確定や実機制御ではありません。" : "Compare four synthetic sensor readings with their reference bands. The rule-based score does not diagnose a cause or control equipment."}</p>
+                  <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold">
+                    <a href="#sensor-evidence" className="sg-step px-3 py-1.5">01 {lang === "ko" ? "현재값 · 기준" : lang === "ja" ? "現在値・基準" : "Value · reference"}</a>
+                    <a href="#sensor-trend" className="sg-step px-3 py-1.5">02 {lang === "ko" ? "변화 추세" : lang === "ja" ? "変化の傾向" : "Trend"}</a>
+                    <button type="button" onClick={() => setActiveTab("log")} className="sg-step px-3 py-1.5 text-left">03 {lang === "ko" ? "이상 이력 확인" : lang === "ja" ? "異常履歴" : "History"}</button>
                   </div>
-                  <button ref={chatLaunchButtonRef} type="button" onClick={() => setIsChatOpen(true)} className="mt-5 rounded-lg border border-teal-300/60 bg-teal-300/10 px-4 py-2 text-xs font-semibold text-teal-100 transition hover:bg-teal-300/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-200">{lang === "ko" ? "AI에 관측 근거 질문하기 · 설명 보조" : lang === "ja" ? "AIに観測根拠を質問・説明補助" : "Ask AI about the evidence · explanation only"}</button>
+                  <button ref={chatLaunchButtonRef} type="button" onClick={() => setIsChatOpen(true)} className="sg-ask-evidence mt-5 border px-4 py-2 text-xs transition-colors">{lang === "ko" ? "AI에 관측 근거 질문하기 · 설명 보조" : lang === "ja" ? "AIに観測根拠を質問・説明補助" : "Ask AI about the evidence · explanation only"}</button>
                 </div>
-                <div className="flex flex-col justify-between rounded-xl border border-[#416375] bg-[#1b3248] p-5">
-                  <p className="text-[11px] font-bold tracking-[0.13em] text-teal-200">{lang === "ko" ? "현재 가상 관측" : lang === "ja" ? "現在の仮想観測" : "CURRENT SYNTHETIC SAMPLE"}</p>
-                  <div className="mt-3 flex items-baseline gap-3"><strong className="font-mono text-5xl tabular-nums text-white">{current ? anomalyScore : "—"}</strong><span className="text-sm text-slate-300">/ 100 · {current ? t[riskLevel] : (lang === "ko" ? "불러오는 중" : lang === "ja" ? "読み込み中" : "Loading")}</span></div>
-                  {leadingSensorEvidence && <div className="mt-4 border-t border-slate-500/50 pt-3 text-xs leading-5 text-slate-200">
-                    <p className="font-semibold text-teal-200">{lang === "ko" ? "현재 가장 큰 점수 기여" : lang === "ja" ? "現在最も大きいスコア寄与" : "Largest score contribution now"}</p>
+                <div className="sg-score-tile flex flex-col justify-between p-5">
+                  <p className="sg-eyebrow text-[11px] font-semibold">{lang === "ko" ? "현재 가상 관측" : lang === "ja" ? "現在の仮想観測" : "CURRENT SYNTHETIC SAMPLE"}</p>
+                  <div className="mt-3 flex items-baseline gap-3"><strong className="font-mono text-5xl tabular-nums text-[#edf0eb]">{current ? anomalyScore : "—"}</strong><span className="sg-score-note text-sm">/ 100 · {current ? t[riskLevel] : (lang === "ko" ? "불러오는 중" : lang === "ja" ? "読み込み中" : "Loading")}</span></div>
+                  {leadingSensorEvidence && <div className="mt-4 border-t border-[#4c6050] pt-3 text-xs leading-5 text-[#e9efe8]">
+                    <p className="sg-eyebrow font-semibold">{lang === "ko" ? "현재 가장 큰 점수 기여" : lang === "ja" ? "現在最も大きいスコア寄与" : "Largest score contribution now"}</p>
                     <p className="mt-1">{({ current: t.current, temperature: t.temperature, vibration: t.vibration, noise: t.noise })[leadingSensorEvidence.field]} · {Math.abs((leadingSensorEvidence.value - NORMAL_BASELINE[leadingSensorEvidence.field].mean) / NORMAL_BASELINE[leadingSensorEvidence.field].std).toFixed(1)}σ · {leadingSensorEvidence.contribution.toFixed(1)}/25</p>
-                    <p className="mt-1 text-slate-400">{lang === "ko" ? "관찰된 편차이며 고장 원인을 뜻하지 않습니다." : lang === "ja" ? "観測された偏差であり、故障原因を意味しません。" : "An observed deviation, not a diagnosed cause."}</p>
+                    <p className="sg-score-note mt-1">{lang === "ko" ? "관찰된 편차이며 고장 원인을 뜻하지 않습니다." : lang === "ja" ? "観測された偏差であり、故障原因を意味しません。" : "An observed deviation, not a diagnosed cause."}</p>
                   </div>}
                 </div>
               </div>
@@ -6340,7 +6341,7 @@ export default function Dashboard() {
                       ? `${card.label}のセンサー値推移。現在 ${card.value ?? "未受信"}、最小 ${sensorTrend.length ? Math.min(...sensorTrend) : "なし"}、最大 ${sensorTrend.length ? Math.max(...sensorTrend) : "なし"}`
                       : `${card.label} sensor values. Current ${card.value ?? "pending"}, minimum ${sensorTrend.length ? Math.min(...sensorTrend) : "none"}, maximum ${sensorTrend.length ? Math.max(...sensorTrend) : "none"}`;
                   return (
-                  <div key={card.label} className="rounded-xl border p-4 transition-colors duration-300"
+                  <div key={card.label} className="sg-sensor-card border p-4 transition-colors duration-300"
                     style={{ background: th.bgCard, borderColor: outsideReference ? "#c88748" : th.border }}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold" style={{ color: th.textMuted }}>{card.label}</span>
@@ -6365,7 +6366,7 @@ export default function Dashboard() {
 
               {/* ── 가운데: 차트 ── */}
               <div id="sensor-trend" className="col-span-12 flex flex-col gap-4 scroll-mt-20 lg:col-span-9" tabIndex={0} role="group" aria-label={lang === "ko" ? "센서 추이 차트 확대와 이동" : lang === "ja" ? "センサー推移チャートの拡大と移動" : "Sensor trend chart zoom and pan"} onKeyDown={handleSensorChartKeyDown} onWheel={event => { if (displayedSensorChartData.length > 2) { event.preventDefault(); zoomSensorChart(event.deltaY < 0 ? "in" : "out"); } }}>
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2" style={{ background: th.bgCard, borderColor: th.border }}>
+                <div className="sg-chart-controls flex flex-wrap items-center justify-between gap-2 border px-3 py-2" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold" style={{ color: th.textMuted }}>{lang === "ko" ? "차트: 드래그로 구간 선택 · 휠로 확대 · ← →로 이동" : lang === "ja" ? "チャート: ドラッグで範囲選択 · ホイールで拡大 · ← →で移動" : "Chart: drag to select · wheel to zoom · ← → to pan"}</p>
                   <div className="flex items-center gap-1" role="group" aria-label={lang === "ko" ? "차트 확대 제어" : lang === "ja" ? "チャートの拡大操作" : "Chart zoom controls"}>
                     <button type="button" onClick={() => panSensorChart("back")} disabled={resolvedSensorChartRange.startIndex === 0} className="h-7 min-w-7 rounded border text-xs font-bold transition-colors hover:bg-cyan-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-40" style={{ color: th.text, borderColor: th.border2 }} aria-label={lang === "ko" ? "차트 이전 구간으로 이동" : lang === "ja" ? "チャートを前の範囲へ移動" : "Pan chart backward"}>←</button>
@@ -6379,38 +6380,38 @@ export default function Dashboard() {
                   </div>
                 </div>
                 {/* 전류와 온도는 단위가 다르므로 각자의 축을 사용합니다. */}
-                <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
+                <div className="sg-trend-card border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
                     {t.current} ({t.unitA}) <span aria-hidden="true" className="text-[#38bdf8]">●</span> / {t.temperature} ({t.unitC}) <span aria-hidden="true" className="text-[#fb923c]">●</span>
                   </p>
                   <ResponsiveContainer width="100%" height={190}>
                     <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                      <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#4b5563" }} interval="preserveStartEnd" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#334139" : "#ced8cd"} />
+                      <XAxis dataKey="label" tick={{ fontSize: 9, fill: th.textMuted }} interval="preserveStartEnd" />
                       <YAxis yAxisId="current" width={34} tick={{ fontSize: 9, fill: "#38bdf8" }} domain={["auto", "auto"]} />
                       <YAxis yAxisId="temperature" orientation="right" width={34} tick={{ fontSize: 9, fill: "#fb923c" }} domain={["auto", "auto"]} />
                       <Tooltip content={<CustomTooltip />} />
                       <Line yAxisId="current" type="monotone" dataKey="current" stroke="#38bdf8" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.current} (${t.unitA})`} />
                       <Line yAxisId="temperature" type="monotone" dataKey="temperature" stroke="#fb923c" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.temperature} (${t.unitC})`} />
-                      <Brush dataKey="label" height={22} stroke={isDark ? "#38bdf8" : "#0284c7"} fill={isDark ? "#102a43" : "#eaf4f7"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
+                      <Brush dataKey="label" height={22} stroke={th.accent} fill={isDark ? "#222d27" : "#e8eee6"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
                 {/* 진동과 소음도 각각의 단위 축을 사용합니다. */}
-                <div className="rounded-xl border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
+                <div className="sg-trend-card border p-4" style={{ background: th.bgCard, borderColor: th.border }}>
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
                     {t.vibration} ({t.unitMms}) <span aria-hidden="true" className="text-[#a78bfa]">●</span> / {t.noise} ({t.unitDb}) <span aria-hidden="true" className="text-[#34d399]">●</span>
                   </p>
                   <ResponsiveContainer width="100%" height={190}>
                     <LineChart data={displayedSensorChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                      <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#4b5563" }} interval="preserveStartEnd" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#334139" : "#ced8cd"} />
+                      <XAxis dataKey="label" tick={{ fontSize: 9, fill: th.textMuted }} interval="preserveStartEnd" />
                       <YAxis yAxisId="vibration" width={34} tick={{ fontSize: 9, fill: "#a78bfa" }} domain={["auto", "auto"]} />
                       <YAxis yAxisId="noise" orientation="right" width={34} tick={{ fontSize: 9, fill: "#34d399" }} domain={["auto", "auto"]} />
                       <Tooltip content={<CustomTooltip />} />
                       <Line yAxisId="vibration" type="monotone" dataKey="vibration" stroke="#a78bfa" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.vibration} (${t.unitMms})`} />
                       <Line yAxisId="noise" type="monotone" dataKey="noise" stroke="#34d399" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.noise} (${t.unitDb})`} />
-                      <Brush dataKey="label" height={22} stroke={isDark ? "#38bdf8" : "#0284c7"} fill={isDark ? "#102a43" : "#eaf4f7"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
+                      <Brush dataKey="label" height={22} stroke={th.accent} fill={isDark ? "#222d27" : "#e8eee6"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
