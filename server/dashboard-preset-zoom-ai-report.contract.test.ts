@@ -21,6 +21,9 @@ describe("dashboard period presets, zoom, and AI report contract", () => {
     expect(dashboardSource).toContain("const panSensorChart = (direction: \"back\" | \"forward\")");
     expect(dashboardSource).toContain("const resetSensorChartZoom");
     expect(dashboardSource.match(/<Brush dataKey="label"/g)?.length).toBe(2);
+    expect(dashboardSource).toContain('ariaLabel={sensorChartBrushLabel(`${t.current} · ${t.temperature}`)}');
+    expect(dashboardSource).toContain('ariaLabel={sensorChartBrushLabel(`${t.vibration} · ${t.noise}`)}');
+    expect(dashboardSource).toContain('const range = start && end ? `${start}–${end}`');
     expect(dashboardSource).toContain("onWheel={event =>");
     expect(dashboardSource).toContain("onKeyDown={handleSensorChartKeyDown}");
   });
