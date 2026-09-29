@@ -20,6 +20,8 @@ const errorCopy: Record<ErrorLanguage, {
   retry: string;
   login: string;
   reload: string;
+  staleDescription: string;
+  staleRetry: string;
 }> = {
   ko: {
     title: "화면을 준비하는 중 문제가 발생했습니다.",
@@ -28,6 +30,8 @@ const errorCopy: Record<ErrorLanguage, {
     retry: "다시 시도",
     login: "로그인으로 이동",
     reload: "페이지 새로고침",
+    staleDescription: "열어 둔 사이 사이트가 새 버전으로 바뀌었습니다. 최신 화면을 불러오세요. 저장하지 않은 입력은 사라질 수 있습니다.",
+    staleRetry: "최신 화면 불러오기",
   },
   en: {
     title: "We could not prepare this screen.",
@@ -36,6 +40,8 @@ const errorCopy: Record<ErrorLanguage, {
     retry: "Try again",
     login: "Go to sign in",
     reload: "Reload page",
+    staleDescription: "The site changed while this tab was open. Reload the latest version. Unsaved input may be lost.",
+    staleRetry: "Load latest version",
   },
   ja: {
     title: "画面の準備中に問題が発生しました。",
@@ -44,6 +50,8 @@ const errorCopy: Record<ErrorLanguage, {
     retry: "再試行",
     login: "ログインへ移動",
     reload: "ページを再読み込み",
+    staleDescription: "このタブを開いている間にサイトが更新されました。最新版を読み込んでください。未保存の入力は失われる場合があります。",
+    staleRetry: "最新版を読み込む",
   },
 };
 
@@ -58,6 +66,13 @@ function getStoredLanguage(): ErrorLanguage {
 
 function createErrorId() {
   return `SG-${Date.now().toString(36).toUpperCase()}`;
+}
+
+export function isStaleModuleError(error: Error | null): boolean {
+  return Boolean(error && (
+    error.name === "ChunkLoadError" ||
+    /Failed to fetch dynamically imported module|Importing a module script failed/i.test(error.message)
+  ));
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -79,6 +94,10 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   private retry = () => {
+    if (isStaleModuleError(this.state.error)) {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null, errorId: null });
   };
 
@@ -89,6 +108,7 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       const copy = errorCopy[getStoredLanguage()];
+      const staleModule = isStaleModuleError(this.state.error);
       return (
         <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 to-slate-800 p-6" role="alert" aria-live="assertive" aria-atomic="true">
           <section className="w-full max-w-lg rounded-2xl border border-amber-300/25 bg-slate-900/85 p-6 text-center shadow-2xl sm:p-8">
@@ -96,20 +116,20 @@ class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle size={25} aria-hidden="true" />
             </div>
             <h1 className="text-lg font-bold text-slate-50 sm:text-xl">{copy.title}</h1>
-            <p className="mt-3 text-sm leading-relaxed text-slate-300">{copy.description}</p>
+            <p className="mt-3 text-sm leading-relaxed text-slate-300">{staleModule ? copy.staleDescription : copy.description}</p>
             <p className="mt-4 font-mono text-[11px] text-slate-500">{copy.reference}: {this.state.errorId}</p>
             <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
               <button ref={this.retryButtonRef} type="button" onClick={this.retry} className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
                 <RotateCcw size={16} aria-hidden="true" />
-                {copy.retry}
+                {staleModule ? copy.staleRetry : copy.retry}
               </button>
               <button type="button" onClick={this.goToLogin} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-500 px-4 py-2.5 text-sm font-bold text-slate-100 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
                 <LogIn size={16} aria-hidden="true" />
                 {copy.login}
               </button>
-              <button type="button" onClick={() => window.location.reload()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
+              {!staleModule && <button type="button" onClick={() => window.location.reload()} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
                 {copy.reload}
-              </button>
+              </button>}
             </div>
           </section>
         </main>
