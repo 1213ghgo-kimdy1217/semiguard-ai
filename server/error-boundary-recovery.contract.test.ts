@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { isStaleModuleError } from "../client/src/components/ErrorBoundary";
 
 const source = readFileSync(resolve(process.cwd(), "client/src/components/ErrorBoundary.tsx"), "utf8");
 
@@ -19,5 +20,14 @@ describe("global error boundary recovery contract", () => {
     expect(source).toContain("this.setState({ hasError: false, error: null, errorId: null })");
     expect(source).toContain('window.location.assign("/login")');
     expect(source).toContain("window.location.reload()");
+  });
+
+  it("reloads rather than retrying an obsolete lazy-loaded bundle", () => {
+    expect(isStaleModuleError(new TypeError("Failed to fetch dynamically imported module: https://example.test/assets/EtchLive-old.js"))).toBe(true);
+    expect(isStaleModuleError(new Error("Importing a module script failed."))).toBe(true);
+    expect(isStaleModuleError(new Error("A form component failed"))).toBe(false);
+    expect(source).toContain("if (isStaleModuleError(this.state.error))");
+    expect(source).toContain("{staleModule ? copy.staleRetry : copy.retry}");
+    expect(source).toContain("{!staleModule && <button");
   });
 });
