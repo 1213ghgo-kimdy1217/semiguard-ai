@@ -3,6 +3,7 @@ import type { ProductLanguage } from "./productLanguage";
 
 type Lesson = typeof processLessons[number];
 type LessonCopy = { title: string; concept: string; equipment: string; observe: string; misconception: string; question: string; options: readonly [string, string] };
+type DepthCopy = { input: string; output: string; evidence: string };
 
 const copy: Record<"en" | "ja", Record<Lesson["id"], LessonCopy>> = {
   en: {
@@ -27,6 +28,29 @@ const copy: Record<"en" | "ja", Record<Lesson["id"], LessonCopy>> = {
   },
 };
 
-export function localizeLesson(language: ProductLanguage, lesson: Lesson): Lesson | (Omit<Lesson, "title" | "concept" | "equipment" | "observe" | "misconception" | "question" | "options"> & LessonCopy) {
-  return language === "ko" ? lesson : { ...lesson, ...copy[language][lesson.id] };
+const depthCopy: Record<"en" | "ja", Record<Lesson["id"], DepthCopy>> = {
+  en: {
+    wafer: { input: "Single-crystal silicon", output: "A flat wafer for circuit fabrication", evidence: "Surface and thickness inspection results" },
+    oxidation: { input: "Silicon surface", output: "An oxide layer used for insulation or protection", evidence: "Film thickness and uniformity measurements" },
+    photo: { input: "Resist-coated wafer and mask pattern", output: "A pattern in the resist", evidence: "Pattern position and shape inspection" },
+    etch: { input: "Patterned wafer", output: "A structure with selected material removed", evidence: "Etch-result inspection and same-phase sensor records" },
+    deposition: { input: "Wafer needing a film or adjusted properties", output: "A new film or adjusted electrical properties", evidence: "Distinguish film measurements from electrical tests" },
+    metal: { input: "Device structures that need connections", output: "Conductive paths between devices", evidence: "Electrical connectivity measurements" },
+    eds: { input: "Wafer with fabricated circuits", output: "Test and classification results for each die", evidence: "Die-level electrical results and wafer map" },
+    packaging: { input: "Tested and classified dies", output: "Protected chips with external connections", evidence: "Connection and visual inspection results" },
+  },
+  ja: {
+    wafer: { input: "シリコン単結晶", output: "回路形成に使う平坦なウェーハ", evidence: "表面状態と厚さの検査結果" },
+    oxidation: { input: "シリコン表面", output: "絶縁や保護に使う酸化膜", evidence: "膜厚と均一性の測定結果" },
+    photo: { input: "レジスト付きウェーハとマスクパターン", output: "レジストに形成されたパターン", evidence: "パターンの位置と形状の検査結果" },
+    etch: { input: "パターンが形成されたウェーハ", output: "材料が選択的に除去された構造", evidence: "エッチング結果の検査と同じ段階のセンサー記録" },
+    deposition: { input: "膜形成または特性調整が必要なウェーハ", output: "新しい薄膜または調整された電気的特性", evidence: "膜の測定と電気的測定を区別" },
+    metal: { input: "接続が必要な素子構造", output: "素子間の導電経路", evidence: "接続状態の電気的測定結果" },
+    eds: { input: "回路形成が終わったウェーハ", output: "個々のチップの検査・分類結果", evidence: "チップ別の電気検査結果とウェーハマップ" },
+    packaging: { input: "検査・分類済みのチップ", output: "保護構造と外部接続を備えたチップ", evidence: "接続状態と外観の検査結果" },
+  },
+};
+
+export function localizeLesson(language: ProductLanguage, lesson: Lesson): Lesson | (Omit<Lesson, "title" | "concept" | "equipment" | "observe" | "misconception" | "question" | "options" | "input" | "output" | "evidence"> & LessonCopy & DepthCopy) {
+  return language === "ko" ? lesson : { ...lesson, ...copy[language][lesson.id], ...depthCopy[language][lesson.id] };
 }

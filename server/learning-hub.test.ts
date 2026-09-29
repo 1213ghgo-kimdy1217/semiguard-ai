@@ -10,10 +10,16 @@ describe("process learning guide", () => {
       expect(lesson.options[lesson.answer]).toBeTruthy();
       expect(lesson.observe).toBeTruthy();
       expect(lesson.misconception).toBeTruthy();
+      expect(lesson.input).toBeTruthy();
+      expect(lesson.output).toBeTruthy();
+      expect(lesson.evidence).toBeTruthy();
+      expect(new URL(lesson.source).hostname).toBe("semiconductor.samsung.com");
+      expect(new URL(lesson.source).pathname).toContain("/fabrication-process/eight-essential-semiconductor-fabrication-processes-");
     }
   });
   it("uses official sources and preserves fictional equipment boundaries", () => {
     expect(new URL(processOverviewSource).hostname).toBe("semiconductor.samsung.com");
+    expect(new URL(processOverviewSource).pathname).toContain("semiconductor-encyclopedia-the-eight-essential");
     expect(new URL(etchEquipmentSource).hostname).toBe("www.lamresearch.com");
     const source = readFileSync("client/src/components/EtchEquipmentReference.tsx", "utf8");
     expect(source).toContain("디지털 트윈이 아닙니다");

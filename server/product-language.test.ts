@@ -27,6 +27,10 @@ describe("trilingual product language", () => {
         expect(localized.answer).toBe(lesson.answer);
         expect(localized.options).toHaveLength(2);
         expect(localized.options[localized.answer]).toBeTruthy();
+        for (const field of ["input", "output", "evidence"] as const) {
+          expect(localized[field]).toBeTruthy();
+          expect(localized[field]).not.toBe(lesson[field]);
+        }
       }
     }
     expect(tr("en", "가상 데이터", "Synthetic data", "仮想データ")).toBe("Synthetic data");

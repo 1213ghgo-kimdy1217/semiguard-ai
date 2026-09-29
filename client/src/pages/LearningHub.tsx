@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { processLessons, processOverviewSource } from "../../../shared/learningHub";
 import EtchEquipmentReference from "../components/EtchEquipmentReference";
@@ -14,7 +14,11 @@ export default function LearningHub() {
   useEffect(() => { document.title = l("SemiGuard — 8대 공정 학습", "SemiGuard — Eight semiconductor processes", "SemiGuard — 8大工程の学習"); }, [language]);
   const [query, setQuery] = useState("");
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const lessons = processLessons.map(p => localizeLesson(language, p)).filter(p => (p.title + p.english + p.equipment + processLessons.find(source => source.id === p.id)?.title).toLowerCase().includes(query.trim().toLowerCase()));
+  const lessons = useMemo(() => {
+    const term = query.trim().toLocaleLowerCase();
+    return processLessons.map((source, index) => ({ ...localizeLesson(language, source), order: index + 1, koreanTitle: source.title }))
+      .filter(p => [p.title, p.koreanTitle, p.english, p.concept, p.input, p.output, p.evidence, p.equipment].join(" ").toLocaleLowerCase().includes(term));
+  }, [language, query]);
   return <div className="et-app lh-app">
     <header className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard</Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/training">{l("시나리오 훈련", "Scenario training", "シナリオ訓練")}</Link><Link href="/live">{l("자유 관찰", "Free observation", "自由観察")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /></nav></header>
     <main id="learning-main" className="et-main">
@@ -25,14 +29,22 @@ export default function LearningHub() {
       <label className="lh-search">{l("공정·장비 검색", "Search processes and equipment", "工程・装置を検索")}<input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={l("예: 식각, Etch, 노광", "e.g., Etch, lithography", "例：エッチング、露光")} /></label>
       <p role="status">{lessons.length} {l("개 공정", "processes", "工程")}</p>
       <div className="lh-grid">{lessons.map(p => <article className="et-panel" key={p.id} id={p.id}>
-        <p className="et-eyebrow">{String(processLessons.findIndex(source => source.id === p.id) + 1).padStart(2, "0")} / {p.english}</p>
+        <p className="et-eyebrow">{String(p.order).padStart(2, "0")} / {p.english}</p>
         <h2>{p.title}</h2><p>{p.concept}</p>
         <details><summary>{p.title} {l("더 알아보기", "details", "詳細を見る")}</summary>
+          <h3>{l("공정의 앞뒤를 연결하기", "Connect the before and after", "工程の前後をつなぐ")}</h3>
+          <div className="lh-flow" aria-label={l("공정 입력, 결과, 확인 근거", "Process input, result, and evidence", "工程の入力、結果、確認根拠")}>
+            <div><span>{l("들어오는 것", "Starting point", "入力")}</span><p>{p.input}</p></div>
+            <div><span>{l("달라지는 것", "Result", "結果")}</span><p>{p.output}</p></div>
+            <div><span>{l("확인할 근거", "Evidence to compare", "確認する根拠")}</span><p>{p.evidence}</p></div>
+          </div>
+          <p className="et-caption">{l("검사 결과와 장비 센서 신호는 서로 다른 근거입니다. 어느 하나만으로 원인을 확정하지 마세요.", "Inspection results and equipment sensor signals are different evidence. Neither alone confirms a cause.", "検査結果と装置センサー信号は別の根拠です。どちらか一方だけで原因を断定しないでください。")}</p>
           <h3>{l("대표 장비 유형", "Typical equipment types", "代表的な装置の種類")}</h3><p>{p.equipment}</p>
           <h3>{l("관찰할 때 던질 질문", "Observation prompt", "観察時の問い")}</h3><p>{p.observe}</p>
           <h3>{l("구분해야 할 점", "Key distinction", "区別すべき点")}</h3><p>{p.misconception}</p>
           <fieldset><legend>{p.question}</legend>{p.options.map((option, index) => <label className="lh-option" key={option}><input type="radio" name={p.id} checked={answers[p.id] === index} onChange={() => setAnswers(a => ({ ...a, [p.id]: index }))} />{option}</label>)}</fieldset>
           <div aria-live="polite">{answers[p.id] !== undefined && <p className="lh-feedback">{answers[p.id] === p.answer ? l("맞습니다. ", "Correct. ", "正解です。") : l("다시 생각해 보세요. ", "Consider again. ", "もう一度考えてみましょう。")}{p.misconception}</p>}</div>
+          <p className="lh-source"><a href={p.source} target="_blank" rel="noopener noreferrer">{l("이 공정의 삼성반도체 원문 보기 ↗ (한국어, 새 탭)", "Read Samsung Semiconductor's process article ↗ (Korean, new tab)", "Samsung Semiconductorの工程記事を読む ↗（韓国語・新しいタブ）")}</a></p>
           {p.id === "etch" ? <Link className="et-linkbutton" href="/training">{l("식각 Scenario 01에서 관찰하기 →", "Observe in Etch Scenario 01 →", "エッチングScenario 01で観察する →")}</Link> : <p className="et-caption">{l("개념 학습만 제공 · 이 공정의 관찰 시나리오는 아직 없습니다.", "Concept learning only · no observation scenario for this process yet.", "概念学習のみ・この工程の観察シナリオはまだありません。")}</p>}
         </details>
       </article>)}</div>
