@@ -11,6 +11,9 @@ describe("free analysis source selection", () => {
     expect(file).toContain("parseSensorCsv(await file.text())");
     expect(file).toContain("출처·측정 품질은 검증되지 않았습니다");
     expect(file).toContain("실시간 설비 모니터링이 아닙니다");
+    expect(file).toContain('htmlFor="csv-inspection-number"');
+    expect(file).toContain('min={1} max={selectedRecords.length} step={1} value={inspection + 1}');
+    expect(file).toContain('Math.min(selectedRecords.length - 1, Math.floor(Number(event.target.value) || 1) - 1)');
     expect(file).not.toMatch(/\bfetch\(|\baxios\.|XMLHttpRequest/);
   });
 });
