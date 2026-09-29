@@ -2897,6 +2897,12 @@ export default function Dashboard() {
     const endIndex = Math.min(Math.max(startIndex, sensorChartRange.endIndex), maxIndex);
     return { startIndex, endIndex };
   }, [displayedSensorChartData.length, sensorChartRange]);
+  const sensorChartBrushLabel = (signals: string) => {
+    const start = displayedSensorChartData[resolvedSensorChartRange.startIndex]?.label;
+    const end = displayedSensorChartData[resolvedSensorChartRange.endIndex]?.label;
+    const range = start && end ? `${start}–${end}` : (lang === "ko" ? "기록 없음" : lang === "ja" ? "記録なし" : "No records");
+    return lang === "ko" ? `${signals} 차트 선택 구간 ${range}` : lang === "ja" ? `${signals}チャートの選択範囲 ${range}` : `${signals} chart selected range ${range}`;
+  };
   const setSensorChartWindow = (startIndex: number, endIndex: number) => {
     const maxIndex = Math.max(0, displayedSensorChartData.length - 1);
     setSensorChartRange({ startIndex: Math.min(Math.max(0, startIndex), maxIndex), endIndex: Math.min(Math.max(0, endIndex), maxIndex) });
@@ -6393,7 +6399,7 @@ export default function Dashboard() {
                       <Tooltip content={<CustomTooltip />} />
                       <Line yAxisId="current" type="monotone" dataKey="current" stroke="#38bdf8" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.current} (${t.unitA})`} />
                       <Line yAxisId="temperature" type="monotone" dataKey="temperature" stroke="#fb923c" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.temperature} (${t.unitC})`} />
-                      <Brush dataKey="label" height={22} stroke={th.accent} fill={isDark ? "#222d27" : "#e8eee6"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
+                      <Brush dataKey="label" ariaLabel={sensorChartBrushLabel(`${t.current} · ${t.temperature}`)} height={22} stroke={th.accent} fill={isDark ? "#222d27" : "#e8eee6"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -6411,7 +6417,7 @@ export default function Dashboard() {
                       <Tooltip content={<CustomTooltip />} />
                       <Line yAxisId="vibration" type="monotone" dataKey="vibration" stroke="#a78bfa" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.vibration} (${t.unitMms})`} />
                       <Line yAxisId="noise" type="monotone" dataKey="noise" stroke="#34d399" strokeWidth={2} dot={false} isAnimationActive={false} name={`${t.noise} (${t.unitDb})`} />
-                      <Brush dataKey="label" height={22} stroke={th.accent} fill={isDark ? "#222d27" : "#e8eee6"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
+                      <Brush dataKey="label" ariaLabel={sensorChartBrushLabel(`${t.vibration} · ${t.noise}`)} height={22} stroke={th.accent} fill={isDark ? "#222d27" : "#e8eee6"} travellerWidth={9} startIndex={resolvedSensorChartRange.startIndex} endIndex={resolvedSensorChartRange.endIndex} onChange={range => { if (typeof range.startIndex === "number" && typeof range.endIndex === "number") setSensorChartWindow(range.startIndex, range.endIndex); }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
