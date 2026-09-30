@@ -3,8 +3,8 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import "./signup.css";
 
 type Language = "ko" | "en" | "ja";
 
@@ -15,6 +15,16 @@ const SIGNUP_COPY = {
     pageKeywords: "SemiGuard AI, 반도체 장비, 센서 판단 훈련, 회원가입, 점검 보조",
     languageLabel: "표시 언어",
     subtitle: "반도체 장비 센서 판단 훈련",
+    heroEyebrow: "SEMIGUARD / CREATE ACCESS",
+    heroTitle: "신호를 읽고, 근거로 판단하다.",
+    heroDescription: "회원가입 후 로그인하면 4센서 대시보드를 이용할 수 있습니다. 시나리오와 자유 관찰은 가입 없이도 시작할 수 있습니다.",
+    pathLabel: "LEARNING PATH",
+    path: ["공정 맥락 학습", "시나리오 판단 연습", "가상 신호 자유 관찰"],
+    scope: "교육용 가상 센서 데이터 · 실제 장비 연결·제어 없음",
+    trainingLink: "가입 없이 연습 둘러보기",
+    formEyebrow: "STEP 01 / ACCOUNT",
+    formTitle: "계정 만들기",
+    formDescription: "대시보드를 이용할 계정을 등록하세요.",
     badgeNumber: "회사 명찰 번호",
     badgePlaceholder: "예: EMP-2024-001",
     name: "이름",
@@ -52,6 +62,16 @@ const SIGNUP_COPY = {
     pageKeywords: "SemiGuard AI, semiconductor equipment, sensor reasoning, sign up, inspection aid",
     languageLabel: "Display language",
     subtitle: "Semiconductor sensor reasoning practice",
+    heroEyebrow: "SEMIGUARD / CREATE ACCESS",
+    heroTitle: "Read the signal. Reason from evidence.",
+    heroDescription: "Sign in after registration to use the four-sensor dashboard. Scenario and free observation are available without an account.",
+    pathLabel: "LEARNING PATH",
+    path: ["Learn process context", "Practice scenario reasoning", "Observe synthetic signals"],
+    scope: "Synthetic sensor data for learning · no real-equipment connection or control",
+    trainingLink: "Explore practice without signing up",
+    formEyebrow: "STEP 01 / ACCOUNT",
+    formTitle: "Create an account",
+    formDescription: "Register an account for the dashboard.",
     badgeNumber: "Company badge number",
     badgePlaceholder: "e.g., EMP-2024-001",
     name: "Name",
@@ -89,6 +109,16 @@ const SIGNUP_COPY = {
     pageKeywords: "SemiGuard AI, 半導体装置, センサー判断訓練, アカウント登録, 点検支援",
     languageLabel: "表示言語",
     subtitle: "半導体装置の信号判断訓練",
+    heroEyebrow: "SEMIGUARD / CREATE ACCESS",
+    heroTitle: "信号を読み、根拠から判断する。",
+    heroDescription: "登録後にログインすると4センサーダッシュボードを利用できます。シナリオと自由観察は登録せずに始められます。",
+    pathLabel: "LEARNING PATH",
+    path: ["工程の背景を学ぶ", "シナリオで判断を練習", "仮想信号を自由に観察"],
+    scope: "学習用の仮想センサーデータ・実際の装置への接続や制御はありません",
+    trainingLink: "登録せずに練習を見る",
+    formEyebrow: "STEP 01 / ACCOUNT",
+    formTitle: "アカウントを作成",
+    formDescription: "ダッシュボード用のアカウントを登録してください。",
     badgeNumber: "社員証番号",
     badgePlaceholder: "例: EMP-2024-001",
     name: "氏名",
@@ -286,69 +316,75 @@ export function Signup() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-slate-700 bg-slate-800 shadow-2xl">
-        <div className="p-6 sm:p-8">
-          <div className="mb-6 flex justify-end" role="group" aria-label={copy.languageLabel}>
-            <div className="inline-flex rounded-lg border border-slate-700 bg-slate-900/60 p-1">
-              {([
-                ["ko", "한국어"],
-                ["en", "EN"],
-                ["ja", "日本語"],
-              ] as const).map(([nextLanguage, label], index) => (
-                <button
-                  key={nextLanguage}
-                  type="button"
-                  onClick={() => selectLanguage(nextLanguage)}
-                  onKeyDown={(event) => handleSignupLanguageKeyDown(event, index)}
-                  ref={(element) => { signupLanguageButtonRefs.current[index] = element; }}
-                  aria-pressed={language === nextLanguage}
-                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800 ${language === nextLanguage ? "bg-cyan-500 text-slate-950" : "text-slate-400 hover:bg-slate-700 hover:text-slate-100"}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+    <main className="sg-signup min-h-screen">
+      <div className="sg-signup-topbar">
+        <div className="sg-signup-brand"><span aria-hidden="true">SG</span><strong>SemiGuard</strong><small>TRAINING LAB</small></div>
+        <div className="sg-signup-languages" role="group" aria-label={copy.languageLabel}>
+          {([
+            ["ko", "한국어"],
+            ["en", "EN"],
+            ["ja", "日本語"],
+          ] as const).map(([nextLanguage, label], index) => (
+            <button
+              key={nextLanguage}
+              type="button"
+              onClick={() => selectLanguage(nextLanguage)}
+              onKeyDown={(event) => handleSignupLanguageKeyDown(event, index)}
+              ref={(element) => { signupLanguageButtonRefs.current[index] = element; }}
+              aria-pressed={language === nextLanguage}
+              className={`sg-signup-language-option focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 ${language === nextLanguage ? "is-active" : ""}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="sg-signup-layout">
+        <section className="sg-signup-intro" aria-labelledby="signup-intro-title">
+          <p className="sg-signup-eyebrow">{copy.heroEyebrow}</p>
+          <h1 id="signup-intro-title">{copy.heroTitle}</h1>
+          <p className="sg-signup-lead">{copy.heroDescription}</p>
+          <div className="sg-signup-path" aria-label={copy.pathLabel}>
+            <p className="sg-signup-eyebrow">{copy.pathLabel}</p>
+            <ol>{copy.path.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span>{step}</li>)}</ol>
           </div>
-
-          <div className="mb-8 text-center">
-            <div className="mb-4 flex items-center justify-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
-                <span className="text-lg font-bold text-white" aria-hidden="true">⚙️</span>
-              </div>
-              <h1 className="text-2xl font-bold text-white">SemiGuard AI</h1>
-            </div>
-            <p className="text-sm text-slate-400">{copy.subtitle}</p>
+          <p className="sg-signup-scope">{copy.scope}</p>
+          <button className="sg-signup-explore focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" type="button" onClick={() => setLocation("/training")}>{copy.trainingLink} <span aria-hidden="true">↗</span></button>
+        </section>
+        <section className="sg-signup-card" aria-labelledby="signup-form-title">
+          <div className="sg-signup-card-heading">
+            <p className="sg-signup-eyebrow">{copy.formEyebrow}</p>
+            <h2 id="signup-form-title">{copy.formTitle}</h2>
+            <p>{copy.formDescription}</p>
           </div>
-
           <form onSubmit={handleSignup} className="space-y-5" aria-busy={isLoading} noValidate>
             {isLoading && <p id="signup-submit-status" className="sr-only" role="status" aria-live="polite" aria-atomic="true">{copy.submitting}</p>}
             {authError && (
-              <p id="signup-auth-error" role="alert" aria-atomic="true" className="rounded-lg border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-200" tabIndex={-1}>
+              <p id="signup-auth-error" role="alert" aria-atomic="true" className="sg-signup-auth-error" tabIndex={-1}>
                 {authError}
               </p>
             )}
             <div className="space-y-2">
-              <Label htmlFor="badgeNumber" className="text-sm font-medium text-slate-300">{copy.badgeNumber}</Label>
-              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} inputMode="text" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={[fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ") || undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="username" required />
+              <Label htmlFor="badgeNumber" className="sg-signup-label">{copy.badgeNumber}</Label>
+              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} inputMode="text" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={[fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ") || undefined} className="sg-signup-input" disabled={isLoading} autoComplete="username" required />
               {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.badgeNumber}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium text-slate-300">{copy.name}</Label>
-              <Input id="name" name="name" type="text" placeholder={copy.namePlaceholder} value={formData.name} onChange={handleChange} inputMode="text" enterKeyHint="next" aria-invalid={fieldError === "name"} aria-describedby={fieldError === "name" ? "name-error" : undefined} className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="name" required />
+              <Label htmlFor="name" className="sg-signup-label">{copy.name}</Label>
+              <Input id="name" name="name" type="text" placeholder={copy.namePlaceholder} value={formData.name} onChange={handleChange} inputMode="text" enterKeyHint="next" aria-invalid={fieldError === "name"} aria-describedby={fieldError === "name" ? "name-error" : undefined} className="sg-signup-input" disabled={isLoading} autoComplete="name" required />
               {fieldError === "name" && <p id="name-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.name}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dateOfBirth" className="text-sm font-medium text-slate-300">{copy.dateOfBirth}</Label>
-              <Input id="dateOfBirth" name="dateOfBirth" type="date" lang={LANGUAGE_LOCALES[language]} value={formData.dateOfBirth} onChange={handleChange} enterKeyHint="next" aria-invalid={fieldError === "dateOfBirth"} aria-describedby={[fieldError === "dateOfBirth" ? "dateOfBirth-error" : null, "dateOfBirth-hint"].filter(Boolean).join(" ")} className="border-slate-600 bg-slate-700 text-white focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="bday" required />
-              <p id="dateOfBirth-hint" className="text-xs leading-relaxed text-slate-400">{copy.dateHint}</p>
+              <Label htmlFor="dateOfBirth" className="sg-signup-label">{copy.dateOfBirth}</Label>
+              <Input id="dateOfBirth" name="dateOfBirth" type="date" lang={LANGUAGE_LOCALES[language]} value={formData.dateOfBirth} onChange={handleChange} enterKeyHint="next" aria-invalid={fieldError === "dateOfBirth"} aria-describedby={[fieldError === "dateOfBirth" ? "dateOfBirth-error" : null, "dateOfBirth-hint"].filter(Boolean).join(" ")} className="sg-signup-input" disabled={isLoading} autoComplete="bday" required />
+              <p id="dateOfBirth-hint" className="sg-signup-hint">{copy.dateHint}</p>
               {fieldError === "dateOfBirth" && <p id="dateOfBirth-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.dateOfBirth}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-slate-300">{copy.password}</Label>
+              <Label htmlFor="password" className="sg-signup-label">{copy.password}</Label>
               <div className="relative">
-                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} enterKeyHint="next" aria-invalid={fieldError === "password"} aria-describedby={[fieldError === "password" ? "password-error" : null, "password-strength-status"].filter(Boolean).join(" ")} className="border-slate-600 bg-slate-700 pr-32 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
-                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} aria-busy={isLoading || undefined} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
+                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder={copy.passwordPlaceholder} value={formData.password} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} enterKeyHint="next" aria-invalid={fieldError === "password"} aria-describedby={[fieldError === "password" ? "password-error" : null, "password-strength-status"].filter(Boolean).join(" ")} className="sg-signup-input pr-32" disabled={isLoading} autoComplete="new-password" required />
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? copy.hidePassword : copy.showPassword} aria-pressed={showPassword} disabled={isLoading} aria-busy={isLoading || undefined} className="sg-signup-password-toggle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
                   {showPassword ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
@@ -366,31 +402,31 @@ export function Signup() {
               {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite" aria-atomic="true">{copy.capsLockWarning}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="passwordConfirm" className="text-sm font-medium text-slate-300">{copy.passwordConfirm}</Label>
+              <Label htmlFor="passwordConfirm" className="sg-signup-label">{copy.passwordConfirm}</Label>
               <div className="relative">
-                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} enterKeyHint="done" aria-invalid={fieldError === "passwordConfirm"} aria-describedby={fieldError === "passwordConfirm" ? "passwordConfirm-error" : undefined} className="border-slate-600 bg-slate-700 pr-32 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-400" disabled={isLoading} autoComplete="new-password" required />
-                <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} aria-busy={isLoading || undefined} className="absolute inset-y-1 right-1 rounded px-3 text-xs font-semibold text-cyan-300 transition-colors hover:bg-slate-600 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-inset disabled:opacity-50">
+                <Input id="passwordConfirm" name="passwordConfirm" type={showPasswordConfirm ? "text" : "password"} placeholder={copy.passwordConfirmPlaceholder} value={formData.passwordConfirm} onChange={handleChange} onKeyDown={handleCapsLock} onKeyUp={handleCapsLock} onBlur={() => setCapsLockOn(false)} enterKeyHint="done" aria-invalid={fieldError === "passwordConfirm"} aria-describedby={fieldError === "passwordConfirm" ? "passwordConfirm-error" : undefined} className="sg-signup-input pr-32" disabled={isLoading} autoComplete="new-password" required />
+                <button type="button" onClick={() => setShowPasswordConfirm((visible) => !visible)} aria-label={showPasswordConfirm ? copy.hidePassword : copy.showPassword} aria-pressed={showPasswordConfirm} disabled={isLoading} aria-busy={isLoading || undefined} className="sg-signup-password-toggle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
                   {showPasswordConfirm ? copy.hidePassword : copy.showPassword}
                 </button>
               </div>
               {fieldError === "passwordConfirm" && <p id="passwordConfirm-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.passwordConfirm}</p>}
               {capsLockOn && <p className="text-xs font-medium text-amber-300" role="status" aria-live="polite" aria-atomic="true">{copy.capsLockWarning}</p>}
             </div>
-            <Button type="submit" disabled={isLoading} aria-busy={isLoading || undefined} className="w-full rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 py-2 font-semibold text-white transition-all duration-200 hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-50">
+            <Button type="submit" disabled={isLoading} aria-busy={isLoading || undefined} className="sg-signup-submit w-full">
               {isLoading ? copy.submitting : copy.submit}
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-400">
+          <div className="sg-signup-account-prompt">
+            <p>
               {copy.accountPrompt}{" "}
-              <button type="button" onClick={() => setLocation("/login")} className="rounded font-semibold text-cyan-400 transition-colors hover:text-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800">
+              <button type="button" onClick={() => setLocation("/login")} className="sg-signup-inline-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300">
                 {copy.login}
               </button>
             </p>
           </div>
-        </div>
-      </Card>
+        </section>
+      </div>
     </main>
   );
 }

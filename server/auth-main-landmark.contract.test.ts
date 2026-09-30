@@ -12,7 +12,7 @@ describe("authentication main landmark contract", () => {
   });
 
   it("exposes the Signup form as the page main content landmark", () => {
-    expect(signupSource).toContain('<main className="min-h-screen bg-gradient-to-br from-slate-900');
+    expect(signupSource).toContain('<main className="sg-signup min-h-screen">');
     expect(signupSource).toContain("</main>");
   });
 });
