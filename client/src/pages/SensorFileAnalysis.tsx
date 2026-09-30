@@ -64,7 +64,7 @@ export default function SensorFileAnalysis({ language = "ko" }: { language?: Pro
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
     const link = document.createElement("a"); link.href = url; link.download = "semiguard-file-observations.json"; link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setNotice(l("원본 센서값 없이 관찰 메모와 파일 정보만 내려받았습니다.", "Downloaded notes and file metadata without raw sensor values.", "元のセンサー値を含めず、観察メモとファイル情報をダウンロードしました。"));
+    setNotice(l("선택 기록의 값과 메모를 내려받았습니다. 원본 CSV 전체는 포함되지 않습니다.", "Downloaded selected record values and notes. The full source CSV is not included.", "選択した記録の値とメモをダウンロードしました。元のCSV全体は含まれません。"));
   }
 
   function downloadExample() {
@@ -120,6 +120,7 @@ export default function SensorFileAnalysis({ language = "ko" }: { language?: Pro
         </form>
         <h3>{l("이번 파일의 관찰 메모", "Observation notes for this file", "このファイルの観察メモ")} ({notes.length})</h3>
         {notes.length ? <ol className="sensor-file-notes">{notes.map(note => <li key={note.id}><h4>{note.sensor} · {note.timestamp} · {note.value}</h4><p><b>{l("사실", "Fact", "事実")}</b> {note.fact}</p><p><b>{l("가능한 설명", "Possible explanation", "考えられる説明")}</b> {note.possibility || l("미기재", "Not provided", "未記入")}</p><p><b>{l("다음 확인", "Next check", "次の確認")}</b> {note.nextCheck || l("미기재", "Not provided", "未記入")}</p><Button variant="ghost" aria-label={`${note.timestamp} ${l("메모 취소", "remove note", "メモを取り消す")}`} onClick={() => setNotes(current => current.filter(item => item.id !== note.id))}>{l("기록 취소", "Remove note", "記録を取り消す")}</Button></li>)}</ol> : <p>{l("아직 메모가 없습니다.", "No notes yet.", "まだメモはありません。")}</p>}
+        <p className="et-caption">{l("내려받는 JSON에는 파일명·기록 수, 선택 기록의 센서명·시각·값과 직접 쓴 메모가 포함됩니다. 원본 CSV 전체는 포함되지 않습니다.", "The downloaded JSON includes the file name, record count, selected sensor names, timestamps, values, and your notes. It does not include the full source CSV.", "ダウンロードするJSONにはファイル名・記録件数、選択したセンサー名・時刻・値と入力したメモが含まれます。元のCSV全体は含まれません。")}</p>
         <Button variant="outline" disabled={!notes.length} onClick={exportNotes}>{l("메모 파일 내려받기", "Download note file", "メモファイルをダウンロード")}</Button>
         <p className="et-caption">{l("이 파일과 메모는 현재 화면의 메모리에만 있습니다. 새로고침하거나 이동하면 사라지므로 필요한 메모는 내려받으세요.", "This file and its notes exist only in this screen's memory. They disappear on refresh or navigation, so download important notes.", "このファイルとメモは現在の画面のメモリーにのみあります。更新や移動で消えるため、必要なメモはダウンロードしてください。")}</p>
       </> : null}
