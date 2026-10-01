@@ -8,7 +8,7 @@ export const etchSignals = [
 ] as const;
 export type EtchSignal = typeof etchSignals[number]["id"];
 export type EtchAnswer = { signal: string; onset: string; comparison: string; certainty: string; facts: string; checks: string };
-export type EtchAttempt = { version: 1; elapsed: number; marker: number | null; answer: EtchAnswer; submitted: boolean };
+export type EtchAttempt = { version: 1; elapsed: number; marker: number | null; answer: EtchAnswer; submitted: boolean; saveKey?: string };
 export const emptyEtchAttempt = (): EtchAttempt => ({ version: 1, elapsed: 0, marker: null, submitted: false, answer: { signal: "", onset: "", comparison: "", certainty: "", facts: "", checks: "" } });
 export function toggleEtchMarker(attempt: EtchAttempt): EtchAttempt {
   if (attempt.submitted) return attempt;
@@ -52,7 +52,8 @@ export function restoreEtchAttempt(raw: string | null): EtchAttempt | null {
     if (a.onset && (!/^(0|[1-9]\d{0,2})$/.test(a.onset) || Number(a.onset) > v.elapsed)) return null;
     if (a.comparison && !["same-phase", "whole-run"].includes(a.comparison)) return null;
     if (a.certainty && !["uncertain", "certain"].includes(a.certainty)) return null;
-    return { version: 1, elapsed: v.elapsed, marker: v.marker, answer: a, submitted: v.submitted === true && v.elapsed === ETCH_DURATION && validEtchAnswer(a) };
+    return { version: 1, elapsed: v.elapsed, marker: v.marker, answer: a, submitted: v.submitted === true && v.elapsed === ETCH_DURATION && validEtchAnswer(a),
+      saveKey: typeof v.saveKey === "string" && /^[0-9a-f-]{36}$/i.test(v.saveKey) ? v.saveKey : undefined };
   } catch { return null; }
 }
 export function etchFeedback(a: EtchAnswer) {

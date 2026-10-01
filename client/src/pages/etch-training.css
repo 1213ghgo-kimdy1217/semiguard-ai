@@ -106,3 +106,6 @@
 .et-skip{background:#e4aa55;color:#17201b}
 .et-app :is(button,a,input,textarea,summary,.et-table):focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
 @media(max-width:760px){.et-main{padding-top:28px}.et-header{position:relative}}
+.et-history,.et-save-status{margin:24px 0}
+.et-history ul{list-style:none;margin:16px 0 0;padding:0}
+.et-history li{padding:12px 0;border-top:1px solid #435447;overflow-wrap:anywhere}
