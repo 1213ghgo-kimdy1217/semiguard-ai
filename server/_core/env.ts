@@ -7,6 +7,10 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Server-only: never use a VITE_ prefix for model credentials.
+  aiProvider: process.env.AI_PROVIDER ?? "",
+  nvidiaApiKey: process.env.NVIDIA_API_KEY ?? "",
+  nvidiaModel: process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3-super-120b-a12b",
   // Social login
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",

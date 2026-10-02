@@ -134,7 +134,13 @@ SemiGuard AI는 전류·온도·진동·소음 데이터에서 위험 신호를 
 | 프론트엔드 | React 19, Tailwind CSS 4, Recharts | 대시보드, 차트, 반응형·접근성 UI                |
 | 서버       | Express 4, tRPC 11                 | 인증된 API, AI 요청, 보고서·제품 지표 처리      |
 | 데이터     | MySQL/TiDB, Drizzle ORM            | 이상 이력, 상담, 매뉴얼, 제품 사용 지표 저장    |
-| AI         | Manus Built-in LLM API             | 근거 기반 설명·기간 보고서 요약, 대체 진단 경로 |
+| AI         | NVIDIA NIM / 기존 Manus LLM 연결  | 근거 기반 설명·기간 보고서 요약, 실패 시 규칙 요약 |
+
+### AI 설명 서버 설정
+
+운영 서버에 `NVIDIA_API_KEY`를 비밀 환경변수로 설정하면 NVIDIA 연결을 사용합니다. 기본 모델은 `nvidia/nemotron-3-super-120b-a12b`이며 `NVIDIA_MODEL`로 변경할 수 있습니다. `AI_PROVIDER=nvidia` 또는 `manus`로 제공자를 명시할 수 있고, NVIDIA 키가 없을 때만 기존 `BUILT_IN_FORGE_API_KEY` 연결을 기본으로 선택합니다. 키는 `VITE_` 변수·GitHub·브라우저에 넣지 않습니다.
+
+응답은 40초 이내로 제한하며, 비어 있거나 잘린 답변·유효하지 않은 구조화 응답은 AI 결과로 표시하지 않습니다. 화면에는 실제 제공자·모델 또는 규칙 기반 대체 여부를 표시합니다. 설정·로컬 검사 통과만으로 운영 연결 성공을 보장하지 않으므로 배포 후 가상 데이터로 확인해야 합니다. OGQ API는 학습용 이미지·스티커 자산 API이며, 센서 분석이나 AI 답변 생성 API가 아닙니다.
 
 ## 탐지 방식과 검증 상태
 

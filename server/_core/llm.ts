@@ -81,6 +81,7 @@ export type ToolCall = {
 };
 
 export type InvokeResult = {
+  provider?: "nvidia" | "manus";
   id: string;
   created: number;
   model: string;
@@ -212,15 +213,26 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
+const resolveProvider = () => {
+  const provider = ENV.aiProvider.trim() || (ENV.nvidiaApiKey.trim() ? "nvidia" : "manus");
+  if (provider !== "nvidia" && provider !== "manus") throw new Error("Unsupported AI_PROVIDER");
+  const apiKey = (provider === "nvidia" ? ENV.nvidiaApiKey : ENV.forgeApiKey).trim();
+  if (!apiKey) throw new Error(`${provider === "nvidia" ? "NVIDIA_API_KEY" : "BUILT_IN_FORGE_API_KEY"} is not configured`);
+  return {
+    provider,
+    apiKey,
+    baseUrl: provider === "nvidia" ? "https://integrate.api.nvidia.com/v1"
+      : `${(ENV.forgeApiUrl.trim() || "https://forge.manus.im").replace(/\/$/, "")}/v1`,
+  } as const;
+};
 
-const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
-  }
+// Some providers return a reasoning trace in content rather than a separate field.
+// Never display or save that trace, and reject an unfinished trace or empty answer.
+export const finalAnswerOnly = (content: string): string => {
+  const closing = content.lastIndexOf("</think>");
+  const answer = (closing >= 0 ? content.slice(closing + 8) : content).trim();
+  if (!answer || /<think>/i.test(answer)) throw new Error("LLM returned no complete final answer");
+  return answer;
 };
 
 const normalizeResponseFormat = ({
@@ -274,8 +286,13 @@ const RETRY_MAX_DELAY_MS = 30_000;
 
 type FetchInit = NonNullable<Parameters<typeof fetch>[1]>;
 
-const sleep = (ms: number) =>
-  new Promise<void>(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number, signal?: AbortSignal | null) =>
+  new Promise<void>((resolve, reject) => {
+    signal?.throwIfAborted();
+    const onAbort = () => { clearTimeout(timer); reject(signal?.reason); };
+    const timer = setTimeout(() => { signal?.removeEventListener("abort", onAbort); resolve(); }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 
 const parseRetryAfter = (value: string | null): number | undefined => {
   if (!value) return undefined;
@@ -309,6 +326,7 @@ const fetchWithBackoff = async (
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= RETRY_MAX_RETRIES; attempt++) {
+    init.signal?.throwIfAborted();
     try {
       const response = await fetch(url, init);
       if (response.ok || !isRetriableStatus(response.status) || attempt === RETRY_MAX_RETRIES) {
@@ -326,14 +344,15 @@ const fetchWithBackoff = async (
       console.warn(
         `LLM request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after status ${response.status}`
       );
-      await sleep(computeBackoffDelay(attempt, retryAfterMs));
+      await sleep(computeBackoffDelay(attempt, retryAfterMs), init.signal);
     } catch (error) {
       lastError = error;
+      init.signal?.throwIfAborted();
       if (attempt === RETRY_MAX_RETRIES) throw error;
       console.warn(
         `LLM request retry ${attempt + 1}/${RETRY_MAX_RETRIES} after network error`
       );
-      await sleep(computeBackoffDelay(attempt));
+      await sleep(computeBackoffDelay(attempt), init.signal);
     }
   }
 
@@ -343,7 +362,9 @@ const fetchWithBackoff = async (
 };
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  assertApiKey();
+  const config = resolveProvider();
+  // Budget includes response-body reading; stay below the 60s function limit.
+  const signal = AbortSignal.timeout(40_000);
 
   const {
     messages,
@@ -368,6 +389,13 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   if (model) {
     payload.model = model;
   }
+  if (config.provider === "nvidia") {
+    // Callers retain their legacy model names; NVIDIA uses its own verified model.
+    payload.model = ENV.nvidiaModel;
+    payload.stream = false;
+    payload.max_tokens = max_tokens ?? maxTokens ?? 2048;
+    payload.chat_template_kwargs = { enable_thinking: false };
+  }
 
   if (tools && tools.length > 0) {
     payload.tools = tools;
@@ -386,10 +414,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.max_tokens = resolvedMaxTokens;
   }
 
-  if (thinking) {
+  if (thinking && config.provider !== "nvidia") {
     payload.thinking = thinking;
   }
-  if (reasoning) {
+  if (reasoning && config.provider !== "nvidia") {
     payload.reasoning = reasoning;
   }
 
@@ -401,26 +429,53 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   });
 
   if (normalizedResponseFormat) {
-    payload.response_format = normalizedResponseFormat;
+    // NVIDIA JSON mode is supported by the verified model. Preserve the caller's
+    // requested schema as instructions; callers still validate the actual JSON.
+    if (config.provider === "nvidia" && normalizedResponseFormat.type === "json_schema") {
+      payload.response_format = { type: "json_object" };
+      const schemaInstruction = `Return only a JSON object matching this schema: ${JSON.stringify(normalizedResponseFormat.json_schema.schema)}`;
+      const normalizedMessages = payload.messages as ReturnType<typeof normalizeMessage>[];
+      if (normalizedMessages[0]?.role === "system" && typeof normalizedMessages[0].content === "string") {
+        normalizedMessages[0].content += `\n${schemaInstruction}`;
+      } else {
+        normalizedMessages.unshift(normalizeMessage({ role: "system", content: schemaInstruction }));
+      }
+    } else {
+      payload.response_format = normalizedResponseFormat;
+    }
   }
 
-  const response = await fetchWithBackoff(resolveApiUrl(), {
+  const fetcher = config.provider === "nvidia" ? fetch : fetchWithBackoff;
+  const response = await fetcher(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${config.apiKey}`,
     },
     body: JSON.stringify(payload),
+    redirect: "error",
+    signal,
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
+    // Do not log upstream bodies: they may echo credentials or user prompts.
+    await response.body?.cancel();
+    throw new Error(`LLM ${config.provider} request failed (HTTP ${response.status})`);
   }
 
-  return (await response.json()) as InvokeResult;
+  const result = await response.json() as InvokeResult;
+  const choice = result.choices?.[0];
+  if (!choice || typeof result.model !== "string" || !result.model.trim()) {
+    throw new Error("LLM returned an incomplete or invalid response");
+  }
+  if (choice.finish_reason === "tool_calls" && tools?.length && choice.message?.tool_calls?.length) {
+    return { ...result, provider: config.provider };
+  }
+  if (choice.finish_reason !== "stop" || typeof choice.message?.content !== "string") {
+    throw new Error("LLM returned an incomplete or invalid response");
+  }
+  choice.message.content = finalAnswerOnly(choice.message.content);
+  return { ...result, provider: config.provider };
 }
 
 export type ModelInfo = {
@@ -436,21 +491,18 @@ export type ModelsResponse = {
 };
 
 export async function listLLMModels(): Promise<ModelsResponse> {
-  assertApiKey();
-
-  const url = ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/models`
-    : "https://forge.manus.im/v1/models";
+  const config = resolveProvider();
+  const url = `${config.baseUrl}/models`;
 
   const response = await fetchWithBackoff(url, {
-    headers: { authorization: `Bearer ${ENV.forgeApiKey}` },
+    headers: { authorization: `Bearer ${config.apiKey}` },
+    redirect: "error",
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `List LLM models failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
+    await response.body?.cancel();
+    throw new Error(`List LLM models failed (HTTP ${response.status})`);
   }
 
   return (await response.json()) as ModelsResponse;
