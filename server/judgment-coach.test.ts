@@ -40,6 +40,7 @@ describe("scenario judgment coach", () => {
     expect(payload.messages[0].content).toContain("Korean");
     expect(payload.messages[0].content).toContain("untrusted data");
     expect(payload.messages[0].content).toContain("existing VIRTUAL records");
+    expect(payload.messages[0].content).toContain("An unconfirmed cause is not an excluded cause");
     expect(payload.messages[0].content).toContain("pressure-trend");
     expect(JSON.parse(payload.messages[1].content)).toMatchObject({ learnerAnswer: input().answer, chartMarker: 80, responseLanguage: "Korean" });
     expect(JSON.stringify(payload)).not.toMatch(/userId|badgeNumber|dateOfBirth|email|synthetic-private-key/);
@@ -149,6 +150,25 @@ describe("scenario judgment coach", () => {
       data.reflections[0].question = `이 문구는 장비 ${term}를 제안합니다.`;
       expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
     }
+  });
+  it.each([
+    ["ko", "어떤 가상 기록 간의 비교를 통해 인과 관계를 배제했나요?"],
+    ["en", "Which virtual comparisons allowed you to rule out a causal relationship?"],
+    ["ja", "どの仮想記録の比較によって因果関係を除外しましたか？"],
+  ] as const)("rejects unsupported causal exclusion in %s coaching", (language, question) => {
+    const data = output(language);
+    data.reflections[1] = { ...data.reflections[1], dimension: "uncertainty", evidenceId: "cause-unknown", question };
+    expect(() => validateCoachOutput(JSON.stringify(data), input().answer, language)).toThrow("Unsupported causal exclusion");
+  });
+  it.each([
+    ["ko", "가상 기록으로 뒷받침되는 관찰과 아직 알 수 없는 원인은 어떻게 구분할 수 있나요?"],
+    ["en", "Which observations do the virtual records support, and what remains unknown about the cause?"],
+    ["ja", "仮想記録で裏付けられる観察と、原因についてまだ不明な点をどう区別しますか？"],
+  ] as const)("allows evidence-limited uncertainty in %s without rewriting the learner", (language, question) => {
+    const data = output(language);
+    data.reflections[1] = { ...data.reflections[1], dimension: "uncertainty", evidenceId: "cause-unknown", question };
+    const answer = { ...input().answer, checks: "원인을 아직 확정하거나 배제할 수 없으므로 가상 기록을 비교합니다." };
+    expect(validateCoachOutput(JSON.stringify(data), answer, language).reflections[1].answerQuote).toBe(answer.checks);
   });
   it("creates a separate minimal coaching payload without the save key or identity", () => {
     const attempt = { ...emptyEtchAttempt(), elapsed: 180, submitted: true, saveKey: "do-not-transmit", marker: 80, answer: input().answer };
