@@ -1,0 +1,16 @@
+.ogq-guide{display:flex;gap:22px;align-items:flex-start;border:1px solid #526255;border-radius:8px;background:#19231e;padding:22px;margin:24px 0;color:#edf0eb}
+.ogq-guide-visual{display:flex;align-items:center;justify-content:center;flex:0 0 104px;min-height:104px;color:#e4aa55}
+.ogq-guide-visual img{object-fit:contain;width:104px;height:104px}
+.ogq-guide-content{min-width:0;flex:1}
+.ogq-guide .ogq-guide-label{font-size:.7rem;font-weight:700;letter-spacing:.14em;color:#e4aa55;margin:0 0 6px}
+.ogq-guide h2{font-size:1.1rem;margin:0 0 14px}
+.ogq-guide-choices{display:flex;flex-wrap:wrap;gap:8px}
+.ogq-guide-choices button{padding:7px 12px;border:1px solid #687b6c;border-radius:5px;background:#101816;color:#edf0eb;cursor:pointer;font-size:.85rem}
+.ogq-guide-choices button[aria-pressed=true]{background:#e4aa55;border-color:#e4aa55;color:#101816}
+.ogq-guide .ogq-guide-question{line-height:1.65;margin:14px 0 10px;max-width:850px}
+.ogq-guide .ogq-guide-note,.ogq-guide-credit{font-size:.78rem;line-height:1.5;color:#b7c4ba}
+.ogq-guide-credit summary{cursor:pointer;padding:8px 0;font-weight:500}
+.ogq-guide-credit label{display:flex;gap:8px;align-items:center;padding:8px 0}
+.ogq-guide-credit input{accent-color:#e4aa55}
+.ogq-guide :is(button,summary,input):focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
+@media(max-width:600px){.ogq-guide{padding:16px;gap:12px}.ogq-guide-visual{flex-basis:64px;min-height:64px}.ogq-guide-visual img{width:64px;height:64px}}

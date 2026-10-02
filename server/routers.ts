@@ -15,6 +15,7 @@ import { MANUAL_CHUNK_LIMIT, splitManualTextIntoChunks } from "../shared/ragManu
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
 import { getTrainingAttempts, saveTrainingAttempt } from "./trainingRecords";
+import { getOgqLearningGuide } from "./ogqLearningGuide";
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -106,6 +107,9 @@ function buildSafeFallbackDiagnostic(sensorContext: {
 
 export const appRouter = router({
   system: systemRouter,
+  learning: router({
+    guide: protectedProcedure.query(() => getOgqLearningGuide()),
+  }),
   training: router({
     history: protectedProcedure.query(async ({ ctx }) => ({
       userId: ctx.user.id,
