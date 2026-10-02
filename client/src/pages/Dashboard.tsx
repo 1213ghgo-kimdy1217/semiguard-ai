@@ -1265,6 +1265,9 @@ export default function Dashboard() {
     recommendation: string;
     score: number;
     riskLevel: string;
+    usedFallback?: boolean;
+    provider?: string;
+    model?: string;
   } | null>(null);
   const [llmLoading, setLlmLoading] = useState(false);
   const [showAiHistory, setShowAiHistory] = useState(false);
@@ -1608,7 +1611,7 @@ export default function Dashboard() {
   const [activeManualSource, setActiveManualSource] = useState<ManualSource | null>(null);
   const [quickPromptStatus, setQuickPromptStatus] = useState("");
 
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string; usedFallback?: boolean }>>([
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string; usedFallback?: boolean; provider?: string; model?: string }>>([
     {
       role: "assistant",
       content: lang === "ko"
@@ -2371,6 +2374,8 @@ export default function Dashboard() {
         timestamp: Date.now(),
         manualSources: res.manualSources ?? [],
         usedFallback: res.usedFallback ?? false,
+        provider: res.provider,
+        model: res.model,
         recoveryPrompt: isTemporaryServiceReply || res.usedFallback ? text.trim() : undefined,
       }]);
 
@@ -2424,7 +2429,7 @@ export default function Dashboard() {
         lang,
         feedbackHistory,
       });
-      const improvedReply = { role: "assistant" as const, content: result.reply, timestamp: Date.now(), feedbackApplied: true, manualSources: result.manualSources ?? [] };
+      const improvedReply = { role: "assistant" as const, content: result.reply, timestamp: Date.now(), feedbackApplied: !result.usedFallback, usedFallback: result.usedFallback, provider: result.provider, model: result.model, manualSources: result.manualSources ?? [] };
       setChatMessages(previous => [...previous, improvedReply]);
       if (activeSessionId !== null) {
         await saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "assistant", content: result.reply });
@@ -2440,7 +2445,11 @@ export default function Dashboard() {
         }
         chatUtils.semiguard.getChatSessions.invalidate();
       }
-      toast.success(lang === "ko" ? "피드백을 반영한 답변을 생성했습니다." : lang === "ja" ? "フィードバックを反映した回答を生成しました。" : "Generated an answer using your feedback.");
+      if (result.usedFallback) {
+        toast.info(lang === "ko" ? "AI 연결 실패로 규칙 요약을 표시합니다." : lang === "ja" ? "AI接続に失敗したためルール要約を表示します。" : "AI connection failed; showing a rule-based summary.");
+      } else {
+        toast.success(lang === "ko" ? "피드백을 반영한 답변을 생성했습니다." : lang === "ja" ? "フィードバックを反映した回答を生成しました。" : "Generated an answer using your feedback.");
+      }
     } catch (error) {
       console.error("Feedback regeneration failed:", error);
       toast.error(lang === "ko"
@@ -3147,12 +3156,15 @@ export default function Dashboard() {
 
   // LLM 이상 원인 분석 트리거 (30초 throttle)
   const lastLlmCallRef = useRef<number>(0);
+  const llmInFlightRef = useRef(false);
   const triggerLlmAnalysis = useCallback(async (result: AnomalyResult) => {
-    if (!result.sensorData) return;
+    if (!result.sensorData || llmInFlightRef.current) return;
     // 30초 이내 중복 호출 방지
     const now = Date.now();
     if (now - lastLlmCallRef.current < 30_000) return;
     lastLlmCallRef.current = now;
+    llmInFlightRef.current = true;
+    setLlmAnalysis(null);
     setLlmLoading(true);
     void trackProductActivityMutation.mutateAsync({ eventType: "analysis_started" }).catch(() => undefined);
     try {
@@ -3174,8 +3186,11 @@ export default function Dashboard() {
       });
       void trackProductActivityMutation.mutateAsync({ eventType: "analysis_viewed" }).catch(() => undefined);
     } catch {
-      // 분석 실패 시 무시
+      toast.error(lang === "ko" ? "AI 설명을 불러오지 못했습니다. 관측 근거 질문에서 다시 시도해 주세요."
+        : lang === "ja" ? "AI説明を読み込めませんでした。観測根拠への質問から再試行してください。"
+          : "Could not load the AI explanation. Try again from Ask AI about the evidence.");
     } finally {
+      llmInFlightRef.current = false;
       setLlmLoading(false);
     }
   }, [lang, analyzeAnomalyMutation, trackProductActivityMutation]);
@@ -3390,7 +3405,7 @@ export default function Dashboard() {
                     <div className="px-5 pb-5 flex flex-col gap-2">
                       <div className="rounded-xl p-3 border" role="region" aria-labelledby="selected-log-ai-analysis-title" style={{ background: "oklch(0.75 0.18 200 / 0.06)", borderColor: "oklch(0.75 0.18 200 / 0.25)" }}>
                         <h3 id="selected-log-ai-analysis-title" className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "oklch(0.75 0.18 200)" }}>
-                          <span aria-hidden="true">🤖</span> {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
+                          <span aria-hidden="true">🤖</span> {lang === "ko" ? "센서 근거 설명" : lang === "ja" ? "センサー根拠の説明" : "Sensor evidence explanation"}
                         </h3>
                         <p className="text-[11px] font-semibold mb-1" style={{ color: isDark ? "oklch(0.90 0.01 240)" : "oklch(0.15 0.01 240)" }}>{a.primaryCause}</p>
                         <p className="text-[10px] leading-relaxed mb-1.5" style={{ color: isDark ? "oklch(0.60 0.01 240)" : "oklch(0.40 0.01 240)" }}>{a.details}</p>
@@ -3437,7 +3452,7 @@ export default function Dashboard() {
                   style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
                   <div className="w-4 h-4 rounded-full border-2 border-red-400 border-t-transparent animate-spin flex-shrink-0" aria-hidden="true" />
                   <span className="text-xs" style={{ color: "rgb(220,38,38)" }}>
-                    {lang === "ko" ? "AI 이상 원인 분석 중..." : lang === "ja" ? "AI異常原因分析中..." : "AI analyzing anomaly cause..."}
+                    {lang === "ko" ? "센서 근거 설명 준비 중..." : lang === "ja" ? "センサー根拠の説明を準備中..." : "Preparing sensor evidence explanation..."}
                   </span>
                 </div>
               )}
@@ -3447,9 +3462,12 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm" aria-hidden="true">🤖</span>
                     <h3 id="danger-alert-ai-analysis-title" className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
-                      {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
+                      {lang === "ko" ? "센서 근거 설명 · 원인 미확정" : lang === "ja" ? "センサー根拠の説明・原因未確定" : "Sensor evidence · cause unconfirmed"}
                     </h3>
                   </div>
+                  <p className="mb-2 text-[10px]" style={{ color: th.textMuted }}>
+                    {llmAnalysis.usedFallback ? (lang === "ko" ? "규칙 요약 · AI 연결 실패" : lang === "ja" ? "ルール要約・AI接続失敗" : "Rule summary · AI unavailable") : llmAnalysis.model ? `${llmAnalysis.provider === "nvidia" ? "NVIDIA" : "AI"} · ${llmAnalysis.model}` : (lang === "ko" ? "시나리오 예시설명 · 실시간 AI 생성 아님" : lang === "ja" ? "シナリオの例示説明・リアルタイムAI生成ではありません" : "Scenario example · not a live AI generation")}
+                  </p>
                   <p className="text-sm font-bold mb-1" style={{ color: "rgb(239,68,68)" }}>
                     {llmAnalysis.primaryCause}
                   </p>
@@ -3493,7 +3511,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <span className="text-base" aria-hidden="true">🤖</span>
                 <span id="ai-analysis-result-title" className="text-xs font-bold" style={{ color: "oklch(0.65 0.18 200)" }}>
-                  {lang === "ko" ? "AI 이상 원인 분석" : lang === "ja" ? "AI異常原因分析" : "AI Anomaly Analysis"}
+                  {lang === "ko" ? "센서 근거 설명 · 원인 미확정" : lang === "ja" ? "センサー根拠の説明 · 原因未確定" : "Sensor evidence · cause unconfirmed"}
                 </span>
               </div>
               <button
@@ -3520,6 +3538,9 @@ export default function Dashboard() {
                 &nbsp;{llmAnalysis.score.toFixed(0)}{lang === "ko" ? "점" : lang === "ja" ? "点" : ""}
               </span>
             </div>
+            <p className="mb-2 text-[10px]" style={{ color: th.textMuted }}>
+              {llmAnalysis.usedFallback ? (lang === "ko" ? "규칙 요약 · AI 연결 실패" : lang === "ja" ? "ルール要約・AI接続失敗" : "Rule summary · AI unavailable") : llmAnalysis.model ? `${llmAnalysis.provider === "nvidia" ? "NVIDIA" : "AI"} · ${llmAnalysis.model}` : (lang === "ko" ? "시나리오 예시설명 · 실시간 AI 생성 아님" : lang === "ja" ? "シナリオの例示説明・リアルタイムAI生成ではありません" : "Scenario example · not a live AI generation")}
+            </p>
             <p className="text-sm font-bold mb-2" style={{ color: th.text }}>
               {llmAnalysis.primaryCause}
             </p>
@@ -5538,6 +5559,11 @@ export default function Dashboard() {
                           🛡 {lang === "ko" ? "가상 센서 수치 기반 규칙 요약" : lang === "ja" ? "仮想センサー値に基づくルール要約" : "Rule summary from synthetic sensor values"}
                         </div>
                       )}
+                      {msg.role === "assistant" && !msg.usedFallback && msg.provider && (
+                        <p className="mb-2 text-[10px]" style={{ color: th.textMuted }}>
+                          {msg.provider === "nvidia" ? "NVIDIA" : "AI"} · {msg.model}
+                        </p>
+                      )}
                       <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                       {msg.role === "assistant" && msg.recoveryPrompt && (
                         <button
@@ -5855,6 +5881,11 @@ export default function Dashboard() {
             </div>
 
             {/* 입력 폼 영역 */}
+            <p className="px-3 py-2 text-[10px] leading-relaxed sm:px-4" style={{ color: th.textMuted }}>
+              {lang === "ko" ? "질문·가상 센서 값·관련 등록 매뉴얼 발췌가 외부 AI 제공자(NVIDIA 등)에게 전달됩니다. 개인정보·회사 기밀을 입력하지 마세요."
+                : lang === "ja" ? "質問・仮想センサー値・関連する登録マニュアルの抜粋は外部AI提供者（NVIDIA等）に送信されます。個人情報や会社の機密情報を入力しないでください。"
+                  : "Questions, synthetic readings and relevant registered manual excerpts are sent to an external AI provider (such as NVIDIA). Do not enter personal or confidential company information."}
+            </p>
             <div className="flex flex-col gap-2 border-t px-2.5 pb-[max(0.625rem,calc(env(safe-area-inset-bottom)+0.5rem))] pt-2.5 sm:flex-row sm:items-end sm:p-4" style={{ borderColor: th.border, background: th.bgCard }}>
               <textarea
                 rows={1}

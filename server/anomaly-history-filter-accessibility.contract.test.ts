@@ -38,8 +38,8 @@ describe("anomaly history filter accessibility contract", () => {
     expect(dashboardSource).toContain('role="region" aria-labelledby="selected-log-ai-analysis-title"');
     expect(dashboardSource).toContain('<h3 id="selected-log-ai-analysis-title"');
     expect(dashboardSource).toContain('<span aria-hidden="true">🤖</span>');
-    expect(dashboardSource).toContain('"AI 이상 원인 분석"');
-    expect(dashboardSource).toContain('"AI異常原因分析"');
-    expect(dashboardSource).toContain('"AI Anomaly Analysis"');
+    expect(dashboardSource).toContain('"센서 근거 설명"');
+    expect(dashboardSource).toContain('"センサー根拠の説明"');
+    expect(dashboardSource).toContain('"Sensor evidence explanation"');
   });
 });
