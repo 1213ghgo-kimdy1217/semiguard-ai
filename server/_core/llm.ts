@@ -62,6 +62,7 @@ export type InvokeParams = {
   tool_choice?: ToolChoice;
   maxTokens?: number;
   max_tokens?: number;
+  temperature?: number;
   outputSchema?: OutputSchema;
   output_schema?: OutputSchema;
   responseFormat?: ResponseFormat;
@@ -385,6 +386,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   const payload: Record<string, unknown> = {
     messages: messages.map(normalizeMessage),
   };
+  if (params.temperature !== undefined) {
+    if (!Number.isFinite(params.temperature) || params.temperature < 0 || params.temperature > 2) throw new Error("Invalid temperature");
+    payload.temperature = params.temperature;
+  }
 
   if (model) {
     payload.model = model;
