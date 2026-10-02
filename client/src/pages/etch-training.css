@@ -109,3 +109,13 @@
 .et-history,.et-save-status{margin:24px 0}
 .et-history ul{list-style:none;margin:16px 0 0;padding:0}
 .et-history li{padding:12px 0;border-top:1px solid #435447;overflow-wrap:anywhere}
+.et-entry-card{display:flex;flex-direction:column;align-items:flex-start}
+.et-main h1{scroll-margin-top:110px}
+.et-entry-card .et-linkbutton,.et-entry-card .et-primary{margin-top:auto}
+.et-entry-card .et-caption{margin-bottom:24px}
+.et-entry-steps{padding-left:24px}
+.et-entry-steps li{padding-left:8px;margin:22px 0}
+.et-entry-steps li::marker{color:#e4aa55;font-weight:700}
+.et-entry-steps h3{font-size:18px;margin-bottom:8px}
+.et-entry-steps p{margin-top:0}
+.et-inline-link{color:#e4aa55;text-decoration:underline;text-underline-offset:4px}
