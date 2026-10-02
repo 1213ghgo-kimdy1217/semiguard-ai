@@ -14,6 +14,7 @@ import type { RiskLevel } from "../shared/semiguard";
 import { MANUAL_CHUNK_LIMIT, splitManualTextIntoChunks } from "../shared/ragManual";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
+import { getTrainingAttempts, saveTrainingAttempt } from "./trainingRecords";
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -105,6 +106,15 @@ function buildSafeFallbackDiagnostic(sensorContext: {
 
 export const appRouter = router({
   system: systemRouter,
+  training: router({
+    history: protectedProcedure.query(async ({ ctx }) => ({
+      userId: ctx.user.id,
+      attempts: await getTrainingAttempts(ctx.user.id),
+    })),
+    saveAttempt: protectedProcedure
+      .input(z.object({ attemptKey: z.string().uuid(), attempt: z.unknown() }))
+      .mutation(({ ctx, input }) => saveTrainingAttempt(ctx.user.id, input.attemptKey, input.attempt)),
+  }),
   auth: router({
     me: publicProcedure.query(({ ctx }) => {
       if (!ctx.user) return null;

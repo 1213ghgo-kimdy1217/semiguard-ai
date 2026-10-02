@@ -18,6 +18,29 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// 계정별 시나리오 연습 결과. 서술형 원문은 저장하지 않고 선택형 판단 근거만 보관한다.
+export const trainingAttempts = mysqlTable("training_attempts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  attemptKey: varchar("attempt_key", { length: 36 }).notNull(),
+  scenarioId: varchar("scenario_id", { length: 64 }).notNull(),
+  signal: varchar("signal", { length: 32 }).notNull(),
+  onset: int("onset").notNull(),
+  marker: int("marker"),
+  comparison: varchar("comparison", { length: 32 }).notNull(),
+  certainty: varchar("certainty", { length: 32 }).notNull(),
+  signalMatched: int("signal_matched").notNull(),
+  onsetMatched: int("onset_matched").notNull(),
+  comparisonMatched: int("comparison_matched").notNull(),
+  certaintyMatched: int("certainty_matched").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  userAttemptUnique: uniqueIndex("training_attempt_user_key_unique").on(table.userId, table.attemptKey),
+  userCreatedIndex: index("training_attempt_user_created_idx").on(table.userId, table.createdAt),
+}));
+
+export type TrainingAttempt = typeof trainingAttempts.$inferSelect;
+
 // 기존 로컬 사용자와 연결된 소셜 계정 식별자
 export const socialAccountLinks = mysqlTable("social_account_links", {
   id: int("id").autoincrement().primaryKey(),
