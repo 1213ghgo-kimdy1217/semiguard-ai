@@ -6,6 +6,7 @@ import { registerSocialOAuthRoutes } from "./socialOAuth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { registerTrainingStorageCheck } from "../trainingStorageCheck";
 
 export function accountServicesConfigured() {
   return Boolean(process.env.DATABASE_URL && process.env.JWT_SECRET && process.env.VITE_APP_ID);
@@ -28,6 +29,7 @@ export function createApp() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerSocialOAuthRoutes(app);
+  registerTrainingStorageCheck(app);
   app.get("/api/health", (_req, res) => {
     res.set("Cache-Control", "no-store");
     res.status(200).json({ status: "ok", capabilities: { accounts: accountServicesConfigured() } });
