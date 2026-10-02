@@ -16,6 +16,8 @@ import * as db from "./db";
 import { sdk } from "./_core/sdk";
 import { getTrainingAttempts, saveTrainingAttempt } from "./trainingRecords";
 import { getOgqLearningGuide } from "./ogqLearningGuide";
+import { requestJudgmentCoach } from "./judgmentCoach";
+import { judgmentCoachRequestSchema } from "../shared/judgmentCoach";
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -111,6 +113,8 @@ export const appRouter = router({
     guide: protectedProcedure.query(() => getOgqLearningGuide()),
   }),
   training: router({
+    coach: protectedProcedure.input(judgmentCoachRequestSchema)
+      .mutation(({ ctx, input }) => requestJudgmentCoach(ctx.user.id, input)),
     history: protectedProcedure.query(async ({ ctx }) => ({
       userId: ctx.user.id,
       attempts: await getTrainingAttempts(ctx.user.id),

@@ -18,7 +18,7 @@ const submissionSchema = z.object({
   certainty: z.enum(["uncertain", "certain"]),
 }).strict();
 
-// Only choice-based practice results leave the browser. Free-text answers are never transmitted.
+// Record saving sends choices only. Optional AI coaching uses a separate explicit-consent request.
 export function toTrainingRecord(raw: unknown) {
   const attempt = submissionSchema.parse(raw);
   return {
