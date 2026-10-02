@@ -43,7 +43,10 @@ export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["a
   const text = JSON.stringify(feedback);
   // Positive labels are fixed, eligible choice criteria, never model-written praise.
   if (new Set(feedback.strengths).size !== feedback.strengths.length || feedback.strengths.some(item => !supportedStrengths(answer).includes(item))) throw new Error("Unsupported strength");
-  if (unsafeOutput.test(text) || [ENV.nvidiaApiKey, ENV.forgeApiKey, ENV.ogqApiKey].some(key => key && text.includes(key))) {
+  // Distinguishing (구분해) is not disassembly (분해). Only normalize the standalone
+  // grammar form; compounds such as 기구분해/도구분해 must still be rejected.
+  const scopeText = text.replace(/(^|[^가-힣])구분해(?=서|야|보|볼|주|요|도|\s|["?.!,]|$)/g, "$1구별해");
+  if (unsafeOutput.test(scopeText) || [ENV.nvidiaApiKey, ENV.forgeApiKey, ENV.ogqApiKey].some(key => key && text.includes(key))) {
     throw new Error("Invalid coach output");
   }
   const dimensions = new Set(feedback.reflections.map(item => item.dimension));

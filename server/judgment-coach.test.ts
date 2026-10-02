@@ -142,6 +142,14 @@ describe("scenario judgment coach", () => {
       expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
     }
   });
+  it("allows distinguishing virtual signals without allowing disassembly compounds", () => {
+    const data = output(); data.reflections[0].question = "추세 시작과 기준 범위 이탈을 어떤 가상 기록으로 구분해 볼 수 있나요?";
+    expect(validateCoachOutput(JSON.stringify(data), input().answer).reflections).toHaveLength(2);
+    for (const term of ["기구분해", "도구분해", "분해"]) {
+      data.reflections[0].question = `이 문구는 장비 ${term}를 제안합니다.`;
+      expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
+    }
+  });
   it("creates a separate minimal coaching payload without the save key or identity", () => {
     const attempt = { ...emptyEtchAttempt(), elapsed: 180, submitted: true, saveKey: "do-not-transmit", marker: 80, answer: input().answer };
     const request = toJudgmentCoachRequest(attempt, "ko");
