@@ -38,11 +38,19 @@ export const judgmentCoachFeedbackSchema = z.object({
   reflections: z.array(z.object({
     dimension: z.enum(coachDimensions),
     evidenceId: z.enum(coachEvidenceIds),
-    answerQuote: z.string().trim().min(8).max(300),
+    answerQuote: z.string().trim().min(10).max(1200),
     question: z.string().trim().min(8).max(300),
   }).strict()).min(2).max(3),
 }).strict();
 export type JudgmentCoachFeedback = z.infer<typeof judgmentCoachFeedbackSchema>;
+// The model selects an existing answer field; the server supplies the original quote.
+export const judgmentCoachModelFeedbackSchema = z.object({
+  strengths: z.array(z.enum(coachStrengths)).max(2),
+  reflections: z.array(z.object({
+    dimension: z.enum(coachDimensions), evidenceId: z.enum(coachEvidenceIds),
+    answerSource: z.enum(["facts", "checks"]), question: z.string().trim().min(8).max(300),
+  }).strict()).min(2).max(3),
+}).strict();
 export type JudgmentCoachResult = {
   status: "ready"; language: "ko" | "en" | "ja"; provider: "nvidia"; model: string;
   feedback: JudgmentCoachFeedback;

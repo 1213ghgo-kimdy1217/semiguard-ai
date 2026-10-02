@@ -13,8 +13,8 @@ const input = () => ({ consent: true as const, scenarioId: "etch-chamber-a-01" a
   answer: { signal: "pressure" as const, onset: "70", comparison: "same-phase" as const, certainty: "uncertain" as const,
     facts: "단계 B의 압력 추이가 정상 참고보다 높아졌습니다.", checks: "같은 시점의 유량과 RF 가상 기록을 먼저 비교하겠습니다." } });
 const output = (language: "ko" | "en" | "ja" = "ko") => ({ strengths: ["uncertainty"] as ("signal" | "reference" | "uncertainty")[], reflections: [
-  { dimension: "reference", evidenceId: "phase-reference", answerQuote: input().answer.facts, question: language === "ko" ? "같은 시점의 어떤 정상 참고 기록을 비교하겠습니까?" : language === "ja" ? "同じ時点のどの正常参照を比較しますか？" : "Which normal reference point would you compare at that time?" },
-  { dimension: "checks", evidenceId: "record-comparison", answerQuote: input().answer.checks, question: language === "ko" ? "비교 순서를 정할 때 어떤 가상 기록을 확인하겠습니까?" : language === "ja" ? "比較順序を決める際にどの仮想記録を確認しますか？" : "What existing virtual evidence would help you choose the comparison order?" },
+  { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" as const, question: language === "ko" ? "같은 시점의 어떤 정상 참고 기록을 비교하겠습니까?" : language === "ja" ? "同じ時点のどの正常参照を比較しますか？" : "Which normal reference point would you compare at that time?" },
+  { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" as const, question: language === "ko" ? "비교 순서를 정할 때 어떤 가상 기록을 확인하겠습니까?" : language === "ja" ? "比較順序を決める際にどの仮想記録を確認しますか？" : "What existing virtual evidence would help you choose the comparison order?" },
 ] });
 const response = (text = JSON.stringify(output()), model = "nvidia/qa", finish_reason = "stop") => new Response(JSON.stringify({
   id: "synthetic", created: 1, model, choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason }],
@@ -133,9 +133,14 @@ describe("scenario judgment coach", () => {
     expect(() => validateCoachOutput(JSON.stringify(output()), { ...input().answer, certainty: "certain" })).toThrow("Unsupported strength");
     expect(() => validateCoachOutput(JSON.stringify({ ...output(), strengths: ["reference", "reference"] }), input().answer)).toThrow("Unsupported strength");
   });
-  it("rejects invented or reworded learner quotations", () => {
-    const data = output(); data.reflections[0].answerQuote = "The learner proposes comparing different times.";
-    expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow("Unverified answer quote");
+  it("constructs original quotes server-side and rejects invented sources or model-written quotations", () => {
+    const valid = validateCoachOutput(JSON.stringify(output()), input().answer);
+    expect(valid.reflections[0].answerQuote).toBe(input().answer.facts);
+    expect(valid.reflections[1].answerQuote).toBe(input().answer.checks);
+    for (const changed of [{ answerSource: "history" }, { answerQuote: "invented learner reasoning" }]) {
+      const data = output(); data.reflections[0] = { ...data.reflections[0], ...changed } as any;
+      expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
+    }
   });
   it("creates a separate minimal coaching payload without the save key or identity", () => {
     const attempt = { ...emptyEtchAttempt(), elapsed: 180, submitted: true, saveKey: "do-not-transmit", marker: 80, answer: input().answer };
