@@ -11,6 +11,7 @@ export const ENV = {
   aiProvider: process.env.AI_PROVIDER ?? "",
   nvidiaApiKey: process.env.NVIDIA_API_KEY ?? "",
   nvidiaModel: process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3-super-120b-a12b",
+  ogqApiKey: process.env.OGQ_API_KEY ?? "",
   // Social login
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",

@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { processLessons, processOverviewSource } from "../../../shared/learningHub";
 import EtchEquipmentReference from "../components/EtchEquipmentReference";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import OgqLearningGuide from "../components/OgqLearningGuide";
 import { localizeLesson } from "../lib/learningLanguage";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import "./etch-training.css";
@@ -27,6 +28,7 @@ export default function LearningHub() {
       <p>{l("8대 공정은 입문용 분류입니다. 실제 제조에서는 여러 단계가 반복되며, 이 순서대로 한 번씩만 진행되는 것은 아닙니다.", "The eight processes are an introductory grouping. Real manufacturing repeats many steps; they do not occur just once in this exact order.", "8大工程は入門用の分類です。実際の製造では多くの段階が繰り返され、この順序で一度ずつ進むわけではありません。")}</p>
       <div className="et-panel"><h2>{l("필요한 만큼 읽고 관찰로 이동하세요.", "Read what you need, then start observing.", "必要なところを読み、観察へ進みましょう。")}</h2><p>{l("장비 운전 지침이 아닌 개념 학습입니다. 관찰 질문과 자가 확인은 SemiGuard가 구성한 학습 보조이며 실제 작업 자격이나 숙련도 평가가 아닙니다.", "This is concept learning, not operating instruction. SemiGuard's observation prompts and self-checks do not assess workplace qualifications or proficiency.", "装置の運転指示ではなく概念学習です。観察質問と自己確認はSemiGuardが作成した学習補助であり、実作業の資格や熟練度評価ではありません。")}</p><Link className="et-linkbutton" href="/training">{l("학습을 건너뛰고 Scenario 01 시작 →", "Skip learning and start Scenario 01 →", "学習を飛ばしてScenario 01を始める →")}</Link></div>
       <label className="lh-search">{l("공정·장비 검색", "Search processes and equipment", "工程・装置を検索")}<input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={l("예: 식각, Etch, 노광", "e.g., Etch, lithography", "例：エッチング、露光")} /></label>
+      <OgqLearningGuide language={language} />
       <p role="status">{lessons.length} {l("개 공정", "processes", "工程")}</p>
       <div className="lh-grid">{lessons.map(p => <article className="et-panel" key={p.id} id={p.id}>
         <p className="et-eyebrow">{String(p.order).padStart(2, "0")} / {p.english}</p>
