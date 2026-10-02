@@ -110,6 +110,7 @@
 .et-history ul{list-style:none;margin:16px 0 0;padding:0}
 .et-history li{padding:12px 0;border-top:1px solid #435447;overflow-wrap:anywhere}
 .et-entry-card{display:flex;flex-direction:column;align-items:flex-start}
+.et-main h1{scroll-margin-top:110px}
 .et-entry-card .et-linkbutton,.et-entry-card .et-primary{margin-top:auto}
 .et-entry-card .et-caption{margin-bottom:24px}
 .et-entry-steps{padding-left:24px}

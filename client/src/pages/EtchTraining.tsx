@@ -97,7 +97,7 @@ export default function EtchTraining() {
       : stage === "sensor-brief" ? l("SemiGuard — 4센서 대시보드 안내", "SemiGuard — Four-sensor dashboard guide", "SemiGuard — 4センサーダッシュボードの案内")
       : l("SemiGuard — 식각 챔버 판단 훈련", "SemiGuard — Etch chamber reasoning training", "SemiGuard — エッチングチャンバー判断訓練");
   }, [language, stage]);
-  useEffect(() => { heading.current?.focus(); }, [stage]);
+  useEffect(() => { heading.current?.focus(); heading.current?.scrollIntoView({ block: "start" }); }, [stage]);
   useEffect(() => { if (auth.data?.id) void history.refetch(); }, [auth.data?.id]);
   useEffect(() => {
     if (!expectedStorageKey || expectedStorageKey === storageKey) return;
