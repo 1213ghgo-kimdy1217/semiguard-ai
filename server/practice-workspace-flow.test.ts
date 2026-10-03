@@ -2,6 +2,14 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 describe("practice workspace flow", () => {
+  it("labels the preserved etch module consistently with the process chooser", () => {
+    const page = read("client/src/pages/EtchTraining.tsx");
+    expect(page).toContain("PLASMA ETCH / PROCESS JUDGMENT");
+    expect(page).not.toContain("SCENARIO 01");
+    expect(page).not.toContain("Scenario 01");
+    expect(read("client/src/components/ProcessScenarioPath.tsx")).not.toContain("기존 식각 훈련 열기");
+  });
+
   it("opens the eight-module chooser from the home card while keeping etch accessible", () => {
     const page = read("client/src/pages/EtchTraining.tsx");
     expect(page).toContain('onClick={() => move("process-select")}');

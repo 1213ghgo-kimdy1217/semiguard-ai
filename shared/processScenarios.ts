@@ -82,7 +82,7 @@ export const processScenarios: readonly ProcessScenario[] = [
   },
   {
     id: "etch-chamber-a-01", processId: "etch", order: 4,
-    title: ["식각 · Scenario 01", "Etch · Scenario 01", "エッチング・Scenario 01"],
+    title: ["식각 · 단계별 센서 기록 비교", "Etch · comparing sensor records by stage", "エッチング・段階別のセンサー記録を比較"],
     equipment: ["가상 식각 챔버", "Virtual etch chamber", "仮想エッチングチャンバー"],
     briefing: ["기존 3분 식각 훈련에서 압력·유량·RF·온도 기록을 관찰합니다. 단계 전환과 같은 단계의 지속 편차를 구분하세요.", "Observe pressure, flow, RF and temperature records in the existing three-minute etch exercise. Separate a stage transition from persistent deviation within a stage.", "既存の3分間エッチング練習で圧力・流量・RF・温度の記録を観察します。段階切替と同じ段階内の継続的な偏差を区別してください。"],
     objective: ["같은 단계의 관측 기록을 비교하고 관찰 사실과 원인 추정을 구분합니다.", "Compare same-stage observations and separate recorded facts from cause inference.", "同じ段階の観測記録を比較し、観察事実と原因の推測を区別します。"],

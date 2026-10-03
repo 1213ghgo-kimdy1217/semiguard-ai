@@ -13,6 +13,17 @@ const correctAnswer = (scenario: ProcessScenario): ProcessAnswer => ({
 });
 
 describe("eight-process scenario catalogue", () => {
+  it("uses process-based titles without a conflicting legacy scenario number", () => {
+    expect(get("etch").title).toEqual([
+      "식각 · 단계별 센서 기록 비교",
+      "Etch · comparing sensor records by stage",
+      "エッチング・段階別のセンサー記録を比較",
+    ]);
+    for (const scenario of processScenarios) {
+      expect(scenario.title.join(" ")).not.toMatch(/scenario\s*0?1|시나리오\s*1|シナリオ\s*0?1/i);
+    }
+  });
+
   it("matches the learning taxonomy in order and retains the existing etch identity", () => {
     expect(processScenarios.map(scenario => scenario.processId)).toEqual(processLessons.map(lesson => lesson.id));
     expect(processScenarios.map(scenario => scenario.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
