@@ -1,0 +1,34 @@
+.pt-app .pt-steps{display:flex;gap:12px;list-style:none;margin:24px 0 18px;padding:0;flex-wrap:wrap}
+.pt-app .pt-steps li{display:flex;align-items:center;gap:8px;color:#b4c1b6;font-size:14px;border:1px solid #3a473e;border-radius:5px;padding:8px 12px}
+.pt-app .pt-steps li span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#29372e;font-size:12px}
+.pt-app .pt-steps li[aria-current=step]{border-color:#e4aa55;color:#efbc70;background:#2b3529}
+.pt-app .pt-steps li[aria-current=step] span{background:#e4aa55;color:#17201b}
+.pt-app .pt-signal-list{list-style:none;margin:16px 0;padding:0}
+.pt-app .pt-signal-list li{display:grid;grid-template-columns:1fr;gap:5px;padding:14px 0;border-bottom:1px solid #435447}
+.pt-app .pt-signal-list span,.pt-app .pt-location{display:block;font-size:12px;font-weight:400;color:#b4c1b6}
+.pt-app .pt-reference{margin:24px 0}
+.pt-app .pt-reference summary{cursor:pointer;font-weight:650}
+.pt-app .pt-reference summary:focus-visible{outline:3px solid #e4aa55;outline-offset:4px}
+.pt-app .pt-sensors{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:24px}
+.pt-app .pt-sensors .et-sensor strong{font-size:23px}
+.pt-app .pt-sensors .et-sensor small{display:inline-block}
+.pt-app .pt-chart{height:260px}
+.pt-app .pt-speed{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:#c3cec4;font-size:14px}
+.pt-app select{background:#101816;color:#edf0eb;border:1px solid #657367;border-radius:5px;min-height:44px;padding:8px 12px;font:inherit}
+.pt-app select:focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
+.pt-app .pt-form{margin:24px 0;max-width:none}
+.pt-app .pt-form input[type=radio]{appearance:auto;accent-color:#e4aa55;width:20px;height:20px;flex:0 0 auto;padding:0;margin:0}
+.pt-app .pt-form fieldset label{min-height:44px;margin:0;padding:10px 0;cursor:pointer;align-items:flex-start}
+.pt-app .pt-form fieldset input{margin-top:4px}
+.pt-app .pt-form input[type=number]{max-width:220px}
+.pt-app .pt-form .pt-no-onset{border:1px solid #435447;background:#1d2a24;padding:12px;border-radius:5px}
+.pt-app .pt-timeline{margin:24px 0}
+.pt-app .pt-timeline ul{list-style:none;margin:18px 0;padding:0}
+.pt-app .pt-timeline li{border-top:1px solid #435447}
+.pt-app .pt-timeline button{display:flex;gap:18px;align-items:flex-start;width:100%;min-height:44px;text-align:left;padding:14px 0;color:#c3cec4;background:transparent;cursor:pointer}
+.pt-app .pt-timeline button:hover{color:#efbc70}
+.pt-app .pt-timeline time{font-family:ui-monospace,monospace;color:#efbc70;flex:0 0 50px}
+.pt-app .et-report h3{margin-top:18px;font-size:16px;font-weight:600}
+.pt-app .et-save-status button{min-height:44px;background:#222d27;border:1px solid #58695b;color:#edf0eb}
+@media(max-width:760px){.pt-app .pt-steps{gap:6px}.pt-app .pt-steps li{padding:6px 8px;font-size:12px}.pt-app .pt-sensors{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pt-app .pt-sensors .et-sensor{padding:12px}.pt-app .pt-sensors .et-sensor strong{font-size:20px}.pt-app .pt-timeline button{gap:10px}.pt-app .pt-speed{width:100%}}
+@media(max-width:400px){.pt-app .pt-sensors{grid-template-columns:1fr}}

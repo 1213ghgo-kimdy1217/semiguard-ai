@@ -21,8 +21,17 @@ export function useProductLanguage() {
   const [language, setLanguage] = useState<ProductLanguage>(readProductLanguage);
 
   useEffect(() => {
+    const synchronize = (event: Event) => {
+      const value = (event as CustomEvent<ProductLanguage>).detail;
+      if (value === "ko" || value === "en" || value === "ja") setLanguage(value);
+    };
+    window.addEventListener("semiguard-language-change", synchronize);
+    return () => window.removeEventListener("semiguard-language-change", synchronize);
+  }, []);
+  useEffect(() => {
     document.documentElement.lang = language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US";
     try { window.localStorage.setItem(STORAGE_KEY, language); } catch { /* Session-only preference when storage is unavailable. */ }
+    window.dispatchEvent(new CustomEvent("semiguard-language-change", { detail: language }));
   }, [language]);
 
   return [language, setLanguage] as const;

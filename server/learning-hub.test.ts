@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { processLessons, processOverviewSource, etchEquipmentSource } from "../shared/learningHub";
+import { processScenarios, getProcessScenario, scenarioHref } from "../shared/processScenarios";
 
 describe("process learning guide", () => {
   it("has eight unique lessons with valid self-check answers", () => {
@@ -25,12 +26,19 @@ describe("process learning guide", () => {
     expect(source).toContain("디지털 트윈이 아닙니다");
     expect(source).toContain("실제 장비 로그가 아닙니다");
   });
-  it("connects public optional learning and does not invent other scenarios", () => {
+  it("connects optional learning to an implemented scenario for every lesson", () => {
     const app = readFileSync("client/src/App.tsx", "utf8");
     const page = readFileSync("client/src/pages/LearningHub.tsx", "utf8");
     expect(app).toContain('path={"/learn"}');
     expect(page).toContain('p.id === "etch"');
-    expect(page).toContain("관찰 시나리오는 아직 없습니다");
+    expect(page).not.toContain("관찰 시나리오는 아직 없습니다");
+    expect(page).toContain("scenarioHref(getProcessScenario(p.id)!)");
+    expect(processScenarios.map(scenario => scenario.processId)).toEqual(processLessons.map(lesson => lesson.id));
+    for (const lesson of processLessons) {
+      const scenario = getProcessScenario(lesson.id)!;
+      expect(scenario).toBeDefined();
+      expect(scenarioHref(scenario)).toBe(lesson.id === "etch" ? "/training" : `/training/process/${lesson.id}`);
+    }
     expect(page).toContain("학습을 건너뛰고");
   });
 });

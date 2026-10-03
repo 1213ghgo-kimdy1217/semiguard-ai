@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import LearningAssistant from "./components/LearningAssistant";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Login } from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -17,6 +18,8 @@ const EtchLive = lazy(() => import("./pages/EtchLive"));
 const LearningHub = lazy(() => import("./pages/LearningHub"));
 const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));
 const Training = lazy(() => import("./pages/EtchTraining"));
+const ProcessTraining = lazy(() => import("./pages/ProcessTraining"));
+const TrainingHistory = lazy(() => import("./pages/TrainingHistory"));
 
 type LoadingLanguage = "ko" | "en" | "ja";
 type LoadingCopy = {
@@ -273,6 +276,12 @@ function Router() {
       <Route path={"/learn"}>
         <Suspense fallback={<TrainingModuleLoading />}><LearningHub /></Suspense>
       </Route>
+      <Route path={"/training/history/:attemptId"}>
+        {params => <Suspense fallback={<TrainingModuleLoading />}><TrainingHistory attemptId={params.attemptId} /></Suspense>}
+      </Route>
+      <Route path={"/training/process/:processId"}>
+        {params => <Suspense fallback={<TrainingModuleLoading />}><ProcessTraining processId={params.processId} /></Suspense>}
+      </Route>
       <Route path={"/training"}>
         <Suspense fallback={<TrainingModuleLoading />}><Training /></Suspense>
       </Route>
@@ -319,6 +328,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <LearningAssistant />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

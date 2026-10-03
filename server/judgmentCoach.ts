@@ -1,4 +1,5 @@
-import { etchFeedback, etchSample, etchSignals } from "../shared/etchScenario";
+import { etchFeedback, etchSample, etchSignals, type EtchAnswer } from "../shared/etchScenario";
+import { getProcessScenario, processCriteria, processSample } from "../shared/processScenarios";
 import { coachDimensions, coachEvidenceIds, coachStrengths, judgmentCoachFeedbackSchema, judgmentCoachModelFeedbackSchema, judgmentCoachRequestSchema,
   type JudgmentCoachRequest, type JudgmentCoachResult } from "../shared/judgmentCoach";
 import { ENV } from "./_core/env";
@@ -8,13 +9,44 @@ const expectedEvidence = {
   reference: "phase-reference", onset: "pressure-trend", "cross-sensor": "other-signals",
   uncertainty: "cause-unknown", checks: "record-comparison",
 } as const;
-const supportedStrengths = (answer: JudgmentCoachRequest["answer"]) => [
-  ...(answer.signal === "pressure" ? ["signal"] : []),
-  ...(answer.comparison === "same-phase" ? ["reference"] : []),
-  ...(answer.certainty === "uncertain" ? ["uncertainty"] : []),
-];
+const supportedStrengths = (answer: JudgmentCoachRequest["answer"], scenarioId = "etch-chamber-a-01") => {
+  if (scenarioId !== "etch-chamber-a-01") {
+    const scenario = getProcessScenario(scenarioId);
+    if (!scenario) return [];
+    const criteria = processCriteria(scenario, answer);
+    return [...(criteria.signalMatched ? ["signal"] : []), ...(criteria.comparisonMatched ? ["reference"] : []),
+      ...(criteria.certaintyMatched ? ["uncertainty"] : [])];
+  }
+  return [...(answer.signal === "pressure" ? ["signal"] : []),
+    ...(answer.comparison === "same-phase" ? ["reference"] : []),
+    ...(answer.certainty === "uncertain" ? ["uncertainty"] : [])];
+};
 
 export function scenarioCoachContext(request: JudgmentCoachRequest) {
+  if (request.scenarioId !== "etch-chamber-a-01") {
+    const scenario = getProcessScenario(request.scenarioId);
+    if (!scenario) throw new Error("Unknown process scenario");
+    const times = [0, 15, 30, 45, 60, scenario.duration];
+    return {
+      scope: `${scenario.title[1]}. ${scenario.equipment[1]}. Synthetic educational records only; values are relative indices, not physical units, manufacturer specifications, production thresholds or real equipment logs.`,
+      evidence: {
+        "phase-reference": `${scenario.referenceRule[1]} Compare the same virtual conditions and observation position, not a whole-run average. Normal reference values can vary with the virtual conditions.`,
+        "pressure-trend": scenario.expectedSignal === "none"
+          ? "The complete virtual series follows its condition-matched normal references. An observed rise or fall alone is not a sustained deviation. No-change is a valid evidence-based choice, not proof of equipment health. This legacy evidence ID denotes change analysis, not necessarily pressure."
+          : "Compare changes in the complete supplied virtual series against the condition-matched normal references. Trend onset and reference-range crossing can be different events. This legacy evidence ID denotes change analysis, not necessarily pressure; do not provide an exact-time answer key.",
+        "other-signals": "Compare all supplied virtual signals at the same observation times. Equipment-condition signals and inspection/test-result signals answer different questions; normal equipment indices alone do not establish normal product results. Correlated changes do not establish a physical cause.",
+        "cause-unknown": "No component fault or physical root cause is established or ruled out by this scenario. 'Uncertain' distinguishes observed evidence from an unconfirmed cause; lack of confirmation does not exclude a cause or causal relationship.",
+        "record-comparison": "Next checks are comparisons of existing virtual records only: matching reference conditions and positions, earlier/later records, other signals at the same times, and supplied inspection/test records. No physical action or new measurement.",
+      },
+      samples: times.map(time => ({ time, signals: scenario.signals.map(({ id }) => {
+        const sample = processSample(scenario, id, time);
+        return { id, phase: "condition-matched virtual reference", current: Number(sample.value.toFixed(1)),
+          reference: Number(sample.reference.toFixed(1)), range: [sample.low, sample.high] };
+      }) })),
+      choiceCriteria: Object.entries(processCriteria(scenario, request.answer)).map(([dimension, matches]) => ({ dimension, matches: Boolean(matches) })),
+      supportedStrengths: supportedStrengths(request.answer, request.scenarioId),
+    };
+  }
   const times = [39, 40, 60, 80, 125, 180];
   return {
     scope: "Scenario 01 synthetic plasma etch chamber. Values are teaching-only relative indices, not physical units, manufacturer specifications or real equipment logs.",
@@ -30,7 +62,7 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
       return { id, phase: sample.phase, current: Number(sample.value.toFixed(1)),
         reference: Number(sample.reference.toFixed(1)), range: [sample.low, sample.high] };
     }) })),
-    choiceCriteria: etchFeedback(request.answer).map(({ title, ok }) => ({ dimension: title, matches: ok })),
+    choiceCriteria: etchFeedback(request.answer as EtchAnswer).map(({ title, ok }) => ({ dimension: title, matches: ok })),
     supportedStrengths: supportedStrengths(request.answer),
   };
 }
@@ -41,11 +73,11 @@ const unsafeOutput = /https?:\/\/|<[^>]+>|ogqc_[a-f0-9]{32,}|nvapi[-_]|%|\b(?:re
 // exclusion phrasing in generated questions; original learner quotes are not rewritten.
 const unsupportedExclusion = /(?:인과\s*관계|원인|고장)[^?？.!。]{0,60}(?:배제|아니라고\s*(?:확인|판단|결론))|(?:rule[ds]?\s*out|ruling\s*out|exclud(?:e[ds]?|ing)|eliminat(?:e[ds]?|ing))[^?？.!。]{0,60}(?:caus(?:e|al)|fault)|(?:因果関係|原因|故障)[^?？.!。]{0,60}(?:除外|否定|排除)/i;
 
-export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["answer"], language: JudgmentCoachRequest["language"] = "ko") {
+export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["answer"], language: JudgmentCoachRequest["language"] = "ko", scenarioId = "etch-chamber-a-01") {
   const feedback = judgmentCoachModelFeedbackSchema.parse(JSON.parse(raw));
   const text = JSON.stringify(feedback);
   // Positive labels are fixed, eligible choice criteria, never model-written praise.
-  if (new Set(feedback.strengths).size !== feedback.strengths.length || feedback.strengths.some(item => !supportedStrengths(answer).includes(item))) throw new Error("Unsupported strength");
+  if (new Set(feedback.strengths).size !== feedback.strengths.length || feedback.strengths.some(item => !supportedStrengths(answer, scenarioId).includes(item))) throw new Error("Unsupported strength");
   // Distinguishing (구분해) is not disassembly (분해). Only normalize the standalone
   // grammar form; compounds such as 기구분해/도구분해 must still be rejected.
   const scopeText = text.replace(/(^|[^가-힣])구분해(?=서|야|보|볼|주|요|도|\s|["?.!,]|$)/g, "$1구별해");
@@ -114,7 +146,7 @@ Trusted scenario context: ${JSON.stringify(scenarioCoachContext(request))}` },
       try {
         const content = result.choices[0]?.message.content;
         if (typeof content !== "string" || content.length > 7000) throw new Error("Invalid output");
-        return { status: "ready", provider: "nvidia", model: result.model, language: request.language, feedback: validateCoachOutput(content, request.answer, request.language) };
+        return { status: "ready", provider: "nvidia", model: result.model, language: request.language, feedback: validateCoachOutput(content, request.answer, request.language, request.scenarioId) };
       } catch { return { status: "unavailable", reason: "invalid-response" }; }
     } catch {
       // Do not log submitted text, upstream bodies, model output or credentials.

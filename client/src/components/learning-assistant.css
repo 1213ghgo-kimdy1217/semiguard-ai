@@ -1,0 +1,15 @@
+.sg-assistant-trigger{position:fixed;bottom:max(20px,env(safe-area-inset-bottom));right:20px;z-index:60;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;border:1px solid #94bbad;background:#23362f;color:#edf0eb;box-shadow:0 8px 28px #0008;cursor:pointer}
+.sg-assistant-trigger:hover{background:#354e44}
+.sg-assistant-panel{position:fixed;z-index:70;right:20px;bottom:86px;width:min(410px,calc(100vw - 32px));max-height:calc(100dvh - 110px);display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:18px;border:1px solid #456154;background:#131d19;color:#edf0eb;box-shadow:0 15px 60px #000a;overflow:auto;font-size:14px}
+.sg-assistant-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.sg-assistant-head h2{font-weight:700;font-size:17px}
+.sg-assistant-panel button{min-height:40px;min-width:40px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #536e60;border-radius:8px;padding:7px;color:#edf0eb;background:#263e32;cursor:pointer}
+.sg-assistant-panel button:disabled{opacity:.45;cursor:not-allowed}.sg-assistant-panel a{color:#c1dac8;text-decoration:underline;display:block;margin-top:8px}
+.sg-assistant-panel :focus-visible,.sg-assistant-trigger:focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
+.sg-assistant-note{font-size:12px;color:#b4c4ba;line-height:1.6}
+.sg-assistant-messages{overflow:auto;min-height:110px;max-height:40dvh;line-height:1.65;overflow-wrap:anywhere}
+.sg-assistant-messages article{margin-top:14px}.sg-assistant-question{padding:10px;border-radius:12px;background:#2a3e33;white-space:pre-wrap}
+.sg-assistant-answer{padding:12px 0;white-space:pre-wrap}.sg-assistant-panel small{color:#a7bdb0;font-size:11px}
+.sg-assistant-panel form{display:grid;gap:8px}.sg-assistant-consent{display:flex;align-items:start;gap:8px;font-size:12px;color:#c1cbc5}.sg-assistant-consent input{margin-top:3px;accent-color:#9dbcab}
+.sg-assistant-panel textarea{width:100%;resize:vertical;max-height:140px;border:1px solid #536e60;border-radius:8px;padding:9px;background:#0d1511;color:#edf0eb;font:inherit}
+.sg-assistant-send{display:flex;align-items:center;justify-content:space-between}.sg-assistant-send span{font-size:12px;color:#a7bdb0}
+@media(max-width:480px){.sg-assistant-trigger{right:16px}.sg-assistant-panel{right:16px;padding:15px}}

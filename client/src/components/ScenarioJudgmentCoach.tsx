@@ -3,8 +3,9 @@ import { Link } from "wouter";
 import { Button } from "./ui/button";
 import { trpc } from "../lib/trpc";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
-import { toJudgmentCoachRequest, type CoachDimension, type CoachStrength, type JudgmentCoachResult } from "../../../shared/judgmentCoach";
+import { toJudgmentCoachRequest, toProcessJudgmentCoachRequest, type CoachDimension, type CoachStrength, type JudgmentCoachResult } from "../../../shared/judgmentCoach";
 import type { EtchAttempt } from "../../../shared/etchScenario";
+import type { ProcessAttempt, ProcessScenario } from "../../../shared/processScenarios";
 import "./judgment-coach.css";
 
 const dimensionLabels: Record<CoachDimension, [string, string, string]> = {
@@ -20,9 +21,12 @@ const strengthLabels: Record<CoachStrength, [string, string, string]> = {
   uncertainty: ["관찰만으로 원인을 확정하지 않는 선택을 했습니다.", "You chose not to confirm a cause from observation alone.", "観察だけで原因を確定しない選択をしました。"],
 };
 
-export default function ScenarioJudgmentCoach({ attempt, language, userId }: {
-  attempt: EtchAttempt; language: ProductLanguage; userId: number | null;
-}) {
+type ScenarioCoachProps = { language: ProductLanguage; userId: number | null } & (
+  { attempt: EtchAttempt; processAttempt?: never; scenario?: never } |
+  { attempt?: never; processAttempt: ProcessAttempt; scenario: ProcessScenario }
+);
+export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAttempt, scenario, language, userId }: ScenarioCoachProps) {
+  const attempt = etchAttempt ?? processAttempt;
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const id = useId();
   const [consent, setConsent] = useState(false);
@@ -32,9 +36,11 @@ export default function ScenarioJudgmentCoach({ attempt, language, userId }: {
   const coach = trpc.training.coach.useMutation({ retry: false });
   // Only a deliberate click sends text; no effect, automatic language request or DB save.
   const request = async () => {
+    if (!attempt || (processAttempt && scenario?.id !== processAttempt.scenarioId)) return;
     if (!consent || !userId || !attempt.submitted || pending.current) return;
     pending.current = true; setResult(null); setNetworkError(false);
-    try { setResult(await coach.mutateAsync(toJudgmentCoachRequest(attempt, language))); }
+    try { setResult(await coach.mutateAsync(processAttempt
+      ? toProcessJudgmentCoachRequest(processAttempt, language) : toJudgmentCoachRequest(attempt, language))); }
     catch { setNetworkError(true); }
     finally { pending.current = false; }
   };
@@ -66,12 +72,17 @@ export default function ScenarioJudgmentCoach({ attempt, language, userId }: {
     {result?.status === "ready" ? <div className="coach-result">
       <p className="et-caption">NVIDIA · {result.model} · {l("AI 생성 코칭 · 참고용", "AI-generated coaching · advisory", "AI生成コーチング · 参考用")}</p>
       {result.feedback.strengths.length ? <><h3>{l("선택형 기준에서 확인한 출발점", "Starting points checked against choice criteria", "選択基準で確認した出発点")}</h3>
-        <ul>{result.feedback.strengths.map(item => <li key={item}>{l(...strengthLabels[item])}</li>)}</ul>
+        <ul>{result.feedback.strengths.map(item => <li key={item}>{scenario && item === "signal"
+          ? l("관찰 항목 선택이 이 가상 시나리오의 비교 기준과 일치했습니다.", "Your observation choice matches this synthetic scenario's comparison criterion.", "観察項目の選択が、この仮想シナリオの比較基準と一致しました。")
+          : scenario && item === "reference" ? l("같은 조건의 정상 참고를 비교 기준으로 선택했습니다.", "You selected a normal reference under matching conditions.", "同じ条件の正常参照を比較基準に選びました。")
+          : l(...strengthLabels[item])}</li>)}</ul>
         <p className="et-caption">{l("위 문구는 기준 기반 안내이며, 아래 복기 질문은 AI가 생성합니다.", "These labels are criteria-based; the reflection questions below are AI-generated.", "上記は基準に基づく案内で、以下の振り返りの問いはAIが生成します。")}</p></> : null}
       {result.feedback.reflections.map(item => <article className="coach-reflection" key={item.dimension}>
         <h3>{l(...dimensionLabels[item.dimension])}</h3><p><strong>{l("내 답안에서", "From your answer", "自分の回答から")}</strong> “{item.answerQuote}”</p>
         <p className="coach-question"><strong>{l("다시 생각할 질문", "A question to revisit", "考え直す問い")}</strong> {item.question}</p>
-        <p className="et-caption">{l("근거: Scenario 01 가상 기록", "Evidence: Scenario 01 virtual records", "根拠：Scenario 01の仮想記録")}</p>
+        <p className="et-caption">{scenario
+          ? `${l("근거", "Evidence", "根拠")}: ${l(...scenario.title)} · ${l("교육용 가상 기록", "synthetic educational records", "教育用の仮想記録")}`
+          : l("근거: Scenario 01 가상 기록", "Evidence: Scenario 01 virtual records", "根拠：Scenario 01の仮想記録")}</p>
       </article>)}
       <p className="et-caption">{l("AI 해석은 틀릴 수 있습니다. 위 타임라인과 정상 참고 기록을 다시 확인하세요. 언어·계정·시도를 바꾸면 코칭 표시와 동의를 초기화하며 자동 재요청하지 않습니다.", "AI interpretation may be wrong. Recheck the timeline and normal reference above. Changing language, account or attempt clears coaching and consent without an automatic request.", "AIの解釈には誤りがあり得ます。上のタイムラインと正常参照を再確認してください。言語、アカウント、試行を変更すると表示と同意をリセットし、自動再依頼しません。")}</p>
     </div> : null}

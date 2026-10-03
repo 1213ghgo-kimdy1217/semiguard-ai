@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { processLessons, processOverviewSource } from "../../../shared/learningHub";
+import { getProcessScenario, scenarioHref } from "../../../shared/processScenarios";
 import EtchEquipmentReference from "../components/EtchEquipmentReference";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
 import OgqLearningGuide from "../components/OgqLearningGuide";
@@ -47,7 +48,7 @@ export default function LearningHub() {
           <fieldset><legend>{p.question}</legend>{p.options.map((option, index) => <label className="lh-option" key={option}><input type="radio" name={p.id} checked={answers[p.id] === index} onChange={() => setAnswers(a => ({ ...a, [p.id]: index }))} />{option}</label>)}</fieldset>
           <div aria-live="polite">{answers[p.id] !== undefined && <p className="lh-feedback">{answers[p.id] === p.answer ? l("맞습니다. ", "Correct. ", "正解です。") : l("다시 생각해 보세요. ", "Consider again. ", "もう一度考えてみましょう。")}{p.misconception}</p>}</div>
           <p className="lh-source"><a href={p.source} target="_blank" rel="noopener noreferrer">{l("이 공정의 삼성반도체 원문 보기 ↗ (한국어, 새 탭)", "Read Samsung Semiconductor's process article ↗ (Korean, new tab)", "Samsung Semiconductorの工程記事を読む ↗（韓国語・新しいタブ）")}</a></p>
-          {p.id === "etch" ? <Link className="et-linkbutton" href="/training">{l("식각 Scenario 01에서 관찰하기 →", "Observe in Etch Scenario 01 →", "エッチングScenario 01で観察する →")}</Link> : <p className="et-caption">{l("개념 학습만 제공 · 이 공정의 관찰 시나리오는 아직 없습니다.", "Concept learning only · no observation scenario for this process yet.", "概念学習のみ・この工程の観察シナリオはまだありません。")}</p>}
+          <Link className="et-linkbutton" href={scenarioHref(getProcessScenario(p.id)!)}>{p.id === "etch" ? l("식각 Scenario 01에서 관찰하기 →", "Observe in Etch Scenario 01 →", "エッチングScenario 01で観察する →") : l("이 공정의 가상 기록으로 판단 연습 →", "Practice with this process's virtual records →", "この工程の仮想記録で判断を練習 →")}</Link>
         </details>
       </article>)}</div>
       {!lessons.length && <p>{l("검색 결과가 없습니다. 다른 공정명으로 검색해 주세요.", "No results. Try another process name.", "検索結果がありません。別の工程名で検索してください。")}</p>}
