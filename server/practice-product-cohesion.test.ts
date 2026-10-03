@@ -25,6 +25,7 @@ describe("coherent practice product", () => {
       expect(read(`client/src/${path}.tsx`)).not.toContain("Scenario 01");
     expect(read("shared/etchScenario.ts")).toContain("semiguard.etch.scenario01.v1");
     expect(read("shared/trainingRecord.ts")).toContain("etch-chamber-a-01");
+    expect(read("server/judgmentCoach.ts")).not.toContain("Scenario 01");
   });
   it("centres SG in welcome and login without the old vertical offset", () => {
     for (const path of ["Welcome", "Login"]) {
