@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { processEquipment } from "../../../shared/processEquipment";
 import { processScenarios, scenarioHref } from "../../../shared/processScenarios";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
@@ -21,6 +22,7 @@ export default function ProcessScenarioPath({ language, userId, onEtch }: {
     <ol className="process-path-grid">{processScenarios.map(scenario => <li className="et-panel process-path-card" key={scenario.id}>
       <div className="process-path-number"><span>{String(scenario.order).padStart(2, "0")}</span><span>{savedIds.includes(scenario.id) ? l("제출 완료", "Submitted", "提出済み") : l("자유 선택", "Open to choose", "自由に選択")}</span></div>
       <h3>{l(...scenario.title)}</h3><p className="et-caption">{l(...scenario.equipment)}</p><p>{l(...scenario.objective)}</p>
+      <p className="et-caption">{l("공개 장비 사례", "Public equipment example", "公開装置の例")} · {processEquipment[scenario.processId].name}</p>
       {scenario.processId === "etch" ? <button className="et-linkbutton" type="button" onClick={onEtch}>{l("공정 훈련 열기 →", "Open process training →", "工程訓練へ →")}</button> : <Link className="et-linkbutton" href={scenarioHref(scenario)}>{l("공정 훈련 열기 →", "Open process training →", "工程訓練へ →")}</Link>}
     </li>)}</ol>
     <p className="et-caption">{l("제출 완료는 학습 기록일 뿐 현장 역량 인증이 아닙니다. 데이터·참고 범위·시간축은 SemiGuard가 만든 교육용 가상 기록입니다.", "Submission is a learning record, not professional certification. Data, reference ranges and timelines are synthetic teaching records created by SemiGuard.", "提出完了は学習記録であり、現場能力の認定ではありません。データ、参照範囲、時間軸はSemiGuardが作成した教育用仮想記録です。")}</p>

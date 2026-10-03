@@ -20,6 +20,7 @@ const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));
 const Training = lazy(() => import("./pages/EtchTraining"));
 const ProcessTraining = lazy(() => import("./pages/ProcessTraining"));
 const TrainingHistory = lazy(() => import("./pages/TrainingHistory"));
+const SharedTraining = lazy(() => import("./pages/SharedTraining"));
 
 type LoadingLanguage = "ko" | "en" | "ja";
 type LoadingCopy = {
@@ -278,6 +279,9 @@ function Router() {
       </Route>
       <Route path={"/training/history/:attemptId"}>
         {params => <Suspense fallback={<TrainingModuleLoading />}><TrainingHistory attemptId={params.attemptId} /></Suspense>}
+      </Route>
+      <Route path={"/training/shared"}>
+        <Suspense fallback={<TrainingModuleLoading />}><SharedTraining /></Suspense>
       </Route>
       <Route path={"/training/process/:processId"}>
         {params => <Suspense fallback={<TrainingModuleLoading />}><ProcessTraining processId={params.processId} /></Suspense>}

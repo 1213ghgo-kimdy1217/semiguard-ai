@@ -82,7 +82,7 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
         <p className="coach-question"><strong>{l("다시 생각할 질문", "A question to revisit", "考え直す問い")}</strong> {item.question}</p>
         <p className="et-caption">{scenario
           ? `${l("근거", "Evidence", "根拠")}: ${l(...scenario.title)} · ${l("교육용 가상 기록", "synthetic educational records", "教育用の仮想記録")}`
-          : l("근거: Scenario 01 가상 기록", "Evidence: Scenario 01 virtual records", "根拠：Scenario 01の仮想記録")}</p>
+          : l("근거: 식각 판단 연습의 가상 기록", "Evidence: etch judgment exercise records", "根拠：エッチング判断練習の仮想記録")}</p>
       </article>)}
       <p className="et-caption">{l("AI 해석은 틀릴 수 있습니다. 위 타임라인과 정상 참고 기록을 다시 확인하세요. 언어·계정·시도를 바꾸면 코칭 표시와 동의를 초기화하며 자동 재요청하지 않습니다.", "AI interpretation may be wrong. Recheck the timeline and normal reference above. Changing language, account or attempt clears coaching and consent without an automatic request.", "AIの解釈には誤りがあり得ます。上のタイムラインと正常参照を再確認してください。言語、アカウント、試行を変更すると表示と同意をリセットし、自動再依頼しません。")}</p>
     </div> : null}

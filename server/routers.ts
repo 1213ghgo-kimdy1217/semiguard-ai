@@ -20,6 +20,9 @@ import { requestLearningAnswer } from "./learningAssistant";
 import { getOgqLearningGuide } from "./ogqLearningGuide";
 import { requestJudgmentCoach } from "./judgmentCoach";
 import { judgmentCoachRequestSchema } from "../shared/judgmentCoach";
+import { trainingDraftSchema } from "../shared/trainingDraft";
+import { getTrainingDrafts, inspectDraftStorage, saveTrainingDraft } from "./trainingDrafts";
+import { readSharedChoices, shareTrainingAttempt } from "./trainingShare";
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -117,6 +120,13 @@ export const appRouter = router({
     guide: protectedProcedure.query(() => getOgqLearningGuide()),
   }),
   training: router({
+    share: protectedProcedure.input(z.object({ id: z.number().int().positive(), consent: z.literal(true) }).strict())
+      .mutation(({ ctx, input }) => shareTrainingAttempt(ctx.user.id, input.id)),
+    shared: publicProcedure.input(z.object({ token: z.string().min(100).max(3000) }).strict())
+      .query(({ input }) => readSharedChoices(input.token)),
+    draftStorage: protectedProcedure.query(() => inspectDraftStorage()),
+    drafts: protectedProcedure.query(async ({ ctx }) => ({ userId: ctx.user.id, drafts: await getTrainingDrafts(ctx.user.id) })),
+    saveDraft: protectedProcedure.input(trainingDraftSchema).mutation(({ ctx, input }) => saveTrainingDraft(ctx.user.id, input)),
     detail: protectedProcedure.input(z.object({ id: z.number().int().positive() }).strict())
       .query(async ({ ctx, input }) => ({ userId: ctx.user.id, attempt: await getTrainingAttempt(ctx.user.id, input.id) })),
     coach: protectedProcedure.input(judgmentCoachRequestSchema)

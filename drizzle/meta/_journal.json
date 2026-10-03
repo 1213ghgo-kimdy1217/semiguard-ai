@@ -127,6 +127,13 @@
       "when": 1790863617174,
       "tag": "0017_whole_silver_centurion",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1791054281795,
+      "tag": "0018_training_drafts",
+      "breakpoints": true
     }
   ]
 }
