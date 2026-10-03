@@ -434,10 +434,13 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   });
 
   if (normalizedResponseFormat) {
-    // NVIDIA JSON mode is supported by the verified model. Preserve the caller's
-    // requested schema as instructions; callers still validate the actual JSON.
+    // Keep schema instructions and caller-side strict validation. The hosted
+    // Lightning endpoint timed out with JSON mode in live checks, while the
+    // same schema in plain completion instructions produced valid final JSON.
     if (config.provider === "nvidia" && normalizedResponseFormat.type === "json_schema") {
-      payload.response_format = { type: "json_object" };
+      if (ENV.nvidiaModel !== "nvidia/nemotron-3.5-lightning-30b-a3b") {
+        payload.response_format = { type: "json_object" };
+      }
       const schemaInstruction = `Return only a JSON object matching this schema: ${JSON.stringify(normalizedResponseFormat.json_schema.schema)}`;
       const normalizedMessages = payload.messages as ReturnType<typeof normalizeMessage>[];
       if (normalizedMessages[0]?.role === "system" && typeof normalizedMessages[0].content === "string") {
