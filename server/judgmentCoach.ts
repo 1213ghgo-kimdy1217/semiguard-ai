@@ -26,14 +26,17 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
   if (request.scenarioId !== "etch-chamber-a-01") {
     const scenario = getProcessScenario(request.scenarioId);
     if (!scenario) throw new Error("Unknown process scenario");
-    const times = [0, 15, 30, 45, 60, scenario.duration];
+    // A uniform grid captures the brief photo difference and recurring connection
+    // differences without selecting answer-key events or trusting learner times.
+    const times = Array.from({ length: Math.floor(scenario.duration / 5) + 1 }, (_, index) => index * 5);
+    if (times.at(-1) !== scenario.duration) times.push(scenario.duration);
     return {
-      scope: `${scenario.title[1]}. ${scenario.equipment[1]}. Synthetic educational records only; values are relative indices, not physical units, manufacturer specifications, production thresholds or real equipment logs.`,
+      scope: `${scenario.title[1]}. ${scenario.equipment[1]}. Synthetic educational records only; values are relative indices, not physical units, manufacturer specifications, production thresholds or real equipment logs. Samples are selected at 5-second intervals, not the complete one-second record. Do not infer an exact onset between samples; ask the learner to revisit the full chart. A return to the reference is not evidence that a real fault was fixed.`,
       evidence: {
         "phase-reference": `${scenario.referenceRule[1]} Compare the same virtual conditions and observation position, not a whole-run average. Normal reference values can vary with the virtual conditions.`,
         "pressure-trend": scenario.expectedSignal === "none"
-          ? "The complete virtual series follows its condition-matched normal references. An observed rise or fall alone is not a sustained deviation. No-change is a valid evidence-based choice, not proof of equipment health. This legacy evidence ID denotes change analysis, not necessarily pressure."
-          : "Compare changes in the complete supplied virtual series against the condition-matched normal references. Trend onset and reference-range crossing can be different events. This legacy evidence ID denotes change analysis, not necessarily pressure; do not provide an exact-time answer key.",
+          ? "The supplied virtual samples follow their condition-matched normal references. An observed rise or fall alone is not a sustained deviation. No-change is a valid evidence-based choice, not proof of equipment health. This legacy evidence ID denotes change analysis, not necessarily pressure."
+          : "Compare earlier, changed and later supplied virtual samples against the condition-matched normal references. Brief, recurring and persistent differences are distinct; a final reference-consistent sample does not erase an earlier deviation. Trend onset and reference-range crossing can be different events. This legacy evidence ID denotes change analysis, not necessarily pressure; do not provide an exact-time answer key.",
         "other-signals": "Compare all supplied virtual signals at the same observation times. Equipment-condition signals and inspection/test-result signals answer different questions; normal equipment indices alone do not establish normal product results. Correlated changes do not establish a physical cause.",
         "cause-unknown": "No component fault or physical root cause is established or ruled out by this scenario. 'Uncertain' distinguishes observed evidence from an unconfirmed cause; lack of confirmation does not exclude a cause or causal relationship.",
         "record-comparison": "Next checks are comparisons of existing virtual records only: matching reference conditions and positions, earlier/later records, other signals at the same times, and supplied inspection/test records. No physical action or new measurement.",
@@ -49,7 +52,7 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
   }
   const times = [39, 40, 60, 80, 125, 180];
   return {
-    scope: "Etch judgment practice with a synthetic plasma etch chamber. Values are teaching-only relative indices, not physical units, manufacturer specifications or real equipment logs.",
+    scope: "Etch judgment practice with a synthetic plasma etch chamber. Values are teaching-only relative indices, not physical units, manufacturer specifications or real equipment logs. These are selected observation points, not the complete one-second record; do not infer an exact onset between samples. Ask the learner to revisit the full chart.",
     evidence: {
       "phase-reference": "Phase A changes normally to B at 40 seconds. Compare the same phase and time of the normal reference run, not whole-run averages.",
       "pressure-trend": "A synthetic pressure trend develops during phase B; trend onset and crossing the reference range are different events. Revisit earlier records to distinguish them, without an exact-time answer key.",

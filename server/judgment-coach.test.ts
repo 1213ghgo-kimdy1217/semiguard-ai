@@ -117,6 +117,52 @@ describe("scenario judgment coach", () => {
     expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(request.answer);
     expect(JSON.stringify(payload)).not.toMatch(/must-not-be-transmitted|userId|badgeNumber|email|synthetic-private-key/);
   });
+  it.each(processScenarios.filter(scenario => scenario.processId !== "etch"))("bounds $processId evidence gaps without supplying an exact-time answer key", scenario => {
+    const context = scenarioCoachContext(processInput(scenario));
+    const times = context.samples.map(row => row.time);
+    expect(times).toEqual(Array.from({ length: scenario.duration / 5 + 1 }, (_, index) => index * 5));
+    expect(context.scope).toContain("5-second intervals");
+    expect(context.scope).toContain("not the complete one-second record");
+    expect(context.evidence["pressure-trend"]).not.toContain("complete");
+    expect(context).not.toHaveProperty("changeTime");
+    expect(context).not.toHaveProperty("events");
+  });
+  it("preserves photo evidence before, during and after the brief deviation in the actual AI request", async () => {
+    const scenario = processScenarios.find(item => item.processId === "photo")!;
+    await createJudgmentCoach()(27, processInput(scenario));
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const context = JSON.parse(payload.messages[0].content.split("Trusted scenario context: ")[1].split("\n")[0]);
+    const position = (time: number) => context.samples.find((row: { time: number }) => row.time === time).signals.find((signal: { id: string }) => signal.id === "position");
+    for (const time of [30, 45, 90]) {
+      const sample = position(time);
+      expect(sample.current).toBeGreaterThanOrEqual(sample.range[0]);
+      expect(sample.current).toBeLessThanOrEqual(sample.range[1]);
+    }
+    for (const time of [35, 40]) {
+      const sample = position(time);
+      expect(sample.current).toBeGreaterThan(sample.range[1]);
+    }
+    expect(context.samples.every((row: { signals: { id: string; current: number; range: number[] }[] }) => {
+      const shape = row.signals.find(signal => signal.id === "shape")!;
+      return shape.current >= shape.range[0] && shape.current <= shape.range[1];
+    })).toBe(true);
+  });
+  it("retains recurring interconnect differences and packaging recovery, not only endpoints", () => {
+    const metal = processScenarios.find(item => item.processId === "metal")!;
+    const connection = scenarioCoachContext(processInput(metal)).samples.filter(row => row.time >= 40).map(row => {
+      const signal = row.signals.find(item => item.id === "connection")!;
+      return signal.current > signal.range[1];
+    });
+    expect(connection.slice(0, 5)).toEqual([false, true, false, true, false]);
+    const packaging = processScenarios.find(item => item.processId === "packaging")!;
+    const samples = scenarioCoachContext(processInput(packaging)).samples;
+    const at = (time: number) => samples.find(row => row.time === time)!.signals.find(item => item.id === "connection")!;
+    expect(at(60).current).toBeLessThan(at(60).range[0]);
+    expect(at(70).current).toBeLessThan(at(60).current);
+    expect(at(80).current).toBeGreaterThan(at(70).current);
+    expect(at(90).current).toBeGreaterThanOrEqual(at(90).range[0]);
+    expect(at(90).current).toBeLessThanOrEqual(at(90).range[1]);
+  });
   it("handles reference-consistent observations without inventing a pressure anomaly", () => {
     const scenario = processScenarios.find(item => item.processId === "oxidation")!;
     const request = processInput(scenario);
