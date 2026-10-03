@@ -29,6 +29,8 @@ describe("learning assistant", () => {
     expect(JSON.parse(payload.messages[1].content)).toEqual({ question: request.question });
     expect(payload.messages[0].content).toContain("teenage");
     expect(payload.messages[0].content).toContain("No exact scenario onset times");
+    expect(payload.messages[0].content).toContain("normal reference VALUE");
+    expect(payload.messages[0].content).toContain("NOT manufacturer limits");
     expect(await ask(7, request)).toEqual({ status: "unavailable", reason: "cooldown" });
     expect(mocks.invoke).toHaveBeenCalledTimes(1);
   });
@@ -56,6 +58,10 @@ describe("learning assistant", () => {
     expect(validateLearningAnswer(JSON.stringify({ answer: "Compare the same conditions and other virtual signals.", destination: "none" }), "en").destination).toBe("none");
     expect(validateLearningAnswer(JSON.stringify({ answer: "同じ条件の正常参照と仮想記録を比較しましょう。", destination: "learn" }), "ja").destination).toBe("learn");
     expect(() => validateLearningAnswer(JSON.stringify({ ...answer, extra: true }), "ko")).toThrow();
+  });
+  it("rejects a generated claim that educational reference values are manufacturing tolerances", () => {
+    expect(() => validateLearningAnswer(JSON.stringify({ answer: "정상 참고값은 제조 공정의 허용 기준입니다. 고정된 한계값으로 사용합니다.", destination: "none" }), "ko")).toThrow("Unsupported answer");
+    expect(validateLearningAnswer(JSON.stringify({ answer: "정상 참고값은 선택한 시점과 조건의 교육용 가상 기준값입니다. 참고 범위는 별도의 아래·위 경계입니다.", destination: "none" }), "ko").destination).toBe("none");
   });
   it("logs bounded failure categories without provider bodies, keys or questions", async () => {
     const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
