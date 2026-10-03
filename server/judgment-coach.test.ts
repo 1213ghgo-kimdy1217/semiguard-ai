@@ -4,14 +4,20 @@ import { ENV } from "./_core/env";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { createJudgmentCoach, scenarioCoachContext, validateCoachOutput } from "./judgmentCoach";
-import { judgmentCoachRequestSchema, toJudgmentCoachRequest } from "../shared/judgmentCoach";
+import { judgmentCoachRequestSchema, toJudgmentCoachRequest, toProcessJudgmentCoachRequest } from "../shared/judgmentCoach";
 import { emptyEtchAttempt } from "../shared/etchScenario";
+import { emptyProcessAttempt, processSample, processScenarios, type ProcessScenario } from "../shared/processScenarios";
 
 const original = { ...ENV };
 const input = () => ({ consent: true as const, scenarioId: "etch-chamber-a-01" as const, language: "ko" as const,
   elapsed: 180 as const, submitted: true as const, marker: 80,
   answer: { signal: "pressure" as const, onset: "70", comparison: "same-phase" as const, certainty: "uncertain" as const,
     facts: "단계 B의 압력 추이가 정상 참고보다 높아졌습니다.", checks: "같은 시점의 유량과 RF 가상 기록을 먼저 비교하겠습니다." } });
+const processInput = (scenario: ProcessScenario) => toProcessJudgmentCoachRequest({ ...emptyProcessAttempt(scenario),
+  elapsed: scenario.duration, submitted: true, marker: 45, saveKey: "must-not-be-transmitted",
+  answer: { signal: scenario.expectedSignal, onset: scenario.changeTime === null ? "none" : String(scenario.changeTime),
+    comparison: "same-condition", certainty: "uncertain", facts: "같은 조건의 여러 가상 기록을 비교해 관찰 내용을 작성했습니다.",
+    checks: "기존 가상 참고 기록과 같은 시점의 다른 항목을 차례로 비교합니다." } }, "ko");
 const output = (language: "ko" | "en" | "ja" = "ko") => ({ strengths: ["uncertainty"] as ("signal" | "reference" | "uncertainty")[], reflections: [
   { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" as const, question: language === "ko" ? "같은 시점의 어떤 정상 참고 기록을 비교하겠습니까?" : language === "ja" ? "同じ時点のどの正常参照を比較しますか？" : "Which normal reference point would you compare at that time?" },
   { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" as const, question: language === "ko" ? "비교 순서를 정할 때 어떤 가상 기록을 확인하겠습니까?" : language === "ja" ? "比較順序を決める際にどの仮想記録を確認しますか？" : "What existing virtual evidence would help you choose the comparison order?" },
@@ -61,6 +67,10 @@ describe("scenario judgment coach", () => {
     await expect(caller.training.coach(input())).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+  it("requires login for all-time completion progress", async () => {
+    const caller = appRouter.createCaller({ user: null, req: {}, res: {} } as TrpcContext);
+    await expect(caller.training.progress()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
   it.each([
     { consent: false }, { elapsed: 30 }, { submitted: false }, { scenarioId: "other" },
     { marker: 181 }, { userId: 1 }, { language: "fr" },
@@ -88,6 +98,47 @@ describe("scenario judgment coach", () => {
     expect(context.samples[1].signals.every(s => s.phase === "B")).toBe(true);
     expect(context.samples.at(-1)?.signals[0].current).toBeGreaterThan(120);
     expect(context.evidence["cause-unknown"]).toContain("No component fault");
+  });
+  it.each(processScenarios.filter(scenario => scenario.processId !== "etch"))("uses the $processId scenario's own trusted records and original quotes", async scenario => {
+    const request = processInput(scenario);
+    const context = scenarioCoachContext(request);
+    expect(context.scope).toContain(scenario.title[1]);
+    expect(context.scope).toContain("relative indices");
+    expect(context.evidence["phase-reference"]).toContain(scenario.referenceRule[1]);
+    expect(context.samples.flatMap(row => row.signals.map(signal => signal.id))).toEqual(
+      context.samples.flatMap(() => scenario.signals.map(signal => signal.id)));
+    const finalSample = processSample(scenario, scenario.signals[0].id, scenario.duration);
+    expect(context.samples.at(-1)?.signals[0].current).toBe(Number(finalSample.value.toFixed(1)));
+    expect(context.supportedStrengths).toEqual(["signal", "reference", "uncertainty"]);
+    const result = await createJudgmentCoach()(27, request);
+    expect(result.status).toBe("ready");
+    if (result.status === "ready") expect(result.feedback.reflections[0].answerQuote).toBe(request.answer.facts);
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(request.answer);
+    expect(JSON.stringify(payload)).not.toMatch(/must-not-be-transmitted|userId|badgeNumber|email|synthetic-private-key/);
+  });
+  it("handles reference-consistent observations without inventing a pressure anomaly", () => {
+    const scenario = processScenarios.find(item => item.processId === "oxidation")!;
+    const request = processInput(scenario);
+    expect(request.answer).toMatchObject({ signal: "none", onset: "none" });
+    const context = scenarioCoachContext(request);
+    expect(context.evidence["pressure-trend"]).toContain("No-change is a valid evidence-based choice");
+    expect(context.evidence["pressure-trend"]).not.toContain("synthetic pressure trend develops");
+    expect(context.samples.every(row => row.signals.every(signal => signal.current >= signal.range[0] && signal.current <= signal.range[1]))).toBe(true);
+    const valid = validateCoachOutput(JSON.stringify({ ...output(), strengths: ["signal", "reference"] }), request.answer, "ko", scenario.id);
+    expect(valid.strengths).toEqual(["signal", "reference"]);
+    expect(() => validateCoachOutput(JSON.stringify({ ...output(), strengths: ["signal"] }), { ...request.answer, signal: "film", onset: "30" }, "ko", scenario.id)).toThrow("Unsupported strength");
+  });
+  it("rejects process aliases, unknown signals, incomplete observation, and incoherent no-change choices before transmission", async () => {
+    const scenario = processScenarios.find(item => item.processId === "wafer")!;
+    const request = processInput(scenario);
+    const changes = [{ scenarioId: "unknown" }, { scenarioId: "wafer" }, { elapsed: 180 }, { marker: 91 }, { submitted: false },
+      { answer: { ...request.answer, signal: "pressure" } }, { answer: { ...request.answer, onset: "none" } },
+      { answer: { ...request.answer, signal: "none" } }, { answer: { ...request.answer, onset: "91" } },
+      { answer: { ...request.answer, comparison: "same-phase" } }, { answer: { ...request.answer, facts: "" } }];
+    for (const change of changes) await expect(createJudgmentCoach()(27, { ...request, ...change })).rejects.toThrow();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(JSON.stringify(request)).not.toContain("must-not-be-transmitted");
   });
   it("serializes concurrent requests and applies user-scoped cooldown without sharing answers", async () => {
     const now = vi.spyOn(Date, "now").mockReturnValue(1000);

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import { trainingAttempts } from "../drizzle/schema";
-import { getTrainingAttempts, saveTrainingAttempt } from "./trainingRecords";
+import { getTrainingAttempt, getTrainingAttempts, getTrainingProgress, saveTrainingAttempt } from "./trainingRecords";
 
 const dbMock = vi.hoisted(() => ({ getDb: vi.fn() }));
 vi.mock("./db", () => dbMock);
@@ -10,6 +10,23 @@ const submission = { elapsed: 180, submitted: true, marker: 82, signal: "pressur
 
 describe("training record persistence", () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it("requires both record ID and current owner for detail, and returns no other identity", async () => {
+    const limit = vi.fn().mockResolvedValue([{ id: 8, comparison: "same-phase" }]);
+    const where = vi.fn().mockReturnValue({ limit });
+    const select = vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where }) });
+    dbMock.getDb.mockResolvedValue({ select });
+    await expect(getTrainingAttempt(27, 8)).resolves.toEqual({ id: 8, comparison: "same-phase" });
+    const query = new MySqlDialect().sqlToQuery(where.mock.calls[0][0]);
+    expect(query.sql).toContain("`training_attempts`.`user_id` = ?");
+    expect(query.sql).toContain("`training_attempts`.`id` = ?");
+    expect(query.params).toEqual([27, 8]);
+    expect(limit).toHaveBeenCalledWith(1);
+    expect(select.mock.calls[0][0]).not.toHaveProperty("userId");
+    expect(select.mock.calls[0][0]).not.toHaveProperty("facts");
+    limit.mockResolvedValue([]);
+    await expect(getTrainingAttempt(27, 9)).resolves.toBeNull();
+  });
 
   it("uses the session owner and only validated choices, with an idempotent retry", async () => {
     const onDuplicateKeyUpdate = vi.fn().mockResolvedValue(undefined);
@@ -49,5 +66,20 @@ describe("training record persistence", () => {
     dbMock.getDb.mockResolvedValue(null);
     await expect(saveTrainingAttempt(27, "attempt-a", submission)).rejects.toThrow();
     await expect(getTrainingAttempts(27)).rejects.toThrow();
+    await expect(getTrainingProgress(27)).rejects.toThrow();
+  });
+
+  it("scopes all-time completion to the current owner and only returns distinct scenario IDs", async () => {
+    const groupBy = vi.fn().mockResolvedValue([{ scenarioId: "etch-chamber-a-01" }]);
+    const where = vi.fn().mockReturnValue({ groupBy });
+    const from = vi.fn().mockReturnValue({ where });
+    const select = vi.fn().mockReturnValue({ from });
+    dbMock.getDb.mockResolvedValue({ select });
+    await expect(getTrainingProgress(27)).resolves.toEqual(["etch-chamber-a-01"]);
+    const query = new MySqlDialect().sqlToQuery(where.mock.calls[0][0]);
+    expect(query.sql).toContain("`training_attempts`.`user_id` = ?");
+    expect(query.params).toEqual([27]);
+    expect(select).toHaveBeenCalledWith({ scenarioId: trainingAttempts.scenarioId });
+    expect(groupBy).toHaveBeenCalledWith(trainingAttempts.scenarioId);
   });
 });

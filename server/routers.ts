@@ -14,7 +14,9 @@ import type { RiskLevel } from "../shared/semiguard";
 import { MANUAL_CHUNK_LIMIT, splitManualTextIntoChunks } from "../shared/ragManual";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
-import { getTrainingAttempts, saveTrainingAttempt } from "./trainingRecords";
+import { getTrainingAttempt, getTrainingAttempts, getTrainingProgress, saveTrainingAttempt } from "./trainingRecords";
+import { learningQuestionSchema } from "../shared/learningAssistant";
+import { requestLearningAnswer } from "./learningAssistant";
 import { getOgqLearningGuide } from "./ogqLearningGuide";
 import { requestJudgmentCoach } from "./judgmentCoach";
 import { judgmentCoachRequestSchema } from "../shared/judgmentCoach";
@@ -110,14 +112,22 @@ function buildSafeFallbackDiagnostic(sensorContext: {
 export const appRouter = router({
   system: systemRouter,
   learning: router({
+    ask: protectedProcedure.input(learningQuestionSchema)
+      .mutation(({ ctx, input }) => requestLearningAnswer(ctx.user.id, input)),
     guide: protectedProcedure.query(() => getOgqLearningGuide()),
   }),
   training: router({
+    detail: protectedProcedure.input(z.object({ id: z.number().int().positive() }).strict())
+      .query(async ({ ctx, input }) => ({ userId: ctx.user.id, attempt: await getTrainingAttempt(ctx.user.id, input.id) })),
     coach: protectedProcedure.input(judgmentCoachRequestSchema)
       .mutation(({ ctx, input }) => requestJudgmentCoach(ctx.user.id, input)),
     history: protectedProcedure.query(async ({ ctx }) => ({
       userId: ctx.user.id,
       attempts: await getTrainingAttempts(ctx.user.id),
+    })),
+    progress: protectedProcedure.query(async ({ ctx }) => ({
+      userId: ctx.user.id,
+      scenarioIds: await getTrainingProgress(ctx.user.id),
     })),
     saveAttempt: protectedProcedure
       .input(z.object({ attemptKey: z.string().uuid(), attempt: z.unknown() }))
