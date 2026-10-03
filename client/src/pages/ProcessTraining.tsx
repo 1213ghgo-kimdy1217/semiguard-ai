@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
+import ProcessEquipmentReference from "../components/ProcessEquipmentReference";
+import { toTrainingDraft, restoreTrainingDraft } from "../../../shared/trainingDraft";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, Flag, Pause, Play } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -216,6 +219,9 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
       <p className="et-caption">{l("이 과정은 학습 순서입니다. 실제 반도체 제조에서는 공정이 여러 번 반복됩니다.", "This is a learning sequence. Real semiconductor manufacturing repeats processes many times.", "これは学習の順序です。実際の半導体製造では工程を何度も繰り返します。")}</p>
       {storageWarning ? <p className="et-alert" role="status">{l("이 브라우저에서 임시 저장을 사용할 수 없습니다. 새로고침하면 미제출 답안이 사라질 수 있습니다.", "Temporary browser storage is unavailable. Refreshing may erase this draft.", "このブラウザーでは一時保存を使えません。更新すると未提出の回答が消える場合があります。")}</p> : null}
       <p className="et-notice" role="status" aria-live="polite">{notice}</p>
+      {stage !== "review" && !attempt.submitted ? <TrainingCheckpoint userId={userId} language={language} scenarioId={scenario.id}
+        capture={() => toTrainingDraft(scenario.id, attempt, stage)}
+        restore={draft => { setRunning(false); setAttempt(restoreTrainingDraft(draft)); setInspectionSelection(null); setSaveStatus("idle"); move(draft.stage); }} /> : null}
 
       {stage === "brief" ? <>
         <div className="et-columns"><section className="et-panel">
@@ -228,6 +234,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
           <p>{l("이번 기록과 같은 조건의 정상 참고를 비교하세요. 값이 바뀌었다는 사실과 고장이라는 추정은 다릅니다. 정상 참고와의 편차가 없는 기록도 있습니다.", "Compare the current record with a same-condition normal reference. A changing value is not itself a confirmed fault. Some records have no deviation from the normal reference.", "今回の記録と同じ条件の正常参照を比較してください。値の変化と故障の推測は異なります。正常参照からの偏差がない記録もあります。")}</p>
           <p className="et-caption">{l("90초 가상 타임라인 · 재생 속도 1배/3배 선택 · 재생·일시정지 가능", "90-second virtual timeline · 1× / 3× playback · pause and resume", "90秒の仮想タイムライン · 1倍 / 3倍再生 · 一時停止・再開可能")}</p>
         </section></div>
+        <ProcessEquipmentReference processId={scenario.processId} language={language} />
         <details className="et-panel pt-reference"><summary>{l("실제 공정과 연결되는 공개 자료", "Public references for the real process", "実際の工程につながる公開資料")}</summary>
           <p>{l("아래 자료는 공정 개념을 이해하기 위한 출처입니다. 이 훈련은 제조사 데이터나 실제 장비 모델의 성능을 재현하지 않습니다.", "The source below explains the process concept. This exercise does not reproduce manufacturer data or the performance of a real equipment model.", "以下は工程の概念を理解するための資料です。この訓練はメーカーのデータや実装置モデルの性能を再現しません。")}</p>
           <a href={scenario.referenceUrl} target="_blank" rel="noopener noreferrer">{localize(scenario.referenceTitle, language)} ↗</a>

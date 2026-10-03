@@ -119,3 +119,10 @@
 .et-entry-steps h3{font-size:18px;margin-bottom:8px}
 .et-entry-steps p{margin-top:0}
 .et-inline-link{color:#e4aa55;text-decoration:underline;text-underline-offset:4px}
+.et-checkpoint{padding:16px 24px}
+.et-checkpoint summary{cursor:pointer;font-size:16px;font-weight:650;color:#e4aa55;min-height:28px}
+.et-checkpoint summary span{font-size:13px;font-weight:400;color:#b4c1b6;margin-left:16px}
+.et-checkpoint-content{padding-top:12px}
+.et-checkpoint .et-actions{margin-top:12px}
+.et-account-benefits{border-left:3px solid #e4aa55}
+#training-share-url{display:block;width:100%;max-width:100%;padding:12px;margin:12px 0;background:#17231e;border:1px solid #65796b;border-radius:6px;color:#eaf0ec;overflow-wrap:anywhere}

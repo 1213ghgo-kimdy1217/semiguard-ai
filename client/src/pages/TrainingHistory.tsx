@@ -7,6 +7,7 @@ import { tr, useProductLanguage } from "../lib/productLanguage";
 import { etchSignalName } from "../lib/etchLanguage";
 import { trpc } from "../lib/trpc";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import TrainingShareControls from "../components/TrainingShareControls";
 import "./etch-training.css";
 
 export default function TrainingHistory({ attemptId }: { attemptId: string }) {
@@ -38,7 +39,7 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
         : query.isError ? <p role="alert">{l("기록을 불러오지 못했습니다.", "Could not load the record.", "記録を読み込めませんでした。")} <button type="button" onClick={() => void query.refetch()}>{l("다시 시도", "Retry", "再試行")}</button></p>
         : !record ? <p>{l("이 계정에서 볼 수 있는 기록이 없습니다.", "No record is available for this account.", "このアカウントで表示できる記録はありません。")}</p>
         : !scenario ? <p>{l("이전 모듈의 기록입니다. 현재 재생은 지원하지 않습니다.", "This older module does not support replay.", "以前のモジュールの記録で、現在は再生に対応していません。")}</p>
-        : <><section className="et-panel"><h2>{l(...scenario.title)}</h2><p>{new Date(record.createdAt).toLocaleString(language)}</p>
+        : <><TrainingShareControls key={`${auth.data?.id}:${record.id}`} id={record.id} language={language} /><section className="et-panel"><h2>{l(...scenario.title)}</h2><p>{new Date(record.createdAt).toLocaleString(language)}</p>
           <dl><dt>{l("주목한 항목", "Selected signal", "注目した項目")}</dt><dd>{record.signal === "none" ? l("차이 없음", "No deviation", "差異なし") : signals.find(s => s.id === record.signal)?.name ?? record.signal}</dd>
             <dt>{l("내 변화 시작 판단", "My estimated onset", "自分の変化開始の判断")}</dt><dd>{record.onset < 0 ? l("해당 없음", "Not applicable", "該当なし") : clock(record.onset)}</dd>
             <dt>{l("내가 표시한 시점", "My selected marker", "自分が印を付けた時点")}</dt><dd>{record.marker === null ? l("없음", "None", "なし") : clock(record.marker)}</dd>

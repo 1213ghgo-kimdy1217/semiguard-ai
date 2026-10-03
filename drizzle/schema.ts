@@ -41,6 +41,21 @@ export const trainingAttempts = mysqlTable("training_attempts", {
 
 export type TrainingAttempt = typeof trainingAttempts.$inferSelect;
 
+// Explicit cross-device checkpoints; no written answers or personal profile fields.
+export const trainingDrafts = mysqlTable("training_drafts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  scenarioId: varchar("scenario_id", { length: 64 }).notNull(),
+  elapsed: int("elapsed").notNull(),
+  marker: int("marker"),
+  stage: varchar("stage", { length: 16 }).notNull(),
+  signal: varchar("signal", { length: 32 }).notNull(),
+  onset: varchar("onset", { length: 4 }).notNull(),
+  comparison: varchar("comparison", { length: 32 }).notNull(),
+  certainty: varchar("certainty", { length: 32 }).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, table => ({ ownerScenario: uniqueIndex("training_draft_owner_scenario_unique").on(table.userId, table.scenarioId) }));
+
 // 기존 로컬 사용자와 연결된 소셜 계정 식별자
 export const socialAccountLinks = mysqlTable("social_account_links", {
   id: int("id").autoincrement().primaryKey(),

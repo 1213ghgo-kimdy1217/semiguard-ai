@@ -192,8 +192,8 @@ export function Login() {
         naverLogin: "Naverでログイン",
         kakaoLogin: "Kakaoでログイン",
         socialLinkHint: "ソーシャルログインは、新規登録後にダッシュボードメニューからアカウントを連携して利用できます。",
-        judgeDemo: "審査用デモを見る",
-        judgeDemoHint: "ログイン不要・読み取り専用・サンプルデータ",
+        judgeDemo: "現在の学習モジュールを体験",
+        judgeDemoHint: "ゲスト体験・アカウント保存はログイン後",
         terms: "ログインすると利用規約に同意したものとみなされます。",
       }
     : loginLanguage === "en"
@@ -220,8 +220,8 @@ export function Login() {
           naverLogin: "Continue with Naver",
           kakaoLogin: "Continue with Kakao",
           socialLinkHint: "After signing up, link a social account from the dashboard menu to use social login.",
-          judgeDemo: "View judge demo",
-          judgeDemoHint: "No sign-in · Read-only · Sample data",
+          judgeDemo: "Preview current learning modules",
+          judgeDemoHint: "Guest practice · Sign in to save",
           terms: "By signing in, you agree to the Terms of Service.",
         }
       : {
@@ -247,8 +247,8 @@ export function Login() {
           naverLogin: "네이버로 로그인",
           kakaoLogin: "카카오로 로그인",
           socialLinkHint: "소셜 로그인은 회원가입 후 대시보드 메뉴에서 계정을 연결한 뒤 사용할 수 있습니다.",
-          judgeDemo: "심사위원 데모 바로가기",
-          judgeDemoHint: "로그인 없이 · 읽기 전용 · 가상 데이터",
+          judgeDemo: "현재 학습 모듈 미리보기",
+          judgeDemoHint: "게스트 체험 · 계정 저장은 로그인 후",
           terms: "로그인하면 서비스 이용약관에 동의하는 것입니다.",
         };
   const isOauthEnabled = !import.meta.env.DEV && accountServiceReady !== false;
@@ -348,11 +348,11 @@ export function Login() {
   return (
     <main className="sg-login">
       <section className="sg-login-intro">
-        <a href="/welcome" className="sg-brand"><span className="sg-brand-symbol">S<span>G</span></span><span>SemiGuard<span className="sg-brand-ai"> AI</span></span></a>
+        <a href="/welcome" className="sg-brand"><span className="sg-brand-symbol" aria-hidden="true">SG</span><span>SemiGuard<span className="sg-brand-ai"> AI</span></span></a>
         <p className="sg-eyebrow">YOUR INSPECTION WORKSPACE</p>
         <h2>{loginLanguage === "ko" ? <>관찰을 기록하고,<br /><span>판단을 이어갑니다.</span></> : loginLanguage === "ja" ? <>観察を記録し、<br /><span>判断につなげる。</span></> : <>Observe clearly.<br /><span>Decide thoughtfully.</span></>}</h2>
         <WaferGraphic />
-        <p>{loginLanguage === "ko" ? "센서 근거와 점검 기록을 한곳에서. 사용자별 작업 공간에서 다음 확인 순서를 이어가세요." : loginLanguage === "ja" ? "センサーの根拠と点検記録を一か所に。自分のワークスペースで次の確認へ。" : "Sensor evidence and inspection records, together in your personal workspace."}</p>
+        <p>{loginLanguage === "ko" ? "내 학습 기록을 다시 보고, 저장한 재생 시점과 선택 답안부터 이어가고, 원하는 결과만 친구에게 공유하세요. 서술형 원문은 계정에 저장하지 않습니다." : loginLanguage === "ja" ? "自分の練習記録を振り返り、保存した再生時点と選択回答から再開し、選んだ結果だけを共有できます。記述回答はアカウントに保存しません。" : "Revisit your learning records, resume saved playback positions and choices, and share only the results you choose. Written answers are not stored in your account."}</p>
       </section>
       <Card className="sg-login-card">
         <div className="space-y-6">
@@ -534,7 +534,7 @@ export function Login() {
             </p>
             <button
               type="button"
-              onClick={() => setLocation("/demo")}
+              onClick={() => setLocation("/training")}
               className="mt-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/45 bg-cyan-400/10 px-3 py-1.5 text-xs font-bold text-cyan-200 transition-colors hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-800"
             >
               <span aria-hidden="true">▸</span>

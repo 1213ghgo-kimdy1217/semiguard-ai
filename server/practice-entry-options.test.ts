@@ -27,7 +27,8 @@ describe("visible practice options and four-sensor entry briefing", () => {
 
   it.each(copy)("explains limits and provides explicit entry and return in $language", item => {
     const html = renderToStaticMarkup(createElement(Router, { ssrPath: "/training" }, createElement(FourSensorBrief, { language: item.language as ProductLanguage, headingRef: null, onBack: () => {} })));
-    for (const text of [item.enter, item.back, item.scope, item.rules, item.ai, "Scenario 01", "mm/s", "dB"]) expect(html).toContain(text);
+    for (const text of [item.enter, item.back, item.scope, item.rules, item.ai, "mm/s", "dB"]) expect(html).toContain(text);
+    expect(html).not.toContain("Scenario 01");
     expect(html).toContain('href="/dashboard"');
     expect(html).toContain('href="/learn"');
     expect(html).toContain('tabindex="-1"');
