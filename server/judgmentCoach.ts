@@ -49,7 +49,7 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
   }
   const times = [39, 40, 60, 80, 125, 180];
   return {
-    scope: "Scenario 01 synthetic plasma etch chamber. Values are teaching-only relative indices, not physical units, manufacturer specifications or real equipment logs.",
+    scope: "Etch judgment practice with a synthetic plasma etch chamber. Values are teaching-only relative indices, not physical units, manufacturer specifications or real equipment logs.",
     evidence: {
       "phase-reference": "Phase A changes normally to B at 40 seconds. Compare the same phase and time of the normal reference run, not whole-run averages.",
       "pressure-trend": "A synthetic pressure trend develops during phase B; trend onset and crossing the reference range are different events. Revisit earlier records to distinguish them, without an exact-time answer key.",
