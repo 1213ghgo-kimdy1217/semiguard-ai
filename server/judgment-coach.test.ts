@@ -240,6 +240,30 @@ describe("scenario judgment coach", () => {
       expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
     }
   });
+  it.each(["ko", "ja"] as const)("localizes a small question glossary in %s without rewriting the original answer", language => {
+    const data = output(language);
+    data.reflections[0].question = language === "ko"
+      ? "onset, oscillation, baseline, trend와 RF 기록을 어떻게 비교하나요?"
+      : "onset、oscillation、baseline、trendとRFの記録をどう比較しますか？";
+    const answer = { ...input().answer, facts: "원문: onset, oscillation, baseline, trend, RF는 내가 쓴 표현입니다." };
+    const result = validateCoachOutput(JSON.stringify(data), answer, language);
+    expect(result.reflections[0].answerQuote).toBe(answer.facts);
+    expect(result.reflections[0].question).not.toMatch(/onset|oscillation|baseline|trend/i);
+    expect(result.reflections[0].question).toContain("RF");
+    expect(result.reflections[0].question).toContain(language === "ko" ? "변화 시작 시점" : "変化の開始時点");
+  });
+  it("keeps English questions unchanged and only matches complete glossary words", () => {
+    const data = output("en"); data.reflections[0].question = "Which baseline supports the onset and oscillation trend?";
+    expect(validateCoachOutput(JSON.stringify(data), input().answer, "en").reflections[0].question).toBe(data.reflections[0].question);
+    const ko = output(); ko.reflections[0].question = "onsetter 항목과 기준을 어떻게 비교하나요?";
+    expect(validateCoachOutput(JSON.stringify(ko), input().answer).reflections[0].question).toContain("onsetter");
+  });
+  it("checks raw safety and secret constraints before glossary replacement and retains the output bound", () => {
+    for (const question of ["onset 기준으로 장비를 분해하나요?", "어떤 onset에서 synthetic-private-key를 보나요?", "어떤 기록에서 " + "onset ".repeat(45) + "를 보나요?"]) {
+      const data = output(); data.reflections[0].question = question;
+      expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
+    }
+  });
   it("allows distinguishing virtual signals without allowing disassembly compounds", () => {
     const data = output(); data.reflections[0].question = "추세 시작과 기준 범위 이탈을 어떤 가상 기록으로 구분해 볼 수 있나요?";
     expect(validateCoachOutput(JSON.stringify(data), input().answer).reflections).toHaveLength(2);

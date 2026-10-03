@@ -4,7 +4,8 @@ import { Button } from "./ui/button";
 import { trpc } from "../lib/trpc";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { toJudgmentCoachRequest, toProcessJudgmentCoachRequest, type CoachDimension, type CoachStrength, type JudgmentCoachResult } from "../../../shared/judgmentCoach";
-import type { EtchAttempt } from "../../../shared/etchScenario";
+import { ETCH_DURATION, type EtchAttempt } from "../../../shared/etchScenario";
+import { coachReviewTargets } from "../../../shared/coachReview";
 import type { ProcessAttempt, ProcessScenario } from "../../../shared/processScenarios";
 import "./judgment-coach.css";
 
@@ -21,11 +22,12 @@ const strengthLabels: Record<CoachStrength, [string, string, string]> = {
   uncertainty: ["관찰만으로 원인을 확정하지 않는 선택을 했습니다.", "You chose not to confirm a cause from observation alone.", "観察だけで原因を確定しない選択をしました。"],
 };
 
-type ScenarioCoachProps = { language: ProductLanguage; userId: number | null } & (
+type ScenarioCoachProps = { language: ProductLanguage; userId: number | null;
+  onReviewPoint: (time: number, returnToQuestion: () => void) => void } & (
   { attempt: EtchAttempt; processAttempt?: never; scenario?: never } |
   { attempt?: never; processAttempt: ProcessAttempt; scenario: ProcessScenario }
 );
-export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAttempt, scenario, language, userId }: ScenarioCoachProps) {
+export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAttempt, scenario, language, userId, onReviewPoint }: ScenarioCoachProps) {
   const attempt = etchAttempt ?? processAttempt;
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const id = useId();
@@ -33,6 +35,8 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
   const [result, setResult] = useState<JudgmentCoachResult | null>(null);
   const [networkError, setNetworkError] = useState(false);
   const pending = useRef(false);
+  const reflectionHeadings = useRef<Partial<Record<CoachDimension, HTMLHeadingElement>>>({});
+  const reviewTargets = coachReviewTargets(attempt, scenario?.duration ?? ETCH_DURATION);
   const coach = trpc.training.coach.useMutation({ retry: false });
   // Only a deliberate click sends text; no effect, automatic language request or DB save.
   const request = async () => {
@@ -53,6 +57,7 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
     <details className="coach-disclosure"><summary>{l("AI에 전달되는 내용 확인", "Review what is sent to AI", "AIに送信する内容を確認")}</summary>
       <p>{l("NVIDIA에 두 서술형 답안, 선택한 센서·변화 시점·비교 기준·확신 여부, 그래프 표시 시점, 표시 언어와 서버가 만든 가상 시나리오 근거를 전달합니다. 계정 이름·이메일·학습 이력·API 키는 답안 내용에 포함하지 않습니다. 개인정보·회사 기밀·실제 설비 자료를 답안에 입력하지 마세요.", "NVIDIA receives your two written answers, chosen signal/onset/reference/certainty, chart marker, language, and server-generated synthetic scenario evidence. Account names, emails, learning history and API keys are not included in the answer content. Do not put personal, confidential or real equipment data in your answers.", "NVIDIAには二つの記述回答、選択したセンサー・変化時点・比較基準・確信度、グラフの印、表示言語、サーバーが作成した仮想シナリオの根拠を送信します。アカウント名、メール、学習履歴、APIキーは回答内容に含めません。個人情報、会社の機密、実装置の資料を回答に入力しないでください。")}</p>
       <p>{l("SemiGuard 학습 DB에는 서술형 원문이나 AI 코칭을 저장하지 않습니다. AI 답변은 현재 화면에서만 표시하며, 제공자의 데이터 처리는 NVIDIA 정책을 따릅니다.", "SemiGuard does not save the written answers or AI coaching in its learning database. Coaching stays in the current view; provider-side data handling follows NVIDIA's policy.", "SemiGuardの学習DBには記述回答やAIコーチングを保存しません。回答は現在の画面にのみ表示し、提供者側のデータ処理はNVIDIAのポリシーに従います。")}</p>
+      <p>{l("AI 질문의 일부 영어 용어는 표시 언어에 맞춰 정리합니다. 내가 쓴 답안 원문은 바꾸지 않습니다.", "A small glossary localizes terms in AI questions for the display language. Your original written answers are unchanged.", "AIの問いに含まれる一部の英語用語を表示言語に合わせます。記入した回答の原文は変更しません。")}</p>
     </details>
     {userId ? <>
       <label className="coach-consent"><input type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} />
@@ -78,11 +83,21 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
           : l(...strengthLabels[item])}</li>)}</ul>
         <p className="et-caption">{l("위 문구는 기준 기반 안내이며, 아래 복기 질문은 AI가 생성합니다.", "These labels are criteria-based; the reflection questions below are AI-generated.", "上記は基準に基づく案内で、以下の振り返りの問いはAIが生成します。")}</p></> : null}
       {result.feedback.reflections.map(item => <article className="coach-reflection" key={item.dimension}>
-        <h3>{l(...dimensionLabels[item.dimension])}</h3><p><strong>{l("내 답안에서", "From your answer", "自分の回答から")}</strong> “{item.answerQuote}”</p>
+        <h3 tabIndex={-1} ref={node => { reflectionHeadings.current[item.dimension] = node ?? undefined; }}>{l(...dimensionLabels[item.dimension])}</h3><p><strong>{l("내 답안에서", "From your answer", "自分の回答から")}</strong> “{item.answerQuote}”</p>
         <p className="coach-question"><strong>{l("다시 생각할 질문", "A question to revisit", "考え直す問い")}</strong> {item.question}</p>
         <p className="et-caption">{scenario
           ? `${l("근거", "Evidence", "根拠")}: ${l(...scenario.title)} · ${l("교육용 가상 기록", "synthetic educational records", "教育用の仮想記録")}`
           : l("근거: 식각 판단 연습의 가상 기록", "Evidence: etch judgment exercise records", "根拠：エッチング判断練習の仮想記録")}</p>
+        <div className="et-actions coach-review-actions">{reviewTargets.map(target => <Button variant="outline" key={target.source} onClick={() => {
+          const returnToQuestion = () => {
+            const heading = reflectionHeadings.current[item.dimension];
+            heading?.focus({ preventScroll: true }); heading?.scrollIntoView({ block: "start", behavior: "auto" });
+          };
+          onReviewPoint(target.time, returnToQuestion);
+        }}>{target.source === "onset" ? l(`내 시작 시점 ${target.time}초 보기`, `View your onset at ${target.time}s`, `自分の開始時点${target.time}秒を見る`)
+          : target.source === "marker" ? l(`내 발견 표시 ${target.time}초 보기`, `View your marker at ${target.time}s`, `自分の発見記録${target.time}秒を見る`)
+          : l("전체 기록 비교하기", "Compare the full record", "全記録を比較する")}</Button>)}</div>
+        <p className="et-caption">{l("이동 위치는 내 선택 시점과 가상 기록에서 가져옵니다. AI가 언급한 숫자를 정답이나 이동 위치로 사용하지 않으며, 답안·저장 기록은 바뀌지 않습니다.", "Navigation uses your selected times and the virtual record, not AI-generated numbers or answer keys. Your answer and saved record are unchanged.", "移動先は自分の選択時点と仮想記録に基づきます。AIが述べた数値を正解や移動先として使わず、回答や保存記録は変わりません。")}</p>
       </article>)}
       <p className="et-caption">{l("AI 해석은 틀릴 수 있습니다. 위 타임라인과 정상 참고 기록을 다시 확인하세요. 언어·계정·시도를 바꾸면 코칭 표시와 동의를 초기화하며 자동 재요청하지 않습니다.", "AI interpretation may be wrong. Recheck the timeline and normal reference above. Changing language, account or attempt clears coaching and consent without an automatic request.", "AIの解釈には誤りがあり得ます。上のタイムラインと正常参照を再確認してください。言語、アカウント、試行を変更すると表示と同意をリセットし、自動再依頼しません。")}</p>
     </div> : null}
