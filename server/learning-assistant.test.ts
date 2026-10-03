@@ -68,4 +68,15 @@ describe("learning assistant", () => {
     expect(JSON.stringify(warning.mock.calls)).not.toMatch(/secret-value|user-question|upstream-body/);
     warning.mockRestore();
   });
+  it("classifies rejected JSON and guards without recording generated content", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mocks.invoke.mockResolvedValueOnce({ ...response(), choices: [{ message: { content: "private-answer-not-json" } }] });
+    await createLearningAssistant()(7, request);
+    expect(warning).toHaveBeenLastCalledWith("[Learning assistant] Invalid response (json)");
+    mocks.invoke.mockResolvedValueOnce({ ...response(), choices: [{ message: { content: JSON.stringify({ ...answer, answer: "NVIDIA_API_KEY private-answer" }) } }] });
+    await createLearningAssistant()(7, request);
+    expect(warning).toHaveBeenLastCalledWith("[Learning assistant] Invalid response (content-guard)");
+    expect(JSON.stringify(warning.mock.calls)).not.toContain("private-answer");
+    warning.mockRestore();
+  });
 });

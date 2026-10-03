@@ -23,7 +23,10 @@ export function createLearningAssistant() {
   const users = new Map<number, { started: number; pending: boolean }>();
   return async (userId: number, raw: unknown): Promise<LearningAssistantResult> => {
     const request = learningQuestionSchema.parse(raw);
-    if (!ENV.nvidiaApiKey.trim() || (ENV.aiProvider.trim() && ENV.aiProvider.trim() !== "nvidia")) return { status: "unavailable", reason: "not-configured" };
+    if (!ENV.nvidiaApiKey.trim() || (ENV.aiProvider.trim() && ENV.aiProvider.trim() !== "nvidia")) {
+      console.warn(`[Learning assistant] Not configured (${ENV.nvidiaApiKey.trim() ? "provider-selection" : "missing-key"})`);
+      return { status: "unavailable", reason: "not-configured" };
+    }
     const now = Date.now();
     for (const [id, value] of Array.from(users.entries())) if (!value.pending && now - value.started > 600_000) users.delete(id);
     const current = users.get(userId);
@@ -47,9 +50,17 @@ Trusted guide: ${guide}` },
         },
       } } } });
       const content = result.choices[0]?.message.content;
-      if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || typeof content !== "string" || content.length > 5000) return { status: "unavailable", reason: "invalid-response" };
+      if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || typeof content !== "string" || content.length > 5000) {
+        console.warn(`[Learning assistant] Invalid response (${result.provider !== "nvidia" ? "provider" : result.model !== ENV.nvidiaModel ? "model" : "content"})`);
+        return { status: "unavailable", reason: "invalid-response" };
+      }
       try { return { status: "ready", provider: "nvidia", model: result.model, ...validateLearningAnswer(content, request.language) }; }
-      catch { return { status: "unavailable", reason: "invalid-response" }; }
+      catch (error) {
+        const failure = error instanceof SyntaxError ? "json" : error instanceof Error && error.message === "Unsupported answer"
+          ? "content-guard" : error instanceof Error && error.message === "Unexpected language" ? "language" : "schema";
+        console.warn(`[Learning assistant] Invalid response (${failure})`);
+        return { status: "unavailable", reason: "invalid-response" };
+      }
     } catch (error) {
       // Only classify known local errors; never log upstream bodies or prompts.
       const message = error instanceof Error ? error.message : "";
