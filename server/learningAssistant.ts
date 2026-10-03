@@ -3,6 +3,7 @@ import { ENV } from "./_core/env";
 import { invokeLLM } from "./_core/llm";
 
 const guide = `SemiGuard is an educational reasoning platform, not a fault diagnosis or real equipment control system. All current sensor records and reference limits are virtual teaching data. Risk scores in the four-sensor dashboard are rule-based normal-reference/z-score calculations, not trained AI. AI only assists explanation and reasoning. No validated fab performance or safety certification.
+In SemiGuard, a normal reference VALUE is the condition-matched typical virtual value at the selected time, not a limit. A reference RANGE is the lower-to-upper synthetic teaching band used for that module and condition. Both are authored educational references, NOT manufacturer limits, actual manufacturing tolerances or fab operating criteria. The reference value and band can change with the virtual phase or inspection group. Comparing to a reference value reveals a difference; being within a range does not prove normal operation or establish a fault. When asked to distinguish these terms, explain these definitions explicitly and do not redefine the reference value as a fixed boundary.
 training: choose guided reasoning practice from eight process modules: wafer, oxidation, photolithography, etch, deposition/implantation context, metallization, EDS, packaging. This is an introductory learning sequence; actual manufacturing repeats processes. Observe supplied virtual records, compare condition-matched references, record evidence and uncertainty, submit, and review a timeline. Keep transient differences and normal phase changes distinct from deviations. Do not infer causes from correlation.
 learn: eight-process concept learning and public equipment references, connected to practice.
 live: open-ended changing synthetic etch observations; runs vary. Not real fab data or a fixed scenario answer key. CSV exploration reads files in the browser; do not enter company/personal data.
@@ -12,6 +13,7 @@ Answer conceptual questions and explain virtual-data comparisons only. No exact 
 
 export function validateLearningAnswer(raw: string, language: "ko" | "en" | "ja") {
   const answer = learningAnswerSchema.parse(JSON.parse(raw));
+  if (/(?:정상\s*참고값(?:은|이)\s*(?:실제\s*)?제조\s*공정의\s*허용\s*기준(?:입니다|이다|이며)|normal reference (?:value|values) (?:is|are) (?:the )?(?:manufacturing|fab) tolerance|正常参照値は(?:実際の)?製造工程の許容基準です)/i.test(answer.answer)) throw new Error("Unsupported answer");
   if (/https?:\/\/|<[^>]+>|ogqc_|nvapi[-_]|NVIDIA_API_KEY|\b(?:setpoint|interlock)\b|(?:교체|분해|배선|주입|밸브|압력|전압|장비)[^.!?。？]{0,25}(?:하세요|해라|한다|설정하|조절하|가동하)|(?:replace|disassemble|rewire|inject|restart|shutdown)\s+(?:the|your|a)\s|(?:交換|分解|配線|注入|調整).{0,20}(?:してください|します)/i.test(answer.answer)) throw new Error("Unsupported answer");
   if (language === "ko" && !/[가-힣]/.test(answer.answer) || language === "ja" && !/[ぁ-ヿ]/.test(answer.answer)
     || language === "en" && /[가-힣ぁ-ヿ]/.test(answer.answer)) throw new Error("Unexpected language");
