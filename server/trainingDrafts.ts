@@ -22,10 +22,14 @@ export async function inspectDraftStorage() {
     const indexes = rows as unknown as { name: string; position: number; col: string; nonUnique: number; prefix: number | null }[];
     const groups = new Map<string, typeof indexes>();
     for (const row of indexes) groups.set(row.name, [...(groups.get(row.name) ?? []), row]);
-    const ready = Array.from(groups.values()).some(group => group.length === 2
+    const ownerKey = (group: typeof indexes) => group.length === 2
       && group.every(row => Number(row.nonUnique) === 0 && row.prefix === null)
       && group.some(row => Number(row.position) === 1 && row.col === "user_id")
-      && group.some(row => Number(row.position) === 2 && row.col === "scenario_id"));
+      && group.some(row => Number(row.position) === 2 && row.col === "scenario_id");
+    const uniqueKeys = Array.from(groups.values()).filter(group => group.some(row => Number(row.nonUnique) === 0));
+    // Upserts must never collide on a global scenario/choice key belonging to another owner.
+    const ready = uniqueKeys.some(ownerKey) && uniqueKeys.every(group => ownerKey(group)
+      || (group.length === 1 && group[0].col === "id" && group[0].prefix === null));
     return { ready };
   } catch { return { ready: false }; }
 }

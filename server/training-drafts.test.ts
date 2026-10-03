@@ -24,7 +24,8 @@ describe("owner-bound checkpoint persistence", () => {
     await expect(inspectDraftStorage()).resolves.toEqual({ ready: true });
     const statement = new MySqlDialect().sqlToQuery(execute.mock.calls[0][0]);
     expect(statement.sql).toContain("LIMIT 0");
-    for (const invalid of [[], [{ ...index[0], prefix: 2 }, index[1]], index.map(i => ({ ...i, nonUnique: 1 }))]) {
+    for (const invalid of [[], [{ ...index[0], prefix: 2 }, index[1]], index.map(i => ({ ...i, nonUnique: 1 })),
+      [...index, { name: "unsafe_global_scenario", position: 1, col: "scenario_id", nonUnique: 0, prefix: null }]]) {
       execute.mockReset().mockResolvedValueOnce([]).mockResolvedValueOnce([invalid]);
       await expect(inspectDraftStorage()).resolves.toEqual({ ready: false });
     }
