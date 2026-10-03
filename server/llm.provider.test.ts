@@ -52,6 +52,20 @@ describe("server-only NVIDIA explanation provider", () => {
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).model).toBe("gpt-5-mini");
   });
 
+  it("retains strict schema instructions without hosted JSON mode for Lightning", async () => {
+    ENV.nvidiaModel = "nvidia/nemotron-3.5-lightning-30b-a3b";
+    fetchMock.mockResolvedValue(complete('{"answer":"가상 기록을 같은 조건의 정상 참고와 비교합니다.","destination":"none"}'));
+    const schema = { type: "object", additionalProperties: false, required: ["answer", "destination"], properties: { answer: { type: "string" }, destination: { type: "string", enum: ["none"] } } };
+    await invokeLLM({ ...params, messages: [{ role: "system", content: "Concepts only" }, ...params.messages], response_format: { type: "json_schema", json_schema: { name: "qa", strict: true, schema } } });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.response_format).toBeUndefined();
+    expect(body.model).toBe(ENV.nvidiaModel);
+    expect(body.messages[0].content).toContain(JSON.stringify(schema));
+    expect(body.messages[0].content).toContain("Concepts only");
+    expect(body.stream).toBe(false);
+    expect(body.chat_template_kwargs).toEqual({ enable_thinking: false });
+  });
+
   it("fails clearly without a key and does not transmit requests to another provider", async () => {
     Object.assign(ENV, { aiProvider: "nvidia", nvidiaApiKey: "", forgeApiKey: "qa-forge" });
     await expect(invokeLLM(params)).rejects.toThrow("NVIDIA_API_KEY is not configured");
