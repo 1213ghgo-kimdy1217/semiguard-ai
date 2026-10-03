@@ -50,8 +50,13 @@ Trusted guide: ${guide}` },
       if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || typeof content !== "string" || content.length > 5000) return { status: "unavailable", reason: "invalid-response" };
       try { return { status: "ready", provider: "nvidia", model: result.model, ...validateLearningAnswer(content, request.language) }; }
       catch { return { status: "unavailable", reason: "invalid-response" }; }
-    } catch {
-      console.warn("[Learning assistant] Provider unavailable");
+    } catch (error) {
+      // Only classify known local errors; never log upstream bodies or prompts.
+      const message = error instanceof Error ? error.message : "";
+      const http = /^LLM nvidia request failed \(HTTP (\d{3})\)$/.exec(message);
+      const failure = http ? `HTTP ${http[1]}` : error instanceof Error && error.name === "TimeoutError"
+        ? "timeout" : /^LLM returned/.test(message) ? "invalid-response" : "provider-error";
+      console.warn(`[Learning assistant] Provider unavailable (${failure})`);
       return { status: "unavailable", reason: "provider-error" };
     } finally { entry.pending = false; }
   };

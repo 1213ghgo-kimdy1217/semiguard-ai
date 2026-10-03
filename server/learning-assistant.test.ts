@@ -57,4 +57,15 @@ describe("learning assistant", () => {
     expect(validateLearningAnswer(JSON.stringify({ answer: "同じ条件の正常参照と仮想記録を比較しましょう。", destination: "learn" }), "ja").destination).toBe("learn");
     expect(() => validateLearningAnswer(JSON.stringify({ ...answer, extra: true }), "ko")).toThrow();
   });
+  it("logs bounded failure categories without provider bodies, keys or questions", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mocks.invoke.mockRejectedValueOnce(new Error("LLM nvidia request failed (HTTP 401)"));
+    expect(await createLearningAssistant()(7, request)).toEqual({ status: "unavailable", reason: "provider-error" });
+    expect(warning).toHaveBeenLastCalledWith("[Learning assistant] Provider unavailable (HTTP 401)");
+    mocks.invoke.mockRejectedValueOnce(new Error("secret-value user-question upstream-body"));
+    await createLearningAssistant()(7, request);
+    expect(warning).toHaveBeenLastCalledWith("[Learning assistant] Provider unavailable (provider-error)");
+    expect(JSON.stringify(warning.mock.calls)).not.toMatch(/secret-value|user-question|upstream-body/);
+    warning.mockRestore();
+  });
 });
