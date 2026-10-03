@@ -9,3 +9,5 @@
 .coach-reflection .coach-question{color:#e9bf81;line-height:1.65}
 .judgment-coach :is(input,summary):focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
 .judgment-coach ul{padding-left:22px;line-height:1.65}
+.coach-review-actions{flex-wrap:wrap}
+.coach-reflection h3,.et-monitor h2[tabindex="-1"]{scroll-margin-top:110px;outline-offset:5px}

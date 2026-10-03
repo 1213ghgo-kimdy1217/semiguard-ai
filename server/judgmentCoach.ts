@@ -9,6 +9,16 @@ const expectedEvidence = {
   reference: "phase-reference", onset: "pressure-trend", "cross-sensor": "other-signals",
   uncertainty: "cause-unknown", checks: "record-comparison",
 } as const;
+const questionTerms = [
+  [/\bonset(?: time)?\b/gi, "변화 시작 시점", "変化の開始時点"],
+  [/\boscillations?\b/gi, "반복 변동", "繰り返す変動"],
+  [/\bbaselines?\b/gi, "정상 참고", "正常参照"],
+  [/\btrends?\b/gi, "추세", "傾向"],
+] as const;
+function localizeQuestionTerms(question: string, language: "ko" | "en" | "ja") {
+  if (language === "en") return question;
+  return questionTerms.reduce((text, [term, ko, ja]) => text.replace(term, language === "ko" ? ko : ja), question);
+}
 const supportedStrengths = (answer: JudgmentCoachRequest["answer"], scenarioId = "etch-chamber-a-01") => {
   if (scenarioId !== "etch-chamber-a-01") {
     const scenario = getProcessScenario(scenarioId);
@@ -96,7 +106,10 @@ export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["a
   if (feedback.reflections.some(({ question }) => language === "en" ? hangul.test(question) || kana.test(question) || han.test(question)
     : language === "ja" ? hangul.test(question) || !kana.test(question) : !hangul.test(question) || kana.test(question))) throw new Error("Unexpected coaching language");
   return judgmentCoachFeedbackSchema.parse({ strengths: feedback.strengths,
-    reflections: feedback.reflections.map(({ answerSource, ...item }) => ({ ...item, answerQuote: answer[answerSource] })) });
+    // Raw safety/language checks above still apply. Only question terminology changes;
+    // the server-provided original learner quote remains untouched.
+    reflections: feedback.reflections.map(({ answerSource, ...item }) => ({ ...item,
+      question: localizeQuestionTerms(item.question, language), answerQuote: answer[answerSource] })) });
 }
 
 // Per-warm-instance backpressure. Store IDs/timestamps only, never answers/results.
@@ -120,6 +133,7 @@ export function createJudgmentCoach() {
       const result = await invokeLLM({ max_tokens: 1800, temperature: 0.1,
         messages: [{ role: "system", content: `You are SemiGuard's AI Judgment Coach, reviewing a completed synthetic educational exercise, not diagnosing equipment or assessing workplace qualifications.
 Reply only in natural ${request.language === "ko" ? "Korean" : request.language === "ja" ? "Japanese" : "English"}. In Korean/Japanese, translate terms such as onset and oscillation rather than mixing in English. Return a JSON object with 0-2 strength IDs and 2-3 distinct reflections.
+Use these Korean/Japanese terms: onset = 변화 시작 시점 / 変化の開始時点; oscillation = 반복 변동 / 繰り返す変動; baseline = 정상 참고 / 正常参照; trend = 추세 / 傾向. Preserve signal abbreviations such as RF. Do not copy English terminology from a learner's answer into Korean/Japanese questions.
 Each reflection has dimension, evidenceId, answerSource and one Socratic question. Match these references exactly: ${JSON.stringify(expectedEvidence)}.
 answerSource must be facts or checks, selecting the learnerAnswer field your question addresses. Do not write, copy or translate a quotation; the server displays the original field. Questions should address that actual field using friendly, respectful language; do not accuse the learner of an omission or wrong comparison they did not make. When uncertain, ask a conditional question. If they explicitly propose same-time comparison, do not claim they propose different times.
 Each question must be a single question sentence with no factual preface. Do not affirm the learner's numerical claims as confirmed; ask what existing virtual records support them. The original answer is already shown separately, so do not paraphrase it as a factual conclusion.

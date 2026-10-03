@@ -109,6 +109,14 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const [signalId, setSignalId] = useState(scenario.signals[0].id);
   const [inspectionSelection, setInspectionSelection] = useState<number | null>(null);
   const [reviewTime, setReviewTime] = useState(scenario.duration);
+  const [coachReviewActive, setCoachReviewActive] = useState(false);
+  const reviewHeading = useRef<HTMLHeadingElement>(null);
+  const coachReturn = useRef<(() => void) | null>(null);
+  const reviewCoachPoint = (time: number, returnToQuestion: () => void) => {
+    if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
+    coachReturn.current = returnToQuestion; setReviewTime(time); setCoachReviewActive(true);
+    reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
+  };
   const [notice, setNotice] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const heading = useRef<HTMLHeadingElement>(null);
@@ -131,6 +139,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   useEffect(() => {
     document.title = `${localize(scenario.title, language)} — SemiGuard`;
   }, [scenario.title, language]);
+  useEffect(() => { coachReturn.current = null; setCoachReviewActive(false); }, [language, attempt.saveKey]);
   useEffect(() => { heading.current?.focus(); heading.current?.scrollIntoView({ block: "start" }); }, [stage]);
   useEffect(() => {
     try { sessionStorage.setItem(storageKey, JSON.stringify(attempt)); }
@@ -242,7 +251,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
       </> : null}
 
       {stage === "observe" || stage === "review" ? <section className="et-monitor">
-        <div className="et-workhead"><div><p className="et-eyebrow">{stage === "review" ? "TIMELINE REVIEW" : "VIRTUAL RECORD OBSERVATION"}</p><h2>{localize(selectedSignal.name, language)}</h2></div>
+        <div className="et-workhead"><div><p className="et-eyebrow">{stage === "review" ? "TIMELINE REVIEW" : "VIRTUAL RECORD OBSERVATION"}</p><h2 ref={reviewHeading} tabIndex={stage === "review" ? -1 : undefined}>{localize(selectedSignal.name, language)}</h2></div>
           <div className="et-clock"><strong>{clock(shownTime)}</strong><span>{l("가상 경과", "Virtual elapsed", "仮想経過")} / {clock(scenario.duration)}</span></div></div>
         <div className="et-sensors pt-sensors">{scenario.signals.map(signal => {
           const sample = processSample(scenario, signal.id, shownTime);
@@ -270,6 +279,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
           </div>
         </> : <div className="et-marker-picker"><label htmlFor="process-review-time">{l("복기할 시점", "Review time", "振り返る時点")} · {clock(reviewTime)}</label><input id="process-review-time" type="range" min={0} max={scenario.duration} step={1} value={reviewTime} onChange={event => setReviewTime(Number(event.target.value))} /></div>}
         <ProcessSnapshot scenario={scenario} time={shownTime} language={language} />
+        {stage === "review" && coachReviewActive ? <Button variant="outline" onClick={() => coachReturn.current?.()}>{l("읽던 AI 질문으로 돌아가기", "Return to the AI question", "読んでいたAIの問いに戻る")}</Button> : null}
         {stage === "observe" ? <div className="et-actions"><Button onClick={() => move("brief")}><ArrowLeft size={16} />{l("상황 다시 보기", "Revisit briefing", "状況を再確認")}</Button><Button className="et-primary" onClick={() => move("decision")}>{l("내 판단 작성하기", "Write your reasoning", "自分の判断を記録")} <ArrowRight size={16} /></Button></div> : null}
       </section> : null}
 
@@ -326,7 +336,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
             : saveStatus === "saving" ? <p role="status">{l("선택형 결과 저장 중…", "Saving choice results…", "選択結果を保存中…")}</p>
             : <><p className={saveStatus === "failed" ? "et-alert" : "et-caption"}>{saveStatus === "failed" ? l("계정 저장에 실패했습니다. 답안과 복기는 그대로 유지되며 같은 시도의 저장을 다시 요청할 수 있습니다.", "Account saving failed. Your answer and review remain available; retry saves the same attempt.", "アカウント保存に失敗しました。回答と振り返りは維持され、同じ試行の保存を再依頼できます。") : l("복원된 답안의 계정 저장 여부는 아직 확인하지 않았습니다. 저장 버튼은 동일한 시도를 중복 생성하지 않습니다.", "The account-save status of this restored answer has not been checked. Saving does not duplicate this attempt.", "復元した回答のアカウント保存状態はまだ確認していません。保存ボタンは同じ試行を重複作成しません。")}</p><Button onClick={() => void saveCompleted(attempt)}>{l("이 시도 저장 다시 요청", "Save this attempt again", "この試行の保存を再依頼")}</Button></>}
         </section>
-        <ScenarioJudgmentCoach key={`${scenario.id}:${userId ?? "guest"}:${attempt.saveKey}:${language}`} processAttempt={attempt} scenario={scenario} language={language} userId={userId} />
+        <ScenarioJudgmentCoach key={`${scenario.id}:${userId ?? "guest"}:${attempt.saveKey}:${language}`} processAttempt={attempt} scenario={scenario} language={language} userId={userId} onReviewPoint={reviewCoachPoint} />
         <section className="et-panel et-next"><h2>{l("다음 판단으로 연결합니다.", "Continue to the next reasoning task.", "次の判断につなげます。")}</h2><p>{l("공정은 순서대로 배울 수 있지만 어느 훈련이든 직접 선택할 수 있습니다. 모든 단계가 이상 신호를 포함하는 것은 아닙니다.", "Follow the learning order or choose any exercise directly. Not every stage contains an anomaly.", "工程を順に学ぶことも、どの訓練でも直接選ぶこともできます。すべての段階に異常があるわけではありません。")}</p>
           <div className="et-actions">{nextScenario ? <Link className="et-linkbutton" href={scenarioHref(nextScenario)}>{l("다음 공정", "Next process", "次の工程")} · {localize(nextScenario.title, language)} <ArrowRight size={16} /></Link> : <Link className="et-linkbutton" href="/live">{l("8대 공정 이후 자유 분석으로", "Continue with free analysis", "8大工程の後は自由分析へ")} <ArrowRight size={16} /></Link>}
             <Link className="et-inline-link" href="/training">{l("다른 학습·연습 선택", "Choose another exercise", "別の学習・練習を選ぶ")}</Link><Button onClick={reset}>{l("이 공정 새로 연습", "Practise this process again", "この工程をもう一度練習")}</Button>
