@@ -9,8 +9,8 @@ import "./training-checkpoint.css";
 export function AccountPracticeBenefits({ language }: { language: ProductLanguage }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   return <section className="et-panel et-account-benefits"><p className="et-eyebrow">GUEST PREVIEW / PERSONAL WORKSPACE</p>
-    <h2>{l("체험은 자유롭게, 내 학습은 계정에.", "Explore freely. Keep your learning in your account.", "自由に体験し、自分の学習はアカウントに。")}</h2>
-    <p>{l("게스트도 8개 공정 기록과 자유 관찰을 체험할 수 있습니다. 로그인하면 제출한 선택형 결과·타임라인을 다시 보고, 중간 저장한 재생 시점과 선택 답안부터 다른 기기에서 이어갈 수 있습니다. 원하는 결과만 읽기 전용 링크로 공유하세요.", "Guests can explore eight process records and free observation. Sign in to revisit submitted choices and timelines, resume an explicitly saved checkpoint on another device, and share selected results through read-only links.", "ゲストも8工程の記録と自由観察を体験できます。ログインすると提出した選択式の結果とタイムラインを見直し、保存した再生時点・選択回答から別の端末で再開し、選んだ結果を閲覧専用リンクで共有できます。")}</p>
+    <h2>{l("로그인하고, 내 판단을 이어가세요.", "Sign in. Keep building your reasoning.", "ログインして、自分の判断を続けましょう。")}</h2>
+    <p>{l("로그인 전에는 장비 소개와 샘플 관찰만 제공합니다. 로그인하면 제출한 선택형 결과·타임라인을 다시 보고, 중간 저장한 재생 시점과 선택 답안부터 다른 기기에서 이어갈 수 있습니다. 원하는 결과만 읽기 전용 링크로 공유하세요.", "Guests can view equipment introductions and sample observations only. Sign in to revisit submitted choices and timelines, resume an explicitly saved checkpoint on another device, and share selected results through read-only links.", "ログイン前は装置紹介とサンプル観察のみを提供します。ログインすると提出した選択式の結果とタイムラインを見直し、保存した再生時点・選択回答から別の端末で再開し、選んだ結果を閲覧専用リンクで共有できます。")}</p>
     <p className="et-caption">{l("계정 중간 저장은 저장소 준비 확인 후, 버튼을 누를 때만 이뤄집니다. 서술형 원문은 계정에 저장하지 않으며, 다른 기기에서는 다시 작성해야 합니다.", "Account checkpoints require available storage and are saved only when requested. Written answers are not stored in your account; re-enter them on a different device.", "アカウントの中間保存は保存先を確認してから、ボタンを押したときだけ行います。記述回答は保存しないため、別の端末では再入力が必要です。")}</p>
   </section>;
 }

@@ -21,7 +21,7 @@ const SIGNUP_COPY = {
     pathLabel: "LEARNING PATH",
     path: ["공정 맥락 학습", "시나리오 판단 연습", "가상 신호 자유 관찰"],
     scope: "교육용 가상 센서 데이터 · 실제 장비 연결·제어 없음",
-    trainingLink: "가입 없이 연습 둘러보기",
+    trainingLink: "가입 없이 장비·샘플 미리보기",
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "계정 만들기",
     formDescription: "대시보드를 이용할 계정을 등록하세요.",
@@ -68,7 +68,7 @@ const SIGNUP_COPY = {
     pathLabel: "LEARNING PATH",
     path: ["Learn process context", "Practice scenario reasoning", "Observe synthetic signals"],
     scope: "Synthetic sensor data for learning · no real-equipment connection or control",
-    trainingLink: "Explore practice without signing up",
+    trainingLink: "Preview equipment and sample signals",
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "Create an account",
     formDescription: "Register an account for the dashboard.",
@@ -115,7 +115,7 @@ const SIGNUP_COPY = {
     pathLabel: "LEARNING PATH",
     path: ["工程の背景を学ぶ", "シナリオで判断を練習", "仮想信号を自由に観察"],
     scope: "学習用の仮想センサーデータ・実際の装置への接続や制御はありません",
-    trainingLink: "登録せずに練習を見る",
+    trainingLink: "登録せずに装置・サンプルを見る",
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "アカウントを作成",
     formDescription: "ダッシュボード用のアカウントを登録してください。",
@@ -349,7 +349,7 @@ export function Signup() {
             <ol>{copy.path.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span>{step}</li>)}</ol>
           </div>
           <p className="sg-signup-scope">{copy.scope}</p>
-          <button className="sg-signup-explore focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" type="button" onClick={() => setLocation("/training")}>{copy.trainingLink} <span aria-hidden="true">↗</span></button>
+          <button className="sg-signup-explore focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" type="button" onClick={() => setLocation("/preview")}>{copy.trainingLink} <span aria-hidden="true">↗</span></button>
         </section>
         <section className="sg-signup-card" aria-labelledby="signup-form-title">
           <div className="sg-signup-card-heading">

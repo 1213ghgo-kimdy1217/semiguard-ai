@@ -1,0 +1,31 @@
+.tp-intro{max-width:900px;margin:36px 0 32px}
+.tp-intro .et-lead{max-width:76ch}
+.tp-observation{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px;align-items:start;margin:28px 0}
+.tp-equipment-map{display:grid;gap:12px;margin:28px 0}
+.tp-equipment-map span{display:block;border-left:2px solid #b68b51;background:#14201a;padding:16px 20px;color:#edf0eb}
+.tp-equipment-map small{display:block;color:#bac9bd;margin-top:4px}
+.tp-signals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:22px 0}
+.tp-signals button{min-height:44px;padding:8px 12px;border:1px solid #526055;background:#14201a;color:#c8d4ca;border-radius:6px;font:inherit;cursor:pointer}
+.tp-signals button[aria-pressed=true]{border-color:#e4aa55;color:#f0c78d;background:#2a3026}
+.tp-reading{display:flex;flex-direction:column;gap:8px;font-size:13px;color:#b4c1b6}
+.tp-reading strong{display:flex;justify-content:space-between;gap:16px;align-items:center;color:#edf0eb;font-size:16px}
+.tp-reading b{font-size:30px;font-variant-numeric:tabular-nums;color:#efbd74}
+.tp-chart{margin:22px 0 18px}
+.tp-chart svg{display:block;width:100%;height:auto}
+.tp-chart figcaption{font-size:12px;color:#b4c1b6;line-height:1.7;margin-top:8px}
+.tp-time{display:block;font-size:14px;color:#d0ddd2}
+.tp-time output{float:right;font-variant-numeric:tabular-nums}
+.tp-time input{display:block;width:100%;min-height:44px;accent-color:#e4aa55}
+.tp-table{margin-top:20px;overflow:auto}
+.tp-table table{width:100%;font-size:13px;text-align:left;border-collapse:collapse}
+.tp-table caption{text-align:left;color:#b4c1b6;margin-bottom:10px}
+.tp-table th,.tp-table td{padding:10px 8px;border-bottom:1px solid #3d4e42}
+.tp-table td{font-variant-numeric:tabular-nums}
+.tp-account{margin:32px 0}
+.tp-benefits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:24px 0}
+.tp-benefits article{border-top:1px solid #526055;padding-top:12px;min-width:0}
+.tp-benefits h3{font-size:16px;font-weight:600;line-height:1.6}
+.tp-benefits p{font-size:14px;color:#b4c1b6}
+.tp-app .et-actions a:not(.et-linkbutton){color:#e4c69b}
+.tp-app h1,.tp-app h2,.tp-app h3,.tp-app p{overflow-wrap:anywhere}
+@media(max-width:760px){.tp-observation,.tp-benefits{grid-template-columns:minmax(0,1fr)}.tp-intro{margin-top:24px}.tp-time output{float:none;display:block}.tp-benefits{gap:14px}.tp-signals{gap:8px}}

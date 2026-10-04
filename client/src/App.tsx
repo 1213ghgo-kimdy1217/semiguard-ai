@@ -4,6 +4,8 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LearningAssistant from "./components/LearningAssistant";
+import PracticeAccess from "./components/PracticeAccess";
+import TrainingPreview from "./pages/TrainingPreview";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Login } from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -271,34 +273,37 @@ function OperationsForCurrentUser() {
 function Router() {
   return (
     <Switch>
+      <Route path={"/preview"}>
+        <TrainingPreview />
+      </Route>
       <Route path={"/live"}>
-        <Suspense fallback={<TrainingModuleLoading />}><EtchLive /></Suspense>
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><EtchLive /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/learn"}>
         <Suspense fallback={<TrainingModuleLoading />}><LearningHub /></Suspense>
       </Route>
       <Route path={"/training/history/:attemptId"}>
-        {params => <Suspense fallback={<TrainingModuleLoading />}><TrainingHistory attemptId={params.attemptId} /></Suspense>}
+        {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><TrainingHistory attemptId={params.attemptId} /></Suspense></PracticeAccess>}
       </Route>
       <Route path={"/training/shared"}>
         <Suspense fallback={<TrainingModuleLoading />}><SharedTraining /></Suspense>
       </Route>
       <Route path={"/training/process/:processId"}>
-        {params => <Suspense fallback={<TrainingModuleLoading />}><ProcessTraining processId={params.processId} /></Suspense>}
+        {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><ProcessTraining processId={params.processId} /></Suspense></PracticeAccess>}
       </Route>
       <Route path={"/training/etch"}>
-        <Suspense fallback={<TrainingModuleLoading />}><Training key="etch-direct" entry="brief" /></Suspense>
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><Training key="etch-direct" entry="brief" /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/training"}>
-        <Suspense fallback={<TrainingModuleLoading />}><Training /></Suspense>
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><Training /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/signup"} component={Signup} />
       <Route path={"/login"} component={Login} />
       <Route path={"/welcome"} component={Welcome} />
       <Route path={"/demo"}>
-        <Suspense fallback={<DashboardModuleLoading />}>
+        <PracticeAccess><Suspense fallback={<DashboardModuleLoading />}>
           <JudgeDemo />
-        </Suspense>
+        </Suspense></PracticeAccess>
       </Route>
       <Route path={"/dashboard/simulation"}>
         <ProtectedRoute>
