@@ -4,6 +4,7 @@ import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
 import { trainingDraftSchema, type TrainingDraft } from "../../../shared/trainingDraft";
 import { getProcessScenario, scenarioHref } from "../../../shared/processScenarios";
+import "./training-checkpoint.css";
 
 export function AccountPracticeBenefits({ language }: { language: ProductLanguage }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
@@ -64,8 +65,29 @@ export function SavedCheckpointList({ userId, language, onEtch }: { userId: numb
   const query = trpc.training.drafts.useQuery(undefined, { enabled: Boolean(userId) && readiness.data?.ready === true, retry: false });
   const rows = query.data?.userId === userId ? query.data.drafts : [];
   if (!userId || readiness.data?.ready !== true) return null;
-  return <section className="et-panel"><h2>{l("마지막으로 중간 저장한 연습", "Your saved checkpoints", "中間保存した練習")}</h2>
+  return <section className="et-panel et-saved-checkpoints" aria-labelledby="saved-checkpoints-heading">
+    <p className="et-eyebrow">SAVED CHECKPOINTS / CONTINUE LEARNING</p>
+    <h2 id="saved-checkpoints-heading">{l("마지막으로 중간 저장한 연습", "Your saved checkpoints", "中間保存した練習")}</h2>
     <p className="et-caption">{l("모듈을 열고 ‘저장본 불러오기’를 선택하세요. 제출 완료 기록과 별개이며, 마지막으로 직접 저장한 상태입니다.", "Open a module and select Load checkpoint. These are your last explicit saves, separate from submitted results.", "モジュールを開き「保存内容を読み込む」を選択してください。提出済みの結果とは別の、最後に保存した状態です。")}</p>
-    {query.isLoading ? <p role="status">{l("불러오는 중…", "Loading…", "読み込み中…")}</p> : query.isError ? <p role="status">{l("중간 저장 목록을 사용할 수 없습니다.", "Checkpoint list is unavailable.", "中間保存の一覧を利用できません。")}</p> : !rows?.length ? <p>{l("아직 계정에 중간 저장한 연습이 없습니다.", "No account checkpoints yet.", "中間保存した練習はまだありません。")}</p> : <ul>{rows.map(row => { const scenario = getProcessScenario(row.scenarioId); return scenario ? <li key={row.scenarioId}>{row.scenarioId === "etch-chamber-a-01" ? <button type="button" className="et-linkbutton" onClick={onEtch}>{l(...scenario.title)}</button> : <Link className="et-linkbutton" href={scenarioHref(scenario)}>{l(...scenario.title)}</Link>} · {row.elapsed}{l("초", "s", "秒")} · {new Date(row.updatedAt).toLocaleString(language)}</li> : null; })}</ul>}
+    {query.isLoading ? <p role="status">{l("불러오는 중…", "Loading…", "読み込み中…")}</p> : query.isError ? <p role="status">{l("중간 저장 목록을 사용할 수 없습니다.", "Checkpoint list is unavailable.", "中間保存の一覧を利用できません。")}</p> : !rows?.length ? <p>{l("아직 계정에 중간 저장한 연습이 없습니다.", "No account checkpoints yet.", "中間保存した練習はまだありません。")}</p> : <ul className="et-checkpoint-list">{rows.map(row => {
+      const scenario = getProcessScenario(row.scenarioId);
+      if (!scenario) return null;
+      const title = l(...scenario.title);
+      const action = l("연습 열기", "Open exercise", "練習を開く");
+      const savedAt = new Date(row.updatedAt);
+      return <li className="et-checkpoint-card" key={row.scenarioId}>
+        <span className="et-checkpoint-order" aria-label={l(`공정 ${scenario.order}`, `Process ${scenario.order}`, `工程 ${scenario.order}`)}>{String(scenario.order).padStart(2, "0")}</span>
+        <div className="et-checkpoint-info">
+          <h3>{title}</h3>
+          <div className="et-checkpoint-meta">
+            <span className="et-checkpoint-position">{l(`${row.elapsed}초에서 저장`, `Saved at ${row.elapsed}s`, `${row.elapsed}秒で保存`)}</span>
+            <span>{l("저장 시각", "Saved", "保存日時")} <time dateTime={savedAt.toISOString()}>{savedAt.toLocaleString(language)}</time></span>
+          </div>
+        </div>
+        {row.scenarioId === "etch-chamber-a-01"
+          ? <button type="button" className="et-linkbutton et-checkpoint-open" aria-label={`${title} · ${action}`} onClick={onEtch}>{action} <span aria-hidden="true">→</span></button>
+          : <Link className="et-linkbutton et-checkpoint-open" aria-label={`${title} · ${action}`} href={scenarioHref(scenario)}>{action} <span aria-hidden="true">→</span></Link>}
+      </li>;
+    })}</ul>}
   </section>;
 }
