@@ -1,2 +1,26 @@
 .et-app .et-actions.et-review-filters button[aria-pressed="true"]{background:#e4aa55;color:#17201b;border-color:#e4aa55}
 .et-review-filters button{border:1px solid #58695b}
+.et-app .et-history .et-record-list{display:grid;gap:16px;list-style:none;margin:24px 0 0;padding:0}
+.et-app .et-history .et-record-card{padding:22px;border:1px solid #3c4d42;border-radius:10px;background:#14201a}
+.et-record-heading{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.et-record-order{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border:1px solid #556453;border-radius:50%;color:#e4aa55;font:15px ui-monospace,monospace}
+.et-record-title{flex:1 1 260px;min-width:0}
+.et-app .et-history .et-record-title h3{margin:0;font-size:17px;font-weight:600;line-height:1.6;color:#edf0eb;overflow-wrap:anywhere}
+.et-app .et-history .et-record-time{margin:8px 0 0;font-size:12px;line-height:1.6;color:#b4c1b6;overflow-wrap:anywhere}
+.et-record-time time{font-variant-numeric:tabular-nums}
+.et-record-result{border:1px solid #52624c;border-radius:5px;padding:4px 9px;color:#ead1a4;background:#293326;font-size:13px;line-height:1.6;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.et-record-observation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:22px 0;padding:16px 0;border-top:1px solid #3c4d42;border-bottom:1px solid #3c4d42}
+.et-record-observation dt,.et-record-criteria dt{font-size:12px;line-height:1.6;color:#b4c1b6;overflow-wrap:anywhere}
+.et-record-observation dd{margin:6px 0 0;color:#edf0eb;font-size:15px;line-height:1.6;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.et-record-criteria{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0}
+.et-record-criteria>div{padding:12px;border:1px solid #405145;border-radius:6px;min-width:0;background:#18271e}
+.et-record-criteria dd{margin:6px 0 0;font-size:13px;line-height:1.6;color:#bed6c5;overflow-wrap:anywhere}
+.et-record-criteria [data-result="revisit"]{border-color:#9a794a;background:#2b3024}
+.et-record-criteria [data-result="revisit"] dd{color:#f1c17c}
+.et-record-criteria [data-result="unavailable"] dd{color:#c3cac4}
+.et-record-actions{display:flex;justify-content:flex-end;margin-top:20px}
+.et-app .et-history .et-record-open{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:44px;padding:10px 16px;border:1px solid #ba9159;border-radius:6px;background:transparent;color:#efbc70;font-size:14px;line-height:1.5;text-decoration:none;overflow-wrap:anywhere}
+.et-app .et-history .et-record-open:hover{background:#2b3529;border-color:#efbc70;color:#f4ce99}
+.et-app .et-history .et-record-open:focus-visible{outline:3px solid #e4aa55;outline-offset:4px}
+@media(max-width:760px){.et-record-criteria{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.et-app .et-history .et-record-card{padding:18px}.et-record-heading{gap:12px}.et-record-order{flex-basis:34px;width:34px;height:34px;font-size:13px}.et-record-title{flex-basis:calc(100% - 46px)}.et-record-result{margin-left:46px}.et-record-observation{grid-template-columns:minmax(0,1fr);gap:14px}.et-app .et-history .et-record-open{width:100%}}
