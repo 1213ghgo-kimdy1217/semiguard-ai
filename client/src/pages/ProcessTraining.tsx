@@ -228,9 +228,9 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
       <p className="et-caption">{l("이 과정은 학습 순서입니다. 실제 반도체 제조에서는 공정이 여러 번 반복됩니다.", "This is a learning sequence. Real semiconductor manufacturing repeats processes many times.", "これは学習の順序です。実際の半導体製造では工程を何度も繰り返します。")}</p>
       {storageWarning ? <p className="et-alert" role="status">{l("이 브라우저에서 임시 저장을 사용할 수 없습니다. 새로고침하면 미제출 답안이 사라질 수 있습니다.", "Temporary browser storage is unavailable. Refreshing may erase this draft.", "このブラウザーでは一時保存を使えません。更新すると未提出の回答が消える場合があります。")}</p> : null}
       <p className="et-notice" role="status" aria-live="polite">{notice}</p>
-      {stage !== "review" && !attempt.submitted ? <TrainingCheckpoint userId={userId} language={language} scenarioId={scenario.id}
-        capture={() => toTrainingDraft(scenario.id, attempt, stage)}
-        restore={draft => { setRunning(false); setAttempt(restoreTrainingDraft(draft)); setInspectionSelection(null); setSaveStatus("idle"); move(draft.stage); }} /> : null}
+      <TrainingCheckpoint userId={userId} language={language} scenarioId={scenario.id} resumeOnly={attempt.submitted} disabled={saveStatus === "saving"}
+        capture={() => toTrainingDraft(scenario.id, attempt, stage as "brief" | "observe" | "decision")}
+        restore={draft => { currentSaveKey.current = undefined; setRunning(false); setAttempt(restoreTrainingDraft(draft)); setInspectionSelection(null); setSaveStatus("idle"); move(draft.stage); }} />
 
       {stage === "brief" ? <>
         <div className="et-columns"><section className="et-panel">
