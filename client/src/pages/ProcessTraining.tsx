@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
+import { TrainingRetry } from "../components/TrainingRetry";
 import ProcessEquipmentReference from "../components/ProcessEquipmentReference";
 import { toTrainingDraft, restoreTrainingDraft } from "../../../shared/trainingDraft";
 import { Link } from "wouter";
@@ -105,6 +106,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const [storageWarning, setStorageWarning] = useState(initial.warning);
   const [stage, setStage] = useState<Stage>(initial.attempt.submitted ? "review" : initial.attempt.elapsed > 0 ? "observe" : "brief");
   const [running, setRunning] = useState(false);
+  const [retryRevision, setRetryRevision] = useState(0);
   const [speed, setSpeed] = useState<1 | 3>(1);
   const [signalId, setSignalId] = useState(scenario.signals[0].id);
   const [inspectionSelection, setInspectionSelection] = useState<number | null>(null);
@@ -199,9 +201,10 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
     if (userId) void saveCompleted(completed);
   };
   const reset = () => {
+    if (saveStatus === "saving") return;
     currentSaveKey.current = undefined;
     setAttempt(emptyProcessAttempt(scenario)); setRunning(false); setSpeed(1); setInspectionSelection(null);
-    setSignalId(scenario.signals[0].id); setReviewTime(scenario.duration); setSaveStatus("idle"); move("brief");
+    setSignalId(scenario.signals[0].id); setReviewTime(scenario.duration); setSaveStatus("idle"); move("brief"); heading.current?.focus();
   };
   const choicesReady = validProcessAnswer(scenario, answer);
   const matched = attempt.submitted ? processCriteria(scenario, answer) : null;
@@ -230,7 +233,11 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
       <p className="et-notice" role="status" aria-live="polite">{notice}</p>
       <TrainingCheckpoint userId={userId} language={language} scenarioId={scenario.id} resumeOnly={attempt.submitted} disabled={saveStatus === "saving"}
         capture={() => toTrainingDraft(scenario.id, attempt, stage as "brief" | "observe" | "decision")}
-        restore={draft => { currentSaveKey.current = undefined; setRunning(false); setAttempt(restoreTrainingDraft(draft)); setInspectionSelection(null); setSaveStatus("idle"); move(draft.stage); }} />
+        restore={draft => { currentSaveKey.current = undefined; setRetryRevision(revision => revision + 1); setRunning(false); setAttempt(restoreTrainingDraft(draft)); setInspectionSelection(null); setSaveStatus("idle"); move(draft.stage); }} />
+
+      <TrainingRetry key={`${storageKey}:${attempt.saveKey ?? "draft"}:${retryRevision}`} language={language}
+        hasWork={attempt.elapsed > 0 || attempt.marker !== null || attempt.submitted || Object.values(answer).some(value => value.trim().length > 0)}
+        disabled={saveStatus === "saving"} onPause={() => setRunning(false)} onRestart={reset} />
 
       {stage === "brief" ? <>
         <div className="et-columns"><section className="et-panel">
@@ -339,7 +346,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
         <ScenarioJudgmentCoach key={`${scenario.id}:${userId ?? "guest"}:${attempt.saveKey}:${language}`} processAttempt={attempt} scenario={scenario} language={language} userId={userId} onReviewPoint={reviewCoachPoint} />
         <section className="et-panel et-next"><h2>{l("다음 판단으로 연결합니다.", "Continue to the next reasoning task.", "次の判断につなげます。")}</h2><p>{l("공정은 순서대로 배울 수 있지만 어느 훈련이든 직접 선택할 수 있습니다. 모든 단계가 이상 신호를 포함하는 것은 아닙니다.", "Follow the learning order or choose any exercise directly. Not every stage contains an anomaly.", "工程を順に学ぶことも、どの訓練でも直接選ぶこともできます。すべての段階に異常があるわけではありません。")}</p>
           <div className="et-actions">{nextScenario ? <Link className="et-linkbutton" href={scenarioHref(nextScenario)}>{l("다음 공정", "Next process", "次の工程")} · {localize(nextScenario.title, language)} <ArrowRight size={16} /></Link> : <Link className="et-linkbutton" href="/live">{l("8대 공정 이후 자유 분석으로", "Continue with free analysis", "8大工程の後は自由分析へ")} <ArrowRight size={16} /></Link>}
-            <Link className="et-inline-link" href="/training">{l("다른 학습·연습 선택", "Choose another exercise", "別の学習・練習を選ぶ")}</Link><Button onClick={reset}>{l("이 공정 새로 연습", "Practise this process again", "この工程をもう一度練習")}</Button>
+            <Link className="et-inline-link" href="/training">{l("다른 학습·연습 선택", "Choose another exercise", "別の学習・練習を選ぶ")}</Link>
           </div>
         </section>
       </> : null}

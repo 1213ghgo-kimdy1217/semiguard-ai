@@ -286,6 +286,9 @@ function Router() {
       <Route path={"/training/process/:processId"}>
         {params => <Suspense fallback={<TrainingModuleLoading />}><ProcessTraining processId={params.processId} /></Suspense>}
       </Route>
+      <Route path={"/training/etch"}>
+        <Suspense fallback={<TrainingModuleLoading />}><Training key="etch-direct" entry="brief" /></Suspense>
+      </Route>
       <Route path={"/training"}>
         <Suspense fallback={<TrainingModuleLoading />}><Training /></Suspense>
       </Route>
