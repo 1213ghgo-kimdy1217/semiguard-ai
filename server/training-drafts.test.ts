@@ -3,6 +3,7 @@ import { MySqlDialect } from "drizzle-orm/mysql-core";
 import { getTrainingDrafts, inspectDraftStorage, saveTrainingDraft } from "./trainingDrafts";
 import { trainingDrafts } from "../drizzle/schema";
 import { appRouter } from "./routers";
+import { processScenarios } from "../shared/processScenarios";
 const mock = vi.hoisted(() => ({ getDb: vi.fn() }));
 vi.mock("./db", () => mock);
 const draft = { version: 1 as const, scenarioId: "etch-chamber-a-01", elapsed: 70, marker: null,
@@ -57,5 +58,24 @@ describe("owner-bound checkpoint persistence", () => {
     mock.getDb.mockRejectedValue(new Error("connection-password-example"));
     await expect(inspectDraftStorage()).resolves.toEqual({ ready: false });
     await expect(saveTrainingDraft(41, draft)).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+  });
+  it.each(processScenarios)("persists and returns an early decision checkpoint for $processId under its session owner", async scenario => {
+    const early = { ...draft, scenarioId: scenario.id, elapsed: 10, marker: 5, stage: "decision" as const,
+      signal: scenario.signals[0].id, onset: "5", comparison: scenario.processId === "etch" ? "same-phase" as const : "same-condition" as const };
+    const execute = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([index]);
+    const update = vi.fn().mockResolvedValue(undefined);
+    const values = vi.fn().mockReturnValue({ onDuplicateKeyUpdate: update });
+    const { version: _version, ...choices } = early;
+    const row = { ...choices, updatedAt: new Date("2026-10-04T00:00:00Z") };
+    const limit = vi.fn().mockResolvedValue([row]);
+    const where = vi.fn().mockReturnValue({ orderBy: vi.fn().mockReturnValue({ limit }) });
+    mock.getDb.mockResolvedValue({ execute, insert: vi.fn().mockReturnValue({ values }),
+      select: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where }) }) });
+    const caller = appRouter.createCaller({ user: { id: 41 }, req: {}, res: {} } as any);
+    await expect(caller.training.saveDraft(early)).resolves.toEqual({ saved: true });
+    expect(values).toHaveBeenCalledWith({ userId: 41, ...choices });
+    expect(update.mock.calls[0][0].set).not.toHaveProperty("userId");
+    await expect(caller.training.drafts()).resolves.toEqual({ userId: 41, drafts: [{ ...early, updatedAt: row.updatedAt }] });
+    expect(new MySqlDialect().sqlToQuery(where.mock.calls[0][0]).params).toEqual([41]);
   });
 });

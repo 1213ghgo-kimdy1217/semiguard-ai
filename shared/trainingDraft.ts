@@ -15,8 +15,8 @@ export const trainingDraftSchema = z.object({
   if (!scenario) return;
   const etch = scenario.processId === "etch";
   const signals = etch ? etchSignals : scenario.signals;
+  // Learners can write before observation ends. A decision checkpoint is not a submission.
   const invalid = draft.elapsed > scenario.duration || (draft.marker !== null && draft.marker > draft.elapsed)
-    || (draft.stage === "decision" && draft.elapsed !== scenario.duration)
     || (draft.signal !== "" && !(signals.some(s => s.id === draft.signal) || (!etch && draft.signal === "none")))
     || (draft.onset !== "" && !(draft.onset === "none" && draft.signal === "none")
       && (!/^(0|[1-9]\d{0,2})$/.test(draft.onset) || Number(draft.onset) > draft.elapsed))
