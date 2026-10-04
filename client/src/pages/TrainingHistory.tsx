@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { trainingReplay } from "../../../shared/trainingReplay";
 import { Link } from "wouter";
 import { Line, LineChart, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { getProcessScenario, processSample } from "../../../shared/processScenarios";
@@ -19,14 +20,16 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
   const query = trpc.training.detail.useQuery({ id: validId ? id : 1 }, { enabled: validId && Boolean(auth.data), retry: false });
   const record = query.data?.userId === auth.data?.id ? query.data?.attempt : null;
   const scenario = record ? getProcessScenario(record.scenarioId) : undefined;
-  const [time, setTime] = useState(0);
+  const replay = record ? trainingReplay(record) : undefined;
+  const [comparisonTime, setComparisonTime] = useState<number | null>(null);
   const [selected, setSelected] = useState("");
-  useEffect(() => { setTime(0); setSelected(""); }, [attemptId, auth.data?.id]);
+  useEffect(() => { setComparisonTime(null); setSelected(""); }, [attemptId, auth.data?.id]);
   useEffect(() => { document.title = l("SemiGuard — 내 판단 기록", "SemiGuard — My reasoning record", "SemiGuard — 自分の判断記録"); }, [language]);
   const isEtch = scenario?.processId === "etch";
   const duration = isEtch ? 180 : scenario?.duration ?? 90;
   const signals = scenario ? isEtch ? etchSignals.map(s => ({ id: s.id, name: etchSignalName(language, s.id) })) : scenario.signals.map(s => ({ id: s.id, name: l(...s.name) })) : [];
-  const signalId = signals.some(s => s.id === selected) ? selected : signals[0]?.id;
+  const signalId = signals.some(s => s.id === selected) ? selected : replay?.signalId ?? signals[0]?.id;
+  const time = comparisonTime ?? replay?.targets[0]?.time ?? 0;
   const sample = (signal: string, at: number) => isEtch ? etchSample(signal as typeof etchSignals[number]["id"], at) : processSample(scenario!, signal, at);
   const clock = (value: number) => `${Math.floor(value / 60).toString().padStart(2, "0")}:${(value % 60).toString().padStart(2, "0")}`;
   const chart = scenario && signalId ? Array.from({ length: duration + 1 }, (_, at) => sample(signalId, at)) : [];
@@ -49,10 +52,14 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
         </section><section className="et-panel"><h2>{l("기록의 타임라인 다시 보기", "Replay the record timeline", "記録のタイムラインを振り返る")}</h2>
           <label>{l("관측 항목", "Observation", "観測項目")} <select value={signalId} onChange={e => setSelected(e.target.value)}>{signals.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
           <div role="img" aria-label={l("가상 기록과 정상 참고 비교. 정확한 값은 아래 표에 있습니다.", "Synthetic record versus normal reference. Exact values are in the table below.", "仮想記録と正常参照の比較。正確な値は下の表にあります。")}>
-            <ResponsiveContainer width="100%" height={260}><LineChart data={chart}><XAxis dataKey="time" tickFormatter={clock} stroke="#b5c7d8" /><YAxis domain={["auto", "auto"]} stroke="#b5c7d8" /><Line dataKey="value" stroke="#8ed0c3" dot={false} isAnimationActive={false} /><Line dataKey="reference" stroke="#b5c7d8" strokeDasharray="5 5" dot={false} isAnimationActive={false} />{record.marker !== null ? <ReferenceLine x={record.marker} stroke="#e4aa55" /> : null}{scenario.changeTime !== null ? <ReferenceLine x={scenario.changeTime} stroke="#c4aad7" /> : null}</LineChart></ResponsiveContainer>
-          </div><p className="et-caption">{l("실선: 가상 기록 / 점선: 정상 참고 / 주황: 내 표시 / 보라: 구성상 편차 시작. 실제 장비 고장 기준이 아닙니다.", "Solid: synthetic record / dashed: reference / orange: my marker / purple: designed deviation onset, not a real fault limit.", "実線：仮想記録／破線：正常参照／オレンジ：自分の印／紫：構成上の偏差開始。実装置の故障基準ではありません。")}</p>
-          <label htmlFor="history-time">{l("비교 시점", "Comparison time", "比較時点")} {clock(time)}</label><input id="history-time" type="range" min={0} max={duration} value={time} onChange={e => setTime(Number(e.target.value))} />
-          <div className="et-table"><table><caption>{l("모든 값은 교육용 상대지수", "All values are educational relative indices", "すべて教育用の相対指数")}</caption><thead><tr><th>{l("항목", "Signal", "項目")}</th><th>{l("관측값", "Current", "観測値")}</th><th>{l("정상 참고", "Reference", "正常参照")}</th><th>{l("차이", "Difference", "差")}</th></tr></thead><tbody>{signals.map(s => { const p = sample(s.id, time); return <tr key={s.id}><th>{s.name}</th><td>{p.value.toFixed(1)}</td><td>{p.reference.toFixed(1)}</td><td>{(p.value - p.reference).toFixed(1)}</td></tr>; })}</tbody></table></div>
+            <ResponsiveContainer width="100%" height={260}><LineChart data={chart}><XAxis dataKey="time" type="number" domain={[0, duration]} tickFormatter={clock} stroke="#b5c7d8" /><YAxis domain={["auto", "auto"]} stroke="#b5c7d8" /><Line dataKey="value" stroke="#8ed0c3" dot={false} isAnimationActive={false} /><Line dataKey="reference" stroke="#b5c7d8" strokeDasharray="5 5" dot={false} isAnimationActive={false} /><ReferenceLine x={time} stroke="#71b7f0" strokeDasharray="3 3" />{record.marker !== null ? <ReferenceLine x={record.marker} stroke="#e4aa55" /> : null}{scenario.changeTime !== null ? <ReferenceLine x={scenario.changeTime} stroke="#c4aad7" /> : null}</LineChart></ResponsiveContainer>
+          </div><p className="et-caption">{l("실선: 가상 기록 / 점선: 정상 참고 / 파랑: 현재 비교 시점 / 주황: 내 표시 / 보라: 구성상 편차 시작. 실제 장비 고장 기준이 아닙니다.", "Solid: synthetic record / dashed: reference / blue: current comparison time / orange: my marker / purple: designed deviation onset, not a real fault limit.", "実線：仮想記録／破線：正常参照／青：現在の比較時点／オレンジ：自分の印／紫：構成上の偏差開始。実装置の故障基準ではありません。")}</p>
+          <div className="et-actions" role="group" aria-label={l("저장된 판단 시점으로 이동", "Navigate to saved reasoning times", "保存した判断時点へ移動")}>
+            {replay?.targets.map(target => <button key={target.source} className="et-linkbutton" type="button" onClick={() => { setComparisonTime(target.time); if (target.source !== "start" && replay) setSelected(replay.signalId); }}>{target.source === "onset" ? l(`내 시작 판단 ${clock(target.time)} 보기`, `View my onset choice ${clock(target.time)}`, `自分の開始判断 ${clock(target.time)} を見る`) : target.source === "marker" ? l(`내 표시 ${clock(target.time)} 보기`, `View my marker ${clock(target.time)}`, `自分の印 ${clock(target.time)} を見る`) : l("기록 처음 보기", "View record start", "記録の最初を見る")}</button>)}
+          </div>
+          <p className="et-caption">{l("내 시작 판단·내 표시 버튼은 저장된 관측 항목과 가상 시점으로 이동합니다. 아래 값은 선택한 비교 시점의 값이며, 저장된 답안을 바꾸지 않습니다.", "My onset and marker buttons open the saved signal and virtual time. Values below reflect the comparison time; your saved answer is unchanged.", "開始判断・印のボタンで保存した観測項目と仮想時点へ移動します。下の値は比較時点の値であり、保存済みの回答は変わりません。")}</p>
+          <label htmlFor="history-time">{l("비교 시점", "Comparison time", "比較時点")} {clock(time)}</label><input id="history-time" type="range" min={0} max={duration} value={time} aria-valuetext={clock(time)} onChange={e => setComparisonTime(Number(e.target.value))} />
+          <div className="et-table"><table><caption aria-live="polite">{l(`비교 시점 ${clock(time)} · 모든 값은 교육용 상대지수`, `Comparison time ${clock(time)} · All values are educational relative indices`, `比較時点 ${clock(time)}・すべて教育用の相対指数`)}</caption><thead><tr><th>{l("항목", "Signal", "項目")}</th><th>{l("관측값", "Current", "観測値")}</th><th>{l("정상 참고", "Reference", "正常参照")}</th><th>{l("차이", "Difference", "差")}</th></tr></thead><tbody>{signals.map(s => { const p = sample(s.id, time); return <tr key={s.id} aria-current={s.id === signalId ? "true" : undefined}><th>{s.name}{s.id === signalId ? l(" · 그래프 표시", " · In graph", "・グラフ表示") : ""}</th><td>{p.value.toFixed(1)}</td><td>{p.reference.toFixed(1)}</td><td>{(p.value - p.reference).toFixed(1)}</td></tr>; })}</tbody></table></div>
           <h3>{l("저장된 선택형 비교 결과", "Saved choice-criteria results", "保存された選択基準との比較")}</h3>
           <ul>{[record.signalMatched, record.onsetMatched, record.comparisonMatched, record.certaintyMatched].map((match, index) => <li key={index}>{[l("관측 항목", "Signal", "観測項目"), l("시작 시점", "Onset", "開始時点"), l("비교 기준", "Reference", "比較基準"), l("사실과 추정", "Fact versus inference", "事実と推測")][index]} · {match ? l("구성 기준 일치", "Matches teaching criterion", "構成基準と一致") : l("다시 비교", "Revisit", "再度比較")}</li>)}</ul>
           <p className="et-caption">{l("실제 현장 역량 점수가 아닙니다. 다시 보기로 저장된 답안이 바뀌지 않습니다.", "Not a workplace competency score. Replay does not change your saved answer.", "現場能力の点数ではありません。振り返っても保存済みの回答は変わりません。")}</p>
