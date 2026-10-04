@@ -3,6 +3,13 @@ import { getProcessScenario } from "./processScenarios";
 type ReplayRecord = { scenarioId: string; signal: string; onset: number; marker: number | null };
 export type TrainingReplayTarget = { source: "onset" | "marker" | "start"; time: number };
 
+// Opening a module never reconstructs or replaces a saved answer.
+export function trainingPracticeHref(scenarioId: string) {
+  const scenario = getProcessScenario(scenarioId);
+  if (!scenario || scenario.id !== scenarioId) return undefined;
+  return scenario.processId === "etch" ? "/training/etch" : `/training/process/${scenario.processId}`;
+}
+
 // Only canonical saved scenario IDs and bounded virtual times are navigation targets.
 // Never infer an onset from the teaching answer, AI text or a no-deviation choice.
 export function trainingReplay(record: ReplayRecord) {
