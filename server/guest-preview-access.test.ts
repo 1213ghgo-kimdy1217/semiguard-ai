@@ -55,15 +55,16 @@ describe("full practice identity boundary", () => {
 
 describe("observation-only sample", () => {
   it.each([
-    ["ko", "장비를 이해하고, 신호를 먼저 살펴보세요.", "로그인하고 본 훈련 시작", "교육용 상대지수"],
-    ["en", "Meet the equipment. Explore a sample signal.", "Log in to start full practice", "Teaching relative index"],
-    ["ja", "装置を理解し、まず信号を見てみましょう。", "ログインして本訓練を始める", "教育用相対指数"],
-  ] as const)("explains sample versus full training in %s without presenting grading controls", (language, title, login, units) => {
+    ["ko", "장비를 이해하고, 신호를 먼저 살펴보세요.", "로그인하고 본 훈련 시작", "교육용 상대지수", "샘플 관찰 시점"],
+    ["en", "Meet the equipment. Explore a sample signal.", "Log in to start full practice", "Teaching relative index", "Sample observation time"],
+    ["ja", "装置を理解し、まず信号を見てみましょう。", "ログインして本訓練を始める", "教育用相対指数", "サンプル観察時点"],
+  ] as const)("explains sample versus full training in %s without presenting grading controls", (language, title, login, units, timeLabel) => {
     const html = render(createElement(TrainingPreviewContent, props(language)));
     for (const text of [title, login, units, "00:30", etchSample("pressure", 30).value.toFixed(2), "76–84"]) expect(html).toContain(text);
     expect(html).toContain('href="/login"'); expect(html).toContain('href="/signup"'); expect(html).not.toContain('href="/training"');
     expect(html).not.toContain("<form"); expect(html).not.toContain('type="submit"'); expect(html).not.toContain("textarea");
     expect(html).toContain('scope="row"'); expect(html).toContain('role="img"'); expect(html).toContain('aria-valuetext="00:30"');
+    expect(html).toContain(`type="range" aria-label="${timeLabel}"`);
   });
   it("allows 4 signals and 4 sample points, capped at 30 seconds, without a timer or scoring API", () => {
     expect(PREVIEW_TIMES).toEqual([0, 10, 20, 30]);
