@@ -139,7 +139,7 @@ export default function Welcome() {
           <h1>{t.hero1}<br /><span>{t.hero2}</span></h1>
           <p className="sg-intro">{t.intro1}<br />{t.intro2}</p>
           <div className="sg-hero-actions"><Link className="sg-button sg-button-primary" href="/login">{t.start} <ArrowUpRight size={18} /></Link><a href="#workflow" className="sg-text-link">{t.how} <ArrowDown size={16} /></a></div>
-          <p className="sg-quiet">{t.path} <Link href="/training">{t.preview}</Link></p>
+          <p className="sg-quiet">{t.path} <Link href="/preview">{t.preview}</Link></p>
         </div>
         <div className="sg-hero-visual">
           <span className="sg-visual-index">FIG. 01 / SIGNAL OBSERVATION</span>
@@ -162,7 +162,7 @@ export default function Welcome() {
             </svg>
             <div className="sg-chart-caption"><span>{t.previous}</span><span>{current.difference}</span><span>{t.now}</span></div>
           </div>
-          <div className="sg-score-summary"><p className="sg-eyebrow">RULE-BASED SCORE</p><div className="sg-score">67<span>/100</span></div><span className="sg-outline-label sg-amber">{t.scoreStatus}</span><p>{t.scoreDetail}</p><Link href="/training">{t.follow} <ArrowRight size={16} /></Link></div>
+          <div className="sg-score-summary"><p className="sg-eyebrow">RULE-BASED SCORE</p><div className="sg-score">67<span>/100</span></div><span className="sg-outline-label sg-amber">{t.scoreStatus}</span><p>{t.scoreDetail}</p><Link href="/preview">{t.follow} <ArrowRight size={16} /></Link></div>
         </div>
       </section>
 
@@ -170,7 +170,7 @@ export default function Welcome() {
         <p className="sg-eyebrow">TWO WAYS TO PRACTISE REASONING</p><h2 id="sg-mode-title">{tr(language, "배우고 판단하기. 자유롭게 비교하기.", "Learn and reason. Explore and compare.", "学んで判断し、自由に比較する。")}</h2>
         <div className="sg-mode-grid"><article><h3>{tr(language, "8대 공정 판단 연습", "Eight-process judgment practice", "8大工程の判断練習")}</h3><p>{tr(language, "준비된 공정별 기록과 정상 참고를 관찰하고, 판단을 제출한 뒤 구성 기준·AI 코칭·타임라인으로 복기합니다. 어떤 근거를 놓쳤는지 생각하는 구조화된 연습입니다.", "Observe prepared process records and normal references, submit your reasoning, then review teaching criteria, optional AI coaching, and timelines. Structured practice helps you revisit overlooked evidence.", "準備された工程別記録と正常参照を観察し、判断を提出して構成基準・任意のAIコーチング・タイムラインで振り返る、構造化された練習です。")}</p></article>
           <article><h3>{tr(language, "실시간 자유 분석", "Free observation", "自由観察")}</h3><p>{tr(language, "실행마다 달라지는 가상 식각 신호나 CSV를 시간 제한 없이 비교합니다. 고정 답안·정답 채점 없이 여러 시점의 근거 메모를 쌓는 탐색 공간입니다. 실제 팹 연결은 지원하지 않습니다.", "Compare changing virtual etch signals or CSV records without a time limit. An exploration space for evidence notes at multiple points, without fixed answers or grading. Real-fab connections are not supported.", "実行ごとに変わる仮想エッチング信号やCSVを時間制限なく比較します。固定回答・採点はなく、複数時点の根拠メモを残す探索の場です。実際の製造装置には接続しません。")}</p></article></div>
-        <p>{tr(language, "게스트는 기능을 체험하고, 로그인하면 내 선택형 기록을 저장·복기할 수 있습니다. 중간 저장은 재생 위치와 선택 답안만, 결과 공유는 내가 선택한 기록만 대상으로 합니다.", "Guests can explore. Signed-in users can save and review their own choice records. Checkpoints contain only playback position and choices; sharing covers only a result you select.", "ゲストは機能を体験できます。ログインすると自分の選択式記録を保存して振り返れます。中間保存は再生位置と選択回答、共有は自分が選んだ結果だけが対象です。")}</p>
+        <p>{tr(language, "로그인 전에는 장비 소개와 샘플 관찰을 제공합니다. 본 훈련·판단 제출·복기는 로그인 후 이용하며 내 선택형 기록을 저장할 수 있습니다. 중간 저장은 재생 위치와 선택 답안만, 결과 공유는 내가 선택한 기록만 대상으로 합니다.", "Before sign-in, explore equipment introductions and sample observations. Full practice, submission, and review require sign-in; your choice records stay in your account. Checkpoints contain only playback position and choices; sharing covers only a result you select.", "ログイン前は装置紹介とサンプル観察を提供します。本訓練・判断提出・振り返りはログイン後に利用し、自分の選択式記録を保存できます。中間保存は再生位置と選択回答、共有は自分が選んだ結果だけが対象です。")}</p>
         <Link href="/login" className="sg-text-link">{tr(language, "내 학습 공간 시작하기", "Start a personal learning workspace", "自分の学習スペースを始める")} <ArrowRight size={16} /></Link>
       </section>
 

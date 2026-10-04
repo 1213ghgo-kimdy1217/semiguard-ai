@@ -17,11 +17,11 @@ const SIGNUP_COPY = {
     subtitle: "반도체 장비 센서 판단 훈련",
     heroEyebrow: "SEMIGUARD / CREATE ACCESS",
     heroTitle: "신호를 읽고, 근거로 판단하다.",
-    heroDescription: "회원가입 후 로그인하면 4센서 대시보드를 이용할 수 있습니다. 시나리오와 자유 관찰은 가입 없이도 시작할 수 있습니다.",
+    heroDescription: "로그인 전에는 장비 소개와 30초 샘플만 볼 수 있습니다. 가입 후 로그인하면 8대 공정 판단 연습·자유 분석·4센서 대시보드를 이용하고 내 기록을 저장할 수 있습니다.",
     pathLabel: "LEARNING PATH",
     path: ["공정 맥락 학습", "시나리오 판단 연습", "가상 신호 자유 관찰"],
     scope: "교육용 가상 센서 데이터 · 실제 장비 연결·제어 없음",
-    trainingLink: "가입 없이 연습 둘러보기",
+    trainingLink: "가입 없이 장비·샘플 미리보기",
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "계정 만들기",
     formDescription: "대시보드를 이용할 계정을 등록하세요.",
@@ -64,11 +64,11 @@ const SIGNUP_COPY = {
     subtitle: "Semiconductor sensor reasoning practice",
     heroEyebrow: "SEMIGUARD / CREATE ACCESS",
     heroTitle: "Read the signal. Reason from evidence.",
-    heroDescription: "Sign in after registration to use the four-sensor dashboard. Scenario and free observation are available without an account.",
+    heroDescription: "Before sign-in, explore equipment introductions and a 30-second sample only. Create an account and sign in for eight-process practice, free analysis, the four-sensor workspace, and saved personal records.",
     pathLabel: "LEARNING PATH",
     path: ["Learn process context", "Practice scenario reasoning", "Observe synthetic signals"],
     scope: "Synthetic sensor data for learning · no real-equipment connection or control",
-    trainingLink: "Explore practice without signing up",
+    trainingLink: "Preview equipment and sample signals",
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "Create an account",
     formDescription: "Register an account for the dashboard.",
@@ -111,11 +111,11 @@ const SIGNUP_COPY = {
     subtitle: "半導体装置の信号判断訓練",
     heroEyebrow: "SEMIGUARD / CREATE ACCESS",
     heroTitle: "信号を読み、根拠から判断する。",
-    heroDescription: "登録後にログインすると4センサーダッシュボードを利用できます。シナリオと自由観察は登録せずに始められます。",
+    heroDescription: "ログイン前は装置紹介と30秒のサンプルだけを見られます。登録してログインすると、8大工程の判断練習・自由分析・4センサー画面を利用し、自分の記録を保存できます。",
     pathLabel: "LEARNING PATH",
     path: ["工程の背景を学ぶ", "シナリオで判断を練習", "仮想信号を自由に観察"],
     scope: "学習用の仮想センサーデータ・実際の装置への接続や制御はありません",
-    trainingLink: "登録せずに練習を見る",
+    trainingLink: "登録せずに装置・サンプルを見る",
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "アカウントを作成",
     formDescription: "ダッシュボード用のアカウントを登録してください。",
@@ -349,7 +349,7 @@ export function Signup() {
             <ol>{copy.path.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span>{step}</li>)}</ol>
           </div>
           <p className="sg-signup-scope">{copy.scope}</p>
-          <button className="sg-signup-explore focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" type="button" onClick={() => setLocation("/training")}>{copy.trainingLink} <span aria-hidden="true">↗</span></button>
+          <button className="sg-signup-explore focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" type="button" onClick={() => setLocation("/preview")}>{copy.trainingLink} <span aria-hidden="true">↗</span></button>
         </section>
         <section className="sg-signup-card" aria-labelledby="signup-form-title">
           <div className="sg-signup-card-heading">

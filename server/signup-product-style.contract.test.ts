@@ -19,9 +19,9 @@ describe("signup product design", () => {
   });
 
   it("explains account access and the synthetic training scope in every language", () => {
-    expect(signup).toContain("시나리오와 자유 관찰은 가입 없이도 시작할 수 있습니다.");
-    expect(signup).toContain("Scenario and free observation are available without an account.");
-    expect(signup).toContain("シナリオと自由観察は登録せずに始められます。");
+    expect(signup).toContain("로그인 전에는 장비 소개와 30초 샘플만 볼 수 있습니다.");
+    expect(signup).toContain("Before sign-in, explore equipment introductions and a 30-second sample only.");
+    expect(signup).toContain("ログイン前は装置紹介と30秒のサンプルだけを見られます。");
     expect(signup).toContain("실제 장비 연결·제어 없음");
   });
 });

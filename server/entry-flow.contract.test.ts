@@ -28,7 +28,7 @@ describe("public introduction to login to training choice", () => {
     const training = source("client/src/pages/EtchTraining.tsx");
     expect(welcome).toContain('href="/login">{t.start}');
     expect(welcome).not.toContain('href="/dashboard"');
-    expect(welcome).toContain('href="/training">{t.preview}');
+    expect(welcome).toContain('href="/preview">{t.preview}');
     expect(login).toContain('isAuthenticated &&');
     expect(login).toContain('onClick={() => setLocation("/training")}');
     expect(dashboard).toContain('href="/training"');
