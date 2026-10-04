@@ -21,7 +21,7 @@ describe("practice workspace flow", () => {
   it("opens account-bound read-only history without inventing old written answers", () => {
     const page = read("client/src/pages/TrainingHistory.tsx");
     expect(read("client/src/App.tsx")).toContain('"/training/history/:attemptId"');
-    expect(read("client/src/pages/EtchTraining.tsx")).toContain('href={`/training/history/${item.id}`}');
+    expect(read("client/src/components/TrainingHistoryList.tsx")).toContain('href={`/training/history/${item.id}`}');
     expect(page).toContain("query.data?.userId === auth.data?.id");
     expect(page).toContain("서술형 답안은 서버에 저장하지 않았으므로");
     expect(page).not.toContain("useMutation");
