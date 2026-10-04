@@ -11,11 +11,15 @@
 .process-path-number span:first-child { color: #e4aa55; font-family: monospace; font-size: 1.5rem; }
 .process-path .et-linkbutton:focus-visible { outline: 3px solid #e4aa55; outline-offset: 4px; }
 .process-path-progress { margin-top: 1.5rem; }
-.process-path-progress progress { display: block; width: 100%; height: .6rem; margin-bottom: 1.25rem; accent-color: #e4aa55; }
+.process-path-progress progress { display: block; width: 100%; height: .6rem; margin-bottom: 1.25rem; appearance: none; border: 0; border-radius: 999px; background: #35433b; accent-color: #e4aa55; }
+.process-path-progress progress::-webkit-progress-bar { background: #35433b; border-radius: 999px; }
+.process-path-progress progress::-webkit-progress-value { background: #e4aa55; border-radius: 999px; }
+.process-path-progress progress::-moz-progress-bar { background: #e4aa55; }
 .process-path-progress h3 { margin: .5rem 0; }
 .process-path-next { margin-bottom: 1rem; }
 .process-path-filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
 .process-path-filters button { border: 1px solid #58695b; }
+.et-app .process-path-filters button[aria-pressed="false"] { background: #223129; color: #d9e5dc; border-color: #58695b; }
 .et-app .process-path-filters button[aria-pressed="true"] { background: #e4aa55; color: #17201b; border-color: #e4aa55; }
 @media (max-width: 1000px) { .process-path-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .process-path-grid { grid-template-columns: 1fr; } }

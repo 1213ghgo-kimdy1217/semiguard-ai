@@ -94,6 +94,10 @@ describe("process selection to next unsubmitted training", () => {
     const css = readFileSync("client/src/components/process-scenario-path.css", "utf8");
     expect(css).toContain('.et-app .process-path-filters button[aria-pressed="true"]');
     expect(css).toContain("background: #e4aa55; color: #17201b");
+    expect(css).toContain('.et-app .process-path-filters button[aria-pressed="false"]');
+    expect(css).toContain("background: #223129; color: #d9e5dc");
+    expect(css).toContain("progress::-webkit-progress-value { background: #e4aa55;");
+    expect(css).toContain("progress::-moz-progress-bar { background: #e4aa55;");
     expect(css).toContain(".et-linkbutton:focus-visible");
   });
 });
