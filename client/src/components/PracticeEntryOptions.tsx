@@ -3,26 +3,35 @@ import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, Layers, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
+import "./practice-entry-options.css";
 
 type LanguageProps = { language: ProductLanguage };
+
+export function PracticeWorkspaceNav({ language }: LanguageProps) {
+  const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
+  return <nav className="et-workspace-links" aria-label={l("학습 작업 공간 바로가기", "Learning workspace shortcuts", "学習画面のショートカット")}>
+    <a href="#practice-options">{l("연습 방식", "Practice options", "練習方法")} <span aria-hidden="true">↓</span></a>
+    <a href="#practice-history">{l("내 학습 기록", "My practice history", "自分の練習記録")} <span aria-hidden="true">↓</span></a>
+  </nav>;
+}
 
 export function PracticeLearningOptions({ language, onSensorBrief }: LanguageProps & { onSensorBrief: () => void }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   return <>
     <section className="et-panel et-entry-card" aria-labelledby="process-option-title">
-      <Layers aria-hidden="true" />
+      <div className="et-card-top"><span className="et-card-icon"><Layers aria-hidden="true" /></span><span className="et-card-kind">{l("공정 이해", "Process concepts", "工程を理解")}</span></div>
       <p className="et-eyebrow">PROCESS LEARNING</p>
       <h2 id="process-option-title">{l("8대 공정 학습", "Eight-process learning", "8大工程の学習")}</h2>
-      <p>{l("신호를 읽기 전에 맥락이 필요하다면 여기서 시작하세요. 공정에서 무엇이 달라지는지, 어떤 장비와 확인 근거가 연결되는지 살펴봅니다.", "Start here when you need context for the signals. Explore what changes in each process, its equipment types, and the evidence to compare.", "信号を読むための背景が必要なら、ここから始めましょう。各工程で何が変わり、どの装置や確認根拠につながるかを学びます。")}</p>
+      <p>{l("신호의 의미가 낯설다면 여기서 시작하세요. 8대 공정의 원리·장비·확인 근거를 읽고 간단한 자가 확인을 해봅니다.", "Start here if the signals are unfamiliar. Read about eight process principles, equipment and evidence, then try short self-checks.", "信号の意味に慣れていなければ、ここから始めましょう。8工程の原理・装置・確認根拠を読み、簡単な自己確認を行います。")}</p>
       <div className="et-tags"><span>{l("공정 · 장비 · 근거", "Processes · equipment · evidence", "工程・装置・根拠")}</span><span>{l("자가 확인", "Self-checks", "自己確認")}</span></div>
       <p className="et-caption">{l("필요한 공정만 읽어도 됩니다. 각 공정의 판단 연습으로 연결되며, 상단 메뉴로 언제든 다시 볼 수 있습니다.", "Read only what you need. Each process connects to its judgment exercise; return anytime through the top menu.", "必要な工程だけ読めます。各工程の判断練習へ進め、上部メニューからいつでも見直せます。")}</p>
       <Link className="et-linkbutton" href="/learn">{l("공정 학습 열기", "Open process learning", "工程学習を開く")} <ArrowRight size={18} aria-hidden="true" /></Link>
     </section>
     <section className="et-panel et-entry-card et-navy" aria-labelledby="sensor-option-title">
-      <SlidersHorizontal aria-hidden="true" />
+      <div className="et-card-top"><span className="et-card-icon"><SlidersHorizontal aria-hidden="true" /></span><span className="et-card-kind">{l("단위·기여도 비교", "Units and contributions", "単位・寄与を比較")}</span></div>
       <p className="et-eyebrow">FOUR-SENSOR WORKSPACE</p>
       <h2 id="sensor-option-title">{l("4센서 대시보드", "Four-sensor dashboard", "4センサーダッシュボード")}</h2>
-      <p>{l("전류·온도·진동·소음의 현재값과 정상 참고 범위를 비교하세요. 센서별 점수 기여도, 변화 그래프, 관측 이력을 연결해 이상 신호의 근거를 읽는 연습입니다.", "Compare current, temperature, vibration, and noise with their reference ranges. Practice reading evidence through score contributions, trend charts, and observation history.", "電流・温度・振動・騒音の現在値を正常参照範囲と比較します。スコアへの寄与、変化グラフ、観測履歴をつなぎ、異常信号の根拠を読む練習です。")}</p>
+      <p>{l("전류·온도·진동·소음의 단위와 정상 참고 범위를 구분하고, 변화 그래프·규칙 점수 기여도·관측 이력을 함께 읽어보세요.", "Distinguish current, temperature, vibration and noise units and reference ranges. Read their trends, rule-score contributions and observation history together.", "電流・温度・振動・騒音の単位と正常参照範囲を区別し、推移・ルールスコアへの寄与・観測履歴を一緒に読みます。")}</p>
       <div className="et-tags"><span>{l("서로 다른 4개 단위", "Four distinct units", "異なる4つの単位")}</span><span>{l("근거 · 추이 · 이력", "Evidence · trends · history", "根拠・推移・履歴")}</span></div>
       <p className="et-caption">{l("고정 답안을 제출하는 시나리오가 아닙니다. 로그인 후 사용하는 교육용 가상 센서 작업 공간이며, 먼저 활용 방법을 확인합니다.", "Not a fixed-answer scenario. This signed-in workspace uses synthetic training sensors; review its purpose before entering.", "決まった回答を提出するシナリオではありません。ログインして使う教育用の仮想センサー画面です。まず使い方を確認します。")}</p>
       <Button type="button" className="et-primary" onClick={onSensorBrief}>{l("활용 방법 먼저 보기", "See how to use it", "まず使い方を見る")}<ArrowRight aria-hidden="true" /></Button>

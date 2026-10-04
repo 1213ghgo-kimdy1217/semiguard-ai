@@ -1,0 +1,19 @@
+.et-workspace-links{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
+.et-app .et-workspace-links a{display:inline-flex;align-items:center;justify-content:space-between;gap:20px;min-height:44px;padding:10px 16px;border:1px solid #526255;border-radius:6px;background:#1d2923;color:#dbe4db;font-size:14px;text-decoration:none;overflow-wrap:anywhere}
+.et-app .et-workspace-links a:hover{background:#28372d;color:#efbc70;border-color:#b49460}
+.et-app .et-workspace-links a:focus-visible{outline:3px solid #e4aa55;outline-offset:4px}
+.et-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.et-choice-grid .et-entry-card{min-width:0;padding:24px;display:flex;flex-direction:column;align-items:stretch;border-radius:10px}
+.et-choice-grid .et-card-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.et-choice-grid .et-card-icon{display:grid;place-items:center;width:40px;height:40px;border:1px solid #766342;border-radius:8px;background:#e4aa5510;color:#e4aa55;flex-shrink:0}
+.et-choice-grid .et-card-icon svg{width:21px;height:21px}
+.et-choice-grid .et-card-kind{padding:4px 9px;border:1px solid #425547;border-radius:5px;color:#c7d5c9;background:#213028;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.et-choice-grid .et-entry-card .et-eyebrow{font-size:11px;line-height:1.5;letter-spacing:.08em;margin:0 0 8px}
+.et-choice-grid .et-entry-card h2{margin:0 0 12px;font-size:20px;overflow-wrap:anywhere}
+.et-choice-grid .et-entry-card p:not(.et-eyebrow){margin:0 0 16px;font-size:14px;line-height:1.8;overflow-wrap:anywhere}
+.et-choice-grid .et-entry-card .et-tags{margin:0 0 16px;gap:8px}
+.et-choice-grid .et-entry-card .et-caption{font-size:12px;margin-bottom:20px}
+.et-choice-grid .et-entry-card .et-primary,.et-choice-grid .et-entry-card .et-linkbutton{margin-top:auto;justify-content:space-between;width:100%;min-height:44px;gap:16px;padding:12px 16px;text-align:left}
+.et-choice-grid .et-entry-card :is(.et-primary,.et-linkbutton) svg{flex-shrink:0;width:18px;height:18px}
+#practice-options,#practice-history{scroll-margin-top:110px}
+@media(max-width:760px){.et-choice-grid{grid-template-columns:minmax(0,1fr);gap:20px}.et-choice-grid .et-entry-card{padding:20px}.et-workspace-links{gap:10px}.et-app .et-workspace-links a{flex:1 1 140px}#practice-options,#practice-history{scroll-margin-top:24px}}

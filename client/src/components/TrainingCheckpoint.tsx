@@ -8,9 +8,9 @@ import "./training-checkpoint.css";
 
 export function AccountPracticeBenefits({ language }: { language: ProductLanguage }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
-  return <section className="et-panel et-account-benefits"><p className="et-eyebrow">GUEST PREVIEW / PERSONAL WORKSPACE</p>
-    <h2>{l("로그인하고, 내 판단을 이어가세요.", "Sign in. Keep building your reasoning.", "ログインして、自分の判断を続けましょう。")}</h2>
-    <p>{l("로그인 전에는 장비 소개와 샘플 관찰만 제공합니다. 로그인하면 제출한 선택형 결과·타임라인을 다시 보고, 중간 저장한 재생 시점과 선택 답안부터 다른 기기에서 이어갈 수 있습니다. 원하는 결과만 읽기 전용 링크로 공유하세요.", "Guests can view equipment introductions and sample observations only. Sign in to revisit submitted choices and timelines, resume an explicitly saved checkpoint on another device, and share selected results through read-only links.", "ログイン前は装置紹介とサンプル観察のみを提供します。ログインすると提出した選択式の結果とタイムラインを見直し、保存した再生時点・選択回答から別の端末で再開し、選んだ結果を閲覧専用リンクで共有できます。")}</p>
+  return <section className="et-panel et-account-benefits"><p className="et-eyebrow">PERSONAL WORKSPACE / SAVE AND REVIEW</p>
+    <h2>{l("기록을 남기고, 다음 연습으로 이어가세요.", "Save your reasoning. Build on it next time.", "判断を記録し、次の練習につなげましょう。")}</h2>
+    <p>{l("제출한 선택형 결과와 타임라인은 아래 ‘내 학습 기록’에서 다시 볼 수 있습니다. 직접 중간 저장한 재생 시점·선택 답안부터 다른 기기에서 이어가거나, 원하는 완료 결과만 읽기 전용 링크로 공유할 수 있습니다.", "Revisit submitted choices and timelines in My practice history below. Resume an explicitly saved position and choices on another device, or share a selected completed result through a read-only link.", "提出した選択結果とタイムラインは下の「自分の練習記録」で見直せます。自分で保存した再生時点・選択回答から別の端末で再開し、選んだ完了結果だけを閲覧専用リンクで共有できます。")}</p>
     <p className="et-caption">{l("계정 중간 저장은 저장소 준비 확인 후, 버튼을 누를 때만 이뤄집니다. 서술형 원문은 계정에 저장하지 않으며, 다른 기기에서는 다시 작성해야 합니다.", "Account checkpoints require available storage and are saved only when requested. Written answers are not stored in your account; re-enter them on a different device.", "アカウントの中間保存は保存先を確認してから、ボタンを押したときだけ行います。記述回答は保存しないため、別の端末では再入力が必要です。")}</p>
   </section>;
 }
