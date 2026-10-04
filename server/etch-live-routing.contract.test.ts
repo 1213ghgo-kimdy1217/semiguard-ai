@@ -23,6 +23,11 @@ describe("live observation integration", () => {
     const training = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");
     expect(training).toContain('href="/live"');
     expect(training).not.toContain('href="/dashboard"');
-    expect(training).toContain("시나리오 훈련 · 실시간 자유 분석 · 8대 공정 학습 · 4센서 대시보드");
+    expect(training).toContain("8대 공정 판단 연습");
+    expect(training).toContain("실시간 자유 분석");
+    expect(training).toContain('<PracticeLearningOptions language={language}');
+    const options = readFileSync("client/src/components/PracticeEntryOptions.tsx", "utf8");
+    expect(options).toContain("8대 공정 학습");
+    expect(options).toContain("4센서 대시보드");
   });
 });
