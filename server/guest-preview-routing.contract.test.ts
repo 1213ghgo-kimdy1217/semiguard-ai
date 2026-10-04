@@ -29,4 +29,9 @@ describe("sample-only guest entry policy", () => {
     expect(signup).toContain('trainingLink: "가입 없이 장비·샘플 미리보기"');
     expect(login).toContain('window.location.href = "/training";');
   });
+  it("does not promise account-free full practice on the signup introduction in any locale", () => {
+    const signup = source("client/src/pages/Signup.tsx");
+    for (const sampleOnly of ["로그인 전에는 장비 소개와 30초 샘플만", "Before sign-in, explore equipment introductions and a 30-second sample only", "ログイン前は装置紹介と30秒のサンプルだけ"]) expect(signup).toContain(sampleOnly);
+    for (const outdated of ["시나리오와 자유 관찰은 가입 없이도", "Scenario and free observation are available without an account", "シナリオと自由観察は登録せずに"]) expect(signup).not.toContain(outdated);
+  });
 });
