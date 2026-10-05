@@ -42,8 +42,9 @@ describe("visible practice options and four-sensor entry briefing", () => {
     expect(page.indexOf("<PracticeLearningOptions")).toBeLessThan(page.indexOf('className="et-panel et-history"'));
     expect(page).toContain('href="/live"');
     expect(page).toContain('attempt.elapsed > 0 ? "observe" : "brief"');
-    expect(page).toContain('heading.current?.focus()');
-    expect(page).toContain('heading.current?.scrollIntoView({ block: "start" })');
+    expect(page).toContain('stage === "home" && historyReturn.current ? historyHeading.current : heading.current');
+    expect(page).toContain('target?.focus({ preventScroll: true })');
+    expect(page).toContain('target?.scrollIntoView({ block: "start" })');
     expect(readFileSync("client/src/pages/etch-training.css", "utf8")).toContain("scroll-margin-top:110px");
     expect(page).not.toContain('setLocation("/learn")');
     expect(page).not.toContain('window.location.href = "/dashboard"');

@@ -18,14 +18,15 @@ function text(node: ReactNode): string {
   return Children.toArray(node).map(child => isValidElement(child) ? text((child.props as any).children) : String(child)).join("");
 }
 const etch = vi.fn();
-const render = (userId: number | null = 42, language: "ko" | "en" | "ja" = "ko") => ProcessScenarioPath({ userId, language, onEtch: etch });
+const openHistory = vi.fn();
+const render = (userId: number | null = 42, language: "ko" | "en" | "ja" = "ko") => ProcessScenarioPath({ userId, language, onEtch: etch, onHistory: openHistory });
 const buttons = (tree: ReactNode) => elements(tree).filter(e => e.type === "button");
 const cards = (tree: ReactNode) => elements(tree).filter(e => e.type === "li");
 const nextLink = (tree: ReactNode) => elements(tree).find(e => e.props.className === "et-linkbutton process-path-next");
 
 describe("process selection to next unsubmitted training", () => {
   beforeEach(() => {
-    mock.view = false; etch.mockClear();
+    mock.view = false; etch.mockClear(); openHistory.mockClear();
     mock.query = { data: { userId: 42, scenarioIds: processScenarios.slice(0, 4).map(s => s.id) },
       isError: false, isLoading: false, isFetching: false, refetch: vi.fn() };
   });
@@ -53,10 +54,32 @@ describe("process selection to next unsubmitted training", () => {
     expect(next.type).toBe("button"); next.props.onClick(); expect(etch).toHaveBeenCalledOnce();
     expect(cards(tree)).toHaveLength(8);
   });
+  it.each([
+    ["ko", "내 학습 기록 보기"], ["en", "View my practice history"], ["ja", "自分の練習記録を見る"],
+  ] as const)("opens owned history directly without changing progress in %s", (language, label) => {
+    mock.query.data.scenarioIds = processScenarios.map(s => s.id); mock.view = true;
+    const before = structuredClone(mock.query.data);
+    const tree = render(42, language);
+    const button = buttons(tree).find(e => text(e.props.children) === label)!;
+    expect(button).toBeDefined(); expect(button.props.type).toBe("button");
+    button.props.onClick(); expect(openHistory).toHaveBeenCalledOnce();
+    expect(etch).not.toHaveBeenCalled(); expect(mock.query.refetch).not.toHaveBeenCalled();
+    expect(mock.query.data).toEqual(before); expect(mock.view).toBe(true);
+  });
+  it.each(["loading", "error", "other-account"])("keeps history navigation independent of %s progress", state => {
+    if (state === "loading") mock.query.data = undefined;
+    if (state === "error") mock.query.isError = true;
+    if (state === "other-account") mock.query.data.userId = 43;
+    const tree = render();
+    buttons(tree).find(e => text(e.props.children) === "내 학습 기록 보기")!.props.onClick();
+    expect(openHistory).toHaveBeenCalledOnce();
+    expect(cards(tree)).toHaveLength(8); expect(text(tree)).not.toContain("4/8");
+  });
   it("does not present a suggestion or count for a guest", () => {
     const tree = render(null); expect(mock.options.enabled).toBe(false);
     expect(cards(tree)).toHaveLength(8); expect(nextLink(tree)).toBeUndefined();
     expect(elements(tree).find(e => e.type === "progress")).toBeUndefined();
+    expect(text(tree)).not.toContain("내 학습 기록 보기");
   });
   it("keeps all modules selectable while loading, without inventing completion", () => {
     mock.query.data = undefined; mock.query.isLoading = true;
@@ -99,5 +122,15 @@ describe("process selection to next unsubmitted training", () => {
     expect(css).toContain("progress::-webkit-progress-value { background: #e4aa55;");
     expect(css).toContain("progress::-moz-progress-bar { background: #e4aa55;");
     expect(css).toContain(".et-linkbutton:focus-visible");
+  });
+  it("targets the mounted history heading while preserving the existing stage and attempt flow", () => {
+    const source = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");
+    expect(source).toContain('onHistory={openPracticeHistory}');
+    expect(source).toContain('historyReturn.current = true; move("home");');
+    expect(source).toContain('stage === "home" && historyReturn.current ? historyHeading.current : heading.current');
+    expect(source).toContain('historyReturn.current = false;');
+    expect(source).toContain('id="practice-history-heading" ref={historyHeading} tabIndex={-1}');
+    const css = readFileSync("client/src/pages/etch-training.css", "utf8");
+    expect(css).toContain('.et-main h1,.et-main #practice-history-heading{scroll-margin-top:110px}');
   });
 });
