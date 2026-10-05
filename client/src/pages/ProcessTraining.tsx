@@ -3,6 +3,7 @@ import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
 import ProcessEquipmentReference from "../components/ProcessEquipmentReference";
 import ProcessCriteriaFeedback from "../components/ProcessCriteriaFeedback";
+import ProcessEvidenceReview, { ProcessRecordContext } from "../components/ProcessEvidenceReview";
 import { toTrainingDraft, restoreTrainingDraft } from "../../../shared/trainingDraft";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, Flag, Pause, Play } from "lucide-react";
@@ -54,6 +55,7 @@ function ProcessChart({ scenario, signalId, until, marker, review, language }: {
 function ProcessSnapshot({ scenario, time, language }: { scenario: ProcessScenario; time: number; language: ProductLanguage }) {
   return <div className="et-evidence">
     <h3>{tr(language, `${clock(time)}의 관측 근거`, `Evidence at ${clock(time)}`, `${clock(time)}の観測根拠`)}</h3>
+    <ProcessRecordContext scenario={scenario} time={time} language={language} />
     <div className="et-table" tabIndex={0} role="region" aria-label={tr(language, "시점별 신호 비교표", "Signal comparison at the selected time", "選択時点の信号比較表")}>
       <table>
         <caption>{tr(language, "모든 수치는 교육용 상대지수입니다. 실제 장비의 운전 범위가 아닙니다.", "All values are training-only relative indices, not real equipment operating limits.", "すべて教育用の相対指数で、実装置の運転範囲ではありません。")}</caption>
@@ -346,6 +348,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
           <ul>{scenario.events.map((event, index) => <li key={`${event.time}:${index}`}><button type="button" onClick={() => reviewChoicePoint(event.time, "timeline")}><time>{clock(event.time)}</time>{localize(event.label, language)}</button></li>)}</ul>
           <p>{l("내 발견 기록", "Your discovery marker", "自分の発見記録")}: {attempt.marker === null ? l("없음", "none", "なし") : clock(attempt.marker)} · {l("내 시작 시점 판단", "Your estimated onset", "自分の開始時点の判断")}: {answer.onset === "none" ? l("없음", "none", "なし") : clock(Number(answer.onset))}</p>
           <p className="et-caption">{l("보라색 선은 시나리오가 구성한 편차의 시작입니다. 편차가 없는 경우에는 표시하지 않습니다. 이 구성 기준은 실제 설비의 고장 기준이 아닙니다. 내 표시는 내가 선택한 가상 시점이며 발견 속도 평가가 아닙니다.", "The purple line marks the designed deviation onset, if present, not a real equipment fault limit. Your marker is a selected virtual time, not a discovery-speed assessment.", "紫の線はシナリオで構成した偏差の開始で、実装置の故障基準ではありません。自分の印は選択した仮想時点で、発見速度の評価ではありません。")}</p>
+          <ProcessEvidenceReview scenario={scenario} language={language} onReviewPoint={time => reviewChoicePoint(time, "timeline")} />
         </section>
         <section className="et-panel et-report"><h2 ref={criteriaHeading} tabIndex={-1}>{l("선택형 기준으로 돌아보기", "Review against choice criteria", "選択基準で振り返る")}</h2>
           <p>{l("다음 표시는 이 가상 시나리오의 선택형 기준과 일치했는지만 보여줍니다. 전문성·안전 자격·실제 현장 판단 능력을 평가하지 않으며 서술형 답안을 자동 채점하지 않습니다.", "These checks show agreement with this synthetic scenario's choice criteria only. They do not assess expertise, safety qualifications or workplace ability, and do not grade written answers.", "以下はこの仮想シナリオの選択基準との一致だけを示します。専門性、安全資格、現場の判断能力は評価せず、記述回答を自動採点しません。")}</p>

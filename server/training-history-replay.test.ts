@@ -9,7 +9,7 @@ const mock = vi.hoisted(() => ({
   response: undefined as any,
 }));
 vi.mock("react", async original => ({
-  ...await original<typeof import("react")>(), useEffect: vi.fn(),
+  ...await original<typeof import("react")>(), useEffect: vi.fn(), useRef: () => ({ current: null }),
   useState: (initial: unknown) => {
     const index = mock.cursor++;
     if (!(index in mock.states)) mock.states[index] = initial;
