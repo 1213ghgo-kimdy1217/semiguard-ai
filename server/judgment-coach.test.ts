@@ -203,6 +203,44 @@ describe("scenario judgment coach", () => {
     expect(await createJudgmentCoach()(27, input())).toEqual({ status: "unavailable", reason: "provider-error" });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(vi.mocked(console.warn).mock.calls)).not.toMatch(/private-user-answer|synthetic-private-key/);
+    expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "provider-error",
+      category: status === 401 ? "authentication" : status === 429 ? "rate-limit" : "http" })]]);
+  });
+  it.each(["TimeoutError", "AbortError", "Error"])("logs only a fixed classification for %s, never the error body", async name => {
+    const error = new Error(`private-user-answer ${ENV.nvidiaApiKey} account@example.com`); error.name = name;
+    fetchMock.mockRejectedValue(error);
+    expect(await createJudgmentCoach()(27, input())).toEqual({ status: "unavailable", reason: "provider-error" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "provider-error",
+      category: name === "Error" ? "connection" : "timeout" })]]);
+  });
+  it.each([
+    ["invalid JSON private-user-answer", "json"], ["{}", "schema"], ["x".repeat(7001), "output-shape"],
+    [JSON.stringify({ ...output(), strengths: ["reference", "reference"] }), "strength"],
+    [JSON.stringify({ ...output(), reflections: output().reflections.map(item => ({ ...item, question: ENV.nvidiaApiKey })) }), "safety"],
+    [JSON.stringify({ ...output(), reflections: [{ ...output().reflections[0], evidenceId: "record-comparison" }, output().reflections[1]] }), "evidence"],
+    [JSON.stringify(output("en")), "language"],
+    [JSON.stringify({ ...output(), reflections: [{ ...output().reflections[0], question: "어떤 비교로 원인을 배제했습니까?" }, output().reflections[1]] }), "causal-exclusion"],
+  ])("logs validation classification %s without copying output", async (text, category) => {
+    fetchMock.mockResolvedValue(response(text));
+    expect(await createJudgmentCoach()(27, input())).toEqual({ status: "unavailable", reason: "invalid-response" });
+    expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category })]]);
+  });
+  it("logs configuration and metadata failures without key, model or user identifiers", async () => {
+    ENV.nvidiaApiKey = "";
+    await createJudgmentCoach()(27, input());
+    ENV.nvidiaApiKey = "synthetic-private-key";
+    fetchMock.mockResolvedValue(response(JSON.stringify(output()), ENV.nvidiaApiKey));
+    await createJudgmentCoach()(27, input());
+    expect(vi.mocked(console.warn).mock.calls).toEqual([
+      [JSON.stringify({ event: "judgment_coach_unavailable", reason: "not-configured", category: "configuration" })],
+      [JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category: "metadata" })],
+    ]);
+  });
+  it("does not log successful answers or invalid unconsented input", async () => {
+    expect((await createJudgmentCoach()(27, input())).status).toBe("ready");
+    await expect(createJudgmentCoach()(27, { ...input(), consent: false })).rejects.toThrow();
+    expect(console.warn).not.toHaveBeenCalled();
   });
   it.each(["length", "content_filter"])("rejects incomplete %s responses", async reason => {
     fetchMock.mockResolvedValue(response(JSON.stringify(output()), "nvidia/qa", reason));
