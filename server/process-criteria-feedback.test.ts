@@ -72,4 +72,13 @@ describe("process feedback reconnects choices to their evidence", () => {
     expect(css).toContain(".pt-choice-values"); expect(css).toContain("min-height:44px");
     expect(css).toContain(".pt-review-return"); expect(css).toContain("scroll-margin-top:110px");
   });
+  it("does not remove the graph return control before scrolling to the source heading", () => {
+    const source = readFileSync("client/src/pages/ProcessTraining.tsx", "utf8");
+    const returning = source.slice(source.indexOf("const returnToReview ="), source.indexOf("const reviewCoachPoint ="));
+    expect(returning).toContain('target?.focus({ preventScroll: true })');
+    expect(returning).not.toContain("setReviewReturnTarget(null)");
+    expect(returning).toContain("alignReviewHeading(target)");
+    expect(source).toContain("productHeader.current?.getBoundingClientRect().height");
+    expect(source).toContain('ref={productHeader}');
+  });
 });

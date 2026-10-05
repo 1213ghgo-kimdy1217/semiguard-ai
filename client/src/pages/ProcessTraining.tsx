@@ -115,24 +115,32 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const [coachReviewActive, setCoachReviewActive] = useState(false);
   const [reviewReturnTarget, setReviewReturnTarget] = useState<"criteria" | "timeline" | null>(null);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
+  const productHeader = useRef<HTMLElement>(null);
   const criteriaHeading = useRef<HTMLHeadingElement>(null);
   const timelineHeading = useRef<HTMLHeadingElement>(null);
   const coachReturn = useRef<(() => void) | null>(null);
+  const alignReviewHeading = (target: HTMLElement | null) => {
+    if (!target) return;
+    const offset = (productHeader.current?.getBoundingClientRect().height ?? 90) + 20;
+    window.scrollTo({ top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - offset), behavior: "auto" });
+  };
   const reviewChoicePoint = (time: number, source: "criteria" | "timeline") => {
     if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
     coachReturn.current = null; setCoachReviewActive(false);
     setReviewReturnTarget(source); setReviewTime(time);
     reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
+    alignReviewHeading(reviewHeading.current);
   };
   const returnToReview = () => {
     const target = reviewReturnTarget === "criteria" ? criteriaHeading.current : timelineHeading.current;
-    setReviewReturnTarget(null);
     target?.focus({ preventScroll: true }); target?.scrollIntoView({ block: "start", behavior: "auto" });
+    alignReviewHeading(target);
   };
   const reviewCoachPoint = (time: number, returnToQuestion: () => void) => {
     if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
     setReviewReturnTarget(null); coachReturn.current = returnToQuestion; setReviewTime(time); setCoachReviewActive(true);
     reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
+    alignReviewHeading(reviewHeading.current);
   };
   const [notice, setNotice] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
@@ -226,7 +234,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
 
   return <div className="et-app pt-app">
     <a className="et-skip" href="#process-main">{l("본문으로 건너뛰기", "Skip to content", "本文へスキップ")}</a>
-    <header className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard <small>JUDGMENT TRAINING</small></Link>
+    <header className="et-header" ref={productHeader}><Link className="et-brand" href="/training"><b>SG</b> SemiGuard <small>JUDGMENT TRAINING</small></Link>
       <nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}>
         <Link href="/training">{l("학습·연습 선택", "Choose practice", "練習を選ぶ")}</Link>
         <Link href="/learn">{l("8대 공정 학습", "Process learning", "8大工程学習")}</Link>
