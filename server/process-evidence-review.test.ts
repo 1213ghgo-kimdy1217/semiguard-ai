@@ -81,4 +81,59 @@ describe("condition-aware oxidation and transient photo evidence", () => {
       expect(sample.value >= sample.low && sample.value <= sample.high).toBe(true);
     }
   });
+  it.each(["ko", "en", "ja"] as const)("separates deposition and implantation inspection evidence in %s", language => {
+    const scenario = getProcessScenario("deposition")!; const before = JSON.stringify(scenario); const onReviewPoint = vi.fn();
+    const tree = ProcessEvidenceReview({ scenario, language, onReviewPoint });
+    const cards = elements(tree).filter(element => element.type === "article");
+    expect(cards).toHaveLength(3);
+    elements(tree).filter(element => element.type === "button").forEach(button => button.props.onClick());
+    expect(onReviewPoint.mock.calls).toEqual([[47], [48], [90]]);
+    for (const [index, time] of [47, 48, 90].entries()) for (const signal of scenario.signals) {
+      const sample = processSample(scenario, signal.id, time);
+      expect(text(cards[index])).toContain(signal.name[{ko:0,en:1,ja:2}[language]]);
+      expect(text(cards[index])).toContain(signal.location[{ko:0,en:1,ja:2}[language]]);
+      expect(text(cards[index])).toContain(sample.value.toFixed(1));
+      expect(text(cards[index])).toContain(sample.reference.toFixed(1));
+      expect(text(cards[index])).toContain((sample.value - sample.reference).toFixed(1));
+      expect(text(cards[index])).toContain(`${sample.low.toFixed(1)}–${sample.high.toFixed(1)}`);
+    }
+    expect(text(tree)).toContain({ko:"서로 다른 목적의 별도 검사 기록",en:"separate inspections with different purposes",ja:"異なる目的の別々の検査記録"}[language]);
+    expect(text(tree)).toContain({ko:"특정 장비 원인의 확정·배제",en:"confirm or exclude a particular equipment cause",ja:"特定の装置原因の確定・除外"}[language]);
+    expect(JSON.stringify(scenario)).toBe(before);
+  });
+  it.each(["ko", "en", "ja"] as const)("compares interconnect deviation, temporary return and recurrence in %s", language => {
+    const scenario = getProcessScenario("metal")!; const before = JSON.stringify(scenario); const onReviewPoint = vi.fn();
+    const tree = ProcessEvidenceReview({ scenario, language, onReviewPoint });
+    const cards = elements(tree).filter(element => element.type === "article");
+    expect(cards).toHaveLength(4);
+    elements(tree).filter(element => element.type === "button").forEach(button => button.props.onClick());
+    expect(onReviewPoint.mock.calls).toEqual([[41], [42], [48], [54]]);
+    for (const [index, time] of [41, 42, 48, 54].entries()) for (const signal of scenario.signals) {
+      const sample = processSample(scenario, signal.id, time);
+      expect(text(cards[index])).toContain(signal.location[{ko:0,en:1,ja:2}[language]]);
+      expect(text(cards[index])).toContain(sample.value.toFixed(1));
+      expect(text(cards[index])).toContain(sample.reference.toFixed(1));
+      expect(text(cards[index])).toContain((sample.value - sample.reference).toFixed(1));
+    }
+    expect(text(tree)).toContain({ko:"48초의 띠 안 복귀만으로",en:"return inside the band at 48 s alone",ja:"48秒の基準帯内への復帰だけ"}[language]);
+    expect(text(tree)).toContain({ko:"연결 기록의 편차가 없어졌다는 뜻은 아닙니다",en:"does not erase the connection-record deviation",ja:"接続記録の偏差がなくなったことを意味しません"}[language]);
+    expect(elements(tree).some(element => element.props.className === "pt-evidence-points pt-evidence-points--four")).toBe(true);
+    expect(JSON.stringify(scenario)).toBe(before);
+  });
+  it("grounds deposition's sustained deviation in every authored sample, not the electrical inspection", () => {
+    const scenario = getProcessScenario("deposition")!;
+    for (let at = 0; at <= scenario.duration; at++) {
+      const film = processSample(scenario, "film", at); const electrical = processSample(scenario, "electrical", at);
+      expect(film.value < film.low).toBe(at >= 48);
+      expect(electrical.value >= electrical.low && electrical.value <= electrical.high).toBe(true);
+    }
+  });
+  it("grounds the interconnect recurrence in the authored six-second intervals", () => {
+    const scenario = getProcessScenario("metal")!;
+    for (let at = 0; at <= scenario.duration; at++) {
+      const connection = processSample(scenario, "connection", at); const appearance = processSample(scenario, "appearance", at);
+      expect(connection.value > connection.high).toBe(at >= 42 && Math.floor((at - 42) / 6) % 2 === 0);
+      expect(appearance.value >= appearance.low && appearance.value <= appearance.high).toBe(true);
+    }
+  });
 });
