@@ -12,7 +12,7 @@ export const processEquipment: Record<ProcessId, EquipmentContext> = {
   oxidation: {
     name: "Tokyo Electron TELINDY PLUS",
     context: ["열처리 플랫폼의 산화·어닐링 용도를 통해 산화 공정 장비의 역할을 이해합니다.", "Its oxidation and annealing applications illustrate the role of thermal-processing equipment.", "熱処理プラットフォームの酸化・アニール用途から、酸化工程の装置の役割を理解します。"],
-    distinction: ["조건이 달라지면 정상 참고도 달라질 수 있습니다. 연습의 온도·막 기록은 가상이며 실제 운전 조건이 아닙니다.", "Different conditions can need different normal references. The temperature and film records are fictional, not operating conditions.", "条件が異なれば正常参照も変わり得ます。温度・膜の記録は仮想で、実際の運転条件ではありません。"],
+    distinction: ["조건이 달라지면 정상 참고도 달라질 수 있습니다. 연습은 가상 막·균일도 검사 기록을 비교하며, 이 열처리 장비의 온도 센서나 실제 운전 조건을 재현하지 않습니다.", "Different conditions can need different normal references. The exercise compares fictional film and uniformity inspection records, not this thermal system's temperature sensors or actual operating conditions.", "条件が異なれば正常参照も変わり得ます。練習は仮想の膜・均一性検査記録を比較し、この熱処理装置の温度センサーや実際の運転条件は再現しません。"],
     sources: [{ name: "Tokyo Electron · TELINDY series", url: "https://www.tel.com/product/telindy.html" }],
   },
   photo: {
