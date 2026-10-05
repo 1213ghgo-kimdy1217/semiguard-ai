@@ -136,4 +136,63 @@ describe("condition-aware oxidation and transient photo evidence", () => {
       expect(appearance.value >= appearance.low && appearance.value <= appearance.high).toBe(true);
     }
   });
+  it.each([["ko", "교육용 검사 구역"], ["en", "Teaching inspection region"], ["ja", "教育用検査領域"]] as const)("identifies EDS regions without revealing review answers in %s", (language, label) => {
+    const scenario = getProcessScenario("eds")!;
+    for (const [time, region] of [[0, "A"], [29, "A"], [30, "B"], [59, "B"], [60, "C"], [90, "C"]] as const) {
+      const result = text(ProcessRecordContext({ scenario, time, language }));
+      expect(result).toContain(`${label} ${region}`);
+      expect(result).toContain({ko:"실제 생산 시간이 아닙니다",en:"not production time",ja:"実際の生産時間ではありません"}[language]);
+      expect(result).not.toMatch(/편차|deviation|偏差/);
+    }
+  });
+  it.each(["ko", "en", "ja"] as const)("compares the EDS region boundaries with separate evidence in %s", language => {
+    const scenario = getProcessScenario("eds")!; const before = JSON.stringify(scenario); const onReviewPoint = vi.fn();
+    const tree = ProcessEvidenceReview({ scenario, language, onReviewPoint });
+    const cards = elements(tree).filter(element => element.type === "article");
+    expect(cards).toHaveLength(4);
+    elements(tree).filter(element => element.type === "button").forEach(button => button.props.onClick());
+    expect(onReviewPoint.mock.calls).toEqual([[29], [30], [59], [60]]);
+    for (const [index, time] of [29, 30, 59, 60].entries()) for (const signal of scenario.signals) {
+      const sample = processSample(scenario, signal.id, time);
+      expect(text(cards[index])).toContain(signal.location[{ko:0,en:1,ja:2}[language]]);
+      expect(text(cards[index])).toContain(sample.value.toFixed(1));
+      expect(text(cards[index])).toContain(sample.reference.toFixed(1));
+    }
+    expect(text(tree)).toContain({ko:"실제 생산 중 변화가 시작된 시간",en:"not when a change began during production",ja:"実際の生産中に変化が始まった時刻ではありません"}[language]);
+    expect(text(tree)).toContain({ko:"특정 장비 원인의 확정·배제",en:"confirm or exclude a particular equipment cause",ja:"特定の装置原因の確定・除外"}[language]);
+    expect(JSON.stringify(scenario)).toBe(before);
+  });
+  it.each(["ko", "en", "ja"] as const)("separates packaging trend, band crossing and return in %s", language => {
+    const scenario = getProcessScenario("packaging")!; const before = JSON.stringify(scenario); const onReviewPoint = vi.fn();
+    const tree = ProcessEvidenceReview({ scenario, language, onReviewPoint });
+    const cards = elements(tree).filter(element => element.type === "article");
+    expect(cards).toHaveLength(4);
+    elements(tree).filter(element => element.type === "button").forEach(button => button.props.onClick());
+    expect(onReviewPoint.mock.calls).toEqual([[50], [56], [70], [82]]);
+    for (const [index, time] of [50, 56, 70, 82].entries()) for (const signal of scenario.signals) {
+      const sample = processSample(scenario, signal.id, time);
+      expect(text(cards[index])).toContain(signal.name[{ko:0,en:1,ja:2}[language]]);
+      expect(text(cards[index])).toContain(sample.value.toFixed(1));
+      expect(text(cards[index])).toContain((sample.value - sample.reference).toFixed(1));
+    }
+    expect(text(tree)).toContain({ko:"실제 원인이 해결됐다는 증거는 아닙니다",en:"not evidence that a real cause was resolved",ja:"実際の原因が解決した証拠ではありません"}[language]);
+    expect(JSON.stringify(scenario)).toBe(before);
+  });
+  it("grounds EDS deviation in region C without interpreting playback as production time", () => {
+    const scenario = getProcessScenario("eds")!;
+    for (let at = 0; at <= scenario.duration; at++) {
+      const die = processSample(scenario, "die", at); const comparison = processSample(scenario, "comparison", at);
+      expect(die.value > die.high).toBe(at >= 60);
+      expect(comparison.value >= comparison.low && comparison.value <= comparison.high).toBe(true);
+    }
+  });
+  it("grounds packaging's first band exit and return in every authored sample", () => {
+    const scenario = getProcessScenario("packaging")!;
+    expect(scenario.changeTime).toBe(50);
+    for (let at = 0; at <= scenario.duration; at++) {
+      const connection = processSample(scenario, "connection", at); const appearance = processSample(scenario, "appearance", at);
+      expect(connection.value < connection.low).toBe(at >= 56 && at < 82);
+      expect(appearance.value >= appearance.low && appearance.value <= appearance.high).toBe(true);
+    }
+  });
 });
