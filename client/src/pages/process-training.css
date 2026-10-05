@@ -42,6 +42,9 @@
 .et-app .pt-record-context strong{color:#a9d5c5;white-space:nowrap}.et-app .pt-record-context span{font-size:13px;color:#c3cec4}
 .et-app .pt-evidence-compare{margin-top:24px;padding-top:20px;border-top:1px solid #435447}
 .et-app .pt-evidence-points{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin:18px 0}
+.et-app .pt-evidence-points--four{grid-template-columns:repeat(2,minmax(0,1fr))}
+.et-app .pt-evidence-location{display:block;margin-top:4px;font-weight:400;line-height:1.6}
+.et-app .pt-evidence-limit{border-left:3px solid #e4aa55;padding:12px 16px;background:#24342b;line-height:1.8}
 .et-app .pt-evidence-points article{min-width:0;background:#1b2923;border:1px solid #435447;border-radius:8px;padding:18px}
 .et-app .pt-evidence-points h4{display:flex;flex-direction:column;gap:6px;margin:0;color:#edf0eb;font-size:15px}.et-app .pt-evidence-points time{font:600 18px ui-monospace,monospace;color:#efbc70}
 .et-app .pt-evidence-points dl{margin:12px 0 18px}.et-app .pt-evidence-points dl>div{padding:12px 0;border-bottom:1px solid #435447}.et-app .pt-evidence-points dt{color:#edf0eb;font-size:14px}.et-app .pt-evidence-points dd{display:grid;gap:6px;margin:6px 0 0;color:#c3cec4;font-size:13px;overflow-wrap:anywhere}.et-app .pt-evidence-points small{color:#b4c1b6;font-size:12px}
