@@ -7,8 +7,8 @@ import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
 import "./process-scenario-path.css";
 
-export default function ProcessScenarioPath({ language, userId, onEtch }: {
-  language: ProductLanguage; userId: number | null; onEtch: () => void;
+export default function ProcessScenarioPath({ language, userId, onEtch, onHistory }: {
+  language: ProductLanguage; userId: number | null; onEtch: () => void; onHistory?: () => void;
 }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const progress = trpc.training.progress.useQuery(undefined, { enabled: userId !== null, retry: false });
@@ -34,6 +34,7 @@ export default function ProcessScenarioPath({ language, userId, onEtch }: {
       </div>
       <p role="status" aria-live="polite">{pendingOnly ? l(`미제출 공정 ${visible.length}개`, `Unsubmitted processes: ${visible.length}`, `未提出の工程 ${visible.length}件`) : l(`전체 공정 ${visible.length}개`, `All processes: ${visible.length}`, `すべての工程 ${visible.length}件`)}</p>
     </section> : userId !== null ? <div className="process-path-load"><p role="status">{progress.isError ? l("완료 기록을 불러오지 못했지만 모든 훈련은 선택할 수 있습니다.", "Completion records could not load, but all exercises remain available.", "完了記録を読み込めませんでしたが、すべての訓練を選択できます。") : l("제출 기록을 확인하는 중… 기록 확인 전에도 모든 공정을 선택할 수 있습니다.", "Checking submission records… You can choose any process while records load.", "提出記録を確認中…確認中でもすべての工程を選べます。")}</p>{progress.isError ? <button type="button" className="et-linkbutton" disabled={progress.isFetching} onClick={() => { void progress.refetch(); }}>{l("제출 기록 다시 불러오기", "Reload submission records", "提出記録を再読み込み")}</button> : null}</div> : null}
+    {userId !== null && onHistory ? <div className="et-actions"><button type="button" className="et-linkbutton" onClick={onHistory}>{l("내 학습 기록 보기", "View my practice history", "自分の練習記録を見る")}</button></div> : null}
     <ol id="process-path-modules" className="process-path-grid">{visible.map(scenario => <li className="et-panel process-path-card" key={scenario.id}>
       <div className="process-path-number"><span>{String(scenario.order).padStart(2, "0")}</span><span>{saved ? saved.scenarioIds.includes(scenario.id) ? l("제출 완료", "Submitted", "提出済み") : l("미제출", "Unsubmitted", "未提出") : l("자유 선택", "Open to choose", "自由に選択")}</span></div>
       <h3>{l(...scenario.title)}</h3><p className="et-caption">{l(...scenario.equipment)}</p><p>{l(...scenario.objective)}</p>
