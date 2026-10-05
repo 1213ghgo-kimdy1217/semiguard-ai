@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
 import ProcessEquipmentReference from "../components/ProcessEquipmentReference";
+import ProcessCriteriaFeedback from "../components/ProcessCriteriaFeedback";
 import { toTrainingDraft, restoreTrainingDraft } from "../../../shared/trainingDraft";
 import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, Flag, Pause, Play } from "lucide-react";
@@ -112,11 +113,25 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const [inspectionSelection, setInspectionSelection] = useState<number | null>(null);
   const [reviewTime, setReviewTime] = useState(scenario.duration);
   const [coachReviewActive, setCoachReviewActive] = useState(false);
+  const [reviewReturnTarget, setReviewReturnTarget] = useState<"criteria" | "timeline" | null>(null);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
+  const criteriaHeading = useRef<HTMLHeadingElement>(null);
+  const timelineHeading = useRef<HTMLHeadingElement>(null);
   const coachReturn = useRef<(() => void) | null>(null);
+  const reviewChoicePoint = (time: number, source: "criteria" | "timeline") => {
+    if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
+    coachReturn.current = null; setCoachReviewActive(false);
+    setReviewReturnTarget(source); setReviewTime(time);
+    reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
+  };
+  const returnToReview = () => {
+    const target = reviewReturnTarget === "criteria" ? criteriaHeading.current : timelineHeading.current;
+    setReviewReturnTarget(null);
+    target?.focus({ preventScroll: true }); target?.scrollIntoView({ block: "start", behavior: "auto" });
+  };
   const reviewCoachPoint = (time: number, returnToQuestion: () => void) => {
     if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
-    coachReturn.current = returnToQuestion; setReviewTime(time); setCoachReviewActive(true);
+    setReviewReturnTarget(null); coachReturn.current = returnToQuestion; setReviewTime(time); setCoachReviewActive(true);
     reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
   };
   const [notice, setNotice] = useState("");
@@ -141,7 +156,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   useEffect(() => {
     document.title = `${localize(scenario.title, language)} — SemiGuard`;
   }, [scenario.title, language]);
-  useEffect(() => { coachReturn.current = null; setCoachReviewActive(false); }, [language, attempt.saveKey]);
+  useEffect(() => { coachReturn.current = null; setCoachReviewActive(false); setReviewReturnTarget(null); }, [language, attempt.saveKey]);
   useEffect(() => { heading.current?.focus(); heading.current?.scrollIntoView({ block: "start" }); }, [stage]);
   useEffect(() => {
     try { sessionStorage.setItem(storageKey, JSON.stringify(attempt)); }
@@ -208,9 +223,6 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   };
   const choicesReady = validProcessAnswer(scenario, answer);
   const matched = attempt.submitted ? processCriteria(scenario, answer) : null;
-  const expectedSignalName = scenario.expectedSignal === "none"
-    ? l("정상 참고와의 편차를 확인하지 못함", "No deviation established against the normal reference", "正常参照からの偏差は確認できない")
-    : localize(scenario.signals.find(signal => signal.id === scenario.expectedSignal)!.name, language);
 
   return <div className="et-app pt-app">
     <a className="et-skip" href="#process-main">{l("본문으로 건너뛰기", "Skip to content", "本文へスキップ")}</a>
@@ -286,6 +298,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
           </div>
         </> : <div className="et-marker-picker"><label htmlFor="process-review-time">{l("복기할 시점", "Review time", "振り返る時点")} · {clock(reviewTime)}</label><input id="process-review-time" type="range" min={0} max={scenario.duration} step={1} value={reviewTime} onChange={event => setReviewTime(Number(event.target.value))} /></div>}
         <ProcessSnapshot scenario={scenario} time={shownTime} language={language} />
+        {stage === "review" && reviewReturnTarget ? <Button variant="outline" className="pt-review-return" onClick={returnToReview}>{reviewReturnTarget === "criteria" ? l("선택형 피드백으로 돌아가기", "Return to choice feedback", "選択基準のフィードバックに戻る") : l("타임라인 설명으로 돌아가기", "Return to timeline notes", "タイムラインの説明に戻る")}</Button> : null}
         {stage === "review" && coachReviewActive ? <Button variant="outline" onClick={() => coachReturn.current?.()}>{l("읽던 AI 질문으로 돌아가기", "Return to the AI question", "読んでいたAIの問いに戻る")}</Button> : null}
         {stage === "observe" ? <div className="et-actions"><Button onClick={() => move("brief")}><ArrowLeft size={16} />{l("상황 다시 보기", "Revisit briefing", "状況を再確認")}</Button><Button className="et-primary" onClick={() => move("decision")}>{l("내 판단 작성하기", "Write your reasoning", "自分の判断を記録")} <ArrowRight size={16} /></Button></div> : null}
       </section> : null}
@@ -321,19 +334,14 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
       </section> : null}
 
       {stage === "review" && matched ? <>
-        <section className="et-panel pt-timeline"><p className="et-eyebrow">WHAT THE VIRTUAL SCENARIO CONTAINS</p><h2>{l("기록의 변화와 내 판단을 나란히 봅니다.", "Compare the record with your reasoning.", "記録の変化と自分の判断を並べて確認します。")}</h2>
-          <ul>{scenario.events.map((event, index) => <li key={`${event.time}:${index}`}><button type="button" onClick={() => setReviewTime(event.time)}><time>{clock(event.time)}</time>{localize(event.label, language)}</button></li>)}</ul>
+        <section className="et-panel pt-timeline"><p className="et-eyebrow">WHAT THE VIRTUAL SCENARIO CONTAINS</p><h2 ref={timelineHeading} tabIndex={-1}>{l("기록의 변화와 내 판단을 나란히 봅니다.", "Compare the record with your reasoning.", "記録の変化と自分の判断を並べて確認します。")}</h2>
+          <ul>{scenario.events.map((event, index) => <li key={`${event.time}:${index}`}><button type="button" onClick={() => reviewChoicePoint(event.time, "timeline")}><time>{clock(event.time)}</time>{localize(event.label, language)}</button></li>)}</ul>
           <p>{l("내 발견 기록", "Your discovery marker", "自分の発見記録")}: {attempt.marker === null ? l("없음", "none", "なし") : clock(attempt.marker)} · {l("내 시작 시점 판단", "Your estimated onset", "自分の開始時点の判断")}: {answer.onset === "none" ? l("없음", "none", "なし") : clock(Number(answer.onset))}</p>
           <p className="et-caption">{l("보라색 선은 시나리오가 구성한 편차의 시작입니다. 편차가 없는 경우에는 표시하지 않습니다. 이 구성 기준은 실제 설비의 고장 기준이 아닙니다. 내 표시는 내가 선택한 가상 시점이며 발견 속도 평가가 아닙니다.", "The purple line marks the designed deviation onset, if present, not a real equipment fault limit. Your marker is a selected virtual time, not a discovery-speed assessment.", "紫の線はシナリオで構成した偏差の開始で、実装置の故障基準ではありません。自分の印は選択した仮想時点で、発見速度の評価ではありません。")}</p>
         </section>
-        <section className="et-panel et-report"><h2>{l("선택형 기준으로 돌아보기", "Review against choice criteria", "選択基準で振り返る")}</h2>
+        <section className="et-panel et-report"><h2 ref={criteriaHeading} tabIndex={-1}>{l("선택형 기준으로 돌아보기", "Review against choice criteria", "選択基準で振り返る")}</h2>
           <p>{l("다음 표시는 이 가상 시나리오의 선택형 기준과 일치했는지만 보여줍니다. 전문성·안전 자격·실제 현장 판단 능력을 평가하지 않으며 서술형 답안을 자동 채점하지 않습니다.", "These checks show agreement with this synthetic scenario's choice criteria only. They do not assess expertise, safety qualifications or workplace ability, and do not grade written answers.", "以下はこの仮想シナリオの選択基準との一致だけを示します。専門性、安全資格、現場の判断能力は評価せず、記述回答を自動採点しません。")}</p>
-          {([
-            ["signalMatched", l("주목한 항목", "Main item", "注目した項目"), l(`구성 기준: ${expectedSignalName}. 다른 기록을 함께 보고 추정과 구분하세요.`, `Teaching criterion: ${expectedSignalName}. Compare the other records and separate inference.`, `構成基準：${expectedSignalName}。他の記録も比較し、推測と区別してください。`)],
-            ["onsetMatched", l("변화 시작 판단", "Onset reasoning", "変化開始の判断"), scenario.changeTime === null ? l("이 기록에는 정상 참고와의 편차 시작을 지정하지 않았습니다. 정상 변화가 있다는 이유로 이상 시점을 만들지 않습니다.", "This record has no designed deviation from the normal reference. A normal change does not require inventing an anomaly onset.", "この記録には正常参照からの偏差開始を設定していません。正常な変化を理由に異常の開始を作る必要はありません。") : l(`구성상 편차는 ${clock(scenario.changeTime)}부터 시작합니다. 짧은 편차, 반복되는 편차, 추세 변화를 함께 구분해 보세요.`, `The designed deviation starts at ${clock(scenario.changeTime)}. Distinguish brief differences, repeated differences and trend changes.`, `構成上、偏差は${clock(scenario.changeTime)}から始まります。短い偏差、繰り返す偏差、傾向の変化を区別してください。`)],
-            ["comparisonMatched", l("같은 조건의 정상 참고", "Same-condition reference", "同じ条件の正常参照"), localize(scenario.referenceRule, language)],
-            ["certaintyMatched", l("사실과 원인 추정 구분", "Facts versus cause inference", "事実と原因の推測を区別"), l("관측한 편차는 기록의 사실입니다. 이 자료만으로 실제 장비 고장이나 특정 원인을 확정하거나 배제할 수 없습니다.", "An observed deviation is a fact about the record. These records cannot confirm or exclude a real equipment fault or specific cause.", "観測した偏差は記録上の事実です。この資料だけで実装置の故障や特定原因を確定、または除外できません。")],
-          ] as const).map(([key, label, description]) => <article className="et-feedback" key={key}><span className={matched[key] ? "et-good" : "et-revisit"}>{matched[key] ? l("구성 기준과 일치", "Matches teaching criteria", "構成基準と一致") : l("다시 비교해 보기", "Compare again", "再度比較する")}</span><h3>{label}</h3><p>{description}</p></article>)}
+          <ProcessCriteriaFeedback scenario={scenario} answer={answer} matched={matched} language={language} onReviewPoint={time => reviewChoicePoint(time, "criteria")} />
           <h3>{l("내가 작성한 사실과 추정", "Your observations and inference", "記入した事実と推測")}</h3><p>{answer.facts}</p>
           <h3>{l("내가 선택한 다음 비교 순서", "Your next record comparisons", "選択した次の比較順序")}</h3><p>{answer.checks}</p>
         </section>
