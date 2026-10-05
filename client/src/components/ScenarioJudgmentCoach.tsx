@@ -6,6 +6,7 @@ import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { toJudgmentCoachRequest, toProcessJudgmentCoachRequest, type CoachDimension, type CoachStrength, type JudgmentCoachResult } from "../../../shared/judgmentCoach";
 import { ETCH_DURATION, type EtchAttempt } from "../../../shared/etchScenario";
 import { coachReviewTargets } from "../../../shared/coachReview";
+import { classifyCoachRequestError, coachFailureMessage, type CoachRequestFailure } from "../../../shared/coachFailure";
 import type { ProcessAttempt, ProcessScenario } from "../../../shared/processScenarios";
 import "./judgment-coach.css";
 
@@ -33,7 +34,7 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
   const id = useId();
   const [consent, setConsent] = useState(false);
   const [result, setResult] = useState<JudgmentCoachResult | null>(null);
-  const [networkError, setNetworkError] = useState(false);
+  const [clientFailure, setClientFailure] = useState<CoachRequestFailure | null>(null);
   const pending = useRef(false);
   const reflectionHeadings = useRef<Partial<Record<CoachDimension, HTMLHeadingElement>>>({});
   const reviewTargets = coachReviewTargets(attempt, scenario?.duration ?? ETCH_DURATION);
@@ -42,10 +43,10 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
   const request = async () => {
     if (!attempt || (processAttempt && scenario?.id !== processAttempt.scenarioId)) return;
     if (!consent || !userId || !attempt.submitted || pending.current) return;
-    pending.current = true; setResult(null); setNetworkError(false);
+    pending.current = true; setResult(null); setClientFailure(null);
     try { setResult(await coach.mutateAsync(processAttempt
       ? toProcessJudgmentCoachRequest(processAttempt, language) : toJudgmentCoachRequest(attempt, language))); }
-    catch { setNetworkError(true); }
+    catch (error) { setClientFailure(classifyCoachRequestError(error)); }
     finally { pending.current = false; }
   };
   const busy = coach.isPending;
@@ -70,9 +71,10 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
     <div aria-live="polite" aria-atomic="true" aria-busy={busy}>
       {busy ? <p role="status">{l("최대 40초가 걸릴 수 있습니다. 답안을 다시 제출하거나 페이지를 닫지 않아도 됩니다.", "This may take up to 40 seconds. You do not need to resubmit the exercise or close the page.", "最大40秒ほどかかる場合があります。練習を再提出したりページを閉じる必要はありません。")}</p> : null}
       {result?.status === "ready" ? <p role="status">{l("AI 코칭이 도착했습니다. 아래에서 판단 근거와 질문을 확인하세요.", "AI coaching is ready. Review the evidence and questions below.", "AIコーチングが届きました。以下の根拠と問いを確認してください。")}</p> : null}
-      {networkError || unavailable ? <p className="et-alert" role="status">{result?.status === "unavailable" && result.reason === "cooldown"
-        ? l(`요청이 진행 중이거나 너무 빠르게 반복됐습니다. 약 ${result.retryAfterSeconds ?? 60}초 뒤 직접 다시 요청하세요.`, `A request is active or was repeated too quickly. Try again manually in about ${result.retryAfterSeconds ?? 60} seconds.`, `リクエストが進行中、または繰り返しが速すぎます。約${result.retryAfterSeconds ?? 60}秒後に手動で再依頼してください。`)
-        : l("AI 코칭을 받지 못했습니다. AI 답변을 대신 만들지 않으며, 기존 기준 피드백과 타임라인 복기는 그대로 사용할 수 있습니다.", "AI coaching is unavailable. No substitute is presented as AI; criteria feedback and timeline review remain available.", "AIコーチングを受け取れませんでした。代替文をAI回答として表示せず、基準フィードバックとタイムラインの振り返りはそのまま使えます。")}</p> : null}
+      {clientFailure || unavailable ? <div className="et-alert" role="status"><p>{coachFailureMessage(
+        clientFailure ?? (result?.status === "unavailable" ? result.reason : "request-error"), language,
+        result?.status === "unavailable" ? result.retryAfterSeconds : undefined,
+      )}</p>{clientFailure === "session-expired" ? <Link className="et-linkbutton" href="/login" target="_blank" rel="noopener noreferrer">{l("다른 창에서 로그인 확인", "Check sign-in in another tab", "別タブでログインを確認")}</Link> : null}</div> : null}
     </div>
     {result?.status === "ready" ? <div className="coach-result">
       <p className="et-caption">NVIDIA · {result.model} · {l("AI 생성 코칭 · 참고용", "AI-generated coaching · advisory", "AI生成コーチング · 参考用")}</p>

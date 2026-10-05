@@ -4,6 +4,34 @@ import { coachDimensions, coachEvidenceIds, coachStrengths, judgmentCoachFeedbac
   type JudgmentCoachRequest, type JudgmentCoachResult } from "../shared/judgmentCoach";
 import { ENV } from "./_core/env";
 import { invokeLLM } from "./_core/llm";
+import { ZodError } from "zod";
+
+type CoachDiagnostic = "configuration" | "pending" | "cooldown" | "capacity" | "metadata" | "json" | "schema" | "strength" | "safety" | "causal-exclusion" | "evidence" | "language" | "output-shape" | "validation" | "timeout" | "authentication" | "rate-limit" | "http" | "incomplete" | "connection";
+function logCoachFailure(reason: Extract<JudgmentCoachResult, { status: "unavailable" }>["reason"], category: CoachDiagnostic) {
+  // Fixed classifications only: never log error messages, answers, identities,
+  // provider bodies, model output, credentials or request metadata.
+  console.warn(JSON.stringify({ event: "judgment_coach_unavailable", reason, category }));
+}
+function validationCategory(error: unknown): CoachDiagnostic {
+  if (error instanceof SyntaxError) return "json";
+  if (error instanceof ZodError) return "schema";
+  const known: Record<string, CoachDiagnostic> = {
+    "Unsupported strength": "strength", "Invalid coach output": "safety",
+    "Unsupported causal exclusion": "causal-exclusion", "Invalid evidence reference": "evidence",
+    "Unexpected coaching language": "language", "Invalid output": "output-shape",
+  };
+  return error instanceof Error && Object.hasOwn(known, error.message) ? known[error.message] : "validation";
+}
+function providerCategory(error: unknown): CoachDiagnostic {
+  if (!(error instanceof Error)) return "connection";
+  if (error.name === "TimeoutError" || error.name === "AbortError") return "timeout";
+  // Match only the wrapper's fixed message, never record an upstream body.
+  const status = /^LLM nvidia request failed \(HTTP (\d{3})\)$/.exec(error.message)?.[1];
+  if (status === "401" || status === "403") return "authentication";
+  if (status === "429") return "rate-limit";
+  if (status) return "http";
+  return error.message === "LLM returned an incomplete or invalid response" ? "incomplete" : "connection";
+}
 
 const expectedEvidence = {
   reference: "phase-reference", onset: "pressure-trend", "cross-sensor": "other-signals",
@@ -119,15 +147,20 @@ export function createJudgmentCoach() {
   return async (userId: number, raw: unknown): Promise<JudgmentCoachResult> => {
     const request = judgmentCoachRequestSchema.parse(raw);
     if (!ENV.nvidiaApiKey.trim() || (ENV.aiProvider.trim() && ENV.aiProvider.trim() !== "nvidia")) {
+      logCoachFailure("not-configured", "configuration");
       return { status: "unavailable", reason: "not-configured" };
     }
     const now = Date.now();
     for (const [id, entry] of Array.from(users.entries())) if (!entry.pending && now - entry.started >= 600_000) users.delete(id);
     const existing = users.get(userId);
     if (existing && (existing.pending || now - existing.started < 60_000)) {
+      logCoachFailure("cooldown", existing.pending ? "pending" : "cooldown");
       return { status: "unavailable", reason: "cooldown", retryAfterSeconds: Math.max(1, Math.ceil((60_000 - (now - existing.started)) / 1000)) };
     }
-    if (users.size >= 1000 && !existing) return { status: "unavailable", reason: "cooldown", retryAfterSeconds: 60 };
+    if (users.size >= 1000 && !existing) {
+      logCoachFailure("cooldown", "capacity");
+      return { status: "unavailable", reason: "cooldown", retryAfterSeconds: 60 };
+    }
     const entry = { started: now, pending: true }; users.set(userId, entry);
     try {
       const result = await invokeLLM({ max_tokens: 1800, temperature: 0.1,
@@ -159,15 +192,20 @@ Trusted scenario context: ${JSON.stringify(scenarioCoachContext(request))}` },
           },
         } } },
       });
-      if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || !/^[a-zA-Z0-9._/-]{1,120}$/.test(result.model)) return { status: "unavailable", reason: "invalid-response" };
+      if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || !/^[a-zA-Z0-9._/-]{1,120}$/.test(result.model)) {
+        logCoachFailure("invalid-response", "metadata");
+        return { status: "unavailable", reason: "invalid-response" };
+      }
       try {
         const content = result.choices[0]?.message.content;
         if (typeof content !== "string" || content.length > 7000) throw new Error("Invalid output");
         return { status: "ready", provider: "nvidia", model: result.model, language: request.language, feedback: validateCoachOutput(content, request.answer, request.language, request.scenarioId) };
-      } catch { return { status: "unavailable", reason: "invalid-response" }; }
-    } catch {
-      // Do not log submitted text, upstream bodies, model output or credentials.
-      console.warn("[Judgment Coach] NVIDIA coaching unavailable");
+      } catch (error) {
+        logCoachFailure("invalid-response", validationCategory(error));
+        return { status: "unavailable", reason: "invalid-response" };
+      }
+    } catch (error) {
+      logCoachFailure("provider-error", providerCategory(error));
       return { status: "unavailable", reason: "provider-error" };
     } finally { entry.pending = false; }
   };
