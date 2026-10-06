@@ -101,6 +101,8 @@ describe("dashboard AI explanation boundary", () => {
     expect(request.messages.length).toBeLessThanOrEqual(13);
     expect(request.messages[0].content).toContain("Answer the latest user question directly");
     expect(request.messages[0].content).toContain("Do not repeat the full sensor report");
+    expect(request.messages[0].content).toContain("You have not seen the user's screen");
+    expect(request.messages[0].content).toContain("mm/s is vibration velocity, not displacement distance in mm or oscillation frequency in Hz");
     expect(request.messages[0].content).not.toContain("earlier turns occurred regarding equipment anomalies");
     expect(request.messages.some((message: { content: string }) => message.content.includes("connection unavailable"))).toBe(false);
     const facts = JSON.parse(request.messages[0].content.split("Server-calculated comparisons: ")[1]);
