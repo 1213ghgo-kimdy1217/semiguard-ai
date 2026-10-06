@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, lte, sql, count as drizzleCount } from "drizzle-orm";
 import { anomalyLogs, visitorStats, sampleStats, thresholdSettings, sensorThresholds, productActivityEvents, userOnboardingProgress, firstUseFeedback, userStats, type FirstUseFeedbackDifficultStep, type InsertAnomalyLog, type ProductActivityEventType } from "../drizzle/schema";
 import { getDb } from "./db";
+import { DASHBOARD_HISTORY_LIMIT, DASHBOARD_HISTORY_SECONDS } from "./dashboardHistory";
 
 export async function insertAnomalyLog(entry: InsertAnomalyLog) {
   const db = await getDb();
@@ -61,6 +62,25 @@ export async function getRecentAnomalyLogs(userId: number, limit = 50) {
     .where(eq(anomalyLogs.userId, userId))
     .orderBy(desc(anomalyLogs.timestamp))
     .limit(limit);
+}
+
+// Read only this account's bounded saved observations up to the exact snapshot.
+// No profile, manual text or prior AI analysis is selected for historical evidence.
+export async function getDashboardSensorHistory(userId: number, anchorId: number, anchorAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Dashboard history unavailable");
+  return db.select({
+    id: anomalyLogs.id, timestamp: anomalyLogs.timestamp,
+    current: anomalyLogs.current, temperature: anomalyLogs.temperature,
+    vibration: anomalyLogs.vibration, noise: anomalyLogs.noise,
+  }).from(anomalyLogs)
+    .where(and(
+      eq(anomalyLogs.userId, userId), lte(anomalyLogs.id, anchorId),
+      gte(anomalyLogs.timestamp, new Date(anchorAt.getTime() - DASHBOARD_HISTORY_SECONDS * 1000)),
+      lte(anomalyLogs.timestamp, anchorAt),
+    ))
+    .orderBy(desc(anomalyLogs.timestamp), desc(anomalyLogs.id))
+    .limit(DASHBOARD_HISTORY_LIMIT);
 }
 
 export async function clearAnomalyLogs(userId: number) {
