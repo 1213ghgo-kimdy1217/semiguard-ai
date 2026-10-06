@@ -15,20 +15,20 @@ const sensors = [
 const steps = [
   { title: "변화를 발견하고", subtitle: "SIGNAL", body: "점수만으로 판단하지 않습니다. 현재값과 정상 범위를 나란히 보고, 무엇이 달라졌는지 확인합니다.", detail: "전류 6.50 A · 기준 상한 5.50 A", note: "정상 상한 대비 +1.00 A" },
   { title: "근거를 따라가고", subtitle: "EVIDENCE", body: "변화가 시작된 시점과 센서별 기여도를 살핍니다. 관찰한 사실과 아직 확인하지 않은 원인 후보를 구분합니다.", detail: "관찰된 사실: 전류 상승 · 진동 하락", note: "원인 후보는 추가 확인이 필요합니다" },
-  { title: "다음 확인을 정합니다", subtitle: "NEXT CHECK", body: "센서 상태, 최근 운전 조건, 점검 기록을 순서대로 확인합니다. 조치 후에는 정상 범위로 돌아왔는지 다시 살핍니다.", detail: "센서 연결 → 운전 조건 → 점검 기록", note: "현장 절차와 담당자의 판단을 우선합니다" },
+  { title: "다음 확인을 정합니다", subtitle: "NEXT CHECK", body: "가상 기록에서 다음에 확인할 근거를 선택합니다. 판단을 제출한 뒤 AI 코칭과 타임라인에서 놓친 시점·근거를 복기합니다.", detail: "내 판단 기록 → 제출 → 코칭·복기", note: "AI는 질문과 설명을 돕습니다. 고장을 확정하지 않습니다" },
 ];
 
 const welcomeCopy = {
   ko: {
-    title: "SemiGuard AI — 신호에서 판단으로", description: "반도체 신입 엔지니어를 위한 장비 판단 훈련 플랫폼. 교육용 가상 기록을 관찰하고, 직접 판단한 뒤 피드백과 타임라인으로 복기합니다.", skip: "본문으로 건너뛰기", menu: "주 메뉴", workflow: "판단의 흐름", principles: "설계 원칙", login: "로그인", hero1: "이상 대응,", hero2: "판단하는 법을 훈련합니다.", intro1: "작은 센서 변화에서, 다음 확인까지.", intro2: "8대 공정의 맥락을 배우고, 가상 장비 기록으로 판단을 연습합니다.", start: "로그인하고 시작하기", how: "어떻게 작동하나요", path: "소개 → 로그인 → 연습 방식 선택 ·", preview: "로그인 없이 미리보기", figure: "관찰에서 시작하는 판단", sensorTitle: "같은 순간, 네 가지 근거.", example: "예시 데이터 · 16개 관측값", chooseSensor: "관찰할 센서 선택", trend: "추이", range: "정상 범위", previous: "이전 관측", now: "현재", chartScale: "센서 간 세로축 축척은 다릅니다.", scoreStatus: "경고 · 센서 근거 확인", scoreDetail: "정상 기준과의 편차를 합산한 점수입니다. 고장 확률을 의미하지 않습니다.", follow: "판단 흐름 따라가기", workflowTitle1: "하나의 신호가", workflowTitle2: "이해 가능한 판단이 되도록.", workflowDetail: "무슨 일이 관찰됐는지, 무엇을 더 확인해야 하는지. 복잡한 데이터를 세 단계의 흐름으로 연결합니다.", chooseStep: "판단 단계 선택", principlesTitle1: "설명할 수 있는 근거.", principlesTitle2: "분명하게 정한 역할.", final1: "이제, 신호를", final2: "직접 읽어보세요.", selectPractice: "로그인하고 연습 선택하기", afterLogin: "로그인 후 시나리오 훈련과 자유 분석 중 선택할 수 있습니다.", footer: "반도체 장비 교육·점검 보조 시스템",
+    title: "SemiGuard AI — 반도체 장비 판단 훈련", description: "반도체 신입 엔지니어를 위한 장비 판단 훈련 플랫폼. 교육용 가상 기록을 관찰하고, 직접 판단한 뒤 피드백과 타임라인으로 복기합니다.", skip: "본문으로 건너뛰기", menu: "주 메뉴", workflow: "판단의 흐름", principles: "설계 원칙", login: "로그인", hero1: "반도체 장비", hero2: "판단 훈련 플랫폼", intro1: "가상 데이터를 관찰하고, 내 판단과 근거를 기록하세요.", intro2: "AI 코칭과 타임라인 복기로 판단 과정을 다시 살펴봅니다.", start: "로그인하고 시작하기", how: "어떻게 작동하나요", path: "소개 → 로그인 → 연습 방식 선택 ·", preview: "로그인 없이 미리보기", figure: "관찰에서 시작하는 판단", sensorTitle: "같은 순간, 네 가지 근거.", example: "예시 데이터 · 16개 관측값", chooseSensor: "관찰할 센서 선택", trend: "추이", range: "정상 범위", previous: "이전 관측", now: "현재", chartScale: "센서 간 세로축 축척은 다릅니다.", scoreStatus: "경고 · 센서 근거 확인", scoreDetail: "정상 기준과의 편차를 합산한 점수입니다. 고장 확률을 의미하지 않습니다.", follow: "판단 흐름 따라가기", workflowTitle1: "하나의 신호가", workflowTitle2: "이해 가능한 판단이 되도록.", workflowDetail: "무슨 일이 관찰됐는지, 무엇을 더 확인해야 하는지. 복잡한 데이터를 세 단계의 흐름으로 연결합니다.", chooseStep: "판단 단계 선택", principlesTitle1: "설명할 수 있는 근거.", principlesTitle2: "분명하게 정한 역할.", final1: "이제, 신호를", final2: "직접 읽어보세요.", selectPractice: "로그인하고 연습 선택하기", afterLogin: "로그인 후 시나리오 훈련과 자유 분석 중 선택할 수 있습니다.", footer: "반도체 신입 엔지니어를 위한 장비 판단 훈련 플랫폼",
     principlesList: [["위험 점수는 규칙으로", "정상 기준과 z-score 편차로 계산합니다. 학습된 AI 모델이 위험 점수를 산출하지 않습니다."], ["AI는 설명을 돕도록", "센서 근거, 가능한 원인 후보, 권장 확인 순서를 정리합니다. 원인을 확정하거나 설비에 명령을 보내지 않습니다."], ["검증 범위는 투명하게", "현재는 가상 센서 데이터를 활용한 교육·점검 보조 시스템입니다. 실제 팹 성능은 검증되지 않았습니다."]],
   },
   en: {
-    title: "SemiGuard AI — From signal to judgment", description: "An equipment-reasoning training platform for new semiconductor engineers. Observe synthetic records, form your own judgment, then review feedback and timelines.", skip: "Skip to content", menu: "Main navigation", workflow: "How judgment works", principles: "Design principles", login: "Log in", hero1: "Respond to anomalies.", hero2: "Practice the reasoning behind them.", intro1: "From subtle sensor changes to your next check.", intro2: "Learn eight-process context and practise reasoning with virtual equipment records.", start: "Log in to begin", how: "How it works", path: "Introduction → Login → Choose practice ·", preview: "Preview without logging in", figure: "Reasoning starts with observation", sensorTitle: "Four signals, one moment.", example: "Example data · 16 observations", chooseSensor: "Choose a sensor", trend: "trend", range: "Normal range", previous: "Earlier", now: "Now", chartScale: "Vertical scales differ between sensors.", scoreStatus: "Warning · inspect sensor evidence", scoreDetail: "This score aggregates deviations from synthetic normal baselines. It is not a failure probability.", follow: "Follow the reasoning", workflowTitle1: "Turn a signal into", workflowTitle2: "an explainable judgment.", workflowDetail: "See what was observed and what needs checking next. Follow a three-step reasoning flow.", chooseStep: "Choose a reasoning step", principlesTitle1: "Explainable evidence.", principlesTitle2: "Clearly defined roles.", final1: "Now read the", final2: "signals yourself.", selectPractice: "Log in and choose practice", afterLogin: "After login, choose guided scenario training or free analysis.", footer: "Semiconductor equipment education and inspection aid",
+    title: "SemiGuard AI — Semiconductor judgment training", description: "An equipment-reasoning training platform for new semiconductor engineers. Observe synthetic records, form your own judgment, then review feedback and timelines.", skip: "Skip to content", menu: "Main navigation", workflow: "How judgment works", principles: "Design principles", login: "Log in", hero1: "Semiconductor equipment.", hero2: "Practise your judgment.", intro1: "Observe virtual data and record your judgment and evidence.", intro2: "Revisit your reasoning with AI coaching and timeline review.", start: "Log in to begin", how: "How it works", path: "Introduction → Login → Choose practice ·", preview: "Preview without logging in", figure: "Reasoning starts with observation", sensorTitle: "Four signals, one moment.", example: "Example data · 16 observations", chooseSensor: "Choose a sensor", trend: "trend", range: "Normal range", previous: "Earlier", now: "Now", chartScale: "Vertical scales differ between sensors.", scoreStatus: "Warning · inspect sensor evidence", scoreDetail: "This score aggregates deviations from synthetic normal baselines. It is not a failure probability.", follow: "Follow the reasoning", workflowTitle1: "Turn a signal into", workflowTitle2: "an explainable judgment.", workflowDetail: "See what was observed and what needs checking next. Follow a three-step reasoning flow.", chooseStep: "Choose a reasoning step", principlesTitle1: "Explainable evidence.", principlesTitle2: "Clearly defined roles.", final1: "Now read the", final2: "signals yourself.", selectPractice: "Log in and choose practice", afterLogin: "After login, choose guided scenario training or free analysis.", footer: "Equipment judgment training for new semiconductor engineers",
     principlesList: [["Rules calculate risk", "Normal baselines and z-score deviations drive the score. A trained AI model does not calculate risk."], ["AI helps explain", "AI organizes sensor evidence, possible causes, and suggested next checks. It does not confirm a cause or command equipment."], ["Scope is transparent", "This educational aid currently uses synthetic sensor data. Performance in a real fab has not been validated."]],
   },
   ja: {
-    title: "SemiGuard AI — 信号から判断へ", description: "半導体の新人エンジニア向け装置判断訓練プラットフォーム。教育用仮想記録を観察して判断し、フィードバックとタイムラインで振り返ります。", skip: "本文へ移動", menu: "メインメニュー", workflow: "判断の流れ", principles: "設計原則", login: "ログイン", hero1: "異常への対応を、", hero2: "判断の過程から学ぶ。", intro1: "小さなセンサーの変化から、次の確認へ。", intro2: "8大工程の背景を学び、仮想装置の記録で判断を練習します。", start: "ログインして始める", how: "仕組みを見る", path: "紹介 → ログイン → 練習方法の選択 ·", preview: "ログインせずに見る", figure: "観察から始まる判断", sensorTitle: "同じ時点、四つの根拠。", example: "サンプルデータ · 観測値16件", chooseSensor: "センサーを選択", trend: "の推移", range: "正常範囲", previous: "以前の観測", now: "現在", chartScale: "センサーごとに縦軸の尺度は異なります。", scoreStatus: "警告 · センサーの根拠を確認", scoreDetail: "仮想の正常基準からの偏差を合算した点数です。故障確率ではありません。", follow: "判断の流れを見る", workflowTitle1: "一つの信号から、", workflowTitle2: "説明できる判断へ。", workflowDetail: "観察した事実と、次に確認すべきことを三段階で整理します。", chooseStep: "判断の段階を選択", principlesTitle1: "説明できる根拠。", principlesTitle2: "明確にした役割。", final1: "今度は自分で、", final2: "信号を読んでみましょう。", selectPractice: "ログインして練習を選ぶ", afterLogin: "ログイン後、シナリオ訓練または自由分析を選べます。", footer: "半導体装置の教育・点検補助システム",
+    title: "SemiGuard AI — 半導体装置の判断訓練", description: "半導体の新人エンジニア向け装置判断訓練プラットフォーム。教育用仮想記録を観察して判断し、フィードバックとタイムラインで振り返ります。", skip: "本文へ移動", menu: "メインメニュー", workflow: "判断の流れ", principles: "設計原則", login: "ログイン", hero1: "半導体装置の", hero2: "判断訓練プラットフォーム", intro1: "仮想データを観察し、自分の判断と根拠を記録します。", intro2: "AIコーチングとタイムラインで判断の過程を振り返ります。", start: "ログインして始める", how: "仕組みを見る", path: "紹介 → ログイン → 練習方法の選択 ·", preview: "ログインせずに見る", figure: "観察から始まる判断", sensorTitle: "同じ時点、四つの根拠。", example: "サンプルデータ · 観測値16件", chooseSensor: "センサーを選択", trend: "の推移", range: "正常範囲", previous: "以前の観測", now: "現在", chartScale: "センサーごとに縦軸の尺度は異なります。", scoreStatus: "警告 · センサーの根拠を確認", scoreDetail: "仮想の正常基準からの偏差を合算した点数です。故障確率ではありません。", follow: "判断の流れを見る", workflowTitle1: "一つの信号から、", workflowTitle2: "説明できる判断へ。", workflowDetail: "観察した事実と、次に確認すべきことを三段階で整理します。", chooseStep: "判断の段階を選択", principlesTitle1: "説明できる根拠。", principlesTitle2: "明確にした役割。", final1: "今度は自分で、", final2: "信号を読んでみましょう。", selectPractice: "ログインして練習を選ぶ", afterLogin: "ログイン後、シナリオ訓練または自由分析を選べます。", footer: "半導体の新人エンジニア向け装置判断訓練プラットフォーム",
     principlesList: [["リスク点数はルールで計算", "正常基準とzスコアの偏差で計算します。学習済みAIモデルはリスク点数を算出しません。"], ["AIは説明を補助", "センサーの根拠、考えられる原因候補、推奨確認順序を整理します。原因の確定や装置への指令は行いません。"], ["検証範囲を明確に", "現在は仮想センサーデータを用いた教育・点検補助システムです。実際の製造現場での性能は検証されていません。"]],
   },
 } as const;
@@ -48,16 +48,22 @@ const sensorCopy = {
   ],
 };
 
+const orientationCopy = {
+  ko: { audience: "반도체 신입 엔지니어를 위한", scope: "교육용 시뮬레이션 · 실제 장비 연결 없음", learn: "그림으로 공정 살펴보기", example: "이렇게 판단을 연습합니다", compare: "정상 참고와 비교", record: "내 판단과 근거 기록", review: "AI 질문 + 타임라인 복기", normal: "정상 참고", observed: "관찰 기록", note: "정상 참고와 달라진 구간을 발견했어요.", question: "다른 신호도 같은 시점에 달라졌나요?", timeline: "변화 시작과 내가 발견한 시점을 비교", caption: "훈련 흐름을 보여주는 가상 예시 · 실제 장비 데이터 아님", description: "가상 신호가 정상 참고와 달라지는 구간을 관찰하고, 판단 근거를 기록한 뒤 AI 질문과 타임라인으로 복기하는 훈련입니다." },
+  en: { audience: "For new semiconductor engineers", scope: "Educational simulation · no real equipment connection", learn: "Explore illustrated processes", example: "What you do in a practice session", compare: "Compare with a normal reference", record: "Record your judgment and evidence", review: "AI questions + timeline review", normal: "Normal reference", observed: "Observed record", note: "I noticed a segment differing from the normal reference.", question: "Did other signals change at the same time?", timeline: "Compare the onset with when you noticed it", caption: "Illustrative training flow · not real equipment data", description: "Observe a virtual signal differing from a normal reference, record your reasoning, and review it with AI questions and a timeline." },
+  ja: { audience: "半導体の新人エンジニアのための", scope: "教育用シミュレーション · 実際の装置には接続しません", learn: "図で工程を見てみる", example: "このように判断を練習します", compare: "正常参照と比較", record: "自分の判断と根拠を記録", review: "AIの問いとタイムラインで復習", normal: "正常参照", observed: "観察記録", note: "正常参照と異なる区間に気付きました。", question: "ほかの信号も同じ時点で変化しましたか？", timeline: "変化の開始と自分が気付いた時点を比較", caption: "訓練の流れを示す仮想例 · 実際の装置データではありません", description: "仮想信号を正常参照と比較し、判断の根拠を記録して、AIの問いとタイムラインで振り返る訓練です。" },
+} as const;
+
 const stepCopy = {
   en: [
     { title: "Spot the change", body: "Do not judge by the score alone. Compare current readings with the normal range to see what changed.", detail: "Current 6.50 A · upper baseline 5.50 A", note: "+1.00 A above normal upper limit" },
     { title: "Follow the evidence", body: "Check when the change began and each sensor's contribution. Separate observed facts from unverified possible causes.", detail: "Observed: current rose · vibration fell", note: "Possible causes need further checking" },
-    { title: "Choose the next check", body: "Review sensor condition, recent operating context, and inspection records in order. Then check whether readings return to range.", detail: "Sensor connection → operating context → records", note: "Follow site procedures and the responsible expert's judgment" },
+    { title: "Choose the next check", body: "Choose which virtual evidence to check next. Submit your reasoning, then revisit overlooked moments and evidence with coaching and a timeline.", detail: "Your judgment → submission → coaching and review", note: "AI provides questions and explanations, not a confirmed fault diagnosis" },
   ],
   ja: [
     { title: "変化を見つける", body: "点数だけで判断しません。現在値と正常範囲を並べて、何が変わったか確認します。", detail: "電流 6.50 A · 基準上限 5.50 A", note: "正常上限より +1.00 A" },
     { title: "根拠をたどる", body: "変化が始まった時点とセンサーごとの寄与を確認します。観察した事実と未確認の原因候補を分けます。", detail: "観察された事実：電流上昇・振動低下", note: "原因候補には追加の確認が必要です" },
-    { title: "次の確認を決める", body: "センサー状態、最近の運転状況、点検記録を順に確認します。その後、正常範囲に戻ったか再確認します。", detail: "センサー接続 → 運転状況 → 点検記録", note: "現場の手順と担当者の判断を優先します" },
+    { title: "次の確認を決める", body: "仮想記録で次に確認する根拠を選びます。判断を提出し、AIコーチングとタイムラインで見落とした時点や根拠を振り返ります。", detail: "判断記録 → 提出 → コーチング・振り返り", note: "AIは問いと説明を補助します。故障を確定しません" },
   ],
 };
 
@@ -100,6 +106,7 @@ export default function Welcome() {
   const [step, setStep] = useState(0);
   const [language, setLanguage] = useProductLanguage();
   const t = welcomeCopy[language];
+  const orientation = orientationCopy[language];
   const localizedSensors = sensors.map((item, index) => language === "ko" ? item : { ...item, ...sensorCopy[language][index] });
   const localizedSteps = steps.map((item, index) => language === "ko" ? item : { ...item, ...stepCopy[language][index] });
   const current = localizedSensors[sensor];
@@ -135,18 +142,29 @@ export default function Welcome() {
 
       <section className="sg-hero" id="sg-content">
         <div className="sg-hero-copy">
-          <p className="sg-eyebrow"><span className="sg-dot" /> SEMICONDUCTOR · SENSOR INTELLIGENCE</p>
+          <p className="sg-audience"><span className="sg-dot" aria-hidden="true" />{orientation.audience}</p>
           <h1>{t.hero1}<br /><span>{t.hero2}</span></h1>
           <p className="sg-intro">{t.intro1}<br />{t.intro2}</p>
+          <p className="sg-simulation-scope"><Check size={15} aria-hidden="true" />{orientation.scope}</p>
           <div className="sg-hero-actions"><Link className="sg-button sg-button-primary" href="/login">{t.start} <ArrowUpRight size={18} /></Link><a href="#workflow" className="sg-text-link">{t.how} <ArrowDown size={16} /></a></div>
           <p className="sg-quiet">{t.path} <Link href="/preview">{t.preview}</Link></p>
+          <Link className="sg-learn-link" href="/learn">{orientation.learn} <ArrowRight size={16} aria-hidden="true" /></Link>
         </div>
-        <div className="sg-hero-visual">
-          <span className="sg-visual-index">FIG. 01 / SIGNAL OBSERVATION</span>
-          <WaferGraphic />
-          <span className="sg-wafer-label">SENSOR CHANGE<br /><b>{t.figure}</b></span>
-          <div className="sg-visual-caption"><span>WAFER PROCESS</span><span>CONCEPT VISUAL / NOT A LIVE FEED</span></div>
-        </div>
+        <figure className="sg-training-preview" aria-label={orientation.example}>
+          <div className="sg-training-preview-heading"><span className="sg-eyebrow">OBSERVE / REASON / REVIEW</span><h2>{orientation.example}</h2></div>
+          <div className="sg-preview-observation"><p><span className="sg-preview-number">01</span>{orientation.compare}</p>
+            <div className="sg-preview-legend"><span>{orientation.normal}</span><span>{orientation.observed}</span></div>
+            <svg viewBox="0 0 420 150" role="img" aria-label={orientation.description}>
+              <path d="M16 30H402M16 75H402M16 120H402" stroke="#31453b" strokeDasharray="3 5" />
+              <path d="M16 93H402" stroke="#a9c7d2" strokeWidth="2" strokeDasharray="6 5" />
+              <path d="M16 95 48 90 80 96 112 92 144 94 176 89 208 78 240 67 272 52 304 44 336 30 368 33 402 23" fill="none" stroke="#e4aa55" strokeWidth="3" strokeLinejoin="round" />
+              <path d="M208 14v121" stroke="#a9c7d2" strokeDasharray="3 5" /><circle cx="208" cy="78" r="6" fill="#e4aa55" stroke="#101817" strokeWidth="2" />
+            </svg>
+          </div>
+          <div className="sg-preview-reason"><p><span className="sg-preview-number">02</span>{orientation.record}</p><blockquote>{orientation.note}</blockquote></div>
+          <div className="sg-preview-review"><p><span className="sg-preview-number">03</span>{orientation.review}</p><blockquote>{orientation.question}</blockquote><div className="sg-preview-timeline" aria-hidden="true"><span /><span /></div><p className="sg-preview-timeline-label">{orientation.timeline}</p></div>
+          <figcaption>{orientation.caption}</figcaption>
+        </figure>
       </section>
 
       <section className="sg-sensor-console" aria-labelledby="sensor-console-title" data-reveal>

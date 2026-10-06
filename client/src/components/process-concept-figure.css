@@ -1,0 +1,15 @@
+.pc-figure { margin: 24px 0 10px; padding: 20px; border: 1px solid #3e5449; border-radius: 8px; background: #101a17; min-width: 0; }
+.pc-heading { display: flex; justify-content: space-between; gap: 16px; color: #e4aa55; font-size: .8rem; font-weight: 600; }
+.pc-heading > span:last-child { font: .75rem/1.6 "JetBrains Mono", monospace; color: #a6b6af; }
+.pc-diagram { display: block; width: 100%; height: auto; margin: 16px 0; }
+.pc-labels { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.pc-labels li { display: flex; align-items: start; gap: 7px; color: #e1e9e3; font-size: .8rem; line-height: 1.6; overflow-wrap: anywhere; }
+.pc-labels span { flex: 0 0 20px; height: 20px; display: inline-grid; place-items: center; border: 1px solid #907544; border-radius: 50%; color: #e4aa55; font: .7rem/1 "JetBrains Mono", monospace; margin-top: 2px; }
+.pc-figure figcaption > p { font-size: .85rem; line-height: 1.8; color: #bccbc2; margin: 18px 0 0; }
+.pc-figure figcaption > .pc-observe { border-top: 1px solid #31473a; padding-top: 16px; }
+.pc-observe b { display: block; font-size: .75rem; color: #a9c7d2; margin-bottom: 4px; }
+.pc-footnote { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 10px; margin-top: 18px; font-size: .7rem; line-height: 1.7; color: #a0b1a7; }
+.pc-footnote > span { flex: 1 1 180px; }
+.pc-footnote a { color: #e4aa55; text-decoration: underline; text-underline-offset: 4px; }
+.pc-footnote a:focus-visible { outline: 2px solid #e4aa55; outline-offset: 5px; }
+@media (max-width: 520px) { .pc-figure { padding: 16px; }.pc-labels { grid-template-columns: 1fr; gap: 7px; }.pc-figure figcaption > p { font-size: .85rem; } }
