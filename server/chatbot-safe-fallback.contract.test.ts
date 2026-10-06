@@ -10,7 +10,8 @@ describe("chatbot safe fallback contract", () => {
     expect(routerSource).toContain("[규칙 기반 근거 요약]");
     expect(routerSource).toContain("[ルールベースの根拠要約]");
     expect(routerSource).toContain("[Rule-based Evidence Summary]");
-    expect(routerSource).toContain("formatEvidenceGate(gate, lang)");
+    expect(routerSource).toContain("아래는 질문의 답이 아닌 현재 가상 센서의 고정 요약입니다");
+    expect(routerSource).not.toContain("formatEvidenceGate(gate, lang)");
   });
 
   it("keeps manual citations available when an LLM call falls back", () => {

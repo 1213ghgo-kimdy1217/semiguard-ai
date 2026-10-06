@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 const i18nSource = readFileSync(resolve(process.cwd(), "client/src/lib/i18n.ts"), "utf8");
 const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Dashboard.tsx"), "utf8");
 const loginSource = readFileSync(resolve(process.cwd(), "client/src/pages/Login.tsx"), "utf8");
-const routerSource = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+const consultationSource = readFileSync(resolve(process.cwd(), "server/dashboardConsultation.ts"), "utf8");
 
 describe("product-scope copy contract", () => {
   it("does not represent the read-only product as automatic equipment control", () => {
@@ -32,7 +32,7 @@ describe("product-scope copy contract", () => {
     expect(loginSource).toContain("synthetic sensor signals and rule-based risk scores");
     expect(loginSource).toContain("仮想センサー信号とルールベースのリスク点数");
     expect(loginSource).not.toContain("Isolation Forest AI");
-    expect(routerSource).toContain("위험 점수는 이미 규칙으로 계산되었으며 AI가 다시 산정하지 않습니다");
-    expect(routerSource).toContain("실제 설비 제어, 정지, 분해 또는 현장 조작 방법은 제시하지 마세요");
+    expect(consultationSource).toContain("The risk score is already calculated by rules; never change it or claim AI calculates it");
+    expect(consultationSource).toContain("Never diagnose a real failure or provide physical measurement, equipment control, shutdown, disassembly");
   });
 });
