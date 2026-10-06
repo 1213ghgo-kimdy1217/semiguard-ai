@@ -5,6 +5,7 @@ import { getProcessScenario, scenarioHref } from "../../../shared/processScenari
 import EtchEquipmentReference from "../components/EtchEquipmentReference";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
 import OgqLearningGuide from "../components/OgqLearningGuide";
+import ProcessConceptFigure from "../components/ProcessConceptFigure";
 import { localizeLesson } from "../lib/learningLanguage";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import "./etch-training.css";
@@ -34,6 +35,7 @@ export default function LearningHub() {
       <div className="lh-grid">{lessons.map(p => <article className="et-panel" key={p.id} id={p.id}>
         <p className="et-eyebrow">{String(p.order).padStart(2, "0")} / {p.english}</p>
         <h2>{p.title}</h2><p>{p.concept}</p>
+        <ProcessConceptFigure processId={p.id} language={language} />
         <details><summary>{p.title} {l("더 알아보기", "details", "詳細を見る")}</summary>
           <h3>{l("공정의 앞뒤를 연결하기", "Connect the before and after", "工程の前後をつなぐ")}</h3>
           <div className="lh-flow" aria-label={l("공정 입력, 결과, 확인 근거", "Process input, result, and evidence", "工程の入力、結果、確認根拠")}>
