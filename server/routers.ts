@@ -23,7 +23,7 @@ import { judgmentCoachRequestSchema } from "../shared/judgmentCoach";
 import { trainingDraftSchema } from "../shared/trainingDraft";
 import { getTrainingDrafts, inspectDraftStorage, saveTrainingDraft } from "./trainingDrafts";
 import { readSharedChoices, shareTrainingAttempt } from "./trainingShare";
-import { buildDashboardConsultationMessages } from "./dashboardConsultation";
+import { buildDashboardConsultationMessages, dashboardReplyFormat, parseDashboardConsultationReply } from "./dashboardConsultation";
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -813,11 +813,8 @@ export const appRouter = router({
         const formattedMessages = buildDashboardConsultationMessages({ sensorContext, messages, lang, feedbackContext, manualContext });
 
         try {
-          const res = await invokeLLM({ model: "gpt-5-mini", messages: formattedMessages, max_tokens: 1600, temperature: 0.35 });
-          const reply = res.choices[0]?.message?.content;
-          if (typeof reply !== "string" || !reply.trim()) {
-            throw new Error("No reply content from LLM");
-          }
+          const res = await invokeLLM({ model: "gpt-5-mini", messages: formattedMessages, max_tokens: 1600, temperature: 0.2, response_format: dashboardReplyFormat });
+          const reply = parseDashboardConsultationReply(res.choices[0]?.message?.content);
           return {
             reply,
             usedFallback: false,
@@ -835,7 +832,7 @@ export const appRouter = router({
           };
         } catch (err) {
           const category = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")
-            ? "timeout" : err instanceof Error && err.message === "No reply content from LLM"
+            ? "timeout" : err instanceof Error && err.message === "Invalid dashboard AI reply"
               ? "invalid-reply" : "provider-error";
           console.warn("AI consultation fallback used:", { category });
           return {
