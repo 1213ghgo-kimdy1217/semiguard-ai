@@ -2345,6 +2345,7 @@ export default function Dashboard() {
         noise: current?.sensorData.noise ?? 55.0,
         anomalyScore: current?.anomalyScore ?? 10,
         riskLevel: current?.riskLevel ?? "normal",
+        logId: current?.logId,
       };
       // 수집된 피드백 이력을 서버로 전달하여 LLM이 실시간 학습하도록 반영
       const feedbackHistory = Object.entries(messageFeedbacks).map(([idxStr, type]) => {
@@ -2417,6 +2418,7 @@ export default function Dashboard() {
         noise: current?.sensorData.noise ?? 55.0,
         anomalyScore: current?.anomalyScore ?? 10,
         riskLevel: current?.riskLevel ?? "normal",
+        logId: current?.logId,
       };
       const feedbackHistory = Object.entries(messageFeedbacks).map(([idxStr, type]) => ({
         type,
@@ -5882,9 +5884,9 @@ export default function Dashboard() {
 
             {/* 입력 폼 영역 */}
             <p className="px-3 py-2 text-[10px] leading-relaxed sm:px-4" style={{ color: th.textMuted }}>
-              {lang === "ko" ? "질문·가상 센서 값·관련 등록 매뉴얼 발췌가 외부 AI 제공자(NVIDIA 등)에게 전달됩니다. 개인정보·회사 기밀을 입력하지 마세요."
-                : lang === "ja" ? "質問・仮想センサー値・関連する登録マニュアルの抜粋は外部AI提供者（NVIDIA等）に送信されます。個人情報や会社の機密情報を入力しないでください。"
-                  : "Questions, synthetic readings and relevant registered manual excerpts are sent to an external AI provider (such as NVIDIA). Do not enter personal or confidential company information."}
+              {lang === "ko" ? "질문·현재 가상 센서 값·같은 계정의 최근 5분 저장 기록(최대 60건) 요약·관련 매뉴얼 발췌가 외부 AI 제공자(NVIDIA 등)에게 전달됩니다. 여러 창의 기록이 포함될 수 있습니다. 개인정보·회사 기밀을 입력하지 마세요."
+                : lang === "ja" ? "質問・現在の仮想センサー値・同じアカウントの直近5分の保存記録（最大60件）の要約・関連マニュアルの抜粋は外部AI提供者（NVIDIA等）に送信されます。複数タブの記録を含む場合があります。個人情報や会社の機密情報を入力しないでください。"
+                  : "Questions, current synthetic readings, a summary of this account's last 5 minutes of saved observations (up to 60), and relevant manual excerpts are sent to an external AI provider (such as NVIDIA). Records may include other tabs. Do not enter personal or confidential company information."}
             </p>
             <div className="flex flex-col gap-2 border-t px-2.5 pb-[max(0.625rem,calc(env(safe-area-inset-bottom)+0.5rem))] pt-2.5 sm:flex-row sm:items-end sm:p-4" style={{ borderColor: th.border, background: th.bgCard }}>
               <textarea

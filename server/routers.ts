@@ -24,6 +24,8 @@ import { trainingDraftSchema } from "../shared/trainingDraft";
 import { getTrainingDrafts, inspectDraftStorage, saveTrainingDraft } from "./trainingDrafts";
 import { readSharedChoices, shareTrainingAttempt } from "./trainingShare";
 import { buildDashboardConsultationMessages, dashboardReplyFormat, parseDashboardConsultationReply } from "./dashboardConsultation";
+import { getDashboardSensorHistory } from "./semiguardDb";
+import { buildDashboardHistoryEvidence, matchesDashboardSnapshot, type DashboardHistoryEvidence } from "./dashboardHistory";
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -758,7 +760,7 @@ export const appRouter = router({
             noise: z.number(),
             anomalyScore: z.number(),
             riskLevel: z.string(),
-            logId: z.number().optional(),
+            logId: z.number().int().positive().optional(),
           }),
           messages: z.array(
             z.object({
@@ -775,6 +777,22 @@ export const appRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         const { sensorContext, messages, lang, feedbackHistory } = input;
+
+        let historyEvidence: DashboardHistoryEvidence = { status: "no-linked-observation" };
+        if (sensorContext.logId) {
+          try {
+            const saved = await getAnomalyLogById(sensorContext.logId, ctx.user.id);
+            if (saved && matchesDashboardSnapshot(sensorContext, saved)) {
+              const rows = await getDashboardSensorHistory(ctx.user.id, saved.id, saved.timestamp);
+              historyEvidence = buildDashboardHistoryEvidence(saved, rows);
+            } else {
+              historyEvidence = { status: "snapshot-mismatch" };
+            }
+          } catch {
+            historyEvidence = { status: "unavailable" };
+            console.warn("Dashboard history unavailable");
+          }
+        }
 
         // 마지막 사용자 질문을 기준으로 등록된 설비 매뉴얼에서 관련 구간을 검색합니다.
         const lastUserMessage = [...messages].reverse().find(message => message.role === "user")?.content ?? "";
@@ -810,7 +828,7 @@ export const appRouter = router({
           }
         }
 
-        const formattedMessages = buildDashboardConsultationMessages({ sensorContext, messages, lang, feedbackContext, manualContext });
+        const formattedMessages = buildDashboardConsultationMessages({ sensorContext, messages, lang, feedbackContext, manualContext, historyEvidence });
 
         try {
           const res = await invokeLLM({ model: "gpt-5-mini", messages: formattedMessages, max_tokens: 1600, temperature: 0.2, response_format: dashboardReplyFormat });

@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TrpcContext } from "./_core/context";
 
-const mocks = vi.hoisted(() => ({ invoke: vi.fn(), readLog: vi.fn(), writeLog: vi.fn(), searchManual: vi.fn() }));
+const mocks = vi.hoisted(() => ({ invoke: vi.fn(), readLog: vi.fn(), writeLog: vi.fn(), searchManual: vi.fn(), history: vi.fn() }));
 vi.mock("./_core/llm", () => ({ invokeLLM: mocks.invoke }));
 vi.mock("./semiguardDb", async importOriginal => ({
   ...await importOriginal<typeof import("./semiguardDb")>(),
   getAnomalyLogById: mocks.readLog, updateAnomalyLogLlm: mocks.writeLog,
+  getDashboardSensorHistory: mocks.history,
 }));
 vi.mock("./db", async importOriginal => ({
   ...await importOriginal<typeof import("./db")>(), searchManualChunksForUser: mocks.searchManual,
@@ -25,6 +26,7 @@ beforeEach(() => {
   mocks.invoke.mockResolvedValue(response(JSON.stringify(analysis)));
   mocks.readLog.mockResolvedValue(null);
   mocks.searchManual.mockResolvedValue([]);
+  mocks.history.mockResolvedValue([]);
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -141,5 +143,54 @@ describe("dashboard AI explanation boundary", () => {
   it("requires login before any external model call", async () => {
     await expect(appRouter.createCaller({ ...ctx, user: null }).semiguard.analyzeAnomaly(readings)).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     expect(mocks.invoke).not.toHaveBeenCalled();
+    await expect(appRouter.createCaller({ ...ctx, user: null }).semiguard.chatWithAi({ sensorContext: { ...readings, logId: 10 }, messages: [{ role: "user", content: "Compare history" }] })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    expect(mocks.readLog).not.toHaveBeenCalled();
+    expect(mocks.history).not.toHaveBeenCalled();
+  });
+
+  it("loads only the session owner's history anchored to the matching observation, not latest data", async () => {
+    const timestamp = new Date("2026-10-07T00:00:10Z");
+    const saved = { ...readings, id: 10, timestamp, userId: 42, llmAnalysisKo: "PRIVATE" };
+    mocks.readLog.mockResolvedValue(saved);
+    mocks.history.mockResolvedValue([{ ...saved, id: 9, vibration: 2, timestamp: new Date("2026-10-07T00:00:00Z") }, saved]);
+    mocks.invoke.mockResolvedValue(response(JSON.stringify({ answer: "Two saved synthetic observations differ; true onset is unknown." })));
+    await appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: { ...readings, logId: 10 }, messages: [{ role: "user", content: "Compare history" }] });
+    expect(mocks.readLog).toHaveBeenCalledWith(10, 42);
+    expect(mocks.history).toHaveBeenCalledWith(42, 10, timestamp);
+    const prompt = mocks.invoke.mock.calls[0][0].messages[0].content;
+    expect(prompt).toContain('"sampleCount":2');
+    expect(prompt).toContain('"firstRecordedOutsideAt":"2026-10-07T00:00:10.000Z"');
+    expect(prompt).toContain("other tabs and manually generated examples may be included");
+    expect(prompt).not.toContain("PRIVATE");
+    expect(prompt).not.toContain('"userId"');
+    expect(prompt).not.toContain("Only the current numeric snapshot is supplied");
+    expect(mocks.writeLog).not.toHaveBeenCalled();
+  });
+
+  it.each([null, { ...readings, id: 10, vibration: 3.5 }])("never borrows history from a missing, foreign or changed source snapshot", async saved => {
+    mocks.readLog.mockResolvedValue(saved);
+    mocks.invoke.mockResolvedValue(response(JSON.stringify({ answer: "Linked historical data is unavailable." })));
+    await appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: { ...readings, logId: 10 }, messages: [{ role: "user", content: "Compare history" }] });
+    expect(mocks.history).not.toHaveBeenCalled();
+    expect(mocks.invoke.mock.calls[0][0].messages[0].content).toContain("Saved history status: snapshot-mismatch");
+  });
+
+  it("keeps snapshot-only consultation working if historical storage fails, without leaking errors", async () => {
+    mocks.readLog.mockRejectedValue(new Error("PRIVATE DB DETAILS"));
+    mocks.invoke.mockResolvedValue(response(JSON.stringify({ answer: "No usable history was supplied." })));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = await appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: { ...readings, logId: 10 }, messages: [{ role: "user", content: "Compare history" }] });
+    expect(result.usedFallback).toBe(false);
+    expect(mocks.invoke.mock.calls[0][0].messages[0].content).toContain("Saved history status: unavailable");
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("PRIVATE DB DETAILS");
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not load history for an unlinked virtual example or default snapshot", async () => {
+    mocks.invoke.mockResolvedValue(response(JSON.stringify({ answer: "A snapshot cannot establish onset." })));
+    await appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: readings, messages: [{ role: "user", content: "When did it change?" }] });
+    expect(mocks.readLog).not.toHaveBeenCalled();
+    expect(mocks.history).not.toHaveBeenCalled();
+    expect(mocks.invoke.mock.calls[0][0].messages[0].content).toContain("Saved history status: no-linked-observation");
   });
 });
