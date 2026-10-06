@@ -83,6 +83,40 @@ describe("dashboard AI explanation boundary", () => {
     expect(result).toMatchObject({ usedFallback: true, provider: "rules", model: "" });
     expect(result.reply).toContain("규칙 기반");
     expect(result.reply).not.toContain("Private provider details");
+    expect(result.reply).toContain("질문에 대한 AI 답변을 받지 못했습니다");
+    expect(result.reply.match(/주요 편차/g)).toHaveLength(1);
+  });
+
+  it("answers the latest question without mandatory report sections or invented older topics", async () => {
+    mocks.invoke.mockResolvedValue(response("mm/s is a vibration velocity unit."));
+    const messages = [
+      { role: "assistant" as const, content: "Welcome" },
+      ...Array.from({ length: 14 }, (_, index) => ({ role: "user" as const, content: `Unit question ${index}` })),
+      { role: "assistant" as const, content: "[Rule-based Evidence Summary] connection unavailable" },
+      { role: "user" as const, content: "What does mm/s mean?" },
+    ];
+    await appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: readings, messages, lang: "en" });
+    const request = mocks.invoke.mock.calls[0][0];
+    expect(request.messages.at(-1).content).toBe("What does mm/s mean?");
+    expect(request.messages.length).toBeLessThanOrEqual(13);
+    expect(request.messages[0].content).toContain("Answer the latest user question directly");
+    expect(request.messages[0].content).toContain("Do not repeat the full sensor report");
+    expect(request.messages[0].content).not.toContain("earlier turns occurred regarding equipment anomalies");
+    expect(request.messages.some((message: { content: string }) => message.content.includes("connection unavailable"))).toBe(false);
+    const facts = JSON.parse(request.messages[0].content.split("Server-calculated comparisons: ")[1]);
+    expect(facts.find((fact: { sensor: string }) => fact.sensor === "vibration")).toMatchObject({
+      lower: 1.7, upper: 2.3, deltaFromBaseline: 0.8, excessBeyondRange: 0.5, outsideComparisonRange: true,
+    });
+  });
+
+  it("rejects empty model replies and requests with no question", async () => {
+    mocks.invoke.mockResolvedValue(response("   "));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = await appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: readings, messages: [{ role: "user", content: "Why compare sensors?" }] });
+    expect(result.usedFallback).toBe(true);
+    mocks.invoke.mockClear();
+    await expect(appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: readings, messages: [{ role: "assistant", content: "Welcome" }] })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
   it("requires login before any external model call", async () => {
