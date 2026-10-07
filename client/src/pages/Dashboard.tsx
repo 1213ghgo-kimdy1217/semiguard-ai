@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 import { captureDashboardObservation, messagesForDashboardObservation, type DashboardChatObservation } from "../../../shared/dashboardObservation";
+import { dashboardChatContextNotice } from "../../../shared/dashboardChat";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
 import { NORMAL_BASELINE, sensorScoreContribution, type RiskLevel, type SensorData, type AnomalyResult, type AnomalyLogEntry } from "../../../shared/semiguard";
 import { MANUAL_CHUNK_LIMIT, MANUAL_CHUNK_WARNING_THRESHOLD, splitManualTextIntoChunks } from "../../../shared/ragManual";
@@ -3996,13 +3997,11 @@ export default function Dashboard() {
                       {lang === "ko" ? "SemiGuard AI 근거 정리 도우미" : lang === "ja" ? "SemiGuard AI 根拠整理アシスタント" : "SemiGuard AI Evidence Assistant"}
                     </h3>
                     <span className="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono border whitespace-nowrap shrink-0" style={{ borderColor: th.border2, background: th.bgCard, color: th.accent }}>
-                      {lang === "ko" ? `대화 ${chatMessages.length}` : lang === "ja" ? `会話 ${chatMessages.length}` : `Msgs ${chatMessages.length}`}
+                      {lang === "ko" ? `화면 대화 ${chatMessages.length}` : lang === "ja" ? `表示 ${chatMessages.length}` : `Visible ${chatMessages.length}`}
                     </span>
                   </div>
-                  <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
-                    {chatMessages.length > 12
-                      ? (lang === "ko" ? "⚡ 오래된 대화 요약 압축 중" : lang === "ja" ? "⚡ 古い会話を要約圧縮中" : "⚡ Older turns summarized")
-                      : (lang === "ko" ? "가상 센서 근거 설명 · 원인 미확정" : lang === "ja" ? "仮想センサーの根拠説明・原因は未確定" : "Synthetic sensor evidence · cause unconfirmed")}
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground leading-relaxed" data-chat-context-scope="true">
+                    {dashboardChatContextNotice(lang, Boolean(chatObservation))}
                   </p>
                 </div>
                 <button
