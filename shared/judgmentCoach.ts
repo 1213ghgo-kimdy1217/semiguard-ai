@@ -72,9 +72,8 @@ export const judgmentCoachFeedbackSchema = z.object({
   }).strict()).min(2).max(3),
 }).strict();
 export type JudgmentCoachFeedback = z.infer<typeof judgmentCoachFeedbackSchema>;
-// The model selects an existing answer field; the server supplies the original quote.
+// The model supplies questions only. Original quotes and fixed choice labels are server-owned.
 export const judgmentCoachModelFeedbackSchema = z.object({
-  strengths: z.array(z.enum(coachStrengths)).max(2),
   reflections: z.array(z.object({
     dimension: z.enum(coachDimensions), evidenceId: z.enum(coachEvidenceIds),
     answerSource: z.enum(["facts", "checks"]), question: z.string().trim().min(8).max(300),
