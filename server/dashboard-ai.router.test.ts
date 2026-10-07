@@ -193,4 +193,17 @@ describe("dashboard AI explanation boundary", () => {
     expect(mocks.history).not.toHaveBeenCalled();
     expect(mocks.invoke.mock.calls[0][0].messages[0].content).toContain("Saved history status: no-linked-observation");
   });
+
+  it("does not display a wrong total record count as a successful AI answer", async () => {
+    const saved = { ...readings, id: 10, timestamp: new Date("2026-10-07T00:00:10Z") };
+    mocks.readLog.mockResolvedValue(saved);
+    mocks.history.mockResolvedValue([{ ...saved, id: 9, timestamp: new Date("2026-10-07T00:00:00Z") }, saved]);
+    mocks.invoke.mockResolvedValue(response(JSON.stringify({ answer: "저장된 가상 센서 기록은 4건입니다." })));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = await appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: { ...readings, logId: 10 }, messages: [{ role: "user", content: "몇 건을 봤어?" }] });
+    expect(result).toMatchObject({ usedFallback: true, provider: "rules" });
+    expect(result.reply).not.toContain("기록은 4건");
+    expect(warn).toHaveBeenCalledWith("AI consultation fallback used:", { category: "invalid-reply" });
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+  });
 });
