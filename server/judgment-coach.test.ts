@@ -59,6 +59,30 @@ describe("scenario judgment coach", () => {
     expect(payload.messages[0].content).toContain(language === "en" ? "English" : "Japanese");
     expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(input().answer);
   });
+  it.each(["ko", "en", "ja"] as const)("supplies an exact model-only output shape in %s without asking for server-owned quotations", async language => {
+    fetchMock.mockResolvedValue(response(JSON.stringify(output(language))));
+    expect((await createJudgmentCoach()(27, { ...input(), language })).status).toBe("ready");
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const user = JSON.parse(payload.messages[1].content);
+    expect(user.responseInstructions).toContain("EXACTLY dimension, evidenceId, answerSource, question");
+    expect(user.responseInstructions).toContain("Never add answerQuote");
+    expect(Object.keys(user.outputShapeExample)).toEqual(["strengths", "reflections"]);
+    expect(user.outputShapeExample.strengths).toEqual([]);
+    expect(user.outputShapeExample.reflections).toHaveLength(2);
+    for (const item of user.outputShapeExample.reflections) {
+      expect(Object.keys(item)).toEqual(["dimension", "evidenceId", "answerSource", "question"]);
+      expect(item.question).not.toContain(input().answer.facts);
+    }
+    expect(() => validateCoachOutput(JSON.stringify(user.outputShapeExample), input().answer, language)).not.toThrow();
+    expect(user.learnerAnswer).toEqual(input().answer);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it("still rejects extra reflection fields instead of silently stripping them", () => {
+    for (const field of ["answerQuote", "reasoning", "extra"]) {
+      const result = { ...output(), reflections: output().reflections.map(item => ({ ...item, [field]: "extra model text" })) };
+      expect(() => validateCoachOutput(JSON.stringify(result), input().answer, "ko")).toThrow();
+    }
+  });
   it.each(["en", "ja"] as const)("rejects Korean questions when %s coaching was requested", async language => {
     expect(await createJudgmentCoach()(27, { ...input(), language })).toEqual({ status: "unavailable", reason: "invalid-response" });
   });
