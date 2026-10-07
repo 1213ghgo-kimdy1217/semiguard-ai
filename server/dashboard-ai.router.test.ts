@@ -91,6 +91,27 @@ describe("dashboard AI explanation boundary", () => {
     expect(result.primaryCause).toContain("ルールベース");
   });
 
+  it.each([
+    { lang: "ko", synthetic: "교육용 가상 수치", comparison: "기존 가상 기록", physical: /현장 담당자|지속 감시|점검 이력/ },
+    { lang: "en", synthetic: "synthetic educational readings", comparison: "existing synthetic records", physical: /responsible operator|Continue monitoring|inspection history/ },
+    { lang: "ja", synthetic: "教育用の仮想数値", comparison: "既存の仮想記録", physical: /担当者|継続監視|点検履歴/ },
+  ] as const)("keeps $lang fallback educational rather than describing real measurements or site actions", async ({ lang, synthetic, comparison, physical }) => {
+    mocks.invoke.mockRejectedValue(new Error("Provider unavailable"));
+    for (const [anomalyScore, riskLevel] of [[21, "normal"], [80, "danger"]] as const) {
+      const result = await appRouter.createCaller(ctx).semiguard.analyzeAnomaly({ ...readings, anomalyScore, riskLevel, lang });
+      expect(result).toMatchObject({ usedFallback: true, provider: "rules", model: "" });
+      expect(result.details).toContain(synthetic);
+      expect(result.details).toContain(`${anomalyScore}/100`);
+      expect(result.details).not.toMatch(/live measurements|実測値/);
+      expect(result.recommendation).toContain(comparison);
+      expect(result.recommendation).not.toMatch(physical);
+      expect(result.translations[lang].details).toBe(result.details);
+      expect(result.translations[lang].recommendation).toBe(result.recommendation);
+    }
+    expect(mocks.invoke).toHaveBeenCalledTimes(6);
+    expect(mocks.writeLog).not.toHaveBeenCalled();
+  });
+
   it("stores output only on the owning user's matching source observation", async () => {
     mocks.readLog.mockResolvedValue({ ...readings, id: 10 });
     await appRouter.createCaller(ctx).semiguard.analyzeAnomaly({ ...readings, logId: 10 });
