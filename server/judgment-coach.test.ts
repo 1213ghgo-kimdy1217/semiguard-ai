@@ -59,23 +59,26 @@ describe("scenario judgment coach", () => {
     expect(payload.messages[0].content).toContain(language === "en" ? "English" : "Japanese");
     expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(input().answer);
   });
-  it.each(["ko", "en", "ja"] as const)("supplies an exact model-only output shape in %s while leaving choice labels server-owned", async language => {
+  it.each(["ko", "en", "ja"] as const)("describes the model-only contract in %s without prewritten or empty example questions", async language => {
     fetchMock.mockResolvedValue(response(JSON.stringify(output(language))));
     expect((await createJudgmentCoach()(27, { ...input(), language })).status).toBe("ready");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     const user = JSON.parse(payload.messages[1].content);
     expect(user.responseInstructions).toContain("EXACTLY dimension, evidenceId, answerSource, question");
     expect(user.responseInstructions).toContain("Never add answerQuote");
-    expect(Object.keys(user.outputShapeExample)).toEqual(["reflections"]);
+    expect(user).not.toHaveProperty("outputShapeExample");
+    expect(user.reflectionFields).toEqual(["dimension", "evidenceId", "answerSource", "question"]);
+    expect(user.reflectionAssignments).toEqual([
+      { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" },
+      { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" },
+    ]);
+    expect(user.reflectionAssignments.every((item: object) => !Object.hasOwn(item, "question"))).toBe(true);
     expect(user.allowedDimensionEvidencePairs).toEqual({ reference: "phase-reference", onset: "pressure-trend", "cross-sensor": "other-signals", uncertainty: "cause-unknown", checks: "record-comparison" });
     expect(user.outputCount).toContain("Exactly two reflections");
     expect(payload.messages[0].content).toContain("Only the server computes the fixed choice-criterion labels");
-    expect(user.outputShapeExample.reflections).toHaveLength(2);
-    for (const item of user.outputShapeExample.reflections) {
-      expect(Object.keys(item)).toEqual(["dimension", "evidenceId", "answerSource", "question"]);
-      expect(item.question.length).toBeGreaterThanOrEqual(8);
-    }
-    expect(validateCoachOutput(JSON.stringify(user.outputShapeExample), input().answer, language)).toMatchObject({ strengths: ["signal", "reference"] });
+    expect(user.questionTask).toContain(language === "ko" ? "비교 결과" : language === "ja" ? "比較結果" : "comparison result");
+    expect(payload.messages[0].content).toContain("Do not presume a deviation or an onset");
+    expect(JSON.stringify(payload)).not.toContain(output(language).reflections[0].question);
     expect(user.learnerAnswer).toEqual(input().answer);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -84,6 +87,19 @@ describe("scenario judgment coach", () => {
       const result = { ...output(), reflections: output().reflections.map(item => ({ ...item, [field]: "extra model text" })) };
       expect(() => validateCoachOutput(JSON.stringify(result), input().answer, "ko")).toThrow();
     }
+  });
+  it.each([
+    ["ko", "어떤 기존 가상 기록을 확인할지 묻습니다."],
+    ["en", "Ask which existing virtual record supports the comparison."],
+    ["ja", "どの既存の仮想記録を比較するかを尋ねます。"],
+    ["ko", "어떤 가상 기록을 비교하나요? 어떤 결과를 보나요?"],
+  ] as const)("rejects non-question or multiple-question output in %s without fabricating a replacement", async (language, question) => {
+    const data = output(language); data.reflections[0].question = question;
+    expect(() => validateCoachOutput(JSON.stringify(data), input().answer, language)).toThrow("Invalid question form");
+    fetchMock.mockResolvedValue(response(JSON.stringify(data)));
+    expect(await createJudgmentCoach()(27, { ...input(), language })).toEqual({ status: "unavailable", reason: "invalid-response" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category: "question-form" })]]);
   });
   it.each(["en", "ja"] as const)("rejects Korean questions when %s coaching was requested", async language => {
     expect(await createJudgmentCoach()(27, { ...input(), language })).toEqual({ status: "unavailable", reason: "invalid-response" });
@@ -314,7 +330,7 @@ describe("scenario judgment coach", () => {
     expect(payload.messages[0].content).toContain("Do not output strengths");
     expect(payload.response_format).toEqual({ type: "json_object" });
     expect(payload.messages[0].content).not.toContain("Return only a JSON object matching this schema:");
-    expect(Object.keys(JSON.parse(payload.messages[1].content).outputShapeExample)).toEqual(["reflections"]);
+    expect(JSON.parse(payload.messages[1].content)).not.toHaveProperty("outputShapeExample");
   });
   it("constructs original quotes server-side and rejects invented sources or model-written quotations", () => {
     const valid = validateCoachOutput(JSON.stringify(output()), input().answer);
@@ -328,14 +344,15 @@ describe("scenario judgment coach", () => {
   it.each(["ko", "ja"] as const)("localizes a small question glossary in %s without rewriting the original answer", language => {
     const data = output(language);
     data.reflections[0].question = language === "ko"
-      ? "onset, oscillation, baseline, trend와 RF 기록을 어떻게 비교하나요?"
-      : "onset、oscillation、baseline、trendとRFの記録をどう比較しますか？";
-    const answer = { ...input().answer, facts: "원문: onset, oscillation, baseline, trend, RF는 내가 쓴 표현입니다." };
+      ? "onset, oscillation, baseline, trend와 RF 기록에서 어떤 비교 결과가 revision을 뒷받침하나요?"
+      : "onset、oscillation、baseline、trendとRFの記録からどの比較結果がrevisionを裏付けますか？";
+    const answer = { ...input().answer, facts: "원문: onset, oscillation, baseline, trend, revision, RF는 내가 쓴 표현입니다." };
     const result = validateCoachOutput(JSON.stringify(data), answer, language);
     expect(result.reflections[0].answerQuote).toBe(answer.facts);
-    expect(result.reflections[0].question).not.toMatch(/onset|oscillation|baseline|trend/i);
+    expect(result.reflections[0].question).not.toMatch(/onset|oscillation|baseline|trend|revision/i);
     expect(result.reflections[0].question).toContain("RF");
     expect(result.reflections[0].question).toContain(language === "ko" ? "변화 시작 시점" : "変化の開始時点");
+    expect(result.reflections[0].question).toContain(language === "ko" ? "판단 수정" : "判断の見直し");
   });
   it("keeps English questions unchanged and only matches complete glossary words", () => {
     const data = output("en"); data.reflections[0].question = "Which baseline supports the onset and oscillation trend?";
