@@ -35,13 +35,15 @@ export function buildDashboardHistoryEvidence(anchor: DashboardHistoryRow, rows:
   }
   const first = selected[0];
   const maxGap = Math.max(...selected.slice(1).map((row, index) => (row.timestamp.getTime() - selected[index].timestamp.getTime()) / 1000));
+  const coverageSeconds = (last.timestamp.getTime() - first.timestamp.getTime()) / 1000;
   return {
     status: "available" as const,
     source: "account-synthetic-records" as const,
     window: {
       startAt: first.timestamp.toISOString(), endAt: last.timestamp.toISOString(), timeZone: "UTC",
       requestedSeconds: DASHBOARD_HISTORY_SECONDS, sampleCount: selected.length,
-      coverageSeconds: (last.timestamp.getTime() - first.timestamp.getTime()) / 1000,
+      coverageSeconds,
+      coverageLabel: { ko: `${coverageSeconds}초`, en: `${coverageSeconds} seconds`, ja: `${coverageSeconds}秒` },
       maxGapSeconds: maxGap, limitedByRowCount: valid.length >= DASHBOARD_HISTORY_LIMIT,
     },
     sensors: sensors.map(sensor => {
@@ -51,9 +53,15 @@ export function buildDashboardHistoryEvidence(anchor: DashboardHistoryRow, rows:
       const outsideIndex = values.findIndex(value => value < lower || value > upper);
       return {
         sensor, unit: units[sensor], lower, upper,
+        outsideCondition: {
+          ko: `${lower} ${units[sensor]} 미만 또는 ${upper} ${units[sensor]} 초과`,
+          en: `less than ${lower} ${units[sensor]} or greater than ${upper} ${units[sensor]}`,
+          ja: `${lower} ${units[sensor]}未満または${upper} ${units[sensor]}を超過`,
+        },
         firstValue: values[0], lastValue: values.at(-1)!, delta: round(values.at(-1)! - values[0]),
         minimum: Math.min(...values), maximum: Math.max(...values),
         firstRecordedOutsideAt: outsideIndex < 0 ? null : selected[outsideIndex].timestamp.toISOString(),
+        firstRecordedOutsideValue: outsideIndex < 0 ? null : values[outsideIndex],
         precedingRecordedInsideAt: outsideIndex > 0 ? selected[outsideIndex - 1].timestamp.toISOString() : null,
         outsideAtWindowStart: outsideIndex === 0,
       };

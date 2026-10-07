@@ -51,6 +51,18 @@ describe("bounded saved synthetic observation evidence", () => {
     const result = buildDashboardHistoryEvidence(row(3, 10, 2.8), [row(1, 0, 2.30000004), row(3, 10, 2.8)]);
     if (result.status !== "available") throw new Error("Missing evidence");
     expect(result.sensors.find(s => s.sensor === "vibration")?.firstRecordedOutsideAt).toBe("2026-10-07T00:00:10.000Z");
+    expect(result.sensors.find(s => s.sensor === "vibration")).toMatchObject({
+      firstRecordedOutsideValue: 2.8,
+      outsideCondition: { ko: "1.7 mm/s 미만 또는 2.3 mm/s 초과", en: "less than 1.7 mm/s or greater than 2.3 mm/s", ja: "1.7 mm/s未満または2.3 mm/sを超過" },
+    });
+  });
+
+  it("provides exact duration wording without delegating clock arithmetic to AI", () => {
+    const anchor = { ...row(3, 10, 2.8), timestamp: new Date("2026-10-07T00:04:10Z") };
+    const result = buildDashboardHistoryEvidence(anchor, [{ ...row(1, 0), timestamp: new Date("2026-10-07T00:00:15Z") }, anchor]);
+    if (result.status !== "available") throw new Error("Missing evidence");
+    expect(result.window.coverageSeconds).toBe(235);
+    expect(result.window.coverageLabel).toEqual({ ko: "235초", en: "235 seconds", ja: "235秒" });
   });
 
   it("caps observations and omits user identity, private analysis and raw rows", () => {
