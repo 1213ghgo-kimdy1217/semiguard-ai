@@ -39,6 +39,20 @@ describe("learning assistant", () => {
     expect(await createLearningAssistant()(7, request)).toEqual({ status: "unavailable", reason: "not-configured" });
     expect(mocks.invoke).not.toHaveBeenCalled();
   });
+  it("distinguishes prepared judgment criteria from open-ended free observation without exposing answers", async () => {
+    await createLearningAssistant()(7, { ...request,
+      question: "8대 공정 판단 연습과 실시간 자유 분석의 차이는 무엇인가요?" });
+    const system = mocks.invoke.mock.calls[0][0].messages[0].content;
+    expect(system).toContain("prepared, fixed virtual records");
+    expect(system).toContain("authored teaching criteria for the structured choices");
+    expect(system).toContain("Written-answer meaning is not automatically graded");
+    expect(system).toContain("live has no fixed-answer submission or choice-criteria evaluation");
+    expect(system).toContain("Do not describe training as having no predetermined comparison criteria");
+    expect(system).toContain("No exact scenario onset times, expected signals or answer keys are supplied here");
+    expect(JSON.parse(mocks.invoke.mock.calls[0][0].messages[1].content)).toEqual({
+      question: "8대 공정 판단 연습과 실시간 자유 분석의 차이는 무엇인가요?",
+    });
+  });
   it("rejects upstream errors, wrong provider, invalid JSON, untrusted links, secrets and practical equipment actions", async () => {
     for (const content of ["bad JSON", JSON.stringify({ ...answer, destination: "https://example.com" }),
       JSON.stringify({ ...answer, answer: "장비 압력을 조절하세요. 센서가 정상으로 보일 것입니다." }),
