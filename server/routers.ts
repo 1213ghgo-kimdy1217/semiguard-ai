@@ -545,28 +545,27 @@ export const appRouter = router({
         const riskLabelEn = riskLevel;
         const buildFallbackAnalysis = (fallbackLang: ChatLanguage) => {
           const gate = buildEvidenceGate({ current, temperature, vibration, noise, anomalyScore, riskLevel }, fallbackLang);
-          const urgent = anomalyScore >= 70;
           if (fallbackLang === "ko") {
             return {
               usedFallback: true, provider: "rules", model: "",
               primaryCause: "규칙 기반 센서 이상 감지 (AI 분석 대체)",
-              details: `AI 분석 서비스를 일시적으로 사용할 수 없어 실시간 수치로 판단했습니다. 위험도는 ${riskLabelKo}(${anomalyScore.toFixed(0)}/100)이며, 주요 편차는 ${gate.evidence.join(" · ")}입니다. 현재 수치만으로 특정 고장 원인을 단정할 수는 없습니다.`,
-              recommendation: `${gate.followUp} ${urgent ? "현장 담당자 보고와 규정된 안전 절차를 우선하세요." : "관련 설비 매뉴얼과 최근 점검 이력을 함께 확인하세요."}`,
+              details: `AI 답변을 받지 못해 교육용 가상 수치만 규칙 기반으로 요약합니다. 규칙 기반 위험도는 ${riskLabelKo}(${anomalyScore.toFixed(0)}/100)이며, 주요 편차는 ${gate.evidence.join(" · ")}입니다. 현재 수치만으로 특정 고장 원인을 단정할 수는 없습니다.`,
+              recommendation: "기존 가상 기록의 변화와 다른 센서를 비교하고, 제공된 교육용 참고 자료를 확인하세요. 실제 장비 운전·정지·분해 지침이 아닙니다.",
             };
           }
           if (fallbackLang === "ja") {
             return {
               usedFallback: true, provider: "rules", model: "",
               primaryCause: "ルールベースのセンサー異常検知（AI分析の代替）",
-              details: `AI分析サービスを一時的に利用できないため、現在の実測値で判断しました。危険度は${riskLabelJa}(${anomalyScore.toFixed(0)}/100)で、主な偏差は${gate.evidence.join(" · ")}です。現在の数値だけで特定の故障原因を断定することはできません。`,
-              recommendation: `${gate.followUp} ${urgent ? "現場担当者への報告と定められた安全手順を優先してください。" : "関連設備マニュアルと最近の点検履歴を併せて確認してください。"}`,
+              details: `AI回答を取得できなかったため、教育用の仮想数値だけをルールベースで要約しています。ルールベースの危険度は${riskLabelJa}(${anomalyScore.toFixed(0)}/100)で、主な偏差は${gate.evidence.join(" · ")}です。現在の数値だけで特定の故障原因を断定することはできません。`,
+              recommendation: "既存の仮想記録の変化と他のセンサーを比較し、提供された学習用の参考資料を確認してください。実際の設備の運転・停止・分解を指示するものではありません。",
             };
           }
           return {
             usedFallback: true, provider: "rules", model: "",
             primaryCause: "Rule-based sensor anomaly detected (AI analysis fallback)",
-            details: `The AI analysis service is temporarily unavailable, so this result uses live measurements. Risk is ${riskLabelEn} (${anomalyScore.toFixed(0)}/100), with primary deviations in ${gate.evidence.join(" · ")}. Do not conclude a specific failure cause from current values alone.`,
-            recommendation: `${gate.followUp} ${urgent ? "Prioritize reporting to the responsible operator and the approved safety procedure." : "Review the relevant equipment manual and recent inspection history together."}`,
+            details: `No AI answer was received; this rule-based summary uses only synthetic educational readings. Rule-based risk is ${riskLabelEn} (${anomalyScore.toFixed(0)}/100), with primary deviations in ${gate.evidence.join(" · ")}. Do not conclude a specific failure cause from current values alone.`,
+            recommendation: "Compare changes in existing synthetic records with other sensors and the supplied educational references. This is not an instruction to operate, stop, or disassemble real equipment.",
           };
         };
 
