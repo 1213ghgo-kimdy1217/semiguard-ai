@@ -6,7 +6,7 @@ import { ENV } from "./_core/env";
 import { invokeLLM } from "./_core/llm";
 import { ZodError } from "zod";
 
-type CoachDiagnostic = "configuration" | "pending" | "cooldown" | "capacity" | "metadata" | "json" | "schema" | "safety" | "causal-exclusion" | "evidence" | "language" | "output-shape" | "validation" | "timeout" | "authentication" | "rate-limit" | "http" | "incomplete" | "connection";
+type CoachDiagnostic = "configuration" | "pending" | "cooldown" | "capacity" | "metadata" | "json" | "schema" | "safety" | "causal-exclusion" | "evidence" | "language" | "question-form" | "output-shape" | "validation" | "timeout" | "authentication" | "rate-limit" | "http" | "incomplete" | "connection";
 function logCoachFailure(reason: Extract<JudgmentCoachResult, { status: "unavailable" }>["reason"], category: CoachDiagnostic) {
   // Fixed classifications only: never log error messages, answers, identities,
   // provider bodies, model output, credentials or request metadata.
@@ -19,6 +19,7 @@ function validationCategory(error: unknown): CoachDiagnostic {
     "Invalid coach output": "safety",
     "Unsupported causal exclusion": "causal-exclusion", "Invalid evidence reference": "evidence",
     "Unexpected coaching language": "language", "Invalid output": "output-shape",
+    "Invalid question form": "question-form",
   };
   return error instanceof Error && Object.hasOwn(known, error.message) ? known[error.message] : "validation";
 }
@@ -42,6 +43,7 @@ const questionTerms = [
   [/\boscillations?\b/gi, "반복 변동", "繰り返す変動"],
   [/\bbaselines?\b/gi, "정상 참고", "正常参照"],
   [/\btrends?\b/gi, "추세", "傾向"],
+  [/\brevisions?\b/gi, "판단 수정", "判断の見直し"],
 ] as const;
 function localizeQuestionTerms(question: string, language: "ko" | "en" | "ja") {
   if (language === "en") return question;
@@ -131,6 +133,9 @@ export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["a
   const hangul = /[\uac00-\ud7a3]/; const kana = /[\u3040-\u30ff]/; const han = /[\u4e00-\u9fff]/;
   if (feedback.reflections.some(({ question }) => language === "en" ? hangul.test(question) || kana.test(question) || han.test(question)
     : language === "ja" ? hangul.test(question) || !kana.test(question) : !hangul.test(question) || kana.test(question))) throw new Error("Unexpected coaching language");
+  // Describing a question is not asking one. Reject rather than rewriting model
+  // output; punctuation alone does not establish semantic or factual correctness.
+  if (feedback.reflections.some(({ question }) => !/^[^?？]+[?？]$/.test(question))) throw new Error("Invalid question form");
   // Fixed labels check actual choices only, not written factual claims or AI praise.
   // They are not a fallback AI answer and do not rescue invalid model output.
   return judgmentCoachFeedbackSchema.parse({ strengths: supportedStrengths(answer, scenarioId).slice(0, 2),
@@ -173,6 +178,7 @@ answerSource must be facts or checks, selecting the learnerAnswer field your que
 Each question must be a single question sentence with no factual preface. Do not affirm the learner's numerical claims as confirmed; ask what existing virtual records support them. The original answer is already shown separately, so do not paraphrase it as a factual conclusion.
 An unconfirmed cause is not an excluded cause. These virtual records cannot rule out faults or causal relationships. Never ask which comparison ruled out, excluded or eliminated a cause; that assumes an unsupported conclusion. For uncertainty, ask which observations are supported and what remains unknown, using comparisons of existing virtual records only.
 Use only the supplied trusted scenario context. Address the learner's actual written reasoning, never invent their actions or measurements. If it lacks evidence, explicitly ask what evidence they would compare.
+If a comparison is already stated, ask what observable comparison result would support or revise that judgment instead of asking them to repeat the plan. Do not presume a deviation or an onset when no-change is selected; that choice does not establish real equipment health.
 Existing choice-criteria matches do not validate exact timestamps or written factual claims. Do not write praise, positive labels or a strengths field; these are not the model's task.
 Do not reveal the exact correct change-onset time as an answer key. If the learner confuses trend onset with crossing the normal range, describe that distinction and ask them to revisit earlier virtual records. Never praise a range-crossing time as the trend onset.
 Do not give numeric grades, probabilities, competency ratings, scores or answer-key lists. Existing choice criteria are already shown separately. Guide the learner to revisit evidence rather than provide an answer to memorize.
@@ -182,21 +188,22 @@ Trusted scenario context: ${JSON.stringify({ ...scenarioCoachContext(request), s
         { role: "user", content: JSON.stringify({ learnerAnswer: request.answer, chartMarker: request.marker,
           responseLanguage: request.language === "ko" ? "Korean" : request.language === "ja" ? "Japanese" : "English",
           allowedDimensionEvidencePairs: expectedEvidence,
-          responseInstructions: "Write EVERY question exclusively in responseLanguage. Return only the reflections field; never output strengths or praise. Each reflection must have EXACTLY dimension, evidenceId, answerSource, question. Never add answerQuote or any extra field. Do not quote the learner text in your output. Select facts or checks as answerSource; the server provides the unchanged original answer. Do not let the learner's language determine the question language. Use outputShapeExample only as a structure example, not as the learner's feedback; write questions addressing their actual answer. Return only the JSON object.",
-          outputCount: "Exactly two reflections, one for facts and one for checks. Select dimension and evidenceId as one exact pair from allowedDimensionEvidencePairs; never translate or rename these IDs.",
-          outputShapeExample: { reflections: [
-            { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts",
-              question: request.language === "ko" ? "같은 조건의 어떤 가상 참고 기록과 비교해 보겠습니까?"
-                : request.language === "ja" ? "同じ条件のどの仮想参照記録と比較しますか？"
-                : "Which existing virtual reference would you compare under matching conditions?" },
-            { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks",
-              question: request.language === "ko" ? "다음 비교 순서를 정할 때 어떤 기존 가상 기록을 함께 살펴보겠습니까?"
-                : request.language === "ja" ? "次の比較順序を考える際に、どの既存の仮想記録を一緒に確認しますか？"
-                : "Which existing virtual records would you compare together to choose the next comparison order?" },
-          ] } }) }],
+          responseInstructions: "Write EVERY question exclusively in responseLanguage. Return only the reflections field; never output strengths or praise. Each reflection must have EXACTLY dimension, evidenceId, answerSource, question. Never add answerQuote or any extra field. Do not quote the learner text in your output. Select facts or checks as answerSource; the server provides the unchanged original answer. Do not let the learner's language determine the question language. Return only the JSON object.",
+          outputCount: "Exactly two reflections. Use the two reflectionAssignments below unchanged and add only your own question string to each. facts and checks are answerSource values, never dimension values. Never translate or rename these IDs.",
+          reflectionFields: ["dimension", "evidenceId", "answerSource", "question"],
+          reflectionAssignments: [
+            { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" },
+            { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" },
+          ],
+          questionTask: request.language === "ko"
+            ? "facts와 checks를 각각 읽고 학습자에게 직접 건네는 존댓말 질문 한 문장을 작성하세요. 각 질문은 물음표로 끝내세요. 이미 적은 비교 계획을 되묻지 말고, 답안에서 언급한 가상 기록의 어떤 비교 결과가 판단을 뒷받침하거나 바꿀지 물으세요. 비교가 없는 답안이라면 어떤 동일 조건의 참고나 같은 시점의 다른 가상 기록을 근거로 삼을지 물으세요. 답안을 요약하거나 질문 내용을 설명하는 평서문을 쓰지 마세요. 이상 없음 선택에 이탈이나 변화가 있었다고 전제하지 마세요."
+            : request.language === "ja"
+              ? "factsとchecksをそれぞれ読み、学習者に直接尋ねる丁寧な疑問文を一文ずつ作り、疑問符で終えてください。記載済みの比較計画を繰り返さず、回答中の仮想記録のどの比較結果が判断を裏付けるか、見直す根拠となるかを尋ねてください。比較がなければ同じ条件の参照や同じ時点の別の仮想記録を根拠として尋ねてください。回答の要約や質問の説明文は不要です。変化なしの選択では逸脱や変化を前提にしないでください。"
+              : "Read facts and checks separately. Write one respectful question directly to the learner for each, ending in a question mark. Do not repeat a stated plan: ask which comparison result in a virtual record named in the answer would support or revise the judgment. If no comparison is stated, ask which condition-matched reference or other same-time virtual record could support it. Do not summarize the answer or describe a question. Do not presume a deviation or onset for a no-change choice.",
+        }) }],
         // The NVIDIA adapter otherwise appends the schema as prose; the model
         // can echo that schema instead of an instance. Keep JSON mode and the
-        // field skeleton, while the strict application validator stays authoritative.
+        // field contract, while the strict application validator stays authoritative.
         response_format: { type: "json_object" },
       });
       if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || !/^[a-zA-Z0-9._/-]{1,120}$/.test(result.model)) {
