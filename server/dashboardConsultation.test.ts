@@ -1,7 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { buildDashboardConsultationMessages, parseDashboardConsultationReply } from "./dashboardConsultation";
+import { buildDashboardHistoryEvidence } from "./dashboardHistory";
 
 describe("dashboard learner-facing answer validation", () => {
+  const anchor = { id: 60, timestamp: new Date("2026-10-07T00:05:00Z"), current: 5, temperature: 45, vibration: 2, noise: 55 };
+  const evidence = buildDashboardHistoryEvidence(anchor, Array.from({ length: 60 }, (_, i) => ({ ...anchor, id: i + 1, timestamp: new Date(anchor.timestamp.getTime() - (59 - i) * 4000) })));
+
+  it.each([
+    "이번 요청에 포함된 저장된 가상 센서 기록은 4건이며, 60건의 샘플이 수집되었습니다.",
+    "The provided history contains 4 records.",
+    "Saved synthetic sensor records are 4.",
+    "保存された仮想センサー記録は4件です。",
+  ])("rejects an explicit wrong total-history count without leaking provider text", answer => {
+    expect(() => parseDashboardConsultationReply(JSON.stringify({ answer }), evidence)).toThrow("Invalid dashboard AI reply");
+  });
+
+  it.each([
+    "저장된 가상 센서 기록은 60건이며 센서는 4종입니다.",
+    "The provided history contains 60 records. Compare the last 2 saved observations.",
+    "保存された仮想センサー記録は60件です。センサーは4種類です。保存された記録2件だけを比較してください。",
+    "저장된 기록은 60건입니다. 최근 저장된 기록2건만 선택해 비교하세요.",
+  ])("does not confuse sensor or selected-subset counts with a total-history claim", answer => {
+    expect(parseDashboardConsultationReply(JSON.stringify({ answer }), evidence)).toBe(answer);
+  });
   it.each([
     "mm/s는 진동 속도 단위이며 측정 방식은 제공되지 않았습니다.",
     "As discussed in previous messages, mm/s is a velocity unit, not displacement.",

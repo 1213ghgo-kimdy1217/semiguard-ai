@@ -832,7 +832,7 @@ export const appRouter = router({
 
         try {
           const res = await invokeLLM({ model: "gpt-5-mini", messages: formattedMessages, max_tokens: 1600, temperature: 0.2, response_format: dashboardReplyFormat });
-          const reply = parseDashboardConsultationReply(res.choices[0]?.message?.content);
+          const reply = parseDashboardConsultationReply(res.choices[0]?.message?.content, historyEvidence);
           return {
             reply,
             usedFallback: false,

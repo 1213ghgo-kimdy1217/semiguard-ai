@@ -15,12 +15,23 @@ export const dashboardReplyFormat = {
 };
 
 const replySchema = z.object({ answer: z.string().trim().min(1).max(8000) }).strict();
-export function parseDashboardConsultationReply(content: unknown) {
+export function parseDashboardConsultationReply(content: unknown, historyEvidence?: DashboardHistoryEvidence) {
   try {
     if (typeof content !== "string") throw new Error();
     const { answer } = replySchema.parse(JSON.parse(content));
     // Reject known leaked trace markers; do not silently trim or invent an answer.
     if (/<\/?think>|\b(?:the user's (?:final |last )?message|we (?:need|should) (?:answer|respond)|q following)\b|(?:^|\n)\s*(?:analysis|assistant analysis|reasoning)\s*:/i.test(answer)) throw new Error();
+    if (historyEvidence?.status === "available") {
+      // Validate explicit total-history claims, not counts of selected subsets or sensors.
+      // This is a narrow guard for observed confusion, not a complete factual validator.
+      const totalCountPatterns = [
+        /(?:저장된|조회된|포함된|불러온|최근)\s*(?:가상\s*)?(?:센서\s*)?(?:기록|관측|샘플|데이터)(?:은|는|이|가|의\s*(?:수|개수)는)\s*(?:총\s*)?(\d+)\s*(?:건|개)/g,
+        /(?:provided|supplied|saved|loaded)\s+(?:history|record summary)\s+(?:contains|includes|has)\s+(\d+)\s+(?:records|samples|observations)/gi,
+        /(?:saved|loaded|stored)\s+(?:synthetic\s+)?(?:sensor\s+)?(?:records|samples|observations)\s+(?:count\s+)?(?:is|are|:)\s*(\d+)/gi,
+        /保存(?:された)?(?:仮想)?(?:センサー)?(?:記録|観測)(?:は|が)\s*(?:合計)?(\d+)件/g,
+      ];
+      if (totalCountPatterns.some(pattern => Array.from(answer.matchAll(pattern)).some(match => Number(match[1]) !== historyEvidence.window.sampleCount))) throw new Error();
+    }
     return answer;
   } catch {
     // Never include provider text, user content, or parsing diagnostics in logs.
@@ -62,7 +73,8 @@ export function buildDashboardConsultationMessages(input: {
   }[input.lang];
   const history = prepareDashboardChatHistory(input.messages);
   const historicalContext = input.historyEvidence?.status === "available"
-    ? `Server-calculated saved-observation summary: ${JSON.stringify(input.historyEvidence)}
+    ? `Historical evidence overview: ${input.historyEvidence.window.sampleCount} saved observations, with 4 sensor types per observation. The four sensor summaries are NOT four saved records. State the recorded sampleCount, never the number of sensor types, when asked how many observations are supplied.
+Server-calculated saved-observation summary: ${JSON.stringify(input.historyEvidence)}
 This summary covers only this authenticated account's saved synthetic observations at or before the exact matching snapshot: at most 60 records from the preceding 5 minutes. These are account records, NOT a verified single-device or single-tab session; other tabs and manually generated examples may be included. Do not describe them as one equipment's continuous trace, the user's exact visible graph, or real fab measurements. Mention the actual sample count and UTC coverage when discussing historical evidence; the window can be shorter than 5 minutes or limited by row count. UTC record times are storage times, not physical onset times or necessarily the learner's local clock. Do not invent a local timezone.
 For the recorded duration, quote the supplied coverageLabel in the answer language exactly. Express it only in seconds; do not recalculate or convert it into minutes. For a range-exit condition, use the supplied outsideCondition in the answer language: lower/upper equality is INSIDE the teaching range. Do not replace 'less than' with 'less than or equal', or 'greater than' with 'greater than or equal'. Cite firstRecordedOutsideValue if explaining the first recorded range exit; do not substitute the current or minimum value for that recorded value.
 firstRecordedOutsideAt means the first recorded value outside the teaching range IN THIS LOADED WINDOW, not the actual onset of a fault. precedingRecordedInsideAt bounds two recorded observations only; values between them are unknown. If outsideAtWindowStart is true, the earlier transition is unknown. Same timestamps cannot establish which sensor changed first. maxGapSeconds and sampled bounds do not establish continuous duration, correlation, causality, worsening or a statistically significant trend. Use first/last/min/max and deltas as comparisons of recorded values, not a diagnosis. Do not reconstruct omitted raw samples or invent intermediate values.`
