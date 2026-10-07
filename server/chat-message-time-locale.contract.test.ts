@@ -10,7 +10,7 @@ describe("chat message time locale contract", () => {
   });
 
   it("uses the selected locale for both AI and user message timestamps", () => {
-    const localeUsages = dashboardSource.match(/toLocaleTimeString\(chatTimeLocale/g) ?? [];
+    const localeUsages = dashboardSource.match(/new Date\(msg.timestamp\).toLocaleTimeString\(chatTimeLocale/g) ?? [];
     expect(localeUsages).toHaveLength(2);
   });
 });

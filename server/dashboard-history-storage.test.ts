@@ -35,7 +35,9 @@ describe("read-only bounded per-account dashboard history", () => {
 
   it("links both normal and feedback retry questions and discloses the bounded summary in three languages", () => {
     const source = readFileSync(resolve(process.cwd(), "client/src/pages/Dashboard.tsx"), "utf8");
-    expect(source.match(/logId: current\?\.logId/g)).toHaveLength(2);
+    expect(source.match(/const sensorContext = observation.sensorContext/g)).toHaveLength(2);
+    expect(source).toContain("chatMessages[assistantIndex].observation");
+    expect(source).toContain("handleSendChatMessage(msg.recoveryPrompt, msg.observation)");
     expect(source).toContain("최근 5분 저장 기록(최대 60건) 요약");
     expect(source).toContain("直近5分の保存記録（最大60件）の要約");
     expect(source).toContain("last 5 minutes of saved observations (up to 60)");

@@ -31,6 +31,37 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("dashboard AI explanation boundary", () => {
+  it("returns server-calculated evidence separately from AI text and reuses the exact old anchor for a follow-up", async () => {
+    const saved = { ...readings, id: 10, timestamp: new Date("2026-10-07T00:00:10Z"), userId: 42, llmDetails: "private saved text" };
+    mocks.readLog.mockResolvedValue(saved);
+    mocks.history.mockResolvedValue([{ ...saved, id: 9, vibration: 1.46, timestamp: new Date("2026-10-07T00:00:00Z") }, saved]);
+    mocks.invoke.mockResolvedValue(response(JSON.stringify({ answer: "Compare the recorded observations." })));
+    const input = { sensorContext: { ...readings, logId: 10 }, messages: [{ role: "user" as const, content: "Compare" }] };
+    const caller = appRouter.createCaller(ctx);
+    const first = await caller.semiguard.chatWithAi(input);
+    const followup = await caller.semiguard.chatWithAi({ ...input, messages: [...input.messages,
+      { role: "assistant", content: first.reply }, { role: "user", content: "Correct the earlier answer" }] });
+    expect(first.evidence).toEqual(followup.evidence);
+    expect(first.evidence.recordedAt).toBe(saved.timestamp.toISOString());
+    expect(first.evidence.snapshot.find(fact => fact.sensor === "vibration")).toMatchObject({ value: 2.8, outsideComparisonRange: true });
+    expect(first.evidence.history).toMatchObject({ status: "available", sensors: expect.arrayContaining([
+      expect.objectContaining({ sensor: "vibration", firstRecordedOutsideValue: 1.46 }),
+    ]) });
+    expect(mocks.history.mock.calls).toEqual([[42, 10, saved.timestamp], [42, 10, saved.timestamp]]);
+    expect(JSON.stringify(first.evidence)).not.toMatch(/private saved text|userId/);
+    expect(mocks.invoke.mock.calls[1][0].messages[0].content).toContain("fixed observation for this conversation segment");
+  });
+
+  it("keeps calculated evidence visible on provider failure without presenting fallback as AI", async () => {
+    mocks.invoke.mockRejectedValue(new Error("Provider unavailable"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = await appRouter.createCaller(ctx).semiguard.chatWithAi({ sensorContext: readings, messages: [{ role: "user", content: "Compare" }] });
+    expect(result).toMatchObject({ usedFallback: true, provider: "rules", evidence: {
+      recordedAt: null, history: { status: "no-linked-observation" },
+    } });
+    expect(result.evidence.snapshot).toHaveLength(4);
+  });
+
   it.each(["ko", "en", "ja"] as const)("returns validated %s output and provider metadata without changing the score", async lang => {
     const result = await appRouter.createCaller(ctx).semiguard.analyzeAnomaly({ ...readings, lang });
     expect(result).toMatchObject({ ...analysis, usedFallback: false, provider: "nvidia", model: "nvidia/qa" });
