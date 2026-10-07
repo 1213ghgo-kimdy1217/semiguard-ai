@@ -23,7 +23,7 @@ import { judgmentCoachRequestSchema } from "../shared/judgmentCoach";
 import { trainingDraftSchema } from "../shared/trainingDraft";
 import { getTrainingDrafts, inspectDraftStorage, saveTrainingDraft } from "./trainingDrafts";
 import { readSharedChoices, shareTrainingAttempt } from "./trainingShare";
-import { buildDashboardConsultationMessages, dashboardReplyFormat, parseDashboardConsultationReply } from "./dashboardConsultation";
+import { buildDashboardConsultationMessages, dashboardComparisonFacts, dashboardReplyFormat, parseDashboardConsultationReply } from "./dashboardConsultation";
 import { getDashboardSensorHistory } from "./semiguardDb";
 import { buildDashboardHistoryEvidence, matchesDashboardSnapshot, type DashboardHistoryEvidence } from "./dashboardHistory";
 
@@ -779,10 +779,12 @@ export const appRouter = router({
         const { sensorContext, messages, lang, feedbackHistory } = input;
 
         let historyEvidence: DashboardHistoryEvidence = { status: "no-linked-observation" };
+        let recordedAt: string | null = null;
         if (sensorContext.logId) {
           try {
             const saved = await getAnomalyLogById(sensorContext.logId, ctx.user.id);
             if (saved && matchesDashboardSnapshot(sensorContext, saved)) {
+              recordedAt = saved.timestamp.toISOString();
               const rows = await getDashboardSensorHistory(ctx.user.id, saved.id, saved.timestamp);
               historyEvidence = buildDashboardHistoryEvidence(saved, rows);
             } else {
@@ -793,6 +795,7 @@ export const appRouter = router({
             console.warn("Dashboard history unavailable");
           }
         }
+        const evidence = { recordedAt, snapshot: dashboardComparisonFacts(sensorContext), history: historyEvidence };
 
         // 마지막 사용자 질문을 기준으로 등록된 설비 매뉴얼에서 관련 구간을 검색합니다.
         const lastUserMessage = [...messages].reverse().find(message => message.role === "user")?.content ?? "";
@@ -835,6 +838,7 @@ export const appRouter = router({
           const reply = parseDashboardConsultationReply(res.choices[0]?.message?.content, historyEvidence);
           return {
             reply,
+            evidence,
             usedFallback: false,
             provider: res.provider ?? "manus",
             model: res.model,
@@ -855,6 +859,7 @@ export const appRouter = router({
           console.warn("AI consultation fallback used:", { category });
           return {
             reply: buildSafeFallbackDiagnostic(sensorContext, lang),
+            evidence,
             usedFallback: true,
             provider: "rules",
             model: "",

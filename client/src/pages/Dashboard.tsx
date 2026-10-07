@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent a
 import { Link, useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "../../../server/routers";
+import { captureDashboardObservation, messagesForDashboardObservation, type DashboardChatObservation } from "../../../shared/dashboardObservation";
 import { translations, type Lang, type Translation } from "@/lib/i18n";
 import { NORMAL_BASELINE, sensorScoreContribution, type RiskLevel, type SensorData, type AnomalyResult, type AnomalyLogEntry } from "../../../shared/semiguard";
 import { MANUAL_CHUNK_LIMIT, MANUAL_CHUNK_WARNING_THRESHOLD, splitManualTextIntoChunks } from "../../../shared/ragManual";
@@ -1611,7 +1614,9 @@ export default function Dashboard() {
   const [activeManualSource, setActiveManualSource] = useState<ManualSource | null>(null);
   const [quickPromptStatus, setQuickPromptStatus] = useState("");
 
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string; usedFallback?: boolean; provider?: string; model?: string }>>([
+  const [chatObservation, setChatObservation] = useState<DashboardChatObservation | null>(null);
+  type ChatEvidence = inferRouterOutputs<AppRouter>["semiguard"]["chatWithAi"]["evidence"];
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string; timestamp: number; feedbackApplied?: boolean; manualSources?: ManualSource[]; recoveryPrompt?: string; usedFallback?: boolean; provider?: string; model?: string; observation?: DashboardChatObservation; evidence?: ChatEvidence }>>([
     {
       role: "assistant",
       content: lang === "ko"
@@ -1957,12 +1962,13 @@ export default function Dashboard() {
   };
 
   const loadHistorySession = async (session: { id: number; title: string }) => {
-    if (loadingHistorySessionId === session.id) return;
+    if (isChatLoading || loadingHistorySessionId === session.id) return;
     setLoadingHistorySessionId(session.id);
     setHistorySessionLoadError(null);
     try {
       const res = await chatUtils.client.semiguard.getChatMessages.query({ sessionId: session.id });
       setActiveSessionId(session.id);
+      setChatObservation(null);
       setShowHistoryPanel(false);
       if (res && res.length > 0) {
         setChatMessages(res.map(message => ({
@@ -2278,6 +2284,7 @@ export default function Dashboard() {
         : (lang === "ko" ? "새로운 상담" : lang === "ja" ? "新しい相談" : "New Consultation");
       const res = await createSessionMutation.mutateAsync({ title: newTitle });
       setActiveSessionId(res.sessionId);
+      setChatObservation(null);
       const initialMsg = lang === "ko"
         ? "새로운 상담 세션이 시작되었습니다. 이전 상담 기록은 상단의 '상담 기록' 버튼에서 언제든지 다시 확인하실 수 있습니다."
         : lang === "ja"
@@ -2300,10 +2307,16 @@ export default function Dashboard() {
     }
   };
 
-  const handleSendChatMessage = async (textToSend?: string) => {
+  const handleSendChatMessage = async (textToSend?: string, sourceObservation?: DashboardChatObservation) => {
     const text = textToSend ?? chatInput;
     if (!text.trim() || isChatLoading) return;
-    const userMsg = { role: "user" as const, content: text.trim(), timestamp: Date.now() };
+    const observation = sourceObservation ?? chatObservation ?? captureDashboardObservation(current, Date.now());
+    if (!observation) {
+      toast.info(lang === "ko" ? "가상 센서 값이 준비된 뒤 질문해 주세요." : lang === "ja" ? "仮想センサー値の準備後に質問してください。" : "Wait for the synthetic readings before asking.");
+      return;
+    }
+    setChatObservation(observation);
+    const userMsg = { role: "user" as const, content: text.trim(), timestamp: Date.now(), observation };
     const nextMessages = [...chatMessages, userMsg];
     const activeSession = activeSessionId === null
       ? undefined
@@ -2338,15 +2351,7 @@ export default function Dashboard() {
     }
 
     try {
-      const sensorContext = {
-        current: current?.sensorData.current ?? 5.0,
-        temperature: current?.sensorData.temperature ?? 45.0,
-        vibration: current?.sensorData.vibration ?? 2.0,
-        noise: current?.sensorData.noise ?? 55.0,
-        anomalyScore: current?.anomalyScore ?? 10,
-        riskLevel: current?.riskLevel ?? "normal",
-        logId: current?.logId,
-      };
+      const sensorContext = observation.sensorContext;
       // 수집된 피드백 이력을 서버로 전달하여 LLM이 실시간 학습하도록 반영
       const feedbackHistory = Object.entries(messageFeedbacks).map(([idxStr, type]) => {
         const idx = Number(idxStr);
@@ -2359,7 +2364,7 @@ export default function Dashboard() {
 
       const res = await chatMutation.mutateAsync({
         sensorContext,
-        messages: nextMessages.map(m => ({ role: m.role, content: m.content })),
+        messages: messagesForDashboardObservation(nextMessages, observation).map(m => ({ role: m.role, content: m.content })),
         lang,
         feedbackHistory,
       });
@@ -2377,6 +2382,8 @@ export default function Dashboard() {
         usedFallback: res.usedFallback ?? false,
         provider: res.provider,
         model: res.model,
+        observation,
+        evidence: res.evidence,
         recoveryPrompt: isTemporaryServiceReply || res.usedFallback ? text.trim() : undefined,
       }]);
 
@@ -2396,6 +2403,7 @@ export default function Dashboard() {
               : "Error generating response. Please try again.",
           timestamp: Date.now(),
           recoveryPrompt: text.trim(),
+          observation,
         },
       ]);
     } finally {
@@ -2405,21 +2413,18 @@ export default function Dashboard() {
 
   const regenerateWithFeedback = async (assistantIndex: number) => {
     if (isChatLoading || isFeedbackRegenerating || !messageReasons[assistantIndex]) return;
-    const sourceMessages = chatMessages.slice(0, assistantIndex);
+    const observation = chatMessages[assistantIndex].observation;
+    if (!observation) {
+      toast.info(lang === "ko" ? "이 저장된 답변에는 관측 근거가 연결되어 있지 않습니다. 새 질문으로 현재 자료를 확인해 주세요." : lang === "ja" ? "保存された回答には観測根拠が紐づいていません。新しい質問で現在の資料を確認してください。" : "This stored answer has no linked observation. Ask a new question about the current data.");
+      return;
+    }
+    const sourceMessages = messagesForDashboardObservation(chatMessages.slice(0, assistantIndex), observation);
     if (!sourceMessages.some(message => message.role === "user")) return;
 
     setIsFeedbackRegenerating(true);
     setIsChatLoading(true);
     try {
-      const sensorContext = {
-        current: current?.sensorData.current ?? 5.0,
-        temperature: current?.sensorData.temperature ?? 45.0,
-        vibration: current?.sensorData.vibration ?? 2.0,
-        noise: current?.sensorData.noise ?? 55.0,
-        anomalyScore: current?.anomalyScore ?? 10,
-        riskLevel: current?.riskLevel ?? "normal",
-        logId: current?.logId,
-      };
+      const sensorContext = observation.sensorContext;
       const feedbackHistory = Object.entries(messageFeedbacks).map(([idxStr, type]) => ({
         type,
         reason: messageReasons[Number(idxStr)],
@@ -2431,7 +2436,7 @@ export default function Dashboard() {
         lang,
         feedbackHistory,
       });
-      const improvedReply = { role: "assistant" as const, content: result.reply, timestamp: Date.now(), feedbackApplied: !result.usedFallback, usedFallback: result.usedFallback, provider: result.provider, model: result.model, manualSources: result.manualSources ?? [] };
+      const improvedReply = { role: "assistant" as const, content: result.reply, timestamp: Date.now(), feedbackApplied: !result.usedFallback, usedFallback: result.usedFallback, provider: result.provider, model: result.model, manualSources: result.manualSources ?? [], observation, evidence: result.evidence };
       setChatMessages(previous => [...previous, improvedReply]);
       if (activeSessionId !== null) {
         await saveMessageMutation.mutateAsync({ sessionId: activeSessionId, role: "assistant", content: result.reply });
@@ -4671,6 +4676,7 @@ export default function Dashboard() {
                             const newTitle = lang === "ko" ? "새로운 상담" : lang === "ja" ? "新しい相談" : "New Consultation";
                             const res = await createSessionMutation.mutateAsync({ title: newTitle });
                             setActiveSessionId(res.sessionId);
+                            setChatObservation(null);
                             const initialMsg = lang === "ko"
                               ? "모든 상담 기록이 초기화되었습니다. 새로운 상담을 시작합니다."
                               : lang === "ja"
@@ -5492,6 +5498,20 @@ export default function Dashboard() {
               </div>
             )}
 
+            <div className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 text-[10px] sm:px-4" style={{ borderColor: th.border2, background: th.bgCard2, color: th.textMuted }}>
+              <p className="min-w-0 flex-1" aria-live="polite">
+                {chatObservation
+                  ? (lang === "ko" ? `상담 관측 기준 고정 · ${new Date(chatObservation.capturedAt).toLocaleTimeString(chatTimeLocale)} · 후속 질문도 같은 자료를 사용합니다.` : lang === "ja" ? `相談の観測基準を固定 · ${new Date(chatObservation.capturedAt).toLocaleTimeString(chatTimeLocale)} · 続く質問も同じ資料を使用します。` : `Fixed consultation observation · ${new Date(chatObservation.capturedAt).toLocaleTimeString(chatTimeLocale)} · Follow-ups use the same data.`)
+                  : (lang === "ko" ? "첫 질문에서 관측 기준을 고정합니다. 다시 연 저장된 상담은 텍스트만 있으며, 이전 관측 자료를 복원하지 않습니다." : lang === "ja" ? "最初の質問で観測基準を固定します。再表示した相談はテキストのみで、以前の観測資料は復元されません。" : "The first question fixes the observation. Reopened chats contain text only; previous observations are not restored.")}
+              </p>
+              <button type="button" disabled={isChatLoading || !current} onClick={() => {
+                const refreshed = captureDashboardObservation(current, Date.now());
+                if (refreshed) setChatObservation(refreshed);
+              }} className="min-h-9 rounded-lg border px-2 py-1 font-bold disabled:opacity-40" style={{ borderColor: th.border2, color: th.accent }}>
+                {lang === "ko" ? "최신 관측으로 갱신" : lang === "ja" ? "最新の観測に更新" : "Refresh observation"}
+              </button>
+            </div>
+
             {/* 대화 메시지 영역 */}
             <div className="relative min-h-0 flex-1">
             <div
@@ -5566,11 +5586,32 @@ export default function Dashboard() {
                           {msg.provider === "nvidia" ? "NVIDIA" : "AI"} · {msg.model}
                         </p>
                       )}
+                      {msg.evidence && (
+                        <details className="mb-3 rounded-lg border p-2" style={{ borderColor: th.border2 }}>
+                          <summary className="cursor-pointer font-bold" style={{ color: th.accent }}>
+                            {lang === "ko" ? "계산된 관측 근거 · AI 문장과 별도" : lang === "ja" ? "計算された観測根拠 · AI文章とは別" : "Calculated observation evidence · separate from AI text"}
+                          </summary>
+                          <div className="mt-2 space-y-2 text-[10px] break-words" data-observation-evidence="true">
+                            <p>{lang === "ko" ? "저장 기준 시각" : lang === "ja" ? "保存基準時刻" : "Saved reference time"}: {msg.evidence.recordedAt ?? (lang === "ko" ? "연결된 저장 시각 없음" : lang === "ja" ? "紐づく保存時刻なし" : "No linked saved time")} · UTC</p>
+                            {msg.evidence.snapshot.map(fact => (
+                              <p key={fact.sensor}>{lang === "ko" ? ({ current: "전류", temperature: "온도", vibration: "진동", noise: "소음" }[fact.sensor]) : lang === "ja" ? ({ current: "電流", temperature: "温度", vibration: "振動", noise: "騒音" }[fact.sensor]) : fact.sensor}: {fact.value} {fact.unit} · {fact.lower}–{fact.upper} {fact.unit} · {fact.outsideComparisonRange ? (lang === "ko" ? "기준 범위 밖" : lang === "ja" ? "基準範囲外" : "Outside teaching range") : (lang === "ko" ? "기준 범위 안" : lang === "ja" ? "基準範囲内" : "Inside teaching range")}</p>
+                            ))}
+                            {msg.evidence.history.status === "available" ? <>
+                              <p>{msg.evidence.history.window.sampleCount}{lang === "ko" ? "건" : lang === "ja" ? "件" : " records"} · {msg.evidence.history.window.coverageLabel[lang]} · {msg.evidence.history.window.startAt} → {msg.evidence.history.window.endAt}</p>
+                              {msg.evidence.history.sensors.map(fact => <div key={fact.sensor} className="border-t pt-2" style={{ borderColor: th.border2 }}>
+                                <p>{lang === "ko" ? ({ current: "전류", temperature: "온도", vibration: "진동", noise: "소음" }[fact.sensor]) : lang === "ja" ? ({ current: "電流", temperature: "温度", vibration: "振動", noise: "騒音" }[fact.sensor]) : fact.sensor} · {lang === "ko" ? "첫 값 → 마지막 값" : lang === "ja" ? "最初 → 最後" : "First → last"}: {fact.firstValue} → {fact.lastValue} {fact.unit}</p>
+                                <p>{lang === "ko" ? "조회 구간의 첫 범위 이탈 기록" : lang === "ja" ? "取得区間の最初の範囲外記録" : "First recorded range exit in this window"}: {fact.firstRecordedOutsideAt ? `${fact.firstRecordedOutsideValue} ${fact.unit} · ${fact.firstRecordedOutsideAt}` : (lang === "ko" ? "없음" : lang === "ja" ? "なし" : "None")}</p>
+                              </div>)}
+                              <p>{lang === "ko" ? "여러 창을 포함할 수 있는 계정 기록입니다. 범위 이탈 기록은 실제 고장 시작 시점이 아닙니다." : lang === "ja" ? "複数タブを含む場合があるアカウント記録です。範囲外記録は実際の故障開始時点ではありません。" : "Account records may include other tabs. A recorded range exit is not actual fault onset."}</p>
+                            </> : <p>{lang === "ko" ? "사용 가능한 연결 이력이 없어 이 스냅샷만 비교합니다. 이력이 없다는 뜻은 이탈 기록이 없다는 뜻이 아닙니다." : lang === "ja" ? "利用可能な紐づく履歴がないため、このスナップショットのみ比較します。履歴が利用できないことは範囲外記録がないことを意味しません。" : "No usable linked history; only this snapshot is compared. Unavailable history does not mean no range exit occurred."}</p>}
+                          </div>
+                        </details>
+                      )}
                       <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                       {msg.role === "assistant" && msg.recoveryPrompt && (
                         <button
                           type="button"
-                          onClick={() => void handleSendChatMessage(msg.recoveryPrompt)}
+                          onClick={() => void handleSendChatMessage(msg.recoveryPrompt, msg.observation)}
                           disabled={isChatLoading}
                           className="mt-3 inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-bold transition-all hover:opacity-85 disabled:opacity-45"
                           style={{ borderColor: "oklch(0.65 0.18 200 / 0.45)", background: "oklch(0.65 0.18 200 / 0.12)", color: isDark ? "oklch(0.78 0.14 200)" : "oklch(0.42 0.16 220)" }}>
@@ -5884,9 +5925,9 @@ export default function Dashboard() {
 
             {/* 입력 폼 영역 */}
             <p className="px-3 py-2 text-[10px] leading-relaxed sm:px-4" style={{ color: th.textMuted }}>
-              {lang === "ko" ? "질문·현재 가상 센서 값·같은 계정의 최근 5분 저장 기록(최대 60건) 요약·관련 매뉴얼 발췌가 외부 AI 제공자(NVIDIA 등)에게 전달됩니다. 여러 창의 기록이 포함될 수 있습니다. 개인정보·회사 기밀을 입력하지 마세요."
-                : lang === "ja" ? "質問・現在の仮想センサー値・同じアカウントの直近5分の保存記録（最大60件）の要約・関連マニュアルの抜粋は外部AI提供者（NVIDIA等）に送信されます。複数タブの記録を含む場合があります。個人情報や会社の機密情報を入力しないでください。"
-                  : "Questions, current synthetic readings, a summary of this account's last 5 minutes of saved observations (up to 60), and relevant manual excerpts are sent to an external AI provider (such as NVIDIA). Records may include other tabs. Do not enter personal or confidential company information."}
+              {lang === "ko" ? "질문·고정한 가상 센서 값·해당 관측 이전 같은 계정의 최근 5분 저장 기록(최대 60건) 요약·관련 매뉴얼 발췌가 외부 AI 제공자(NVIDIA 등)에게 전달됩니다. 여러 창의 기록이 포함될 수 있습니다. 개인정보·회사 기밀을 입력하지 마세요."
+                : lang === "ja" ? "質問・固定した仮想センサー値・その観測以前の同じアカウントの直近5分の保存記録（最大60件）の要約・関連マニュアルの抜粋は外部AI提供者（NVIDIA等）に送信されます。複数タブの記録を含む場合があります。個人情報や会社の機密情報を入力しないでください。"
+                  : "Questions, fixed synthetic readings, a summary of this account's last 5 minutes of saved observations (up to 60) before that observation, and relevant manual excerpts are sent to an external AI provider (such as NVIDIA). Records may include other tabs. Do not enter personal or confidential company information."}
             </p>
             <div className="flex flex-col gap-2 border-t px-2.5 pb-[max(0.625rem,calc(env(safe-area-inset-bottom)+0.5rem))] pt-2.5 sm:flex-row sm:items-end sm:p-4" style={{ borderColor: th.border, background: th.bgCard }}>
               <textarea
