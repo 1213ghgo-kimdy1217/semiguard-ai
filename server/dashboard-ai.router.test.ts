@@ -50,6 +50,7 @@ describe("dashboard AI explanation boundary", () => {
     expect(mocks.history.mock.calls).toEqual([[42, 10, saved.timestamp], [42, 10, saved.timestamp]]);
     expect(JSON.stringify(first.evidence)).not.toMatch(/private saved text|userId/);
     expect(mocks.invoke.mock.calls[1][0].messages[0].content).toContain("fixed observation for this conversation segment");
+    expect(mocks.invoke.mock.calls[1][0].messages[0].content).toContain(`Fixed observation saved reference time (UTC, exact verified source anchor): ${saved.timestamp.toISOString()}`);
   });
 
   it("keeps calculated evidence visible on provider failure without presenting fallback as AI", async () => {
