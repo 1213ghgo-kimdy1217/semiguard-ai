@@ -3,6 +3,14 @@ import { buildDashboardConsultationMessages, parseDashboardConsultationReply } f
 import { buildDashboardHistoryEvidence } from "./dashboardHistory";
 
 describe("dashboard learner-facing answer validation", () => {
+  it("distinguishes the verified anchor time from the first loaded record time", () => {
+    const sensorContext = { current: 5, temperature: 45, vibration: 2, noise: 55, anomalyScore: 0, riskLevel: "normal" };
+    const input = { lang: "en" as const, messages: [{ role: "user" as const, content: "What is the saved reference time?" }], sensorContext };
+    const recordedAt = "2026-10-07T00:57:41.000Z";
+    expect(buildDashboardConsultationMessages({ ...input, recordedAt })[0].content).toContain(`exact verified source anchor): ${recordedAt}`);
+    expect(buildDashboardConsultationMessages(input)[0].content).toContain("unavailable; do not invent a saved reference time");
+    expect(buildDashboardConsultationMessages({ ...input, recordedAt })[0].content).toContain("never label the window start as the saved reference time");
+  });
   const anchor = { id: 60, timestamp: new Date("2026-10-07T00:05:00Z"), current: 5, temperature: 45, vibration: 2, noise: 55 };
   const evidence = buildDashboardHistoryEvidence(anchor, Array.from({ length: 60 }, (_, i) => ({ ...anchor, id: i + 1, timestamp: new Date(anchor.timestamp.getTime() - (59 - i) * 4000) })));
 

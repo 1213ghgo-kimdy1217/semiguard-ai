@@ -831,7 +831,7 @@ export const appRouter = router({
           }
         }
 
-        const formattedMessages = buildDashboardConsultationMessages({ sensorContext, messages, lang, feedbackContext, manualContext, historyEvidence });
+        const formattedMessages = buildDashboardConsultationMessages({ sensorContext, messages, lang, feedbackContext, manualContext, historyEvidence, recordedAt });
 
         try {
           const res = await invokeLLM({ model: "gpt-5-mini", messages: formattedMessages, max_tokens: 1600, temperature: 0.2, response_format: dashboardReplyFormat });
