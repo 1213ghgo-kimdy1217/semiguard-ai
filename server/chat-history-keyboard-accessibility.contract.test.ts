@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import ts from "typescript";
 
 const dashboardSource = readFileSync(resolve(process.cwd(), "client/src/pages/Dashboard.tsx"), "utf8");
 
@@ -17,7 +18,23 @@ describe("consultation history keyboard accessibility contract", () => {
   });
 
   it("announces the selected state of the consultation pin control", () => {
-    expect(dashboardSource).toContain('aria-pressed={session.isPinned === 1}');
+    const tree = ts.createSourceFile("Dashboard.tsx", dashboardSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const pinControls: ts.JsxElement[] = [];
+    const visit = (node: ts.Node) => {
+      if (ts.isJsxElement(node) && node.openingElement.tagName.getText(tree) === "button" &&
+        node.openingElement.attributes.properties.some(attribute => ts.isJsxAttribute(attribute) &&
+          attribute.name.getText(tree) === "onClick" && attribute.initializer?.getText(tree).includes("setChatSessionPinnedMutation"))) {
+        pinControls.push(node);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(tree);
+    expect(pinControls.length).toBe(1);
+    const pressed = pinControls[0].openingElement.attributes.properties.find(attribute =>
+      ts.isJsxAttribute(attribute) && attribute.name.getText(tree) === "aria-pressed");
+    expect(pressed && ts.isJsxAttribute(pressed) ? pressed.initializer?.getText(tree) : undefined)
+      .toBe("{session.isPinned === 1}");
+    expect(pinControls[0].children.some(child => ts.isJsxText(child) && child.text.includes("aria-pressed="))).toBe(false);
     expect(dashboardSource).toContain('"상담 기록 상단에 고정"');
     expect(dashboardSource).toContain('"相談履歴を上部に固定"');
     expect(dashboardSource).toContain('"Pin consultation to top"');
