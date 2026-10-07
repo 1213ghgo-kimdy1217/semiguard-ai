@@ -18,7 +18,7 @@ const processInput = (scenario: ProcessScenario) => toProcessJudgmentCoachReques
   answer: { signal: scenario.expectedSignal, onset: scenario.changeTime === null ? "none" : String(scenario.changeTime),
     comparison: "same-condition", certainty: "uncertain", facts: "같은 조건의 여러 가상 기록을 비교해 관찰 내용을 작성했습니다.",
     checks: "기존 가상 참고 기록과 같은 시점의 다른 항목을 차례로 비교합니다." } }, "ko");
-const output = (language: "ko" | "en" | "ja" = "ko") => ({ strengths: ["uncertainty"] as ("signal" | "reference" | "uncertainty")[], reflections: [
+const output = (language: "ko" | "en" | "ja" = "ko") => ({ reflections: [
   { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" as const, question: language === "ko" ? "같은 시점의 어떤 정상 참고 기록을 비교하겠습니까?" : language === "ja" ? "同じ時点のどの正常参照を比較しますか？" : "Which normal reference point would you compare at that time?" },
   { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" as const, question: language === "ko" ? "비교 순서를 정할 때 어떤 가상 기록을 확인하겠습니까?" : language === "ja" ? "比較順序を決める際にどの仮想記録を確認しますか？" : "What existing virtual evidence would help you choose the comparison order?" },
 ] });
@@ -59,21 +59,23 @@ describe("scenario judgment coach", () => {
     expect(payload.messages[0].content).toContain(language === "en" ? "English" : "Japanese");
     expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(input().answer);
   });
-  it.each(["ko", "en", "ja"] as const)("supplies an exact model-only output shape in %s without asking for server-owned quotations", async language => {
+  it.each(["ko", "en", "ja"] as const)("supplies an exact model-only output shape in %s while leaving choice labels server-owned", async language => {
     fetchMock.mockResolvedValue(response(JSON.stringify(output(language))));
     expect((await createJudgmentCoach()(27, { ...input(), language })).status).toBe("ready");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     const user = JSON.parse(payload.messages[1].content);
     expect(user.responseInstructions).toContain("EXACTLY dimension, evidenceId, answerSource, question");
     expect(user.responseInstructions).toContain("Never add answerQuote");
-    expect(Object.keys(user.outputShapeExample)).toEqual(["strengths", "reflections"]);
-    expect(user.outputShapeExample.strengths).toEqual([]);
+    expect(Object.keys(user.outputShapeExample)).toEqual(["reflections"]);
+    expect(user.allowedDimensionEvidencePairs).toEqual({ reference: "phase-reference", onset: "pressure-trend", "cross-sensor": "other-signals", uncertainty: "cause-unknown", checks: "record-comparison" });
+    expect(user.outputCount).toContain("Exactly two reflections");
+    expect(payload.messages[0].content).toContain("Only the server computes the fixed choice-criterion labels");
     expect(user.outputShapeExample.reflections).toHaveLength(2);
     for (const item of user.outputShapeExample.reflections) {
       expect(Object.keys(item)).toEqual(["dimension", "evidenceId", "answerSource", "question"]);
-      expect(item.question).not.toContain(input().answer.facts);
+      expect(item.question.length).toBeGreaterThanOrEqual(8);
     }
-    expect(() => validateCoachOutput(JSON.stringify(user.outputShapeExample), input().answer, language)).not.toThrow();
+    expect(validateCoachOutput(JSON.stringify(user.outputShapeExample), input().answer, language)).toMatchObject({ strengths: ["signal", "reference"] });
     expect(user.learnerAnswer).toEqual(input().answer);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -195,9 +197,9 @@ describe("scenario judgment coach", () => {
     expect(context.evidence["pressure-trend"]).toContain("No-change is a valid evidence-based choice");
     expect(context.evidence["pressure-trend"]).not.toContain("synthetic pressure trend develops");
     expect(context.samples.every(row => row.signals.every(signal => signal.current >= signal.range[0] && signal.current <= signal.range[1]))).toBe(true);
-    const valid = validateCoachOutput(JSON.stringify({ ...output(), strengths: ["signal", "reference"] }), request.answer, "ko", scenario.id);
+    const valid = validateCoachOutput(JSON.stringify(output()), request.answer, "ko", scenario.id);
     expect(valid.strengths).toEqual(["signal", "reference"]);
-    expect(() => validateCoachOutput(JSON.stringify({ ...output(), strengths: ["signal"] }), { ...request.answer, signal: "film", onset: "30" }, "ko", scenario.id)).toThrow("Unsupported strength");
+    expect(validateCoachOutput(JSON.stringify(output()), { ...request.answer, signal: "film", onset: "30" }, "ko", scenario.id).strengths).toEqual(["reference", "uncertainty"]);
   });
   it("rejects process aliases, unknown signals, incomplete observation, and incoherent no-change choices before transmission", async () => {
     const scenario = processScenarios.find(item => item.processId === "wafer")!;
@@ -240,7 +242,7 @@ describe("scenario judgment coach", () => {
   });
   it.each([
     ["invalid JSON private-user-answer", "json"], ["{}", "schema"], ["x".repeat(7001), "output-shape"],
-    [JSON.stringify({ ...output(), strengths: ["reference", "reference"] }), "strength"],
+    [JSON.stringify({ ...output(), strengths: ["reference", "reference"] }), "schema"],
     [JSON.stringify({ ...output(), reflections: output().reflections.map(item => ({ ...item, question: ENV.nvidiaApiKey })) }), "safety"],
     [JSON.stringify({ ...output(), reflections: [{ ...output().reflections[0], evidenceId: "record-comparison" }, output().reflections[1]] }), "evidence"],
     [JSON.stringify(output("en")), "language"],
@@ -287,11 +289,32 @@ describe("scenario judgment coach", () => {
     const duplicate = output(); duplicate.reflections[1] = duplicate.reflections[0];
     for (const data of [wrong, duplicate, { ...output(), score: 95 }]) expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
   });
-  it("rejects model-written praise or positive labels unsupported by the actual choices", () => {
-    const data = { ...output(), strengths: ["You correctly identified the onset at 80 seconds."] };
-    expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
-    expect(() => validateCoachOutput(JSON.stringify(output()), { ...input().answer, certainty: "certain" })).toThrow("Unsupported strength");
-    expect(() => validateCoachOutput(JSON.stringify({ ...output(), strengths: ["reference", "reference"] }), input().answer)).toThrow("Unsupported strength");
+  it("keeps positive choice labels server-owned and rejects model-written strengths instead of trimming them", () => {
+    for (const strengths of [[], ["signal"], ["reference", "reference"], ["signal", "reference", "uncertainty"], ["You correctly identified the onset at 80 seconds."]]) {
+      expect(() => validateCoachOutput(JSON.stringify({ ...output(), strengths }), input().answer)).toThrow();
+    }
+    expect(validateCoachOutput(JSON.stringify(output()), input().answer).strengths).toEqual(["signal", "reference"]);
+    expect(validateCoachOutput(JSON.stringify(output()), { ...input().answer, signal: "flow", comparison: "whole-run", certainty: "certain" }).strengths).toEqual([]);
+  });
+  it("does not let written claims or a different AI question create positive choice labels", () => {
+    const answer = { ...input().answer, signal: "flow", comparison: "whole-run", certainty: "uncertain" as const,
+      facts: "내가 정상 시점을 확실히 맞혔다고 가상 답안에 주장합니다." };
+    const first = validateCoachOutput(JSON.stringify(output()), answer);
+    const changed = output(); changed.reflections[0].question = "같은 단계의 유량 가상 기록과 정상 참고를 어떤 시점에서 비교하겠습니까?";
+    const second = validateCoachOutput(JSON.stringify(changed), answer);
+    expect(first.strengths).toEqual(["uncertainty"]);
+    expect(second.strengths).toEqual(first.strengths);
+    expect(second.reflections[0].answerQuote).toBe(answer.facts);
+  });
+  it("requests only reflections from NVIDIA, not selection of fixed positive criterion labels", async () => {
+    expect((await createJudgmentCoach()(27, input())).status).toBe("ready");
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const context = JSON.parse(payload.messages[0].content.split("Trusted scenario context: ")[1].split("\n")[0]);
+    expect(context).not.toHaveProperty("supportedStrengths");
+    expect(payload.messages[0].content).toContain("Do not output strengths");
+    expect(payload.response_format).toEqual({ type: "json_object" });
+    expect(payload.messages[0].content).not.toContain("Return only a JSON object matching this schema:");
+    expect(Object.keys(JSON.parse(payload.messages[1].content).outputShapeExample)).toEqual(["reflections"]);
   });
   it("constructs original quotes server-side and rejects invented sources or model-written quotations", () => {
     const valid = validateCoachOutput(JSON.stringify(output()), input().answer);
