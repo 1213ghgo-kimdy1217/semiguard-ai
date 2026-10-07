@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { Link } from "wouter";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
@@ -28,6 +28,11 @@ export function TrainingCheckpoint({ userId, language, scenarioId, capture, rest
   const [notice, setNotice] = useState("");
   const [replace, setReplace] = useState(false);
   const owner = useRef(userId); owner.current = userId;
+  const opener = useRef<HTMLButtonElement>(null);
+  const cancelButton = useRef<HTMLButtonElement>(null);
+  const confirmationId = useId();
+  useEffect(() => { if (replace && saved) cancelButton.current?.focus(); }, [replace, saved]);
+  const closeConfirmation = () => { setReplace(false); opener.current?.focus(); };
   const busy = mutation.isPending || disabled;
   const save = async () => {
     if (resumeOnly || busy || !userId || readiness.data?.ready !== true) return;
@@ -48,12 +53,19 @@ export function TrainingCheckpoint({ userId, language, scenarioId, capture, rest
       : readiness.isLoading ? <p role="status">{l("저장소 확인 중…", "Checking storage…", "保存先を確認中…")}</p>
       : !readiness.data?.ready ? <p role="status">{l("계정 중간 저장소를 사용할 수 없습니다. 현재 탭의 임시 저장은 유지됩니다.", "Account checkpoint storage is unavailable. Temporary tab storage remains available.", "アカウントの中間保存先を利用できません。このタブの一時保存は継続します。")}</p>
       : <><div className="et-actions">{!resumeOnly ? <button className="et-linkbutton" type="button" disabled={busy} onClick={() => void save()}>{mutation.isPending ? l("저장 중…", "Saving…", "保存中…") : l("현재 지점 저장", "Save current point", "現在の時点を保存")}</button> : null}
-        {saved ? <button className="et-linkbutton" type="button" disabled={busy} onClick={() => { if (!busy) setReplace(true); }}>{l("저장본 불러오기", "Load checkpoint", "保存内容を読み込む")}</button> : null}</div>
+        {saved ? <button ref={opener} className="et-linkbutton" type="button" disabled={busy} aria-expanded={replace} aria-controls={replace ? confirmationId : undefined} onClick={() => { if (!busy) setReplace(true); }}>{l("저장본 불러오기", "Load checkpoint", "保存内容を読み込む")}</button> : null}</div>
         {disabled ? <p role="status">{l("완료 기록을 저장하는 중입니다. 저장 후 이어하기를 선택하세요.", "Saving the completed record. Resume after saving finishes.", "完了記録を保存中です。保存後に再開を選んでください。")}</p> : null}
         {saved ? <p>{l("마지막 저장", "Last saved", "最終保存")} · {new Date(saved.updatedAt).toLocaleString(language)} · {saved.elapsed}{l("초", "s", "秒")}</p> : null}
         {query.isLoading ? <p role="status">{l("저장본을 확인하는 중…", "Checking checkpoints…", "保存内容を確認中…")}</p> : resumeOnly && !saved && !query.isError ? <p>{l("이 공정의 중간 저장본이 없습니다. 새로 연습하려면 아래의 새 연습 버튼을 이용하세요.", "No checkpoint for this process. Use the new-attempt button below to practise again.", "この工程の中間保存はありません。再練習するには下の新しい試行ボタンを使ってください。")}</p> : null}
         {query.isError ? <p role="status">{l("저장본 목록을 불러오지 못했습니다.", "Could not load checkpoints.", "保存内容を読み込めませんでした。")}</p> : null}
-        {replace && saved ? <div className="et-alert"><p>{l("현재 탭의 답안 대신 저장본을 불러올까요? 서술형 입력은 비워집니다.", "Replace this tab's answers with the checkpoint? Written fields will be cleared.", "このタブの回答を保存内容に置き換えますか？記述入力は空になります。")}</p><button type="button" className="et-linkbutton" disabled={busy} onClick={() => { if (busy || !userId) return; const { updatedAt: _time, ...raw } = saved; restore(trainingDraftSchema.parse(raw)); setReplace(false); setNotice(l("저장한 시점에서 일시정지 상태로 이어갑니다. 서술형은 다시 작성하세요.", "Resumed at the saved point, paused. Re-enter written answers.", "保存した時点から停止状態で再開しました。記述回答は再入力してください。")); }}>{l("불러오기", "Load", "読み込む")}</button> <button type="button" onClick={() => setReplace(false)}>{l("취소", "Cancel", "キャンセル")}</button></div> : null}
+        {replace && saved ? <div className="et-alert" id={confirmationId} role="alertdialog" aria-modal={false} aria-labelledby={`${confirmationId}-title`}
+          onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); closeConfirmation(); } }}>
+          <p id={`${confirmationId}-title`}>{l("현재 탭의 답안 대신 저장본을 불러올까요? 서술형 입력은 비워집니다.", "Replace this tab's answers with the checkpoint? Written fields will be cleared.", "このタブの回答を保存内容に置き換えますか？記述入力は空になります。")}</p>
+          <div className="et-actions">
+            <button ref={cancelButton} type="button" className="et-linkbutton" onClick={closeConfirmation}>{l("취소", "Cancel", "キャンセル")}</button>
+            <button type="button" className="et-linkbutton" disabled={busy} onClick={() => { if (busy || !userId) return; const { updatedAt: _time, ...raw } = saved; restore(trainingDraftSchema.parse(raw)); closeConfirmation(); setNotice(l("저장한 시점에서 일시정지 상태로 이어갑니다. 서술형은 다시 작성하세요.", "Resumed at the saved point, paused. Re-enter written answers.", "保存した時点から停止状態で再開しました。記述回答は再入力してください。")); }}>{l("불러오기", "Load", "読み込む")}</button>
+          </div>
+        </div> : null}
       </>}
     <p role="status" aria-live="polite">{notice}</p>
   </div></details>;

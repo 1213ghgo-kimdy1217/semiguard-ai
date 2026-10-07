@@ -42,7 +42,10 @@ describe("coherent practice product", () => {
     expect(controls).toContain("query.data?.userId === userId");
     expect(controls).toContain("setReplace(true)");
     expect(controls).toContain("서술형 입력은 비워집니다");
-    expect(controls).not.toContain("useEffect");
+    // Focus may move after an explicit confirmation; saved data must never auto-load.
+    const effects = [...controls.matchAll(/useEffect\(\(\) => \{([\s\S]*?)\}, \[[^\]]*\]\)/g)];
+    expect(effects).toHaveLength(1);
+    expect(effects[0][1].trim()).toBe("if (replace && saved) cancelButton.current?.focus();");
     for (const page of ["EtchTraining", "ProcessTraining"]) {
       const source = read(`client/src/pages/${page}.tsx`);
       expect(source).toContain("toTrainingDraft("); expect(source).toContain("restoreTrainingDraft(draft)");
