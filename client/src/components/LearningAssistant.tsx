@@ -41,8 +41,12 @@ function Assistant({ userId, language }: { userId: number | null; language: Prod
       const result = await ask.mutateAsync({ consent: true, language, question: text });
       if (!mounted.current || generation.current !== sequence) return;
       setExchanges(items => items.map((item, index) => index === items.length - 1 ? { ...item, result } : item));
+      if (result.status === "unavailable") setQuestion(text);
     } catch {
-      if (mounted.current && generation.current === sequence) setNotice(l("답변을 받지 못했습니다. 잠시 후 질문을 다시 보내세요.", "Could not receive an answer. Send your question again later.", "回答を受け取れませんでした。後で質問を再送してください。"));
+      if (mounted.current && generation.current === sequence) {
+        setQuestion(text);
+        setNotice(l("답변을 받지 못했습니다. 잠시 후 질문을 다시 보내세요.", "Could not receive an answer. Send your question again later.", "回答を受け取れませんでした。後で質問を再送してください。"));
+      }
     } finally { if (mounted.current && generation.current === sequence) setWaiting(false); }
   };
   const routeLabel = (destination: string) => destination === "learn" ? l("8대 공정 학습", "Process learning", "8大工程学習")
