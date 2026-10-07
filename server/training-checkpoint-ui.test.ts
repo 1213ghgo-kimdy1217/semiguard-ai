@@ -7,13 +7,19 @@ import { restoreTrainingDraft, type TrainingDraft } from "../shared/trainingDraf
 // Exercise the component's explicit handlers without browser storage or a live DB.
 const mock = vi.hoisted(() => ({
   states: [] as unknown[], cursor: 0, owner: { current: 41 as number | null },
+  refs: [] as any[], refCursor: 0, effects: [] as (() => void)[],
   readiness: { data: { ready: true }, isLoading: false },
   query: { data: undefined as any, isLoading: false, isError: false, refetch: vi.fn() },
   mutation: { isPending: false, mutateAsync: vi.fn() },
 }));
 vi.mock("react", async importOriginal => ({
   ...await importOriginal<typeof import("react")>(),
-  useRef: () => mock.owner,
+  useRef: (initial: unknown) => {
+    const index = mock.refCursor++;
+    return mock.refs[index] ??= index === 0 ? mock.owner : { current: initial };
+  },
+  useId: () => "checkpoint-confirmation",
+  useEffect: (effect: () => void) => { mock.effects.push(effect); },
   useState: (initial: unknown) => {
     const index = mock.cursor++;
     if (!(index in mock.states)) mock.states[index] = initial;
@@ -32,8 +38,15 @@ const capture = vi.fn(() => draft);
 const restore = vi.fn();
 const props = { userId: 41, language: "ko" as const, scenarioId: draft.scenarioId, capture, restore };
 function render(extra: Record<string, unknown> = {}) {
-  mock.cursor = 0;
-  return TrainingCheckpoint({ ...props, ...extra });
+  mock.cursor = 0; mock.refCursor = 0; mock.effects = [];
+  const tree = TrainingCheckpoint({ ...props, ...extra });
+  for (const element of elements(tree)) {
+    if (element.type === "button" && element.props.ref) {
+      element.props.ref.current ??= { focus: vi.fn() };
+    }
+  }
+  mock.effects.forEach(effect => effect());
+  return tree;
 }
 function elements(node: ReactNode): ReactElement<any>[] {
   return Children.toArray(node).flatMap(child => isValidElement(child)
@@ -50,6 +63,7 @@ function button(tree: ReactNode, label: string) {
 describe("checkpoint recovery after submitting an exercise", () => {
   beforeEach(() => {
     vi.clearAllMocks(); mock.states = []; mock.cursor = 0; mock.owner.current = 41;
+    mock.refs = []; mock.refCursor = 0; mock.effects = [];
     mock.readiness = { data: { ready: true }, isLoading: false };
     mock.query.data = { userId: 41, drafts: [{ ...draft, updatedAt: "2026-10-04T00:00:00Z" }] };
     mock.query.isLoading = false; mock.query.isError = false;
@@ -76,6 +90,51 @@ describe("checkpoint recovery after submitting an exercise", () => {
     button(confirmation, "취소")!.props.onClick();
     expect(button(render({ resumeOnly: true }), "불러오기")).toBeUndefined();
     expect(restore).not.toHaveBeenCalled(); expect(mock.mutation.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["ko", "저장본 불러오기", "취소"],
+    ["en", "Load checkpoint", "Cancel"],
+    ["ja", "保存内容を読み込む", "キャンセル"],
+  ])("keeps confirmation and cancellation keyboard focus in %s", (language, load, cancel) => {
+    const opener = button(render({ language }), load)!;
+    opener.props.onClick();
+    const confirmation = render({ language });
+    const dialog = elements(confirmation).find(element => element.props.role === "alertdialog")!;
+    const cancelButton = button(confirmation, cancel)!;
+    expect(dialog).toBeDefined();
+    expect(dialog.props["aria-modal"]).toBe(false);
+    expect(dialog.props["aria-labelledby"]).toBeTruthy();
+    expect(opener.props["aria-controls"]).toBeUndefined();
+    expect(button(confirmation, load)!.props["aria-controls"]).toBe(dialog.props.id);
+    expect(cancelButton.props.ref.current.focus).toHaveBeenCalled();
+    cancelButton.props.onClick();
+    expect(opener.props.ref.current.focus).toHaveBeenCalledTimes(1);
+    expect(elements(render({ language })).some(element => element.props.role === "alertdialog")).toBe(false);
+    expect(restore).not.toHaveBeenCalled(); expect(capture).not.toHaveBeenCalled();
+    expect(mock.mutation.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("Escape cancels confirmation without loading or saving and restores the opener", () => {
+    const opener = button(render(), "저장본 불러오기")!;
+    opener.props.onClick();
+    const dialog = elements(render()).find(element => element.props.role === "alertdialog")!;
+    const event = { key: "Escape", preventDefault: vi.fn() };
+    dialog.props.onKeyDown(event);
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    expect(opener.props.ref.current.focus).toHaveBeenCalledTimes(1);
+    expect(button(render(), "불러오기")).toBeUndefined();
+    expect(restore).not.toHaveBeenCalled(); expect(mock.mutation.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("returns focus to a stable control after loading without relying on a stage change", () => {
+    const opener = button(render(), "저장본 불러오기")!;
+    opener.props.onClick();
+    button(render(), "불러오기")!.props.onClick();
+    expect(restore).toHaveBeenCalledWith(draft);
+    expect(opener.props.ref.current.focus).toHaveBeenCalledTimes(1);
+    expect(button(render(), "불러오기")).toBeUndefined();
+    expect(mock.mutation.mutateAsync).not.toHaveBeenCalled();
   });
 
   it("restores only a confirmed draft, paused and unsubmitted, without a save or deletion", () => {
