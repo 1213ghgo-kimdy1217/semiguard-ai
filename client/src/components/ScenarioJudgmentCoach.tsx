@@ -11,7 +11,7 @@ import type { ProcessAttempt, ProcessScenario } from "../../../shared/processSce
 import "./judgment-coach.css";
 
 const dimensionLabels: Record<CoachDimension, [string, string, string]> = {
-  reference: ["정상 참고와 비교", "Compare the normal reference", "正常参照と比較"],
+  reference: ["관찰한 사실의 근거", "Evidence for your observations", "観察した事実の根拠"],
   onset: ["변화 시작 시점", "Change onset", "変化の開始時点"],
   "cross-sensor": ["여러 센서 비교", "Compare multiple signals", "複数のセンサーを比較"],
   uncertainty: ["사실과 추정 구분", "Separate facts and inference", "事実と推測を区別"],

@@ -75,10 +75,9 @@ export const judgmentCoachFeedbackSchema = z.object({
 }).strict();
 export type JudgmentCoachFeedback = z.infer<typeof judgmentCoachFeedbackSchema>;
 // The model supplies brief feedback and questions; excerpts must match the answer.
-// Full original quotes and fixed choice labels remain server-owned.
+// Full original quotes, display/review categories and fixed choice labels remain server-owned.
 export const judgmentCoachModelFeedbackSchema = z.object({
   reflections: z.array(z.object({
-    dimension: z.enum(coachDimensions), evidenceId: z.enum(coachEvidenceIds),
     answerSource: z.enum(["facts", "checks"]), focusQuote: z.string().trim().min(2).max(240),
     analysis: z.string().trim().min(20).max(450), question: z.string().trim().min(8).max(300),
   }).strict()).min(2).max(3),
