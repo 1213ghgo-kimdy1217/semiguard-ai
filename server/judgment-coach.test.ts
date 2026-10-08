@@ -19,10 +19,10 @@ const processInput = (scenario: ProcessScenario) => toProcessJudgmentCoachReques
     comparison: "same-condition", certainty: "uncertain", facts: "같은 조건의 여러 가상 기록을 비교해 관찰 내용을 작성했습니다.",
     checks: "기존 가상 참고 기록과 같은 시점의 다른 항목을 차례로 비교합니다." } }, "ko");
 const output = (language: "ko" | "en" | "ja" = "ko", answer = input().answer as { facts: string; checks: string }) => ({ reflections: [
-  { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" as const, focusQuote: answer.facts.slice(0, 32),
+  { answerSource: "facts" as const, focusQuote: answer.facts.slice(0, 32),
     analysis: language === "ko" ? "관찰 내용을 작성했지만 같은 단계의 참고와 어떤 결과를 비교했는지 더 살펴볼 필요가 있습니다." : language === "ja" ? "観察内容は記載されていますが、同じ段階の参照とどの結果を比較したかを確認する必要があります。" : "Your observation needs an explicit comparison result against the matching phase reference.",
     question: language === "ko" ? "같은 시점의 어떤 정상 참고 기록을 비교하겠습니까?" : language === "ja" ? "同じ時点のどの正常参照を比較しますか？" : "Which normal reference point would you compare at that time?" },
-  { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" as const, focusQuote: answer.checks.slice(0, 32),
+  { answerSource: "checks" as const, focusQuote: answer.checks.slice(0, 32),
     analysis: language === "ko" ? "비교 계획을 관찰 결과와 구분하고 그 결과가 판단을 어떻게 바꾸는지 연결할 필요가 있습니다." : language === "ja" ? "比較計画と観察結果を区別し、その結果が判断をどう変えるかを確認する必要があります。" : "Separate the proposed comparison from its result and consider how that result could revise your judgment.",
     question: language === "ko" ? "비교 순서를 정할 때 어떤 가상 기록을 확인하겠습니까?" : language === "ja" ? "比較順序を決める際にどの仮想記録を確認しますか？" : "What existing virtual evidence would help you choose the comparison order?" },
 ] });
@@ -72,28 +72,31 @@ describe("scenario judgment coach", () => {
     expect((await createJudgmentCoach()(27, { ...input(), language })).status).toBe("ready");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     const user = JSON.parse(payload.messages[1].content);
-    expect(user.responseInstructions).toContain("EXACTLY dimension, evidenceId, answerSource, focusQuote, analysis, question");
+    expect(user.responseInstructions).toContain("EXACTLY answerSource, focusQuote, analysis, question");
     expect(user.responseInstructions).toContain("Never add answerQuote");
     expect(user).not.toHaveProperty("outputShapeExample");
-    expect(user.reflectionFields).toEqual(["dimension", "evidenceId", "answerSource", "focusQuote", "analysis", "question"]);
+    expect(user.reflectionFields).toEqual(["answerSource", "focusQuote", "analysis", "question"]);
     expect(user.reflectionAssignments).toEqual([
       { answerSource: "facts" },
       { answerSource: "checks" },
     ]);
     expect(user.reflectionAssignments.every((item: object) => !Object.hasOwn(item, "question"))).toBe(true);
-    expect(user.allowedDimensionEvidencePairs).toEqual({ reference: "phase-reference", onset: "pressure-trend", "cross-sensor": "other-signals", uncertainty: "cause-unknown", checks: "record-comparison" });
+    expect(user).not.toHaveProperty("allowedDimensionEvidencePairs");
     expect(user.outputCount).toContain("Exactly two reflections");
     expect(payload.messages[0].content).toContain("Only the server computes the fixed choice-criterion labels");
     expect(user.questionTask).toContain(language === "ko" ? "비교 결과" : language === "ja" ? "比較結果" : "comparison result");
     expect(payload.messages[0].content).toContain("Do not presume a deviation or an onset");
     expect(payload.messages[0].content).toContain("If the field is uninterpretable");
-    expect(user.outputCount).toContain("Choose two distinct dimensions based on the actual answer");
+    expect(user.outputCount).toContain("actual evidence");
+    const context = JSON.parse(payload.messages[0].content.split("Trusted scenario context: ")[1].split("\n")[0]);
+    expect(context).not.toHaveProperty("choiceCriteria");
+    expect(context).not.toHaveProperty("supportedStrengths");
     expect(JSON.stringify(payload)).not.toContain(output(language).reflections[0].question);
     expect(user.learnerAnswer).toEqual(input().answer);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
   it("still rejects extra reflection fields instead of silently stripping them", () => {
-    for (const field of ["answerQuote", "reasoning", "extra"]) {
+    for (const field of ["dimension", "evidenceId", "answerQuote", "reasoning", "extra"]) {
       const result = { ...output(), reflections: output().reflections.map(item => ({ ...item, [field]: "extra model text" })) };
       expect(() => validateCoachOutput(JSON.stringify(result), input().answer, "ko")).toThrow();
     }
@@ -280,7 +283,7 @@ describe("scenario judgment coach", () => {
     ["invalid JSON private-user-answer", "json"], ["{}", "schema"], ["x".repeat(7001), "output-shape"],
     [JSON.stringify({ ...output(), strengths: ["reference", "reference"] }), "schema"],
     [JSON.stringify({ ...output(), reflections: output().reflections.map(item => ({ ...item, question: ENV.nvidiaApiKey })) }), "safety"],
-    [JSON.stringify({ ...output(), reflections: [{ ...output().reflections[0], evidenceId: "record-comparison" }, output().reflections[1]] }), "evidence"],
+    [JSON.stringify({ ...output(), reflections: [{ ...output().reflections[0], evidenceId: "record-comparison" }, output().reflections[1]] }), "schema"],
     [JSON.stringify(output("en")), "language"],
     [JSON.stringify({ ...output(), reflections: [{ ...output().reflections[0], question: "어떤 비교로 원인을 배제했습니까?" }, output().reflections[1]] }), "causal-exclusion"],
   ])("logs validation classification %s without copying output", async (text, category) => {
@@ -323,8 +326,8 @@ describe("scenario judgment coach", () => {
     const data = output(); data.reflections[0].question = text;
     expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
   });
-  it("rejects unknown/mismatched evidence, duplicate dimensions, and arbitrary added fields", () => {
-    const wrong = output(); wrong.reflections[0].evidenceId = "record-comparison";
+  it("rejects model-authored metadata, duplicate sources, and arbitrary added fields", () => {
+    const wrong = { reflections: output().reflections.map(item => ({ ...item, evidenceId: "record-comparison" })) };
     const duplicate = output(); duplicate.reflections[1] = duplicate.reflections[0];
     for (const data of [wrong, duplicate, { ...output(), score: 95 }]) expect(() => validateCoachOutput(JSON.stringify(data), input().answer)).toThrow();
   });
@@ -350,7 +353,7 @@ describe("scenario judgment coach", () => {
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     const context = JSON.parse(payload.messages[0].content.split("Trusted scenario context: ")[1].split("\n")[0]);
     expect(context).not.toHaveProperty("supportedStrengths");
-    expect(payload.messages[0].content).toContain("Do not output strengths");
+    expect(payload.messages[0].content).toContain("Do not output dimension, evidenceId, strengths");
     expect(payload.response_format).toEqual({ type: "json_object" });
     expect(payload.messages[0].content).not.toContain("Return only a JSON object matching this schema:");
     expect(JSON.parse(payload.messages[1].content)).not.toHaveProperty("outputShapeExample");
@@ -404,7 +407,7 @@ describe("scenario judgment coach", () => {
     ["ja", "どの仮想記録の比較によって因果関係を除外しましたか？"],
   ] as const)("rejects unsupported causal exclusion in %s coaching", (language, question) => {
     const data = output(language);
-    data.reflections[1] = { ...data.reflections[1], dimension: "uncertainty", evidenceId: "cause-unknown", question };
+    data.reflections[1] = { ...data.reflections[1], question };
     expect(() => validateCoachOutput(JSON.stringify(data), input().answer, language)).toThrow("Unsupported causal exclusion");
   });
   it.each([
@@ -413,7 +416,7 @@ describe("scenario judgment coach", () => {
     ["ja", "仮想記録で裏付けられる観察と、原因についてまだ不明な点をどう区別しますか？"],
   ] as const)("allows evidence-limited uncertainty in %s without rewriting the learner", (language, question) => {
     const data = output(language);
-    data.reflections[1] = { ...data.reflections[1], dimension: "uncertainty", evidenceId: "cause-unknown", question };
+    data.reflections[1] = { ...data.reflections[1], question };
     const answer = { ...input().answer, checks: "원인을 아직 확정하거나 배제할 수 없으므로 가상 기록을 비교합니다." };
     data.reflections[1].focusQuote = answer.checks.slice(0, 32);
     expect(validateCoachOutput(JSON.stringify(data), answer, language).reflections[1].answerQuote).toBe(answer.checks);

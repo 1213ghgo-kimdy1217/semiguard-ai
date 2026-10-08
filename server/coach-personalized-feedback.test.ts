@@ -5,10 +5,10 @@ import { validateCoachOutput } from "./judgmentCoach";
 const answer = { signal: "pressure", onset: "70", comparison: "same-phase" as const, certainty: "uncertain" as const,
   facts: "단계 B의 압력 추이가 정상 참고보다 높아졌습니다.", checks: "같은 시점의 유량과 RF 가상 기록을 먼저 비교하겠습니다." };
 const feedback = () => ({ reflections: [
-  { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts", focusQuote: "정상 참고보다 높아졌습니다",
+  { answerSource: "facts", focusQuote: "정상 참고보다 높아졌습니다",
     analysis: "압력과 정상 참고의 차이를 관찰하셨습니다. 다만 어느 구간을 같은 단계의 참고와 비교했는지는 이 문장만으로 알 수 없습니다.",
     question: "단계 B의 앞뒤 압력 기록에서 어떤 비교 결과가 이 관찰을 뒷받침하나요?" },
-  { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks", focusQuote: "같은 시점의 유량과 RF",
+  { answerSource: "checks", focusQuote: "같은 시점의 유량과 RF",
     analysis: "같은 시점의 다른 신호를 비교하는 계획은 적혀 있습니다. 비교 후 압력만 달라지는지 함께 달라지는지를 어떻게 판단에 반영할지는 아직 쓰지 않았습니다.",
     question: "유량과 RF가 참고 띠 안에 있을 때 압력의 관찰과 원인 추정을 어떻게 구분하겠습니까?" },
 ] });
@@ -17,7 +17,15 @@ describe("personalized coaching feedback", () => {
   it("returns model-authored analysis and a verbatim answer excerpt, not just a generic question", () => {
     const result = validateCoachOutput(JSON.stringify(feedback()), answer);
     expect(result.reflections[0]).toMatchObject({ analysis: feedback().reflections[0].analysis,
-      focusQuote: feedback().reflections[0].focusQuote, answerQuote: answer.facts });
+      focusQuote: feedback().reflections[0].focusQuote, answerQuote: answer.facts,
+      dimension: "reference", evidenceId: "phase-reference" });
+    expect(result.reflections[1]).toMatchObject({ dimension: "checks", evidenceId: "record-comparison" });
+  });
+  it("attaches server-owned metadata even if the model returns the sources in reverse order", () => {
+    const data = feedback(); data.reflections.reverse();
+    const result = validateCoachOutput(JSON.stringify(data), answer);
+    expect(result.reflections[0]).toMatchObject({ dimension: "checks", evidenceId: "record-comparison", answerQuote: answer.checks });
+    expect(result.reflections[1]).toMatchObject({ dimension: "reference", evidenceId: "phase-reference", answerQuote: answer.facts });
   });
   it("does not accept the old question-only response as personalized coaching", () => {
     const old = { reflections: feedback().reflections.map(({ analysis, focusQuote, ...item }) => item) };
@@ -45,7 +53,7 @@ describe("personalized coaching feedback", () => {
       expect(() => validateCoachOutput(JSON.stringify(data), answer)).toThrow();
     }
   });
-  it("rejects duplicate answer sources even when the dimensions differ", () => {
+  it("rejects duplicate answer sources", () => {
     const data = feedback(); data.reflections[1].answerSource = "facts"; data.reflections[1].focusQuote = "정상 참고";
     expect(() => validateCoachOutput(JSON.stringify(data), answer)).toThrow("Invalid answer excerpt");
   });
