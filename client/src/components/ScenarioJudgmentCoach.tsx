@@ -54,11 +54,11 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
   return <section className="et-panel judgment-coach" aria-labelledby={`${id}-heading`}>
     <p className="et-eyebrow">AI JUDGMENT COACH / OPTIONAL</p>
     <h2 id={`${id}-heading`}>{l("내 판단에서 빠진 근거를 돌아봅니다.", "Revisit the evidence behind your reasoning.", "自分の判断の根拠を振り返ります。")}</h2>
-    <p>{l("기존 기준 피드백과 별도로, AI가 내가 작성한 관찰 사실과 확인 계획을 읽고 보완 질문을 제안합니다. 고장 확정·자동 채점·현장 자격 평가는 하지 않습니다.", "Separately from the criteria feedback, AI reviews your written observations and comparison plan to suggest reflection questions. It does not diagnose faults, grade you, or assess workplace qualifications.", "基準フィードバックとは別に、AIが観察事実と確認計画を読み、振り返りの問いを提案します。故障の確定、自動採点、現場の資格評価は行いません。")}</p>
+    <p>{l("기존 기준 피드백과 별도로, AI가 내 답안의 특정 표현을 가상 기록과 연결해 뒷받침되는 점과 부족한 근거를 설명하고 보완 질문을 제안합니다. 고장 확정·자동 채점·현장 자격 평가는 하지 않습니다.", "Separately from the criteria feedback, AI relates a specific phrase in your answer to the virtual records, explains supported points and evidence gaps, then asks a follow-up question. It does not diagnose faults, grade you, or assess workplace qualifications.", "基準フィードバックとは別に、AIが回答の具体的な表現を仮想記録と結び、裏付けられる点と不足する根拠を説明して、振り返りの問いを提案します。故障の確定、自動採点、現場の資格評価は行いません。")}</p>
     <details className="coach-disclosure"><summary>{l("AI에 전달되는 내용 확인", "Review what is sent to AI", "AIに送信する内容を確認")}</summary>
       <p>{l("NVIDIA에 두 서술형 답안, 선택한 센서·변화 시점·비교 기준·확신 여부, 그래프 표시 시점, 표시 언어와 서버가 만든 가상 시나리오 근거를 전달합니다. 계정 이름·이메일·학습 이력·API 키는 답안 내용에 포함하지 않습니다. 개인정보·회사 기밀·실제 설비 자료를 답안에 입력하지 마세요.", "NVIDIA receives your two written answers, chosen signal/onset/reference/certainty, chart marker, language, and server-generated synthetic scenario evidence. Account names, emails, learning history and API keys are not included in the answer content. Do not put personal, confidential or real equipment data in your answers.", "NVIDIAには二つの記述回答、選択したセンサー・変化時点・比較基準・確信度、グラフの印、表示言語、サーバーが作成した仮想シナリオの根拠を送信します。アカウント名、メール、学習履歴、APIキーは回答内容に含めません。個人情報、会社の機密、実装置の資料を回答に入力しないでください。")}</p>
       <p>{l("SemiGuard 학습 DB에는 서술형 원문이나 AI 코칭을 저장하지 않습니다. AI 답변은 현재 화면에서만 표시하며, 제공자의 데이터 처리는 NVIDIA 정책을 따릅니다.", "SemiGuard does not save the written answers or AI coaching in its learning database. Coaching stays in the current view; provider-side data handling follows NVIDIA's policy.", "SemiGuardの学習DBには記述回答やAIコーチングを保存しません。回答は現在の画面にのみ表示し、提供者側のデータ処理はNVIDIAのポリシーに従います。")}</p>
-      <p>{l("AI 질문의 일부 영어 용어는 표시 언어에 맞춰 정리합니다. 내가 쓴 답안 원문은 바꾸지 않습니다.", "A small glossary localizes terms in AI questions for the display language. Your original written answers are unchanged.", "AIの問いに含まれる一部の英語用語を表示言語に合わせます。記入した回答の原文は変更しません。")}</p>
+      <p>{l("AI 피드백과 질문의 일부 영어 용어는 표시 언어에 맞춰 정리합니다. 내가 쓴 답안 원문과 발췌한 표현은 바꾸지 않습니다.", "A small glossary localizes terms in AI feedback and questions. Your original answer and its excerpt are unchanged.", "AIのフィードバックと問いに含まれる一部の英語用語を表示言語に合わせます。回答の原文と抜粋は変更しません。")}</p>
     </details>
     {userId ? <>
       <label className="coach-consent"><input type="checkbox" checked={consent} disabled={busy} onChange={event => setConsent(event.target.checked)} />
@@ -83,9 +83,10 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
           ? l("관찰 항목 선택이 이 가상 시나리오의 비교 기준과 일치했습니다.", "Your observation choice matches this synthetic scenario's comparison criterion.", "観察項目の選択が、この仮想シナリオの比較基準と一致しました。")
           : scenario && item === "reference" ? l("같은 조건의 정상 참고를 비교 기준으로 선택했습니다.", "You selected a normal reference under matching conditions.", "同じ条件の正常参照を比較基準に選びました。")
           : l(...strengthLabels[item])}</li>)}</ul>
-        <p className="et-caption">{l("위 문구는 기준 기반 안내이며, 아래 복기 질문은 AI가 생성합니다.", "These labels are criteria-based; the reflection questions below are AI-generated.", "上記は基準に基づく案内で、以下の振り返りの問いはAIが生成します。")}</p></> : null}
+        <p className="et-caption">{l("위 문구는 기준 기반 안내이며, 아래 답안 피드백과 복기 질문은 AI가 생성합니다.", "These labels are criteria-based; the answer feedback and reflection questions below are AI-generated.", "上記は基準に基づく案内で、以下の回答フィードバックと振り返りの問いはAIが生成します。")}</p></> : null}
       {result.feedback.reflections.map(item => <article className="coach-reflection" key={item.dimension}>
-        <h3 tabIndex={-1} ref={node => { reflectionHeadings.current[item.dimension] = node ?? undefined; }}>{l(...dimensionLabels[item.dimension])}</h3><p><strong>{l("내 답안에서", "From your answer", "自分の回答から")}</strong> “{item.answerQuote}”</p>
+        <h3 tabIndex={-1} ref={node => { reflectionHeadings.current[item.dimension] = node ?? undefined; }}>{l(...dimensionLabels[item.dimension])}</h3><p><strong>{l("이번에 짚은 내 표현", "The phrase being reviewed", "今回取り上げる回答の表現")}</strong> “{item.focusQuote}”</p>
+        <p><strong>{l("내 답안에 대한 AI 피드백", "AI feedback on your reasoning", "回答についてのAIフィードバック")}</strong> {item.analysis}</p>
         <p className="coach-question"><strong>{l("다시 생각할 질문", "A question to revisit", "考え直す問い")}</strong> {item.question}</p>
         <p className="et-caption">{scenario
           ? `${l("근거", "Evidence", "根拠")}: ${l(...scenario.title)} · ${l("교육용 가상 기록", "synthetic educational records", "教育用の仮想記録")}`
