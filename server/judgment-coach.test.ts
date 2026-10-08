@@ -4,7 +4,7 @@ import { ENV } from "./_core/env";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { createJudgmentCoach, scenarioCoachContext, validateCoachOutput } from "./judgmentCoach";
-import { judgmentCoachRequestSchema, toJudgmentCoachRequest, toProcessJudgmentCoachRequest } from "../shared/judgmentCoach";
+import { coachInputIssues, judgmentCoachRequestSchema, toJudgmentCoachRequest, toProcessJudgmentCoachRequest } from "../shared/judgmentCoach";
 import { emptyEtchAttempt } from "../shared/etchScenario";
 import { emptyProcessAttempt, processSample, processScenarios, type ProcessScenario } from "../shared/processScenarios";
 
@@ -46,6 +46,60 @@ beforeEach(() => {
 afterEach(() => { Object.assign(ENV, original); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("scenario judgment coach", () => {
+  it.each(["ㅂㅈㄷㅂㅈㄷㅂㅈㄷㅂㅈㄷㅂㅈㄷ", "ㅋㅋㅋ 12345 !!! ㅁㄴㅇ", "ᄇᄌᄃᄇᄌᄃᄇᄌᄃᄇᄌᄃ", "12345 !!! 😀😀😀"])("asks for written input before any provider call for %s", async text => {
+    const request = input(); request.answer.facts = text;
+    const before = structuredClone(request);
+    expect(await createJudgmentCoach()(27, request)).toEqual({ status: "needs-input", fields: ["facts"] });
+    expect(request).toEqual(before);
+    expect(fetchMock).not.toHaveBeenCalled(); expect(console.warn).not.toHaveBeenCalled();
+  });
+  it("identifies both affected fields without logging them or consuming the model cooldown", async () => {
+    const read = createJudgmentCoach(); const request = input();
+    request.answer.facts = "ㅂㅈㄷㅂㅈㄷㅂㅈㄷㅂㅈㄷㅂㅈㄷ"; request.answer.checks = "ㅁㄴㅇㅁㄴㅇㅁㄴㅇㅁㄴㅇㅁㄴㅇ";
+    expect(await read(27, request)).toEqual({ status: "needs-input", fields: ["facts", "checks"] });
+    expect(fetchMock).not.toHaveBeenCalled(); expect(console.warn).not.toHaveBeenCalled();
+    expect((await read(27, input())).status).toBe("ready"); expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it("checks completed letters across scripts without scoring wording or changing decomposed Korean", () => {
+    for (const text of ["압력 비교 ㅋㅋ", "RF: normal?", "参考と比較します", "Compare reference", "مرجع الاختبار", "abcdefghijk", "압력과 정상 참고를 비교합니다".normalize("NFD")]) {
+      expect(coachInputIssues({ facts: text, checks: text })).toEqual([]);
+    }
+    expect(coachInputIssues({ facts: input().answer.facts, checks: "ㅁㄴㅇㅁㄴㅇㅁㄴㅇ" })).toEqual(["checks"]);
+  });
+  it("keeps consent and completion validation before the narrow writing check", async () => {
+    const request = { ...input(), consent: false, answer: { ...input().answer, facts: "ㅂㅈㄷㅂㅈㄷㅂㅈㄷㅂㅈㄷ" } };
+    await expect(createJudgmentCoach()(27, request)).rejects.toThrow(); expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it.each(["ko", "en", "ja"] as const)("supplies exact trusted screen signal names in %s without prewritten coaching", async language => {
+    const scenario = processScenarios.find(scenario => scenario.processId === "wafer")!;
+    const request = { ...processInput(scenario), language };
+    const context = scenarioCoachContext(request);
+    const index = language === "ko" ? 0 : language === "en" ? 1 : 2;
+    expect(context.signalDefinitions.map(signal => signal.displayName)).toEqual(scenario.signals.map(signal => signal.name[index]));
+    expect(context.signalDefinitions.map(signal => signal.displayLocation)).toEqual(scenario.signals.map(signal => signal.location[index]));
+    expect((await createJudgmentCoach()(27, request)).status).toBe("ready");
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(payload.messages[0].content).toContain("use its trusted displayName exactly");
+    expect(payload.messages[0].content).toContain("without numbered lists");
+    expect(payload.messages[0].content).toContain(scenario.signals[0].name[index]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it("provides matching screen labels for the legacy etch path in all display languages", () => {
+    const scenario = processScenarios.find(scenario => scenario.processId === "etch")!;
+    for (const [index, language] of (["ko", "en", "ja"] as const).entries()) {
+      expect(scenarioCoachContext({ ...input(), language }).signalDefinitions.map(signal => signal.displayName))
+        .toEqual(scenario.signals.map(signal => signal.name[index]));
+    }
+  });
+  it("labels writing assistance separately and checks it before the client sends any answer", () => {
+    const ui = readFileSync("client/src/components/ScenarioJudgmentCoach.tsx", "utf8");
+    expect(ui.indexOf("coachInputIssues(attempt.answer)")).toBeLessThan(ui.indexOf("coach.mutateAsync"));
+    expect(ui).toContain('status: "needs-input"');
+    expect(ui).toContain("답안 작성 안내 · AI 요청하지 않음");
+    expect(ui).toContain("Writing guidance · AI was not requested");
+    expect(ui).toContain("回答の記入案内 · AIには依頼していません");
+    expect(ui).toContain("원래 답안·저장 기록은 바꾸지 않았습니다");
+  });
   it("sends only an explicitly consented completed answer and server-derived synthetic evidence to NVIDIA", async () => {
     const result = await createJudgmentCoach()(27, input());
     expect(result).toMatchObject({ status: "ready", provider: "nvidia", model: "nvidia/qa", language: "ko" });
@@ -174,7 +228,8 @@ describe("scenario judgment coach", () => {
     const context = scenarioCoachContext(request);
     expect(context.scope).toContain(scenario.title[1]);
     expect(context.objective).toBe(scenario.objective[1]);
-    expect(context.signalDefinitions).toEqual(scenario.signals.map(({ id, name, location }) => ({ id, name: name[1], location: location[1] })));
+    expect(context.signalDefinitions).toEqual(scenario.signals.map(({ id, name, location }) => ({ id, name: name[1], location: location[1],
+      displayName: name[0], displayLocation: location[0] })));
     expect(context.scope).toContain("relative indices");
     expect(context.evidence["phase-reference"]).toContain(scenario.referenceRule[1]);
     expect(context.samples.flatMap(row => row.signals.map(signal => signal.id))).toEqual(

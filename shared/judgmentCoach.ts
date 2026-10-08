@@ -44,6 +44,16 @@ const processCoachRequestSchema = z.object({
 export const judgmentCoachRequestSchema = z.union([etchCoachRequestSchema, processCoachRequestSchema]);
 export type JudgmentCoachRequest = z.infer<typeof judgmentCoachRequestSchema>;
 
+// A narrow input check, not a semantic assessment or grade. Preserve all text.
+// Isolated Hangul letters, numbers and symbols alone cannot express a written
+// observation. Completed letters in any script pass; gibberish with words is
+// still left to the coach, not declared meaningful by this check.
+const writtenLetter = new RegExp("\\p{L}", "u");
+export function coachInputIssues(answer: Pick<JudgmentCoachRequest["answer"], "facts" | "checks">) {
+  return (["facts", "checks"] as const).filter(field =>
+    !writtenLetter.test(answer[field].normalize("NFC").replace(/[\u1100-\u11ff\u3130-\u318f\ua960-\ua97f\ud7b0-\ud7ff]/g, "")));
+}
+
 // This is a separate, explicitly requested transmission, never part of record saving.
 export function toJudgmentCoachRequest(attempt: EtchAttempt, language: "ko" | "en" | "ja") {
   return judgmentCoachRequestSchema.parse({ consent: true, scenarioId: "etch-chamber-a-01", language,
@@ -85,6 +95,8 @@ export const judgmentCoachModelFeedbackSchema = z.object({
 export type JudgmentCoachResult = {
   status: "ready"; language: "ko" | "en" | "ja"; provider: "nvidia"; model: string;
   feedback: JudgmentCoachFeedback;
+} | {
+  status: "needs-input"; fields: ("facts" | "checks")[];
 } | {
   status: "unavailable"; reason: "not-configured" | "provider-error" | "invalid-response" | "cooldown";
   retryAfterSeconds?: number;
