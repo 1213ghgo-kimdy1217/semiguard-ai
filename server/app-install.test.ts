@@ -125,6 +125,13 @@ describe("public app packaging and discovery", () => {
   const html = read("client/index.html");
   const manifest = JSON.parse(read("client/public/manifest.webmanifest"));
   const config = JSON.parse(read("vercel.json"));
+  it("keeps the approved Google ownership tag in the initial head, without JavaScript", () => {
+    const tag = '<meta name="google-site-verification" content="u2D1VsEA4N2qCg6dtiSqT5B8HbEsV1B_D02plBi78IU" />';
+    const head = html.match(/<head>([\s\S]*?)<\/head>/)![1];
+    expect(head).toContain(tag);
+    expect(html.split(tag)).toHaveLength(2);
+    expect(html.split("<body>")[1]).not.toContain("google-site-verification");
+  });
   it("uses the public introduction as a stable online app start, without forcing orientation", () => {
     expect(manifest).toMatchObject({ id: "/", start_url: "/", scope: "/", display: "standalone", prefer_related_applications: false });
     expect(manifest.orientation).toBeUndefined();
