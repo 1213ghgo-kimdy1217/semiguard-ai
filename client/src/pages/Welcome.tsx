@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { ArrowDown, ArrowRight, ArrowUpRight, Activity, Check, ScanLine } from "lucide-react";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AppInstall from "../components/AppInstall";
 import { useProductLanguage, tr } from "../lib/productLanguage";
 import "./welcome.css";
 
@@ -166,6 +167,8 @@ export default function Welcome() {
           <figcaption>{orientation.caption}</figcaption>
         </figure>
       </section>
+
+      <AppInstall language={language} />
 
       <section className="sg-sensor-console" aria-labelledby="sensor-console-title" data-reveal>
         <div className="sg-console-heading"><div><p className="sg-eyebrow">SIMULATED OBSERVATION</p><h2 id="sensor-console-title">{t.sensorTitle}</h2></div><span className="sg-outline-label">{t.example}</span></div>
