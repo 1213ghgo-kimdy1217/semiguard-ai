@@ -18,9 +18,13 @@ const processInput = (scenario: ProcessScenario) => toProcessJudgmentCoachReques
   answer: { signal: scenario.expectedSignal, onset: scenario.changeTime === null ? "none" : String(scenario.changeTime),
     comparison: "same-condition", certainty: "uncertain", facts: "같은 조건의 여러 가상 기록을 비교해 관찰 내용을 작성했습니다.",
     checks: "기존 가상 참고 기록과 같은 시점의 다른 항목을 차례로 비교합니다." } }, "ko");
-const output = (language: "ko" | "en" | "ja" = "ko") => ({ reflections: [
-  { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" as const, question: language === "ko" ? "같은 시점의 어떤 정상 참고 기록을 비교하겠습니까?" : language === "ja" ? "同じ時点のどの正常参照を比較しますか？" : "Which normal reference point would you compare at that time?" },
-  { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" as const, question: language === "ko" ? "비교 순서를 정할 때 어떤 가상 기록을 확인하겠습니까?" : language === "ja" ? "比較順序を決める際にどの仮想記録を確認しますか？" : "What existing virtual evidence would help you choose the comparison order?" },
+const output = (language: "ko" | "en" | "ja" = "ko", answer = input().answer as { facts: string; checks: string }) => ({ reflections: [
+  { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" as const, focusQuote: answer.facts.slice(0, 32),
+    analysis: language === "ko" ? "관찰 내용을 작성했지만 같은 단계의 참고와 어떤 결과를 비교했는지 더 살펴볼 필요가 있습니다." : language === "ja" ? "観察内容は記載されていますが、同じ段階の参照とどの結果を比較したかを確認する必要があります。" : "Your observation needs an explicit comparison result against the matching phase reference.",
+    question: language === "ko" ? "같은 시점의 어떤 정상 참고 기록을 비교하겠습니까?" : language === "ja" ? "同じ時点のどの正常参照を比較しますか？" : "Which normal reference point would you compare at that time?" },
+  { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" as const, focusQuote: answer.checks.slice(0, 32),
+    analysis: language === "ko" ? "비교 계획을 관찰 결과와 구분하고 그 결과가 판단을 어떻게 바꾸는지 연결할 필요가 있습니다." : language === "ja" ? "比較計画と観察結果を区別し、その結果が判断をどう変えるかを確認する必要があります。" : "Separate the proposed comparison from its result and consider how that result could revise your judgment.",
+    question: language === "ko" ? "비교 순서를 정할 때 어떤 가상 기록을 확인하겠습니까?" : language === "ja" ? "比較順序を決める際にどの仮想記録を確認しますか？" : "What existing virtual evidence would help you choose the comparison order?" },
 ] });
 const response = (text = JSON.stringify(output()), model = "nvidia/qa", finish_reason = "stop") => new Response(JSON.stringify({
   id: "synthetic", created: 1, model, choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason }],
@@ -28,7 +32,11 @@ const response = (text = JSON.stringify(output()), model = "nvidia/qa", finish_r
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   Object.assign(ENV, original, { aiProvider: "nvidia", nvidiaApiKey: "synthetic-private-key", nvidiaModel: "nvidia/qa" });
-  fetchMock = vi.fn().mockImplementation(async () => response());
+  fetchMock = vi.fn().mockImplementation(async (_url, init) => {
+    const payload = JSON.parse(init.body); const request = JSON.parse(payload.messages[1].content);
+    const language = request.responseLanguage === "English" ? "en" : request.responseLanguage === "Japanese" ? "ja" : "ko";
+    return response(JSON.stringify(output(language, request.learnerAnswer)));
+  });
   vi.stubGlobal("fetch", fetchMock);
   vi.spyOn(console, "warn").mockImplementation(() => undefined);
 });
@@ -64,13 +72,13 @@ describe("scenario judgment coach", () => {
     expect((await createJudgmentCoach()(27, { ...input(), language })).status).toBe("ready");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     const user = JSON.parse(payload.messages[1].content);
-    expect(user.responseInstructions).toContain("EXACTLY dimension, evidenceId, answerSource, question");
+    expect(user.responseInstructions).toContain("EXACTLY dimension, evidenceId, answerSource, focusQuote, analysis, question");
     expect(user.responseInstructions).toContain("Never add answerQuote");
     expect(user).not.toHaveProperty("outputShapeExample");
-    expect(user.reflectionFields).toEqual(["dimension", "evidenceId", "answerSource", "question"]);
+    expect(user.reflectionFields).toEqual(["dimension", "evidenceId", "answerSource", "focusQuote", "analysis", "question"]);
     expect(user.reflectionAssignments).toEqual([
-      { dimension: "reference", evidenceId: "phase-reference", answerSource: "facts" },
-      { dimension: "checks", evidenceId: "record-comparison", answerSource: "checks" },
+      { answerSource: "facts" },
+      { answerSource: "checks" },
     ]);
     expect(user.reflectionAssignments.every((item: object) => !Object.hasOwn(item, "question"))).toBe(true);
     expect(user.allowedDimensionEvidencePairs).toEqual({ reference: "phase-reference", onset: "pressure-trend", "cross-sensor": "other-signals", uncertainty: "cause-unknown", checks: "record-comparison" });
@@ -78,6 +86,8 @@ describe("scenario judgment coach", () => {
     expect(payload.messages[0].content).toContain("Only the server computes the fixed choice-criterion labels");
     expect(user.questionTask).toContain(language === "ko" ? "비교 결과" : language === "ja" ? "比較結果" : "comparison result");
     expect(payload.messages[0].content).toContain("Do not presume a deviation or an onset");
+    expect(payload.messages[0].content).toContain("If the field is uninterpretable");
+    expect(user.outputCount).toContain("Choose two distinct dimensions based on the actual answer");
     expect(JSON.stringify(payload)).not.toContain(output(language).reflections[0].question);
     expect(user.learnerAnswer).toEqual(input().answer);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -102,6 +112,7 @@ describe("scenario judgment coach", () => {
     expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category: "question-form" })]]);
   });
   it.each(["en", "ja"] as const)("rejects Korean questions when %s coaching was requested", async language => {
+    fetchMock.mockResolvedValue(response(JSON.stringify(output())));
     expect(await createJudgmentCoach()(27, { ...input(), language })).toEqual({ status: "unavailable", reason: "invalid-response" });
   });
   it("requires login before any model request", async () => {
@@ -145,6 +156,8 @@ describe("scenario judgment coach", () => {
     const request = processInput(scenario);
     const context = scenarioCoachContext(request);
     expect(context.scope).toContain(scenario.title[1]);
+    expect(context.objective).toBe(scenario.objective[1]);
+    expect(context.signalDefinitions).toEqual(scenario.signals.map(({ id, name, location }) => ({ id, name: name[1], location: location[1] })));
     expect(context.scope).toContain("relative indices");
     expect(context.evidence["phase-reference"]).toContain(scenario.referenceRule[1]);
     expect(context.samples.flatMap(row => row.signals.map(signal => signal.id))).toEqual(
@@ -213,9 +226,9 @@ describe("scenario judgment coach", () => {
     expect(context.evidence["pressure-trend"]).toContain("No-change is a valid evidence-based choice");
     expect(context.evidence["pressure-trend"]).not.toContain("synthetic pressure trend develops");
     expect(context.samples.every(row => row.signals.every(signal => signal.current >= signal.range[0] && signal.current <= signal.range[1]))).toBe(true);
-    const valid = validateCoachOutput(JSON.stringify(output()), request.answer, "ko", scenario.id);
+    const valid = validateCoachOutput(JSON.stringify(output("ko", request.answer)), request.answer, "ko", scenario.id);
     expect(valid.strengths).toEqual(["signal", "reference"]);
-    expect(validateCoachOutput(JSON.stringify(output()), { ...request.answer, signal: "film", onset: "30" }, "ko", scenario.id).strengths).toEqual(["reference", "uncertainty"]);
+    expect(validateCoachOutput(JSON.stringify(output("ko", request.answer)), { ...request.answer, signal: "film", onset: "30" }, "ko", scenario.id).strengths).toEqual(["reference", "uncertainty"]);
   });
   it("rejects process aliases, unknown signals, incomplete observation, and incoherent no-change choices before transmission", async () => {
     const scenario = processScenarios.find(item => item.processId === "wafer")!;
@@ -315,8 +328,8 @@ describe("scenario judgment coach", () => {
   it("does not let written claims or a different AI question create positive choice labels", () => {
     const answer = { ...input().answer, signal: "flow", comparison: "whole-run", certainty: "uncertain" as const,
       facts: "내가 정상 시점을 확실히 맞혔다고 가상 답안에 주장합니다." };
-    const first = validateCoachOutput(JSON.stringify(output()), answer);
-    const changed = output(); changed.reflections[0].question = "같은 단계의 유량 가상 기록과 정상 참고를 어떤 시점에서 비교하겠습니까?";
+    const first = validateCoachOutput(JSON.stringify(output("ko", answer)), answer);
+    const changed = output("ko", answer); changed.reflections[0].question = "같은 단계의 유량 가상 기록과 정상 참고를 어떤 시점에서 비교하겠습니까?";
     const second = validateCoachOutput(JSON.stringify(changed), answer);
     expect(first.strengths).toEqual(["uncertainty"]);
     expect(second.strengths).toEqual(first.strengths);
@@ -347,6 +360,7 @@ describe("scenario judgment coach", () => {
       ? "onset, oscillation, baseline, trend와 RF 기록에서 어떤 비교 결과가 revision을 뒷받침하나요?"
       : "onset、oscillation、baseline、trendとRFの記録からどの比較結果がrevisionを裏付けますか？";
     const answer = { ...input().answer, facts: "원문: onset, oscillation, baseline, trend, revision, RF는 내가 쓴 표현입니다." };
+    data.reflections[0].focusQuote = answer.facts.slice(0, 32);
     const result = validateCoachOutput(JSON.stringify(data), answer, language);
     expect(result.reflections[0].answerQuote).toBe(answer.facts);
     expect(result.reflections[0].question).not.toMatch(/onset|oscillation|baseline|trend|revision/i);
@@ -391,6 +405,7 @@ describe("scenario judgment coach", () => {
     const data = output(language);
     data.reflections[1] = { ...data.reflections[1], dimension: "uncertainty", evidenceId: "cause-unknown", question };
     const answer = { ...input().answer, checks: "원인을 아직 확정하거나 배제할 수 없으므로 가상 기록을 비교합니다." };
+    data.reflections[1].focusQuote = answer.checks.slice(0, 32);
     expect(validateCoachOutput(JSON.stringify(data), answer, language).reflections[1].answerQuote).toBe(answer.checks);
   });
   it("creates a separate minimal coaching payload without the save key or identity", () => {
