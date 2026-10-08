@@ -132,6 +132,13 @@ describe("public app packaging and discovery", () => {
     expect(html.split(tag)).toHaveLength(2);
     expect(html.split("<body>")[1]).not.toContain("google-site-verification");
   });
+  it("keeps the approved Naver ownership tag in the initial head, without JavaScript", () => {
+    const tag = '<meta name="naver-site-verification" content="1f49aa1e10a7dba7e4d430978333b9ca0e123b55" />';
+    const head = html.match(/<head>([\s\S]*?)<\/head>/)![1];
+    expect(head).toContain(tag);
+    expect(html.split(tag)).toHaveLength(2);
+    expect(html.split("<body>")[1]).not.toContain("naver-site-verification");
+  });
   it("uses the public introduction as a stable online app start, without forcing orientation", () => {
     expect(manifest).toMatchObject({ id: "/", start_url: "/", scope: "/", display: "standalone", prefer_related_applications: false });
     expect(manifest.orientation).toBeUndefined();
