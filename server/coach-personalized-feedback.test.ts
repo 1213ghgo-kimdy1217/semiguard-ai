@@ -47,6 +47,19 @@ describe("personalized coaching feedback", () => {
     const data = feedback(); data.reflections[0].analysis = "The supplied answer still needs a condition-matched comparison result.";
     expect(() => validateCoachOutput(JSON.stringify(data), answer, "ko")).toThrow("Unexpected coaching language");
   });
+  it.each(["45초 이후 변화가 시작됐다는 수치 주장을 확정합니다.", "참고값은 100.3이고 범위는 96~104라고 주장합니다.", "표면의 시작을 ４５초로 확인했다고 주장합니다."])("rejects unverified numeric claims in generated analysis", analysis => {
+    const data = feedback(); data.reflections[0].analysis = analysis;
+    expect(() => validateCoachOutput(JSON.stringify(data), answer)).toThrow("Unsupported numeric claim");
+  });
+  it("rejects numeric claims in next guidance but preserves numbers in the original excerpt", () => {
+    const data = feedback(); data.reflections[0].question = "45초가 변화 시작이라고 어떤 근거로 확인했습니까?";
+    expect(() => validateCoachOutput(JSON.stringify(data), answer)).toThrow("Unsupported numeric claim");
+    data.reflections[0].question = feedback().reflections[0].question;
+    data.reflections[0].focusQuote = "70초라고 적었지만";
+    const original = { ...answer, facts: "70초라고 적었지만 앞선 가상 기록을 다시 비교해야 합니다." };
+    const result = validateCoachOutput(JSON.stringify(data), original);
+    expect(result.reflections[0]).toMatchObject({ focusQuote: "70초라고 적었지만", answerQuote: original.facts });
+  });
   it("rejects empty or unbounded analysis rather than substituting fixed text", () => {
     for (const analysis of ["", " ", "가".repeat(451)]) {
       const data = feedback(); data.reflections[0].analysis = analysis;
