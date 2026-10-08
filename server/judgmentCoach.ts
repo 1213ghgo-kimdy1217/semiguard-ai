@@ -6,7 +6,7 @@ import { ENV } from "./_core/env";
 import { invokeLLM } from "./_core/llm";
 import { ZodError } from "zod";
 
-type CoachDiagnostic = "configuration" | "pending" | "cooldown" | "capacity" | "metadata" | "json" | "schema" | "safety" | "causal-exclusion" | "evidence" | "language" | "question-form" | "output-shape" | "validation" | "timeout" | "authentication" | "rate-limit" | "http" | "incomplete" | "connection";
+type CoachDiagnostic = "configuration" | "pending" | "cooldown" | "capacity" | "metadata" | "json" | "schema" | "safety" | "causal-exclusion" | "evidence" | "language" | "output-shape" | "validation" | "timeout" | "authentication" | "rate-limit" | "http" | "incomplete" | "connection";
 function logCoachFailure(reason: Extract<JudgmentCoachResult, { status: "unavailable" }>["reason"], category: CoachDiagnostic) {
   // Fixed classifications only: never log error messages, answers, identities,
   // provider bodies, model output, credentials or request metadata.
@@ -19,7 +19,6 @@ function validationCategory(error: unknown): CoachDiagnostic {
     "Invalid coach output": "safety",
     "Unsupported causal exclusion": "causal-exclusion", "Invalid evidence reference": "evidence", "Invalid answer excerpt": "evidence",
     "Unexpected coaching language": "language", "Invalid output": "output-shape",
-    "Invalid question form": "question-form",
   };
   return error instanceof Error && Object.hasOwn(known, error.message) ? known[error.message] : "validation";
 }
@@ -150,9 +149,9 @@ export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["a
   const hangul = /[\uac00-\ud7a3]/; const kana = /[\u3040-\u30ff]/; const han = /[\u4e00-\u9fff]/;
   if (feedback.reflections.some(({ analysis, question }) => [analysis, question].some(text => language === "en" ? hangul.test(text) || kana.test(text) || han.test(text)
     : language === "ja" ? hangul.test(text) || !kana.test(text) : !hangul.test(text) || kana.test(text)))) throw new Error("Unexpected coaching language");
-  // Describing a question is not asking one. Reject rather than rewriting model
-  // output; punctuation alone does not establish semantic or factual correctness.
-  if (feedback.reflections.some(({ question }) => !/^[^?？]+[?？]$/.test(question))) throw new Error("Invalid question form");
+  // A next-evidence check may be a question or short guidance. Punctuation is
+  // not a safety/factuality test: preserve the bounded, validated model text.
+  // The UI labels this as a next point to examine, not necessarily a question.
   // Fixed labels check actual choices only, not written factual claims or AI praise.
   // They are not a fallback AI answer and do not rescue invalid model output.
   return judgmentCoachFeedbackSchema.parse({ strengths: supportedStrengths(answer, scenarioId).slice(0, 2),

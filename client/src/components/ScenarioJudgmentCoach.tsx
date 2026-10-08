@@ -87,7 +87,7 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
       {result.feedback.reflections.map(item => <article className="coach-reflection" key={item.dimension}>
         <h3 tabIndex={-1} ref={node => { reflectionHeadings.current[item.dimension] = node ?? undefined; }}>{l(...dimensionLabels[item.dimension])}</h3><p><strong>{l("이번에 짚은 내 표현", "The phrase being reviewed", "今回取り上げる回答の表現")}</strong> “{item.focusQuote}”</p>
         <p><strong>{l("내 답안에 대한 AI 피드백", "AI feedback on your reasoning", "回答についてのAIフィードバック")}</strong> {item.analysis}</p>
-        <p className="coach-question"><strong>{l("다시 생각할 질문", "A question to revisit", "考え直す問い")}</strong> {item.question}</p>
+        <p className="coach-question"><strong>{l("다음으로 살펴볼 점", "What to examine next", "次に確認する点")}</strong> {item.question}</p>
         <p className="et-caption">{scenario
           ? `${l("근거", "Evidence", "根拠")}: ${l(...scenario.title)} · ${l("교육용 가상 기록", "synthetic educational records", "教育用の仮想記録")}`
           : l("근거: 식각 판단 연습의 가상 기록", "Evidence: etch judgment exercise records", "根拠：エッチング判断練習の仮想記録")}</p>

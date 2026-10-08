@@ -113,13 +113,13 @@ describe("scenario judgment coach", () => {
     ["en", "Ask which existing virtual record supports the comparison."],
     ["ja", "どの既存の仮想記録を比較するかを尋ねます。"],
     ["ko", "어떤 가상 기록을 비교하나요? 어떤 결과를 보나요?"],
-  ] as const)("rejects non-question or multiple-question output in %s without fabricating a replacement", async (language, question) => {
+  ] as const)("preserves bounded next-evidence guidance in %s without rewriting it by punctuation", async (language, question) => {
     const data = output(language); data.reflections[0].question = question;
-    expect(() => validateCoachOutput(JSON.stringify(data), input().answer, language)).toThrow("Invalid question form");
+    expect(validateCoachOutput(JSON.stringify(data), input().answer, language).reflections[0].question).toBe(question);
     fetchMock.mockResolvedValue(response(JSON.stringify(data)));
-    expect(await createJudgmentCoach()(27, { ...input(), language })).toEqual({ status: "unavailable", reason: "invalid-response" });
+    expect(await createJudgmentCoach()(27, { ...input(), language })).toMatchObject({ status: "ready", feedback: { reflections: [{ question }, expect.anything()] } });
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category: "question-form" })]]);
+    expect(console.warn).not.toHaveBeenCalled();
   });
   it.each(["en", "ja"] as const)("rejects Korean questions when %s coaching was requested", async language => {
     fetchMock.mockResolvedValue(response(JSON.stringify(output())));
