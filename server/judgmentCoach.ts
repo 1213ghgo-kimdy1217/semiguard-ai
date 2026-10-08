@@ -23,6 +23,18 @@ function validationCategory(error: unknown): CoachDiagnostic {
   };
   return error instanceof Error && Object.hasOwn(known, error.message) ? known[error.message] : "validation";
 }
+function logSchemaFailure(error: unknown) {
+  if (!(error instanceof ZodError)) return;
+  const issue = error.issues[0];
+  const fields = ["reflections", "dimension", "evidenceId", "answerSource", "focusQuote", "analysis", "question"];
+  const codes = ["invalid_type", "invalid_value", "too_big", "too_small", "unrecognized_keys", "custom"];
+  const leaf = issue?.path.at(-1);
+  // Only known field/code labels. Never include values, messages, arbitrary keys,
+  // learner answers, model text, account identifiers or upstream metadata.
+  console.warn(JSON.stringify({ event: "judgment_coach_schema",
+    field: typeof leaf === "string" && fields.includes(leaf) ? leaf : "output",
+    code: issue && codes.includes(issue.code) ? issue.code : "invalid" }));
+}
 function providerCategory(error: unknown): CoachDiagnostic {
   if (!(error instanceof Error)) return "connection";
   if (error.name === "TimeoutError" || error.name === "AbortError") return "timeout";
@@ -225,6 +237,7 @@ Trusted scenario context: ${JSON.stringify({ ...scenarioCoachContext(request), s
         if (typeof content !== "string" || content.length > 7000) throw new Error("Invalid output");
         return { status: "ready", provider: "nvidia", model: result.model, language: request.language, feedback: validateCoachOutput(content, request.answer, request.language, request.scenarioId) };
       } catch (error) {
+        logSchemaFailure(error);
         logCoachFailure("invalid-response", validationCategory(error));
         return { status: "unavailable", reason: "invalid-response" };
       }

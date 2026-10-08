@@ -98,6 +98,13 @@ describe("scenario judgment coach", () => {
       expect(() => validateCoachOutput(JSON.stringify(result), input().answer, "ko")).toThrow();
     }
   });
+  it("logs only allowlisted shape labels when model feedback fails the schema", async () => {
+    const data = output(); data.reflections[0].analysis = "short-private-model-text".slice(0, 5);
+    fetchMock.mockResolvedValue(response(JSON.stringify(data)));
+    expect((await createJudgmentCoach()(27, input())).status).toBe("unavailable");
+    expect(vi.mocked(console.warn).mock.calls).toContainEqual([JSON.stringify({ event: "judgment_coach_schema", field: "analysis", code: "too_small" })]);
+    expect(JSON.stringify(vi.mocked(console.warn).mock.calls)).not.toMatch(/short-private|단계 B|synthetic-private-key/);
+  });
   it.each([
     ["ko", "어떤 기존 가상 기록을 확인할지 묻습니다."],
     ["en", "Ask which existing virtual record supports the comparison."],
@@ -279,7 +286,10 @@ describe("scenario judgment coach", () => {
   ])("logs validation classification %s without copying output", async (text, category) => {
     fetchMock.mockResolvedValue(response(text));
     expect(await createJudgmentCoach()(27, input())).toEqual({ status: "unavailable", reason: "invalid-response" });
-    expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category })]]);
+    const expected = category === "schema" ? [[JSON.stringify({ event: "judgment_coach_schema",
+      field: text === "{}" ? "reflections" : "output", code: text === "{}" ? "invalid_type" : "unrecognized_keys" })]] : [];
+    expect(vi.mocked(console.warn).mock.calls).toEqual([...expected,
+      [JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category })]]);
   });
   it("logs configuration and metadata failures without key, model or user identifiers", async () => {
     ENV.nvidiaApiKey = "";
