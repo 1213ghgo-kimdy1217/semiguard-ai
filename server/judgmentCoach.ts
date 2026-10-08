@@ -5,8 +5,9 @@ import { coachInputIssues, judgmentCoachFeedbackSchema, judgmentCoachModelFeedba
 import { ENV } from "./_core/env";
 import { invokeLLM } from "./_core/llm";
 import { ZodError } from "zod";
+import { coachRangeEvidence, hasUnsupportedRangeQuestion } from "./coachRangeEvidence";
 
-type CoachDiagnostic = "configuration" | "pending" | "cooldown" | "capacity" | "metadata" | "json" | "schema" | "safety" | "causal-exclusion" | "numeric-claim" | "evidence" | "language" | "output-shape" | "validation" | "timeout" | "authentication" | "rate-limit" | "http" | "incomplete" | "connection";
+type CoachDiagnostic = "configuration" | "pending" | "cooldown" | "capacity" | "metadata" | "json" | "schema" | "safety" | "causal-exclusion" | "range-premise" | "numeric-claim" | "evidence" | "language" | "output-shape" | "validation" | "timeout" | "authentication" | "rate-limit" | "http" | "incomplete" | "connection";
 function logCoachFailure(reason: Extract<JudgmentCoachResult, { status: "unavailable" }>["reason"], category: CoachDiagnostic) {
   // Fixed classifications only: never log error messages, answers, identities,
   // provider bodies, model output, credentials or request metadata.
@@ -18,6 +19,7 @@ function validationCategory(error: unknown): CoachDiagnostic {
   const known: Record<string, CoachDiagnostic> = {
     "Invalid coach output": "safety",
     "Unsupported numeric claim": "numeric-claim",
+    "Unsupported range premise": "range-premise",
     "Unsupported causal exclusion": "causal-exclusion", "Invalid evidence reference": "evidence", "Invalid answer excerpt": "evidence",
     "Unexpected coaching language": "language", "Invalid output": "output-shape",
   };
@@ -87,6 +89,7 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
     return {
       scope: `${scenario.title[1]}. ${scenario.equipment[1]}. Synthetic educational records only; values are relative indices, not physical units, manufacturer specifications, production thresholds or real equipment logs. Samples are selected at 5-second intervals, not the complete one-second record. Do not infer an exact onset between samples; ask the learner to revisit the full chart. A return to the reference is not evidence that a real fault was fixed.`,
       objective: scenario.objective[1],
+      rangeEvidence: coachRangeEvidence(request.scenarioId),
       signalDefinitions: scenario.signals.map(({ id, name, location }) => ({ id, name: name[1], location: location[1],
         displayName: name[languageIndex], displayLocation: location[languageIndex] })),
       evidence: {
@@ -110,6 +113,7 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
   const times = [39, 40, 60, 80, 125, 180];
   return {
     scope: "Etch judgment practice with a synthetic plasma etch chamber. Values are teaching-only relative indices, not physical units, manufacturer specifications or real equipment logs. These are selected observation points, not the complete one-second record; do not infer an exact onset between samples. Ask the learner to revisit the full chart.",
+    rangeEvidence: coachRangeEvidence(request.scenarioId),
     signalDefinitions: etchSignals.map(({ id, name, location }) => {
       const signal = getProcessScenario("etch")?.signals.find(signal => signal.id === id);
       return { id, name, location, displayName: signal?.name[languageIndex] ?? name,
@@ -151,6 +155,7 @@ export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["a
     throw new Error("Invalid coach output");
   }
   if (feedback.reflections.some(({ analysis, question }) => unsupportedExclusion.test(analysis) || unsupportedExclusion.test(question))) throw new Error("Unsupported causal exclusion");
+  if (feedback.reflections.some(({ question }) => hasUnsupportedRangeQuestion(question, language, scenarioId))) throw new Error("Unsupported range premise");
   // Exact numbers/times belong to the server-owned charts and criteria, not
   // unverified model prose. Original learner excerpts are still unchanged.
   if (/[0-9０-９]/.test(generatedText)) throw new Error("Unsupported numeric claim");
@@ -203,6 +208,7 @@ export function createJudgmentCoach() {
 Reply only in natural ${request.language === "ko" ? "Korean" : request.language === "ja" ? "Japanese" : "English"}. In Korean/Japanese, translate terms such as onset and oscillation rather than mixing in English. Return a JSON object with only reflections, containing exactly two distinct reflections: one addressing facts and one addressing checks.
 Use these Korean/Japanese terms: onset = 변화 시작 시점 / 変化の開始時点; oscillation = 반복 변동 / 繰り返す変動; baseline = 정상 참고 / 正常参照; trend = 추세 / 傾向. Preserve signal abbreviations such as RF. Do not copy English terminology from a learner's answer into Korean/Japanese questions.
 For each signal, use its trusted displayName exactly as written in analysis and question. These are the names the learner sees; do not invent synonyms or mistranslate index as support. displayLocation describes its virtual observation position. These labels are terminology only, not prewritten feedback. Write plain sentences without numbered lists or numeric headings.
+Check rangeEvidence for each named signal before writing analysis or a question. Its flags are derived from the full one-second virtual chart, not selected answers or sampled endpoints. If hasReferenceRangeExcursion is false, that signal never left its condition-matched reference range in this exercise: never ask when it left or returned to that range. Ask for evidence about whether/how it stayed within the matching range instead. A changing value or normal stage transition does not itself establish range excursion. If an earlier excursion exists but endsWithinReferenceRange is true, preserve both facts; do not imply it never differed or that a fault was fixed. These qualitative flags are not an exact onset answer key or proof of real equipment health. A question must not assume an event merely because another signal changed or the learner claimed it happened.
 The model output has only reflections. Each reflection has exactly four keys: answerSource, focusQuote, analysis, question. Do not output dimension, evidenceId, strengths, answerQuote, hidden reasoning or any other fields. Only the server computes the fixed choice-criterion labels, adds display/review metadata and the original learner quote after validation. These display categories do not constrain your feedback: address the actual evidence, including timing, multiple signals or uncertainty when relevant.
 answerSource must be facts or checks, once each. focusQuote is a short, exact contiguous excerpt (2 to 240 characters) from that field; never invent or translate it. analysis is brief user-facing feedback (one or two sentences, 20 to 450 characters), not a reasoning trace. Explain how this specific phrase relates to the supplied virtual evidence, what it supports and which evidence is missing or conflicts. Address a named scenario signal, matching condition or comparison result where relevant; a generic checklist or merely repeating the answer is insufficient. Distinguish a plan from an observed result. Do not validate a written number merely because a choice criterion matches.
 Generated analysis and question must be qualitative: do not state or repeat any numeric values, times, ranges or an exact onset conclusion, even from the learner's text. Exact quantities and selected timestamps are handled by the existing charts and criteria, not your prose. Numbers may appear only in the unchanged focusQuote. Describe whether a named signal differs from its matching reference, persists or returns, and what comparison evidence is missing. Do not equate a later deviation or range crossing with its onset.
