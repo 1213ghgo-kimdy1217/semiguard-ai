@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "SemiGuard AI · 세미가드 에이아이",
+  "short_name": "SemiGuard AI",
+  "description": "반도체 신입 엔지니어를 위한 가상 장비 판단 훈련 플랫폼",
+  "lang": "ko-KR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101516",
+  "theme_color": "#101516",
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/icons/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

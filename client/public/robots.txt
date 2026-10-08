@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://semiguard-ai-five.vercel.app/sitemap.xml
