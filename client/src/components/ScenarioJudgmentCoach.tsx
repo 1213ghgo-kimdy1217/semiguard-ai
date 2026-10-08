@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "./ui/button";
 import { trpc } from "../lib/trpc";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
-import { toJudgmentCoachRequest, toProcessJudgmentCoachRequest, type CoachDimension, type CoachStrength, type JudgmentCoachResult } from "../../../shared/judgmentCoach";
+import { coachInputIssues, toJudgmentCoachRequest, toProcessJudgmentCoachRequest, type CoachDimension, type CoachStrength, type JudgmentCoachResult } from "../../../shared/judgmentCoach";
 import { ETCH_DURATION, type EtchAttempt } from "../../../shared/etchScenario";
 import { coachReviewTargets } from "../../../shared/coachReview";
 import { classifyCoachRequestError, coachFailureMessage, type CoachRequestFailure } from "../../../shared/coachFailure";
@@ -43,6 +43,8 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
   const request = async () => {
     if (!attempt || (processAttempt && scenario?.id !== processAttempt.scenarioId)) return;
     if (!consent || !userId || !attempt.submitted || pending.current) return;
+    const fields = coachInputIssues(attempt.answer);
+    if (fields.length) { setResult({ status: "needs-input", fields }); setClientFailure(null); return; }
     pending.current = true; setResult(null); setClientFailure(null);
     try { setResult(await coach.mutateAsync(processAttempt
       ? toProcessJudgmentCoachRequest(processAttempt, language) : toJudgmentCoachRequest(attempt, language))); }
@@ -72,6 +74,14 @@ export default function ScenarioJudgmentCoach({ attempt: etchAttempt, processAtt
     <div aria-live="polite" aria-atomic="true" aria-busy={busy}>
       {busy ? <p role="status">{l("최대 40초가 걸릴 수 있습니다. 답안을 다시 제출하거나 페이지를 닫지 않아도 됩니다.", "This may take up to 40 seconds. You do not need to resubmit the exercise or close the page.", "最大40秒ほどかかる場合があります。練習を再提出したりページを閉じる必要はありません。")}</p> : null}
       {result?.status === "ready" ? <p role="status">{l("AI 코칭이 도착했습니다. 아래에서 판단 근거와 질문을 확인하세요.", "AI coaching is ready. Review the evidence and questions below.", "AIコーチングが届きました。以下の根拠と問いを確認してください。")}</p> : null}
+      {result?.status === "needs-input" ? <div className="et-alert" role="status">
+        <p><strong>{l("답안 작성 안내 · AI 요청하지 않음", "Writing guidance · AI was not requested", "回答の記入案内 · AIには依頼していません")}</strong></p>
+        <p>{result.fields.map(field => field === "facts"
+          ? l("사실과 추정", "Facts and inference", "事実と推測")
+          : l("다음 비교 순서", "Next comparisons", "次の比較順序")).join(" · ")}</p>
+        <p>{l("해당 항목에는 완성된 단어 없이 낱자·기호·숫자만 있습니다. 관찰한 신호와 정상 참고의 차이, 또는 다음에 비교할 가상 기록을 문장으로 작성해 주세요. 이 안내는 답안의 정답 여부를 평가한 AI 코칭이 아닙니다.", "These fields contain only isolated letters, symbols or numbers, with no completed words. Write the observed signal and its difference from the normal reference, or the virtual records you plan to compare. This is an input notice, not AI coaching or an assessment of correctness.", "該当欄には完成した語がなく、単独の文字・記号・数字のみがあります。観察した信号と正常参照との差、または次に比較する仮想記録を文章で記入してください。これは入力案内で、正誤を評価するAIコーチングではありません。")}</p>
+        <p>{l("원래 답안·저장 기록은 바꾸지 않았습니다. ‘새 시도로 다시 연습’에서 답안을 다시 작성할 수 있습니다.", "Your original answer and saved record are unchanged. Use ‘Start a new attempt’ to write a new answer.", "元の回答と保存記録は変更していません。「新しい試行で再練習」から回答を書き直せます。")}</p>
+      </div> : null}
       {clientFailure || unavailable ? <div className="et-alert" role="status"><p>{coachFailureMessage(
         clientFailure ?? (result?.status === "unavailable" ? result.reason : "request-error"), language,
         result?.status === "unavailable" ? result.retryAfterSeconds : undefined,

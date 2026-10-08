@@ -1,6 +1,6 @@
 import { etchFeedback, etchSample, etchSignals, type EtchAnswer } from "../shared/etchScenario";
 import { getProcessScenario, processCriteria, processSample } from "../shared/processScenarios";
-import { judgmentCoachFeedbackSchema, judgmentCoachModelFeedbackSchema, judgmentCoachRequestSchema,
+import { coachInputIssues, judgmentCoachFeedbackSchema, judgmentCoachModelFeedbackSchema, judgmentCoachRequestSchema,
   type JudgmentCoachRequest, type JudgmentCoachResult } from "../shared/judgmentCoach";
 import { ENV } from "./_core/env";
 import { invokeLLM } from "./_core/llm";
@@ -76,6 +76,7 @@ const supportedStrengths = (answer: JudgmentCoachRequest["answer"], scenarioId =
 };
 
 export function scenarioCoachContext(request: JudgmentCoachRequest) {
+  const languageIndex = request.language === "ko" ? 0 : request.language === "en" ? 1 : 2;
   if (request.scenarioId !== "etch-chamber-a-01") {
     const scenario = getProcessScenario(request.scenarioId);
     if (!scenario) throw new Error("Unknown process scenario");
@@ -86,7 +87,8 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
     return {
       scope: `${scenario.title[1]}. ${scenario.equipment[1]}. Synthetic educational records only; values are relative indices, not physical units, manufacturer specifications, production thresholds or real equipment logs. Samples are selected at 5-second intervals, not the complete one-second record. Do not infer an exact onset between samples; ask the learner to revisit the full chart. A return to the reference is not evidence that a real fault was fixed.`,
       objective: scenario.objective[1],
-      signalDefinitions: scenario.signals.map(({ id, name, location }) => ({ id, name: name[1], location: location[1] })),
+      signalDefinitions: scenario.signals.map(({ id, name, location }) => ({ id, name: name[1], location: location[1],
+        displayName: name[languageIndex], displayLocation: location[languageIndex] })),
       evidence: {
         "phase-reference": `${scenario.referenceRule[1]} Compare the same virtual conditions and observation position, not a whole-run average. Normal reference values can vary with the virtual conditions.`,
         "pressure-trend": scenario.expectedSignal === "none"
@@ -108,7 +110,11 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
   const times = [39, 40, 60, 80, 125, 180];
   return {
     scope: "Etch judgment practice with a synthetic plasma etch chamber. Values are teaching-only relative indices, not physical units, manufacturer specifications or real equipment logs. These are selected observation points, not the complete one-second record; do not infer an exact onset between samples. Ask the learner to revisit the full chart.",
-    signalDefinitions: etchSignals.map(({ id, name, location }) => ({ id, name, location })),
+    signalDefinitions: etchSignals.map(({ id, name, location }) => {
+      const signal = getProcessScenario("etch")?.signals.find(signal => signal.id === id);
+      return { id, name, location, displayName: signal?.name[languageIndex] ?? name,
+        displayLocation: signal?.location[languageIndex] ?? location };
+    }),
     evidence: {
       "phase-reference": "Phase A changes normally to B at 40 seconds. Compare the same phase and time of the normal reference run, not whole-run averages.",
       "pressure-trend": "A synthetic pressure trend develops during phase B; trend onset and crossing the reference range are different events. Revisit earlier records to distinguish them, without an exact-time answer key.",
@@ -171,6 +177,8 @@ export function createJudgmentCoach() {
   const users = new Map<number, { started: number; pending: boolean }>();
   return async (userId: number, raw: unknown): Promise<JudgmentCoachResult> => {
     const request = judgmentCoachRequestSchema.parse(raw);
+    const fields = coachInputIssues(request.answer);
+    if (fields.length) return { status: "needs-input", fields };
     if (!ENV.nvidiaApiKey.trim() || (ENV.aiProvider.trim() && ENV.aiProvider.trim() !== "nvidia")) {
       logCoachFailure("not-configured", "configuration");
       return { status: "unavailable", reason: "not-configured" };
@@ -194,6 +202,7 @@ export function createJudgmentCoach() {
         messages: [{ role: "system", content: `You are SemiGuard's AI Judgment Coach, reviewing a completed synthetic educational exercise, not diagnosing equipment or assessing workplace qualifications.
 Reply only in natural ${request.language === "ko" ? "Korean" : request.language === "ja" ? "Japanese" : "English"}. In Korean/Japanese, translate terms such as onset and oscillation rather than mixing in English. Return a JSON object with only reflections, containing exactly two distinct reflections: one addressing facts and one addressing checks.
 Use these Korean/Japanese terms: onset = 변화 시작 시점 / 変化の開始時点; oscillation = 반복 변동 / 繰り返す変動; baseline = 정상 참고 / 正常参照; trend = 추세 / 傾向. Preserve signal abbreviations such as RF. Do not copy English terminology from a learner's answer into Korean/Japanese questions.
+For each signal, use its trusted displayName exactly as written in analysis and question. These are the names the learner sees; do not invent synonyms or mistranslate index as support. displayLocation describes its virtual observation position. These labels are terminology only, not prewritten feedback. Write plain sentences without numbered lists or numeric headings.
 The model output has only reflections. Each reflection has exactly four keys: answerSource, focusQuote, analysis, question. Do not output dimension, evidenceId, strengths, answerQuote, hidden reasoning or any other fields. Only the server computes the fixed choice-criterion labels, adds display/review metadata and the original learner quote after validation. These display categories do not constrain your feedback: address the actual evidence, including timing, multiple signals or uncertainty when relevant.
 answerSource must be facts or checks, once each. focusQuote is a short, exact contiguous excerpt (2 to 240 characters) from that field; never invent or translate it. analysis is brief user-facing feedback (one or two sentences, 20 to 450 characters), not a reasoning trace. Explain how this specific phrase relates to the supplied virtual evidence, what it supports and which evidence is missing or conflicts. Address a named scenario signal, matching condition or comparison result where relevant; a generic checklist or merely repeating the answer is insufficient. Distinguish a plan from an observed result. Do not validate a written number merely because a choice criterion matches.
 Generated analysis and question must be qualitative: do not state or repeat any numeric values, times, ranges or an exact onset conclusion, even from the learner's text. Exact quantities and selected timestamps are handled by the existing charts and criteria, not your prose. Numbers may appear only in the unchanged focusQuote. Describe whether a named signal differs from its matching reference, persists or returns, and what comparison evidence is missing. Do not equate a later deviation or range crossing with its onset.
