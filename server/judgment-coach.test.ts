@@ -13,6 +13,9 @@ const input = () => ({ consent: true as const, scenarioId: "etch-chamber-a-01" a
   elapsed: 180 as const, submitted: true as const, marker: 80,
   answer: { signal: "pressure" as const, onset: "70", comparison: "same-phase" as const, certainty: "uncertain" as const,
     facts: "단계 B의 압력 추이가 정상 참고보다 높아졌습니다.", checks: "같은 시점의 유량과 RF 가상 기록을 먼저 비교하겠습니다." } });
+const modelAnswer = <T extends { onset: string }>(answer: T) => {
+  const { onset: _onset, ...writtenContext } = answer; return writtenContext;
+};
 const processInput = (scenario: ProcessScenario) => toProcessJudgmentCoachRequest({ ...emptyProcessAttempt(scenario),
   elapsed: scenario.duration, submitted: true, marker: 45, saveKey: "must-not-be-transmitted",
   answer: { signal: scenario.expectedSignal, onset: scenario.changeTime === null ? "none" : String(scenario.changeTime),
@@ -56,7 +59,11 @@ describe("scenario judgment coach", () => {
     expect(payload.messages[0].content).toContain("existing VIRTUAL records");
     expect(payload.messages[0].content).toContain("An unconfirmed cause is not an excluded cause");
     expect(payload.messages[0].content).toContain("pressure-trend");
-    expect(JSON.parse(payload.messages[1].content)).toMatchObject({ learnerAnswer: input().answer, chartMarker: 80, responseLanguage: "Korean" });
+    const modelRequest = JSON.parse(payload.messages[1].content);
+    expect(modelRequest).toMatchObject({ learnerAnswer: modelAnswer(input().answer), responseLanguage: "Korean" });
+    expect(modelRequest).not.toHaveProperty("chartMarker");
+    expect(modelRequest.learnerAnswer).not.toHaveProperty("onset");
+    expect(payload.messages[0].content).toContain("Generated analysis and question must be qualitative");
     expect(JSON.stringify(payload)).not.toMatch(/userId|badgeNumber|dateOfBirth|email|synthetic-private-key/);
     expect(JSON.stringify(result)).not.toContain("synthetic-private-key");
   });
@@ -65,7 +72,7 @@ describe("scenario judgment coach", () => {
     expect((await createJudgmentCoach()(27, { ...input(), language })).status).toBe("ready");
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(payload.messages[0].content).toContain(language === "en" ? "English" : "Japanese");
-    expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(input().answer);
+    expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(modelAnswer(input().answer));
   });
   it.each(["ko", "en", "ja"] as const)("describes the model-only contract in %s without prewritten or empty example questions", async language => {
     fetchMock.mockResolvedValue(response(JSON.stringify(output(language))));
@@ -92,7 +99,7 @@ describe("scenario judgment coach", () => {
     expect(context).not.toHaveProperty("choiceCriteria");
     expect(context).not.toHaveProperty("supportedStrengths");
     expect(JSON.stringify(payload)).not.toContain(output(language).reflections[0].question);
-    expect(user.learnerAnswer).toEqual(input().answer);
+    expect(user.learnerAnswer).toEqual(modelAnswer(input().answer));
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
   it("still rejects extra reflection fields instead of silently stripping them", () => {
@@ -179,7 +186,7 @@ describe("scenario judgment coach", () => {
     expect(result.status).toBe("ready");
     if (result.status === "ready") expect(result.feedback.reflections[0].answerQuote).toBe(request.answer.facts);
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
-    expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(request.answer);
+    expect(JSON.parse(payload.messages[1].content).learnerAnswer).toEqual(modelAnswer(request.answer));
     expect(JSON.stringify(payload)).not.toMatch(/must-not-be-transmitted|userId|badgeNumber|email|synthetic-private-key/);
   });
   it.each(processScenarios.filter(scenario => scenario.processId !== "etch"))("bounds $processId evidence gaps without supplying an exact-time answer key", scenario => {
