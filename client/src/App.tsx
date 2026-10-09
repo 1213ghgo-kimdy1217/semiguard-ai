@@ -5,6 +5,7 @@ import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LearningAssistant from "./components/LearningAssistant";
 import PracticeAccess from "./components/PracticeAccess";
+import { PracticeMeasurementProvider } from "./components/PracticeMeasurement";
 import TrainingPreview from "./pages/TrainingPreview";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Login } from "./pages/Login";
@@ -23,6 +24,7 @@ const Training = lazy(() => import("./pages/EtchTraining"));
 const ProcessTraining = lazy(() => import("./pages/ProcessTraining"));
 const TrainingHistory = lazy(() => import("./pages/TrainingHistory"));
 const SharedTraining = lazy(() => import("./pages/SharedTraining"));
+const PracticeMetrics = lazy(() => import("./pages/PracticeMetrics"));
 
 type LoadingLanguage = "ko" | "en" | "ja";
 type LoadingCopy = {
@@ -273,6 +275,9 @@ function OperationsForCurrentUser() {
 function Router() {
   return (
     <Switch>
+      <Route path={"/training/metrics"}>
+        <Suspense fallback={<TrainingModuleLoading />}><PracticeMetrics /></Suspense>
+      </Route>
       <Route path={"/preview"}>
         <TrainingPreview />
       </Route>
@@ -339,7 +344,7 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <PracticeMeasurementProvider><Router /></PracticeMeasurementProvider>
           <LearningAssistant />
         </TooltipProvider>
       </ThemeProvider>

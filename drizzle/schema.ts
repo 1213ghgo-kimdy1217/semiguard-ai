@@ -294,3 +294,14 @@ export const manualChunks = mysqlTable("manual_chunks", {
 }));
 
 export type ManualChunk = typeof manualChunks.$inferSelect;
+
+// Optional browser-scoped practice measurement: no account ID, contacts or answer text.
+export const practiceActivityEvents = mysqlTable("practice_activity_events", {
+  id: int("id").autoincrement().primaryKey(),
+  participantId: varchar("participant_id", { length: 64 }).notNull(),
+  eventType: mysqlEnum("event_type", ["visit", "practice_started", "practice_completed"]).notNull(),
+  occurredAt: timestamp("occurred_at").defaultNow().notNull(),
+}, table => ({
+  participantTimeIndex: index("practice_activity_participant_time_idx").on(table.participantId, table.occurredAt, table.eventType),
+  timeTypeIndex: index("practice_activity_time_type_idx").on(table.occurredAt, table.eventType),
+}));

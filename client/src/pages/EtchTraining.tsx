@@ -7,6 +7,7 @@ import ProcessScenarioPath from "../components/ProcessScenarioPath";
 import { AccountPracticeBenefits, SavedCheckpointList, TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
 import TrainingHistoryList from "../components/TrainingHistoryList";
+import PracticeMeasurementConsent, { usePracticeMeasurementTracking } from "../components/PracticeMeasurement";
 import { toTrainingDraft, restoreTrainingDraft } from "../../../shared/trainingDraft";
 import { ETCH_SCENARIO_ID } from "../../../shared/trainingRecord";
 import { FourSensorBrief, PracticeLearningOptions, PracticeWorkspaceNav } from "../components/PracticeEntryOptions";
@@ -152,11 +153,13 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
   const openPracticeHistory = () => { historyReturn.current = true; move("home"); };
   const reset = () => {
     if (saveStatus === "saving") return;
+    setRetryRevision(revision => revision + 1);
     setRunning(false); setAttempt(emptyEtchAttempt()); setHint(false); setReviewTime(ETCH_DURATION);
     setSelected("pressure"); setInspectionTime(0); setSaveStatus("idle"); move("brief"); heading.current?.focus();
   };
   const update = (key: keyof EtchAnswer, value: string) => setAttempt(a => a.submitted ? a : ({ ...a, answer: { ...a.answer, [key]: value } }));
   const isRunning = running && attempt.elapsed < ETCH_DURATION && !attempt.submitted;
+  usePracticeMeasurementTracking(isRunning, stage === "review" && attempt.submitted, `${expectedStorageKey}:${retryRevision}`);
   const shownTime = stage === "review" ? reviewTime : attempt.elapsed;
   const inspectedTime = Math.min(inspectionTime, attempt.elapsed);
   const signal = etchSignals.find(s => s.id === selected)!;
@@ -185,6 +188,8 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
     <a className="et-skip" href="#etch-main">{l("훈련 내용으로 이동", "Skip to training", "訓練内容へ移動")}</a>
     <header className="et-header"><Link className="et-brand" href="/training" onClick={() => move("home")}><b>SG</b> SemiGuard <small>TRAINING LAB</small></Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/learn">{l("8대 공정 학습", "Eight processes", "8大工程の学習")}</Link><Button variant="ghost" onClick={() => move("home")}>{l("선택 화면", "Choose practice", "練習を選ぶ")}</Button><Link href="/live">{l("실시간 자유 분석", "Free observation", "自由観察")}</Link><Link href="/welcome">{l("소개", "Introduction", "紹介")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /></nav></header>
     <main className="et-main" id="etch-main">
+      <PracticeMeasurementConsent />
+      {stage === "home" && auth.data?.role === "admin" ? <Link href="/training/metrics" className="et-linkbutton">{l("운영자 · 연습 이용 집계", "Admin · practice metrics", "管理者 · 練習利用の集計")}</Link> : null}
       <div className="et-meta"><span>{stage === "home" ? "SEMIGUARD / LEARNING WORKSPACE" : stage === "process-select" ? "EIGHT PROCESSES / CHOOSE A MODULE" : stage === "sensor-brief" ? "FOUR-SENSOR / OBSERVATION WORKSPACE" : "PLASMA ETCH / PROCESS JUDGMENT"}</span><span>{l("교육용 가상 장비 · 실제 제어 없음", "Synthetic training equipment · no physical control", "教育用仮想装置 · 実際の制御なし")}</span></div>
       {stage !== "sensor-brief" ? <p className="et-storage">{l("진행 중 답안은 현재 탭에 임시 저장됩니다. 로그인한 계정에는 제출 후 선택형 연습 결과만 저장하며 서술형 원문은 자동 전송하거나 서버에 저장하지 않습니다. AI 코칭을 직접 선택하면 안내 후 NVIDIA에 전달됩니다.", "The draft stays in this tab. For signed-in users, only choice-based practice results are saved after submission; written answers are not automatically transmitted or saved on the server. Optional AI coaching sends them to NVIDIA only after disclosure and your request.", "進行中の回答はこのタブに一時保存します。ログイン中は提出後に選択式の練習結果のみを保存し、記述回答は自動送信せずサーバーに保存しません。AIコーチングを選ぶと、案内と依頼の後にNVIDIAへ送信します。")}</p> : null}
       {storageWarning ? <p role="alert" className="et-alert">{storageWarning}</p> : null}
