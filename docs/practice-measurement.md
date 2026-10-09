@@ -31,6 +31,8 @@ Insertion is best-effort deduplicated per browser/event/KST day; concurrent requ
 
 ## Deployment safety
 
+Signed-in QA users can manually read only their own signed QA browser's three event-presence flags for the current KST day. This is not a report of other browsers; server-side filtering uses the cookie's ID and accepts no caller-chosen ID. Global aggregate reports remain administrator-only. No administrator role is granted for verification.
+
 The additive DDL is recorded in `drizzle/0019_practice_activity_events.sql`. The operator reported applying it on 2026-10-09. No migration is automatically executed during application startup or deployment. The runtime checks its own DB connection's exact columns, defaults and indexes before consent activation, writes or reports. An absent/incompatible table fails closed without blocking core practice or exposing connection details.
 
 Verify production readiness and QA events after deployment; local mocks and the operator's report do not prove the Vercel production DB is ready. Use team/test mode for verification and withdraw after testing. Do not report QA browser counts as recruited users or the W5 target of actual users.

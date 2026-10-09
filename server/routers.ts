@@ -26,7 +26,7 @@ import { readSharedChoices, shareTrainingAttempt } from "./trainingShare";
 import { buildDashboardConsultationMessages, dashboardComparisonFacts, dashboardReplyFormat, parseDashboardConsultationReply } from "./dashboardConsultation";
 import { getDashboardSensorHistory } from "./semiguardDb";
 import { measurementConsentSchema, measurementEventSchema, measurementPeriodSchema } from "../shared/practiceMeasurement";
-import { readMeasurementConsent, setMeasurementConsent, recordMeasurementEvent, inspectMeasurementStorage, getMeasurementReport } from "./practiceMeasurement";
+import { readMeasurementConsent, setMeasurementConsent, recordMeasurementEvent, inspectMeasurementStorage, getMeasurementReport, getOwnMeasurementQaStatus } from "./practiceMeasurement";
 import { buildDashboardHistoryEvidence, matchesDashboardSnapshot, type DashboardHistoryEvidence } from "./dashboardHistory";
 
 function hashPassword(password: string): string {
@@ -119,6 +119,7 @@ export const appRouter = router({
     track: publicProcedure.input(measurementEventSchema).mutation(({ ctx, input }) => recordMeasurementEvent(ctx.req, input.event, Boolean(ctx.user))),
     storage: protectedProcedure.query(() => inspectMeasurementStorage()),
     report: adminProcedure.input(measurementPeriodSchema).query(({ input }) => getMeasurementReport(input)),
+    qaStatus: protectedProcedure.query(({ ctx }) => getOwnMeasurementQaStatus(ctx.req)),
   }),
   learning: router({
     ask: protectedProcedure.input(learningQuestionSchema)

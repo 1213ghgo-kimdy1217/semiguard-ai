@@ -139,3 +139,23 @@ export async function getMeasurementReport(period: { start: string; end: string 
       timezone: "Asia/Seoul" as const, observedAt: new Date(), week2Start: new Date(range.week2Start * 1000), week2End: new Date(range.week2End * 1000) };
   } catch { throw unavailable(); }
 }
+
+/** Read this signed QA browser's three event flags only. Never exposes other IDs or records. */
+export async function getOwnMeasurementQaStatus(req: Request) {
+  const consent = readMeasurementConsent(req);
+  if (!consent?.qa) return null;
+  if (!(await inspectMeasurementStorage()).ready) throw unavailable();
+  try {
+    const database = await getDb();
+    if (!database) throw unavailable();
+    const start = kstDateStart(kstDay()) / 1000;
+    const [result] = await database.execute(sql`SELECT
+      COALESCE(MAX(event_type = 'visit'), 0) AS visited,
+      COALESCE(MAX(event_type = 'practice_started'), 0) AS started,
+      COALESCE(MAX(event_type = 'practice_completed'), 0) AS completed
+      FROM practice_activity_events WHERE participant_id = ${consent.id}
+      AND occurred_at >= FROM_UNIXTIME(${start}) AND occurred_at < FROM_UNIXTIME(${start + 86400})`);
+    const row = (result as unknown as { visited: number; started: number; completed: number }[])[0];
+    return { visited: Number(row.visited) > 0, started: Number(row.started) > 0, completed: Number(row.completed) > 0 };
+  } catch { throw unavailable(); }
+}
