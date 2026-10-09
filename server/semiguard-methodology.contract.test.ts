@@ -41,22 +41,23 @@ describe("SemiGuard risk-score methodology", () => {
     expect(Math.round(contributions.reduce((sum, score) => sum + score, 0))).toBe(computeAnomalyScore(sample));
   });
 
-  it("keeps public demo and submission documents transparent about the current scope", () => {
+  it("keeps archived methodology documents transparent about their historical scope", () => {
     const demoSource = readFileSync(
       resolve(process.cwd(), "client/src/pages/JudgeDemo.tsx"),
       "utf8"
     );
-    const readme = readFileSync(resolve(process.cwd(), "README.md"), "utf8");
-    const aiUsage = readFileSync(resolve(process.cwd(), "AI_USAGE.md"), "utf8");
+    const archive = resolve(process.cwd(), "docs/archive/legacy");
+    const readme = readFileSync(resolve(archive, "README.md"), "utf8");
+    const aiUsage = readFileSync(resolve(archive, "AI_USAGE.md"), "utf8");
     const technicalReference = readFileSync(
-      resolve(process.cwd(), "TECHNICAL_REFERENCE.md"),
+      resolve(archive, "TECHNICAL_REFERENCE.md"),
       "utf8"
     );
     const impactScorecard = readFileSync(
-      resolve(process.cwd(), "IMPACT_EVIDENCE_SCORECARD.md"),
+      resolve(archive, "IMPACT_EVIDENCE_SCORECARD.md"),
       "utf8"
     );
-    const todo = readFileSync(resolve(process.cwd(), "todo.md"), "utf8");
+    const todo = readFileSync(resolve(archive, "todo.md"), "utf8");
 
     expect(demoSource).toContain("methodTitle");
     expect(demoSource).toContain(

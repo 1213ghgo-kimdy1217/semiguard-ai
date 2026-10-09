@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const projectRoot = process.cwd();
+const projectRoot = resolve(process.cwd(), "docs/archive/legacy");
 const readDocument = (filename: string) =>
   readFileSync(resolve(projectRoot, filename), "utf8");
 
@@ -13,8 +13,8 @@ const uploadChecklist = readDocument("CHATGPT_UPLOAD_CHECKLIST.md");
 const oauthGuide = readDocument("OAUTH_SETUP_GUIDE.md");
 const environmentTemplate = readDocument("ENVIRONMENT_VARIABLE_TEMPLATE.md");
 
-describe("ChatGPT handover contract", () => {
-  it("keeps the handover documents discoverable from the repository README", () => {
+describe("archived ChatGPT handover contract", () => {
+  it("keeps historical handover documents discoverable from the archived README", () => {
     expect(existsSync(resolve(projectRoot, "CHATGPT_HANDOVER.md"))).toBe(true);
     expect(existsSync(resolve(projectRoot, "CHATGPT_START_PROMPT.md"))).toBe(
       true
