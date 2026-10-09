@@ -114,3 +114,7 @@ client/public/__manus__/version.json
 .project-config.json
 .vercel/
 /full-test-result.json
+
+# Regenerated audit reports; historical snapshots live in docs/archive/audits.
+/.audit-current.json
+/.audit-production-current.json

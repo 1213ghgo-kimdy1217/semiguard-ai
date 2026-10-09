@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const projectRoot = process.cwd();
+const projectRoot = resolve(process.cwd(), "docs/archive/legacy");
 const readProjectDocument = (filename: string) =>
   readFileSync(resolve(projectRoot, filename), "utf8");
 
@@ -56,7 +56,7 @@ const dependencySecurityReview = readProjectDocument(
   "DEPENDENCY_SECURITY_REVIEW.md"
 );
 
-describe("submission documentation contract", () => {
+describe("archived submission documentation contract", () => {
   it("keeps all linked submission documents in the repository", () => {
     [
       "AI_USAGE.md",
