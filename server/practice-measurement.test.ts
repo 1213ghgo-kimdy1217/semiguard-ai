@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import { ENV } from "./_core/env";
 import { appRouter } from "./routers";
-import { inspectMeasurementStorage, readMeasurementConsent, recordMeasurementEvent, setMeasurementConsent, validMeasurementMetadata } from "./practiceMeasurement";
+import { inspectMeasurementStorage, readMeasurementConsent, recordMeasurementEvent, setMeasurementConsent, validMeasurementMetadata, getOwnMeasurementQaStatus } from "./practiceMeasurement";
 const mock = vi.hoisted(() => ({ getDb: vi.fn() }));
 vi.mock("./db", () => mock);
 const columns = [
@@ -129,5 +129,21 @@ describe("practice measurement storage, consent and reporting", () => {
     expect(component).not.toMatch(/localStorage\.setItem\([^\n]*(?:userId|participant|answer|facts)/);
     for (const page of ["ProcessTraining", "EtchTraining"]) expect(read(`client/src/pages/${page}.tsx`)).toContain('stage === "review" && attempt.submitted');
     expect(read("client/src/pages/PracticeMetrics.tsx")).toContain('auth.data?.role === "admin"');
+  });
+  it("reads only this signed QA browser's bounded flags, without widening administrator access", async () => {
+    const caller = (cookie: string, user: any) => appRouter.createCaller({ user, req: req(cookie), res: res() } as any);
+    await expect(caller("", null).practiceMeasurement.qaStatus()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await expect(getOwnMeasurementQaStatus(req())).resolves.toBeNull(); expect(mock.getDb).not.toHaveBeenCalled();
+    const ordinary = await consentCookie(false); mock.getDb.mockClear();
+    await expect(caller(ordinary, { id: 41, role: "user" }).practiceMeasurement.qaStatus()).resolves.toBeNull();
+    expect(mock.getDb).not.toHaveBeenCalled();
+    const cookie = await consentCookie(true);
+    const execute = readyDatabase([[{ visited: "1", started: "1", completed: "0" }]]);
+    await expect(caller(cookie, { id: 41, role: "user" }).practiceMeasurement.qaStatus()).resolves.toEqual({ visited: true, started: true, completed: false });
+    const query = new MySqlDialect().sqlToQuery(execute.mock.calls[2][0]);
+    expect(query.sql).toContain("WHERE participant_id = ?");
+    expect(query.params[0]).toBe(readMeasurementConsent(req(cookie))?.id);
+    expect(query.params[2] - query.params[1]).toBe(86400);
+    expect(query.sql).not.toMatch(/SELECT \*|GROUP BY|user_id|facts|checks/);
   });
 });

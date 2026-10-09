@@ -114,6 +114,21 @@ export default function PracticeMeasurementConsent() {
         </div>}
       {controls.failed ? <p role="status">{l("측정 요청을 확인하지 못했습니다. 연습·계정 저장은 별개로 계속 사용할 수 있습니다. 철회 요청이 실패했다면 다시 철회해 주세요.", "Measurement could not be confirmed. Practice and account saving remain separate and usable. If withdrawal failed, try withdrawing again.", "計測の要求を確認できませんでした。練習・アカウント保存は別機能として利用できます。撤回に失敗した場合は再度撤回してください。")}</p> : null}
       {controls.failed && !controls.consented ? <button type="button" disabled={controls.busy} onClick={() => void controls.setConsent(false)}>{l("측정 철회 다시 시도", "Retry withdrawal", "計測の撤回を再試行")}</button> : null}
+      {controls.consented && controls.qa ? <PracticeMeasurementQaStatus /> : null}
     </div>
   </details>;
+}
+
+/** Mounted only for an opted-in QA browser; sample rendering needs no tRPC context. */
+function PracticeMeasurementQaStatus() {
+  const [language] = useProductLanguage();
+  const qaStatus = trpc.practiceMeasurement.qaStatus.useQuery(undefined, { retry: false, refetchOnWindowFocus: false });
+  const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
+  return <div className="sg-measurement-qa">
+        <button type="button" disabled={qaStatus.isFetching} onClick={() => void qaStatus.refetch()}>{l("이 브라우저의 테스트 기록 확인", "Check this browser's test events", "このブラウザーのテスト記録を確認")}</button>
+        <p role="status">{qaStatus.data ? l(`오늘 이 QA 브라우저 · 방문 ${qaStatus.data.visited ? "확인" : "없음"} / 시작 ${qaStatus.data.started ? "확인" : "없음"} / 제출·복기 ${qaStatus.data.completed ? "확인" : "없음"}`,
+          `Today, this QA browser · visit ${qaStatus.data.visited ? "verified" : "not recorded"} / start ${qaStatus.data.started ? "verified" : "not recorded"} / submitted review ${qaStatus.data.completed ? "verified" : "not recorded"}`,
+          `本日のこのQAブラウザー · 訪問 ${qaStatus.data.visited ? "確認" : "なし"} / 開始 ${qaStatus.data.started ? "確認" : "なし"} / 提出・振り返り ${qaStatus.data.completed ? "確認" : "なし"}`)
+          : l("아직 기록을 확인하지 못했습니다. 로그인한 테스트 계정에서 확인해 주세요. 전체 참여 지표는 운영자만 볼 수 있습니다.", "Events are not confirmed yet. Check from a signed-in test account. Only admins can see overall participant metrics.", "記録をまだ確認できませんでした。ログイン済みのテストアカウントで確認してください。全体の参加指標は管理者のみ確認できます。")}</p>
+    </div>;
 }
