@@ -125,6 +125,17 @@ describe("public app packaging and discovery", () => {
   const html = read("client/index.html");
   const manifest = JSON.parse(read("client/public/manifest.webmanifest"));
   const config = JSON.parse(read("vercel.json"));
+  it("keeps the Korean search description concise and consistent after the introduction loads", () => {
+    const descriptions = [...html.matchAll(/<meta name="description" content="([^"]+)"/g)];
+    expect(descriptions).toHaveLength(1);
+    const description = descriptions[0][1];
+    expect([...description].length).toBeLessThanOrEqual(80);
+    expect(description).toContain("SemiGuard AI(세미가드 에이아이)");
+    expect(description).toContain("가상 장비");
+    expect(description).toContain("교육 플랫폼");
+    const koreanCopy = read("client/src/pages/Welcome.tsx").split("const welcomeCopy = {")[1].split("  en: {")[0];
+    expect(koreanCopy.match(/description: "([^"]+)"/)?.[1]).toBe(description);
+  });
   it("keeps the approved Google ownership tag in the initial head, without JavaScript", () => {
     const tag = '<meta name="google-site-verification" content="u2D1VsEA4N2qCg6dtiSqT5B8HbEsV1B_D02plBi78IU" />';
     const head = html.match(/<head>([\s\S]*?)<\/head>/)![1];
