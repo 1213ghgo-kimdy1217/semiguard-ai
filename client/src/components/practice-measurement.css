@@ -1,0 +1,17 @@
+.sg-measurement { margin: 24px 0; border: 1px solid #52635b; border-radius: 14px; background: #17211d; color: #edf0eb; font-size: 14px; line-height: 1.75; }
+.sg-measurement summary { cursor: pointer; padding: 16px 20px; font-weight: 600; }
+.sg-measurement summary span { display: inline-block; margin-left: 12px; color: #e4aa55; font-family: monospace; }
+.sg-measurement-body { padding: 0 20px 20px; }
+.sg-measurement-body p { margin: 0 0 14px; color: #bfcac2; }
+.sg-measurement-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.sg-measurement label { display: flex; gap: 10px; align-items: flex-start; }
+.sg-measurement input { width: 20px; height: 20px; margin-top: 3px; flex-shrink: 0; accent-color: #e4aa55; }
+.sg-measurement button { min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #91cfc2; background: #24352d; color: #edf0eb; }
+.sg-measurement button:disabled { opacity: .5; cursor: not-allowed; }
+.sg-measurement :focus-visible { outline: 2px solid #e4aa55; outline-offset: 4px; }
+.sg-site > .sg-measurement { margin: 24px max(24px, calc((100% - 1120px)/2)); }
+.sg-metrics-form { display: flex; flex-wrap: wrap; gap: 16px; margin: 24px 0; align-items: end; }
+.sg-metrics-form label { display: grid; gap: 8px; }
+.sg-metrics-form input { color-scheme: dark; padding: 12px; background: #17211d; border: 1px solid #52635b; border-radius: 8px; color: #edf0eb; }
+.sg-metrics-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+.sg-metrics-table th, .sg-metrics-table td { padding: 14px 8px; text-align: left; border-bottom: 1px solid #52635b; }

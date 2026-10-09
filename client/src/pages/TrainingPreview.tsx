@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "../_core/hooks/useAuth";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import PracticeMeasurementConsent from "../components/PracticeMeasurement";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import { etchSample, etchSignals, type EtchSignal } from "../../../shared/etchScenario";
 import "./etch-training.css";
@@ -44,6 +45,7 @@ export function TrainingPreviewContent({ language, setLanguage, authenticated, i
       </nav>
     </header>
     <main className="et-main" id="preview-main">
+      <PracticeMeasurementConsent />
       <div className="et-meta"><span>GUEST PREVIEW / 30-SECOND SAMPLE</span><span>{l("교육용 가상 값 · 실제 제어 없음", "Synthetic teaching values · no physical control", "教育用仮想値 · 実際の制御なし")}</span></div>
       <section className="tp-intro" aria-labelledby="preview-title">
         <p className="et-eyebrow">OBSERVE FIRST. PRACTISE AFTER SIGN-IN.</p>

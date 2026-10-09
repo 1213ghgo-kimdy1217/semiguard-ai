@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
+import PracticeMeasurementConsent, { usePracticeMeasurementTracking } from "../components/PracticeMeasurement";
 import ProcessEquipmentReference from "../components/ProcessEquipmentReference";
 import ProcessCriteriaFeedback from "../components/ProcessCriteriaFeedback";
 import ProcessEvidenceReview, { ProcessRecordContext } from "../components/ProcessEvidenceReview";
@@ -154,6 +155,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const utils = trpc.useUtils();
   const { answer } = attempt;
   const isRunning = running && stage === "observe" && !attempt.submitted && attempt.elapsed < scenario.duration;
+  usePracticeMeasurementTracking(isRunning, stage === "review" && attempt.submitted, `${storageKey}:${retryRevision}`);
   const inspectionTime = Math.min(inspectionSelection ?? attempt.elapsed, attempt.elapsed);
   const shownTime = stage === "review" ? reviewTime : inspectionTime;
   const selectedSignal = scenario.signals.find(signal => signal.id === signalId)!;
@@ -227,6 +229,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   };
   const reset = () => {
     if (saveStatus === "saving") return;
+    setRetryRevision(revision => revision + 1);
     currentSaveKey.current = undefined;
     setAttempt(emptyProcessAttempt(scenario)); setRunning(false); setSpeed(1); setInspectionSelection(null);
     setSignalId(scenario.signals[0].id); setReviewTime(scenario.duration); setSaveStatus("idle"); move("brief"); heading.current?.focus();
@@ -245,6 +248,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
       </nav>
     </header>
     <main id="process-main" className="et-main">
+      <PracticeMeasurementConsent />
       <div className="et-meta"><span>PROCESS {String(scenario.order).padStart(2, "0")} / 08</span><span>{l("교육용 가상 기록 · 장비 제어 없음", "Synthetic learning records · no equipment control", "教育用仮想記録 · 装置制御なし")}</span></div>
       <h1 tabIndex={-1} ref={heading}>{localize(scenario.title, language)}</h1>
       <ol className="pt-steps" aria-label={l("훈련 단계", "Exercise steps", "訓練の段階")}>

@@ -134,6 +134,13 @@
       "when": 1791054281795,
       "tag": "0018_training_drafts",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1791500400000,
+      "tag": "0019_practice_activity_events",
+      "breakpoints": true
     }
   ]
 }
