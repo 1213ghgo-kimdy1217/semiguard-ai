@@ -239,10 +239,12 @@ Trusted scenario context: ${JSON.stringify({ ...scenarioCoachContext(request), c
               ? "factsとchecksからそれぞれ実際の表現をそのまま抜き出してください。その表現を該当工程の仮想信号・参照基準と結び、裏付けられる点と不足する根拠を短く説明し、丁寧な疑問文を一文ずつ作ってください。意味不明な文字列なら観察根拠を読み取れないと明示してください。記載済みの計画を繰り返さず、どの比較結果が判断を裏付けるか、見直す根拠となるかを尋ねてください。疑問符で終え、変化なしの選択では逸脱を前提にしないでください。"
               : "Extract a verbatim phrase from facts and checks separately. Briefly relate each phrase to this process's virtual signals and references, explain what is supported and what evidence is missing, then ask one respectful question ending in a question mark. If a field is uninterpretable, explicitly say it gives no interpretable observation evidence. Do not repeat a stated plan: ask which comparison result would support or revise the judgment. Do not presume a deviation or onset for a no-change choice.",
         }) }],
-        // The NVIDIA adapter otherwise appends the schema as prose; the model
-        // can echo that schema instead of an instance. Keep JSON mode and the
-        // field contract, while the strict application validator stays authoritative.
-        response_format: { type: "json_object" },
+        // Lightning's hosted JSON mode has stalled in live checks. Use its plain
+        // completion path, with the same JSON instructions and strict application
+        // validation; never retry or substitute a prewritten coaching answer.
+        // Keep the existing JSON mode for other configured NVIDIA models.
+        response_format: ENV.nvidiaModel === "nvidia/nemotron-3.5-lightning-30b-a3b"
+          ? undefined : { type: "json_object" },
       });
       if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || !/^[a-zA-Z0-9._/-]{1,120}$/.test(result.model)) {
         logCoachFailure("invalid-response", "metadata");
