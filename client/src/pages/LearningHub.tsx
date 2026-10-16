@@ -4,6 +4,7 @@ import { processLessons, processOverviewSource } from "../../../shared/learningH
 import { getProcessScenario, scenarioHref } from "../../../shared/processScenarios";
 import EtchEquipmentReference from "../components/EtchEquipmentReference";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AccountLogout from "../components/AccountSession";
 import OgqLearningGuide from "../components/OgqLearningGuide";
 import ProcessConceptFigure from "../components/ProcessConceptFigure";
 import { localizeLesson } from "../lib/learningLanguage";
@@ -23,7 +24,7 @@ export default function LearningHub() {
       .filter(p => [p.title, p.koreanTitle, p.english, p.concept, p.input, p.output, p.evidence, p.equipment].join(" ").toLocaleLowerCase().includes(term));
   }, [language, query]);
   return <div className="et-app lh-app">
-    <header className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard</Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/training">{l("시나리오 훈련", "Scenario training", "シナリオ訓練")}</Link><Link href="/live">{l("자유 관찰", "Free observation", "自由観察")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /></nav></header>
+    <header className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard</Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/training">{l("시나리오 훈련", "Scenario training", "シナリオ訓練")}</Link><Link href="/live">{l("자유 관찰", "Free observation", "自由観察")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></nav></header>
     <main id="learning-main" className="et-main">
       <p className="et-eyebrow">PROCESS FIELD GUIDE</p>
       <h1>{l("공정을 이해하면,", "Understand the process,", "工程を理解すると、")}<br />{l("신호를 읽는 맥락이 생깁니다.", "then interpret the signal in context.", "信号を読む文脈が見えてきます。")}</h1>

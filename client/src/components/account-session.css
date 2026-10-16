@@ -1,0 +1,7 @@
+.sg-account-session{display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:100%}
+.sg-account-logout{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:8px 12px;border:1px solid #647369;border-radius:5px;background:#222d27;color:#edf0eb;font:inherit;font-size:13px;line-height:1.4;cursor:pointer;white-space:nowrap}
+.sg-account-logout:hover{background:#304136;border-color:#e4aa55}
+.sg-account-logout:focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
+.sg-account-logout:disabled{cursor:wait;opacity:.65}
+.sg-account-session [role=alert]{max-width:270px;font-size:12px;line-height:1.5;color:#f3bd96;overflow-wrap:anywhere}
+@media(max-width:760px){.sg-account-session{flex-shrink:0}.sg-account-session [role=alert]{flex-basis:100%}}

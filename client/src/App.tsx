@@ -5,6 +5,7 @@ import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LearningAssistant from "./components/LearningAssistant";
 import PracticeAccess from "./components/PracticeAccess";
+import { AccountSessionProvider } from "./components/AccountSession";
 import { PracticeMeasurementProvider } from "./components/PracticeMeasurement";
 import GoogleAnalyticsConsent, { GoogleAnalyticsProvider } from "./components/GoogleAnalytics";
 import TrainingPreview from "./pages/TrainingPreview";
@@ -345,11 +346,11 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          <GoogleAnalyticsProvider>
+          <AccountSessionProvider><GoogleAnalyticsProvider>
             <PracticeMeasurementProvider><Router /></PracticeMeasurementProvider>
             <GoogleAnalyticsConsent />
           </GoogleAnalyticsProvider>
-          <LearningAssistant />
+          <LearningAssistant /></AccountSessionProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

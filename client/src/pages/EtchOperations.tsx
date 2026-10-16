@@ -5,6 +5,7 @@ import { ETCH_DURATION, etchPhase, etchSignals, type EtchSignal } from "../../..
 import { operationsStorageKey, emptyOperationsSession, firstPersistentOutside, nextOperationsTime, operationsEvidence, restoreOperationsSession, validOperationsNote, type OperationsNote } from "../../../shared/etchOperations";
 import { SignalChart } from "./EtchTraining";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AccountLogout from "../components/AccountSession";
 import { etchSignalLocation, etchSignalName } from "../lib/etchLanguage";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import "./etch-training.css";
@@ -83,7 +84,7 @@ export default function EtchOperations({ userId }: { userId: number }) {
 
   return <div className="et-app op-app">
     <a className="et-skip" href="#operations-main">{l("관찰 작업대로 이동", "Skip to observation workspace", "観察ワークスペースへ移動")}</a>
-    <header className="et-header"><Link className="et-brand" href="/dashboard"><b>SG</b> SemiGuard <small>SIMULATION</small></Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/dashboard">{l("4센서 대시보드", "Four-sensor dashboard", "4センサーダッシュボード")}</Link><Link href="/live">{l("자유 관찰", "Free observation", "自由観察")}</Link><Link href="/training">{l("시나리오 훈련", "Scenario training", "シナリオ訓練")}</Link><Link href="/learn">{l("8대 공정 학습", "Eight processes", "8大工程の学習")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /></nav></header>
+    <header className="et-header"><Link className="et-brand" href="/dashboard"><b>SG</b> SemiGuard <small>SIMULATION</small></Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/dashboard">{l("4센서 대시보드", "Four-sensor dashboard", "4センサーダッシュボード")}</Link><Link href="/live">{l("자유 관찰", "Free observation", "自由観察")}</Link><Link href="/training">{l("시나리오 훈련", "Scenario training", "シナリオ訓練")}</Link><Link href="/learn">{l("8대 공정 학습", "Eight processes", "8大工程の学習")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></nav></header>
     <main id="operations-main" className="et-main">
       <div className="et-meta"><span>CHAMBER A / OBSERVATION WORKSPACE</span><span>{l("가상 신호 · 실제 설비 연결 및 제어 없음", "Synthetic signals · no real-equipment connection or control", "仮想信号・実際の装置への接続・制御なし")}</span></div>
       <div className="et-workhead"><div><p className="et-eyebrow">OPERATIONAL OBSERVATION / NOT A QUIZ</p><h1>{l("식각 챔버 관찰 작업대", "Etch-chamber observation workspace", "エッチングチャンバー観察ワークスペース")}</h1><p className="et-lead">{l("한 대의 가상 장비에서 무엇이 달라졌는지 확인하고, 사실과 가능한 설명을 분리해 기록합니다.", "See what changed in one synthetic piece of equipment, then record facts separately from possible explanations.", "一台の仮想装置で何が変わったかを確認し、事実と考えられる説明を分けて記録します。")}</p></div><div className="et-clock"><strong>{clock(session.elapsed)}</strong><span>{session.elapsed === ETCH_DURATION ? l("가상 실행 완료", "Synthetic run complete", "仮想実行完了") : active ? l("3초마다 관측 중", "Observing every 3 seconds", "3秒ごとに観測中") : session.elapsed === 0 ? l("시작 전", "Not started", "開始前") : l("일시정지", "Paused", "一時停止")}</span></div></div>
