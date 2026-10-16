@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import LearningAssistant from "./components/LearningAssistant";
 import PracticeAccess from "./components/PracticeAccess";
 import { PracticeMeasurementProvider } from "./components/PracticeMeasurement";
+import GoogleAnalyticsConsent, { GoogleAnalyticsProvider } from "./components/GoogleAnalytics";
 import TrainingPreview from "./pages/TrainingPreview";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Login } from "./pages/Login";
@@ -344,7 +345,10 @@ function App() {
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          <PracticeMeasurementProvider><Router /></PracticeMeasurementProvider>
+          <GoogleAnalyticsProvider>
+            <PracticeMeasurementProvider><Router /></PracticeMeasurementProvider>
+            <GoogleAnalyticsConsent />
+          </GoogleAnalyticsProvider>
           <LearningAssistant />
         </TooltipProvider>
       </ThemeProvider>

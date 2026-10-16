@@ -15,3 +15,5 @@
 .sg-metrics-form input { color-scheme: dark; padding: 12px; background: #17211d; border: 1px solid #52635b; border-radius: 8px; color: #edf0eb; }
 .sg-metrics-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
 .sg-metrics-table th, .sg-metrics-table td { padding: 14px 8px; text-align: left; border-bottom: 1px solid #52635b; }
+.sg-ga-footer { display: flow-root; background: #101916; padding: 1px max(20px, calc((100% - 1120px)/2)); }
+.sg-ga-footer a { color: #a4dbc9; text-decoration: underline; text-underline-offset: 3px; }

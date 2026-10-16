@@ -4,6 +4,7 @@ import { trpc } from "../lib/trpc";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import { practiceMeasurementTransition, type MeasurementEvent } from "../../../shared/practiceMeasurement";
 import "./practice-measurement.css";
+import { useGoogleAnalyticsPractice } from "./GoogleAnalytics";
 
 const syncKey = "semiguard:measurement-consent:v1";
 type Controls = { consented: boolean; qa: boolean; busy: boolean; failed: boolean;
@@ -76,6 +77,7 @@ export function PracticeMeasurementProvider({ children }: { children: ReactNode 
 }
 
 export function usePracticeMeasurementTracking(running: boolean, reviewed: boolean, cycle: string) {
+  useGoogleAnalyticsPractice(running, reviewed, cycle);
   const controls = useContext(Context);
   const state = useRef({ cycle, started: false });
   useEffect(() => {
