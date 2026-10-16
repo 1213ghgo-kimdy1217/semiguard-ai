@@ -8,6 +8,7 @@ import { tr, useProductLanguage } from "../lib/productLanguage";
 import { etchSignalName } from "../lib/etchLanguage";
 import { trpc } from "../lib/trpc";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AccountLogout from "../components/AccountSession";
 import TrainingShareControls from "../components/TrainingShareControls";
 import ProcessEvidenceReview, { ProcessRecordContext } from "../components/ProcessEvidenceReview";
 import "./etch-training.css";
@@ -44,7 +45,7 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
   const sample = (signal: string, at: number) => isEtch ? etchSample(signal as typeof etchSignals[number]["id"], at) : processSample(scenario!, signal, at);
   const clock = (value: number) => `${Math.floor(value / 60).toString().padStart(2, "0")}:${(value % 60).toString().padStart(2, "0")}`;
   const chart = scenario && signalId ? Array.from({ length: duration + 1 }, (_, at) => sample(signalId, at)) : [];
-  return <div className="et-app"><header ref={historyHeader} className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard</Link><ProductLanguageSelect language={language} onChange={setLanguage} /></header>
+  return <div className="et-app"><header ref={historyHeader} className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard</Link><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></header>
     <main className="et-main"><p className="et-eyebrow">MY SAVED REASONING / READ ONLY</p><h1>{l("내 판단 기록", "My reasoning record", "自分の判断記録")}</h1><Link className="et-linkbutton" href="/training">{l("학습 기록 목록으로", "Back to practice history", "練習記録一覧へ")}</Link>
       {!validId ? <p role="alert">{l("올바르지 않은 기록 주소입니다.", "Invalid record address.", "記録のアドレスが正しくありません。")}</p>
         : auth.isLoading ? <p role="status">{l("로그인 확인 중…", "Checking sign-in…", "ログインを確認中…")}</p>

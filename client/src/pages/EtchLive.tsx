@@ -6,6 +6,7 @@ import { addLiveNote, emptyLiveSession, restoreLegacyLiveSession, restoreLiveSes
 import { SignalChart, EvidenceSnapshot } from "./EtchTraining";
 import SensorFileAnalysis from "./SensorFileAnalysis";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AccountLogout from "../components/AccountSession";
 import { etchSignalLocation, etchSignalName } from "../lib/etchLanguage";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import "./etch-training.css";
@@ -84,7 +85,7 @@ export default function EtchLive() {
   }
   return <div className="et-app">
     <a className="et-skip" href="#live-main">{l("자유 관찰 내용으로 이동", "Skip to free observation", "自由観察の内容へ移動")}</a>
-    <header className="et-header"><a className="et-brand" href="/training"><b>SG</b> SemiGuard</a><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><a href="/learn">{l("8대 공정 학습", "Eight processes", "8大工程の学習")}</a><a href="/training">{l("시나리오 훈련", "Scenario training", "シナリオ訓練")}</a><a href="/dashboard">{l("4센서 대시보드", "Four-sensor dashboard", "4センサーダッシュボード")}</a><ProductLanguageSelect language={language} onChange={setLanguage} /></nav></header>
+    <header className="et-header"><a className="et-brand" href="/training"><b>SG</b> SemiGuard</a><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><a href="/learn">{l("8대 공정 학습", "Eight processes", "8大工程の学習")}</a><a href="/training">{l("시나리오 훈련", "Scenario training", "シナリオ訓練")}</a><a href="/dashboard">{l("4센서 대시보드", "Four-sensor dashboard", "4センサーダッシュボード")}</a><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></nav></header>
     <main id="live-main" className="et-main">
       <div className="et-meta"><span>FREE ANALYSIS / DATA SOURCE</span><span>{l("실제 장비 연결 및 제어 없음", "No real-equipment connection or control", "実際の装置への接続・制御なし")}</span></div>
       <div className="et-actions" role="group" aria-label={l("분석할 데이터 선택", "Select a data source", "分析するデータを選択")}><Button variant={mode === "synthetic" ? "default" : "outline"} aria-pressed={mode === "synthetic"} onClick={() => setMode("synthetic")}>{l("가변 가상 스트림", "Variable synthetic stream", "変化する仮想ストリーム")}</Button><Button variant={mode === "file" ? "default" : "outline"} aria-pressed={mode === "file"} onClick={() => { setRunning(false); setMode("file"); }}>{l("기록 CSV 분석", "Recorded CSV analysis", "記録CSVの分析")}</Button></div>

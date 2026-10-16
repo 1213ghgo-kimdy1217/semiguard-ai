@@ -11,6 +11,7 @@ import { ArrowLeft, ArrowRight, Flag, Pause, Play } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "../components/ui/button";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AccountLogout from "../components/AccountSession";
 import ScenarioJudgmentCoach from "../components/ScenarioJudgmentCoach";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
@@ -244,7 +245,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
         <Link href="/training">{l("학습·연습 선택", "Choose practice", "練習を選ぶ")}</Link>
         <Link href="/learn">{l("8대 공정 학습", "Process learning", "8大工程学習")}</Link>
         <Link href="/live">{l("자유 분석", "Free analysis", "自由分析")}</Link>
-        <ProductLanguageSelect language={language} onChange={setLanguage} />
+        <ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} />
       </nav>
     </header>
     <main id="process-main" className="et-main">

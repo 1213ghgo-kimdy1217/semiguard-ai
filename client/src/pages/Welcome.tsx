@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { ArrowDown, ArrowRight, ArrowUpRight, Activity, Check, ScanLine } from "lucide-react";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AccountLogout from "../components/AccountSession";
 import AppInstall from "../components/AppInstall";
 import PracticeMeasurementConsent from "../components/PracticeMeasurement";
 import { useProductLanguage, tr } from "../lib/productLanguage";
@@ -139,7 +140,7 @@ export default function Welcome() {
       <a className="sg-skip" href="#sg-content">{t.skip}</a>
       <header className="sg-nav">
         <Link href="/welcome" className="sg-brand" aria-label={tr(language, "SemiGuard AI 홈", "SemiGuard AI home", "SemiGuard AI ホーム")}><span className="sg-brand-symbol" aria-hidden="true">SG</span><span>SemiGuard<span className="sg-brand-ai"> AI</span></span></Link>
-        <nav aria-label={t.menu}><a href="#workflow">{t.workflow}</a><a href="#principles">{t.principles}</a><ProductLanguageSelect language={language} onChange={setLanguage} /><Link href="/login" className="sg-nav-login">{t.login} <ArrowUpRight size={15} /></Link></nav>
+        <nav aria-label={t.menu}><a href="#workflow">{t.workflow}</a><a href="#principles">{t.principles}</a><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /><Link href="/login" className="sg-nav-login">{t.login} <ArrowUpRight size={15} /></Link></nav>
       </header>
 
       <section className="sg-hero" id="sg-content">

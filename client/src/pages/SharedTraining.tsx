@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { trpc } from "../lib/trpc";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AccountLogout from "../components/AccountSession";
 import { getProcessScenario, scenarioHref } from "../../../shared/processScenarios";
 import { etchSignalName } from "../lib/etchLanguage";
 import "./etch-training.css";
@@ -18,7 +19,7 @@ export default function SharedTraining() {
   const record = query.data?.record;
   const scenario = record ? getProcessScenario(record.scenarioId) : undefined;
   const signalName = record && scenario ? record.signal === "none" ? l("차이 없음", "No deviation", "差異なし") : scenario.processId === "etch" ? etchSignalName(language, record.signal as "pressure" | "flow" | "rf" | "temperature") : l(...scenario.signals.find(s => s.id === record.signal)!.name) : "";
-  return <div className="et-app"><header className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard</Link><ProductLanguageSelect language={language} onChange={setLanguage} /></header><main className="et-main">
+  return <div className="et-app"><header className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard</Link><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></header><main className="et-main">
     <p className="et-eyebrow">SHARED CHOICES / READ ONLY</p><h1>{l("공유된 판단 결과", "Shared reasoning result", "共有された判断結果")}</h1>
     {!valid || query.isError ? <p role="alert">{l("유효하지 않거나 만료된 공유 링크입니다.", "This share link is invalid or expired.", "共有リンクが無効か、有効期限が切れています。")}</p> : query.isLoading ? <p role="status">{l("불러오는 중…", "Loading…", "読み込み中…")}</p> : record && scenario ? <section className="et-panel"><h2>{l(...scenario.title)}</h2>
       <dl><dt>{l("선택한 관측 항목", "Chosen observation", "選択した観測項目")}</dt><dd>{signalName}</dd><dt>{l("판단한 변화 시작", "Estimated onset", "判断した変化開始")}</dt><dd>{record.onset < 0 ? l("해당 없음", "Not applicable", "該当なし") : `${record.onset}${l("초", "s", "秒")}`}</dd>

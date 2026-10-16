@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "../_core/hooks/useAuth";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import AccountLogout from "../components/AccountSession";
 import PracticeMeasurementConsent from "../components/PracticeMeasurement";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import { etchSample, etchSignals, type EtchSignal } from "../../../shared/etchScenario";
@@ -41,7 +42,7 @@ export function TrainingPreviewContent({ language, setLanguage, authenticated, i
         <Link href="/welcome">{l("소개", "Introduction", "紹介")}</Link>
         <Link href="/learn">{l("공정 개념 읽기", "Read process concepts", "工程の概念を読む")}</Link>
         <Link href={authenticated ? "/training" : "/login"}>{l(authenticated ? "내 학습 공간" : "로그인", authenticated ? "My workspace" : "Log in", authenticated ? "自分の学習画面" : "ログイン")}</Link>
-        <ProductLanguageSelect language={language} onChange={setLanguage} />
+        <ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} />
       </nav>
     </header>
     <main className="et-main" id="preview-main">
