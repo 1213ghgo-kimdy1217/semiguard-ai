@@ -1,10 +1,7 @@
-# Packaging draft implementation
+# Packaging draft status
 
-Base main: 6b01414fa417c90e11b6d15aa6c5622162f49d7c. Branch feat/packaging-observed-return.
-Separate from EDS PR #93; no EDS dependency.
+Current status is documented in [HANDOFF.md](HANDOFF.md).
 
-New component PackagingObservationWorkspace.tsx provides conceptual die/wire/substrate cross-section, observed-only pinned/selected connection index comparison and on-demand first band exit/return from original records. No rendered broken wires or repairs, no future samples, no cause-resolution claim. State is local viewing-only. Scoped responsive CSS and regression tests added.
+The initial unmounted component has now been integrated in packaging-only ProcessRecordContext by [33790d8](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/33790d8a2bdb88fdb734a1cd199c5bfd5df51dd3); Japanese synthetic-record label fixed. Existing observation/review selected-time wiring is reused. Source diff/read-back checks succeeded, but TypeScript, tests, build and browser flows remain NOT EXECUTED.
 
-INCOMPLETE: component not yet mounted in ProcessTraining/ProcessRecordContext. Integration is pending; this commit alone does not change the application screen. Draft must not be merged as complete.
-
-pnpm check/test/build previously unavailable in this session (command not found); current code tests NOT RUN. No browser, keyboard, narrow-screen, account, AI or production flow validation. No merge/deploy/settings/secret/DB changes. Need source review, integration, tests in approved existing environment, actual browser validation and docs/HANDOFF.md final links.
+Draft [PR #94](https://github.com/1213ghgo-kimdy1217/semiguard-ai/pull/94), no merge or production deployment. EDS is independent PR #93; preserve both mounts when eventually combining.
