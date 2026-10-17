@@ -43,8 +43,10 @@ describe("visible practice options and four-sensor entry briefing", () => {
     expect(page).toContain('href="/live"');
     expect(page).toContain('attempt.elapsed > 0 ? "observe" : "brief"');
     expect(page).toContain('stage === "home" && historyReturn.current ? historyHeading.current : heading.current');
-    expect(page).toContain('target?.focus({ preventScroll: true })');
-    expect(page).toContain('target?.scrollIntoView({ block: "start" })');
+    expect(page).toContain('focusPracticeSection(target)');
+    const navigation = readFileSync("client/src/lib/practiceNavigation.ts", "utf8");
+    expect(navigation).toContain('target?.focus({ preventScroll: true })');
+    expect(navigation).toContain('target?.scrollIntoView({ block: "start", behavior: "auto" })');
     expect(readFileSync("client/src/pages/etch-training.css", "utf8")).toContain("scroll-margin-top:110px");
     expect(page).not.toContain('setLocation("/learn")');
     expect(page).not.toContain('window.location.href = "/dashboard"');
