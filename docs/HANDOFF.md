@@ -1,24 +1,30 @@
 # SemiGuard handoff — deposition/implantation concept, stage 1
 
-## Base / branch
-main checked: 6b01414fa417c90e11b6d15aa6c5622162f49d7c (PR #92). New branch `feat/deposition-implantation-concept` created from this main; no reset/revert. EDS #93 and packaging #94 remain separate unmerged drafts from this base; this branch does NOT contain those changes.
+## Base / links
+main checked: 6b01414fa417c90e11b6d15aa6c5622162f49d7c (PR #92). Branch `feat/deposition-implantation-concept` created from this main; no reset/revert.
+Implementation: [dff2c94](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/dff2c94a94e736cf42057cffba7a4400c2b638c5).
+Draft PR: [#95](https://github.com/1213ghgo-kimdy1217/semiguard-ai/pull/95).
+EDS #93 and packaging #94 remain separate drafts from this base; not included here. Main merge and production release not performed.
 
 ## Changes
-- client/src/components/DepositionImplantationConcept.tsx: native buttons switch between surface-film formation and ions introduced into substrate. Separate SVG structures and evidence explanations in ko/en/ja. Explicit non-measurement geometry; no thickness/depth/dose/defect inference. Local viewing state only.
-- client/src/components/deposition-implantation-concept.css: scoped responsive layout and visible keyboard focus.
-- client/src/components/ProcessEquipmentReference.tsx: mounts concept only for deposition, before existing manufacturer references. This is an intentional small BRIEFING-stage change. Original references remain unchanged. It may also appear wherever this shared equipment component is reused; browser reachability not verified.
-- server/deposition-concept.test.ts: language/native-controls, deposition-only integration, safety-copy and no-data/API import assertions authored, NOT RUN. No actual stateful click test yet.
-- No scenario/answer/scoring/account-save/resume/share/AI payload/dependency/DB/secret/settings change. Existing observation evidence sorter unchanged.
+- client/src/components/DepositionImplantationConcept.tsx: native buttons switch surface-film formation / ions introduced into substrate. Separate conceptual SVGs and evidence explanations in ko/en/ja. Geometry is NOT measurement; no inferred thickness/depth/dose/defects. Local viewing state only.
+- client/src/components/deposition-implantation-concept.css: scoped responsive layout, focus styling.
+- client/src/components/ProcessEquipmentReference.tsx: deposition-only concept before original manufacturer references. This is BRIEFING/equipment context, NOT observation-stage linkage. Shared-component reuse may expose it elsewhere; browser reachability not verified.
+- server/deposition-concept.test.ts: language/native-controls, deposition-only integration, safety-copy/no-data-import assertions, authored NOT RUN. Stateful click test still needed.
+- Original observation evidence sorter and scenario/answer/scoring/account-save/resume/share/AI contracts unchanged. No dependency/DB/secret/settings changes.
 
-## Scope / incomplete work
-This is stage 1, NOT a complete observation redesign: drawings are in briefing/equipment context, NOT connected to selected observation records. No claim of dynamic film thickness or implantation outcome. Next stage should mount process concepts beside original selected evidence, preserving onInteraction pause semantics and distinct separate-inspection boundaries; do not turn index values into physical thickness/depth.
-Metal cross-section and etch chamber enhancements have NOT started. Keep existing recurrence board and 3-minute etch engine.
+## Verification actually performed
+Read committed dff2c94 files back via pinned GitHub raw URLs.
+Python source comparison PASS: ProcessEquipmentReference equals original main after removing only new import, conditional mount and fragment wrapper. Original equipment references preserved.
+Python source assertion PASS: conceptual component has no processSample/trpc/sessionStorage/localStorage/fetch imports/calls. These are source checks ONLY, not compilation/tests/browser proof.
+Earlier actual pnpm check -> pnpm test -> pnpm build attempts returned command not found (exit 127). Known unavailable runner not rerun for this revision. This revision's TypeScript/full tests/build NOT EXECUTED. No installed runtime/replacement CI/paid service. Historical 345 files/1571 tests is not current evidence.
+No actual React/browser clicks, keyboard, 320/390px, physical device, account submit/save/resume/share or live AI validation. Native controls and CSS do not prove accessibility/runtime success.
 
-## Verification
-Runner unavailable in earlier actual attempts: pnpm check -> pnpm test -> pnpm build each returned command not found (exit 127). No new runtime/CI/paid service installed. This revision's TypeScript/tests/build NOT EXECUTED. Historical 345 files/1571 tests is not current evidence. Existing branch Vercel deployment success on other PRs is not full test evidence.
-No actual browser, narrow-screen 320/390px, keyboard, account submission/save/resume/share or live AI verification. CSS/native controls do not prove accessibility or runtime correctness. Need approved existing environment for check -> test -> build then interaction checks.
+## Scope / incomplete
+Stage 1 is integrated briefing illustration, NOT completed observation redesign. Next: attach diagrams to selected evidence without implying physical thickness/depth from indices, and preserve onInteraction pause and separate-inspection boundary. Do not show future records.
+Metal cross-section and etch chamber enhancements NOT started. Preserve recurrence board and 3-minute etch engine.
 
-## Release / next handoff
-No merge or production deployment performed/requested. Automatic branch previews may be generated by existing integration; not inspected, protected access not bypassed.
-Implementation commit / draft PR links will be added after GitHub returns real identifiers.
-Next: stateful diagram and evidence linkage review; run validations; learner feedback on process-specific understanding. Core-flow regression, AI consent/evidence/uncertainty/failure/privacy quality, user validation and README/AI_USAGE/attribution/demo reconciliation remain before release. User approval needed after verification before merge/deploy.
+## Release / next work
+No main merge or production deployment requested/performed. Existing hosting may auto-create previews; uninspected, no protected-access bypass.
+Run pnpm check -> pnpm test -> pnpm build in approved existing environment; add actual switch/keyboard/narrow checks and stateful evidence linkage tests.
+Remaining release checklist: all eight observation/submit/rule-feedback/account-save/retry/checkpoint/resume/history/share/ownership flows; AI consent/bounded context/evidence attribution/uncertainty/failure/privacy/language checks; representative learner validation without learning-outcome claims; README/AI_USAGE/HANDOFF/attribution/licensing/demo reconciliation. User approval after results required before merge/deploy, then production checks separately.
