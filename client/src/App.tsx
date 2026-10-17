@@ -27,6 +27,8 @@ const ProcessTraining = lazy(() => import("./pages/ProcessTraining"));
 const TrainingHistory = lazy(() => import("./pages/TrainingHistory"));
 const SharedTraining = lazy(() => import("./pages/SharedTraining"));
 const PracticeMetrics = lazy(() => import("./pages/PracticeMetrics"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const AccountClosed = lazy(() => import("./pages/AccountSettings").then(module => ({ default: module.AccountClosed })));
 
 type LoadingLanguage = "ko" | "en" | "ja";
 type LoadingCopy = {
@@ -277,6 +279,8 @@ function OperationsForCurrentUser() {
 function Router() {
   return (
     <Switch>
+      <Route path="/account/closed"><Suspense fallback={<TrainingModuleLoading />}><AccountClosed /></Suspense></Route>
+      <Route path="/account"><ProtectedRoute><Suspense fallback={<TrainingModuleLoading />}><AccountSettings /></Suspense></ProtectedRoute></Route>
       <Route path={"/training/metrics"}>
         <Suspense fallback={<TrainingModuleLoading />}><PracticeMetrics /></Suspense>
       </Route>

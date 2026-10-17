@@ -1,6 +1,8 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
 import { z } from "zod";
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { hashPassword, verifyPassword } from "./password";
+import { accountWithdrawalSchema } from "../shared/accountWithdrawal";
+import { getWithdrawalStatus, withdrawAccount } from "./accountWithdrawal";
 import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -28,23 +30,6 @@ import { getDashboardSensorHistory } from "./semiguardDb";
 import { measurementConsentSchema, measurementEventSchema, measurementPeriodSchema } from "../shared/practiceMeasurement";
 import { readMeasurementConsent, setMeasurementConsent, recordMeasurementEvent, inspectMeasurementStorage, getMeasurementReport, getOwnMeasurementQaStatus } from "./practiceMeasurement";
 import { buildDashboardHistoryEvidence, matchesDashboardSnapshot, type DashboardHistoryEvidence } from "./dashboardHistory";
-
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = scryptSync(password, salt, 64).toString("hex");
-  return `scrypt$${salt}$${derivedKey}`;
-}
-
-function verifyPassword(password: string, encodedHash: string): boolean {
-  const [algorithm, salt, storedHex] = encodedHash.split("$");
-  if (algorithm !== "scrypt" || !salt || !storedHex || !/^[0-9a-f]+$/i.test(storedHex)) {
-    return false;
-  }
-
-  const storedKey = Buffer.from(storedHex, "hex");
-  const derivedKey = scryptSync(password, salt, storedKey.length);
-  return storedKey.length === derivedKey.length && timingSafeEqual(storedKey, derivedKey);
-}
 
 type ChatLanguage = "ko" | "en" | "ja";
 
@@ -151,6 +136,22 @@ export const appRouter = router({
       .mutation(({ ctx, input }) => saveTrainingAttempt(ctx.user.id, input.attemptKey, input.attempt)),
   }),
   auth: router({
+    withdrawalStatus: protectedProcedure.query(({ ctx }) => getWithdrawalStatus(ctx.user.id)),
+    withdraw: protectedProcedure.input(accountWithdrawalSchema).mutation(async ({ ctx, input }) => {
+      // JSON POST plus a same-origin check prevents cross-site withdrawal forms.
+      const origin = ctx.req.headers.origin;
+      let sameOrigin = false;
+      try { sameOrigin = typeof origin === "string" && ["https:", "http:"].includes(new URL(origin).protocol) && new URL(origin).host === ctx.req.headers.host; } catch { /* Reject invalid origins. */ }
+      if (!sameOrigin) throw new TRPCError({ code: "FORBIDDEN", message: "WITHDRAWAL_ORIGIN" });
+      if (ctx.req.path?.includes(",")) throw new TRPCError({ code: "BAD_REQUEST", message: "WITHDRAWAL_BATCH" });
+      const session = await sdk.verifySession(sdk.getRequestSessionToken(ctx.req));
+      const now = Math.floor(Date.now() / 1000);
+      const fresh = session?.openId === ctx.user.openId && typeof session.issuedAt === "number"
+        && session.issuedAt <= now && now - session.issuedAt <= 300;
+      const result = await withdrawAccount(ctx.user.id, input, fresh);
+      ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 });
+      return result;
+    }),
     me: publicProcedure.query(({ ctx }) => {
       if (!ctx.user) return null;
       const { id, openId, name, email, loginMethod, role } = ctx.user;

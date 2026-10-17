@@ -1,4 +1,6 @@
 import { drizzle } from "drizzle-orm/mysql2";
+import { randomUUID } from "node:crypto";
+import { ensureAccountRevocationStorage, isRevoked } from "./accountRevocations";
 import { InsertUser, socialAccountLinks, users, chatSessions, chatMessagesTable, chatFeedback, manualChunks, manualDocuments } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { and, asc, count, desc, eq, inArray, like, or } from "drizzle-orm";
@@ -18,6 +20,13 @@ export async function getDb() {
   return _db;
 }
 
+export async function isUserRevoked(openId: string) {
+  const database = await getDb();
+  if (!database) throw new Error("Database is not configured");
+  await ensureAccountRevocationStorage(database);
+  return isRevoked(database, openId);
+}
+
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
@@ -30,6 +39,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   try {
+    await ensureAccountRevocationStorage(db);
+    if (await isRevoked(db, user.openId)) throw new Error("Account is unavailable");
     const values: InsertUser = {
       openId: user.openId,
     };
@@ -204,7 +215,8 @@ export async function createLocalUser(input: {
     throw new Error("Database is not configured");
   }
 
-  const openId = `local_${input.badgeNumber}`;
+  // A re-registration must never inherit old sessions for the same badge number.
+  const openId = `local_${randomUUID()}`;
   await db.insert(users).values({
     openId,
     badgeNumber: input.badgeNumber,

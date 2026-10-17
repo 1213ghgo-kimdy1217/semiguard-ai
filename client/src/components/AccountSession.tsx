@@ -5,9 +5,11 @@ import { trpc } from "../lib/trpc";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { finishLocalLogout, isLogoutSignal, LOGOUT_SIGNAL_KEY, requestLogout } from "../lib/logoutSession";
 import "./account-session.css";
+import { clearWithdrawnDrafts, WITHDRAWAL_COMPLETION_KEY } from "../lib/withdrawalCleanup";
 
-type SessionControls = { signedIn: boolean; pending: boolean; failed: boolean; logout: () => Promise<void> };
+type SessionControls = { signedIn: boolean; pending: boolean; failed: boolean; logout: () => Promise<void>; completeWithdrawal: (userId: number) => Promise<void> };
 const SessionContext = createContext<SessionControls | null>(null);
+export const useAccountSession = () => useContext(SessionContext);
 
 export function AccountSessionProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -73,7 +75,16 @@ export function AccountSessionProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return <SessionContext.Provider value={{ signedIn, pending, failed, logout }}>{children}</SessionContext.Provider>;
+  const completeWithdrawal = async (userId: number) => {
+    busy.current = true;
+    setPending(true);
+    try { clearWithdrawnDrafts(sessionStorage, userId); } catch { /* Restricted browser storage. */ }
+    try { sessionStorage.setItem(WITHDRAWAL_COMPLETION_KEY, String(Date.now())); } catch { /* Completion screen will not assert success without the receipt. */ }
+    try { localStorage.setItem(LOGOUT_SIGNAL_KEY, JSON.stringify({ type: "logout", at: Date.now() })); } catch { /* Broadcast fallback. */ }
+    try { channel.current?.postMessage("logout"); } catch { /* Storage fallback. */ }
+    await finishLocalLogout({ ...localPorts(), navigate: () => window.location.replace("/account/closed") });
+  };
+  return <SessionContext.Provider value={{ signedIn, pending, failed, logout, completeWithdrawal }}>{children}</SessionContext.Provider>;
 }
 
 export function AccountLogoutView({ language, signedIn, pending, failed, onLogout }: {
@@ -82,6 +93,7 @@ export function AccountLogoutView({ language, signedIn, pending, failed, onLogou
   if (!signedIn) return null;
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   return <div className="sg-account-session">
+    <a className="sg-account-logout" href="/account">{l("계정 관리", "Account", "アカウント管理")}</a>
     <button type="button" className="sg-account-logout" onClick={onLogout} disabled={pending}
       aria-busy={pending || undefined} title={l("저장된 학습 기록은 유지됩니다.", "Saved learning records are kept.", "保存済みの学習記録は残ります。")}
     ><LogOut size={16} aria-hidden="true" />{pending ? l("로그아웃 중…", "Logging out…", "ログアウト中…") : l("로그아웃", "Log out", "ログアウト")}</button>
