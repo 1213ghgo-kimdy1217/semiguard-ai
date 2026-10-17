@@ -1,6 +1,7 @@
 import React from "react";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { type ProcessAnswer, type ProcessScenario, type processCriteria } from "../../../shared/processScenarios";
+import { processReviewSignal } from "../lib/processReviewNavigation";
 
 const clock = (time: number) => `${Math.floor(time / 60).toString().padStart(2, "0")}:${(time % 60).toString().padStart(2, "0")}`;
 
@@ -9,7 +10,7 @@ export default function ProcessCriteriaFeedback({ scenario, answer, matched, lan
   answer: ProcessAnswer;
   matched: NonNullable<ReturnType<typeof processCriteria>>;
   language: ProductLanguage;
-  onReviewPoint: (time: number) => void;
+  onReviewPoint: (time: number, signalId?: string) => void;
 }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const localize = (values: readonly [string, string, string]) => values[language === "ko" ? 0 : language === "en" ? 1 : 2];
@@ -55,9 +56,9 @@ export default function ProcessCriteriaFeedback({ scenario, answer, matched, lan
     </dl>
     <p>{row.help}</p>
     {row.key === "onsetMatched" ? <div className="et-actions pt-criterion-actions">
-      {ownOnset !== null ? <button type="button" onClick={() => onReviewPoint(ownOnset)}>{l(`${ownOnset}초의 내 시작 판단 보기`, `Review your onset at ${ownOnset} s`, `自分の開始判断（${ownOnset}秒）を見る`)}</button> : null}
-      {scenario.changeTime !== null ? <button type="button" onClick={() => onReviewPoint(scenario.changeTime!)}>{l(`${scenario.changeTime}초의 구성상 시작 보기`, `Review designed onset at ${scenario.changeTime} s`, `構成上の開始（${scenario.changeTime}秒）を見る`)}</button> : null}
-      <button type="button" onClick={() => onReviewPoint(scenario.duration)}>{l("전체 기록과 정상 참고 비교", "Compare the full record with its normal reference", "全記録と正常参照を比較")}</button>
+      {ownOnset !== null ? <button type="button" onClick={() => onReviewPoint(ownOnset, processReviewSignal(scenario, answer.signal))}>{l(`${ownOnset}초의 내 시작 판단 보기`, `Review your onset at ${ownOnset} s`, `自分の開始判断（${ownOnset}秒）を見る`)}</button> : null}
+      {scenario.changeTime !== null ? <button type="button" onClick={() => onReviewPoint(scenario.changeTime!, processReviewSignal(scenario, scenario.expectedSignal))}>{l(`${scenario.changeTime}초의 구성상 시작 보기`, `Review designed onset at ${scenario.changeTime} s`, `構成上の開始（${scenario.changeTime}秒）を見る`)}</button> : null}
+      <button type="button" onClick={() => onReviewPoint(scenario.duration, processReviewSignal(scenario))}>{l("전체 기록과 정상 참고 비교", "Compare the full record with its normal reference", "全記録と正常参照を比較")}</button>
     </div> : null}
   </article>)}</>;
 }

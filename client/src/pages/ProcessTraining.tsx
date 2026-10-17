@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
 import "../components/process-studio.css";
+import { processReviewSignal, processEventReviewSignal } from "../lib/processReviewNavigation";
 import ObservationComparison, { useObservationComparison } from "../components/ObservationComparison";
 import PracticeMeasurementConsent, { usePracticeMeasurementTracking } from "../components/PracticeMeasurement";
 import ProcessEquipmentReference from "../components/ProcessEquipmentReference";
@@ -133,6 +134,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const [coachReviewActive, setCoachReviewActive] = useState(false);
   const [reviewReturnTarget, setReviewReturnTarget] = useState<"criteria" | "timeline" | null>(null);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
+  const reviewGraph = useRef<HTMLDetailsElement>(null);
   const productHeader = useRef<HTMLElement>(null);
   const criteriaHeading = useRef<HTMLHeadingElement>(null);
   const timelineHeading = useRef<HTMLHeadingElement>(null);
@@ -142,10 +144,11 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
     const offset = (productHeader.current?.getBoundingClientRect().height ?? 90) + 20;
     window.scrollTo({ top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - offset), behavior: "auto" });
   };
-  const reviewChoicePoint = (time: number, source: "criteria" | "timeline") => {
+  const reviewChoicePoint = (time: number, source: "criteria" | "timeline", signal?: string) => {
     if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
     coachReturn.current = null; setCoachReviewActive(false);
-    setReviewReturnTarget(source); setReviewTime(time);
+    setReviewReturnTarget(source); setSignalId(processReviewSignal(scenario, signal)); setReviewTime(time);
+    if (reviewGraph.current) reviewGraph.current.open = true;
     reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
     alignReviewHeading(reviewHeading.current);
   };
@@ -156,7 +159,8 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   };
   const reviewCoachPoint = (time: number, returnToQuestion: () => void) => {
     if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
-    setReviewReturnTarget(null); coachReturn.current = returnToQuestion; setReviewTime(time); setCoachReviewActive(true);
+    setReviewReturnTarget(null); coachReturn.current = returnToQuestion; setSignalId(processReviewSignal(scenario, answer.signal)); setReviewTime(time); setCoachReviewActive(true);
+    if (reviewGraph.current) reviewGraph.current.open = true;
     reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
     alignReviewHeading(reviewHeading.current);
   };
@@ -307,7 +311,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
       </> : null}
 
       {stage === "observe" || stage === "review" ? <section className="et-monitor">
-        <div className="et-workhead"><div><p className="et-eyebrow">{stage === "review" ? "TIMELINE REVIEW" : "VIRTUAL RECORD OBSERVATION"}</p><h2 ref={reviewHeading} tabIndex={stage === "review" ? -1 : undefined}>{localize(selectedSignal.name, language)}</h2></div>
+        <div className="et-workhead"><div><p className="et-eyebrow">{stage === "review" ? "TIMELINE REVIEW" : "VIRTUAL RECORD OBSERVATION"}</p><h2>{localize(selectedSignal.name, language)}</h2></div>
           <div className="et-clock"><strong>{clock(shownTime)}</strong><span>{l("가상 경과", "Virtual elapsed", "仮想経過")} / {clock(scenario.duration)}</span></div></div>
         <div className="et-sensors pt-sensors">{scenario.signals.map(signal => {
           const sample = processSample(scenario, signal.id, shownTime);
@@ -350,7 +354,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
         </> : scenario.processId === "eds" || scenario.processId === "packaging" ? <ProcessRecordContext scenario={scenario} time={shownTime} language={language} onInteraction={pauseObservationView} selectedSignal={signalId} onSignalChange={signal => { pauseObservationView(); setSignalId(signal); }} /> : null}
         <ObservationComparison key={`${storageKey}:${retryRevision}`} scenarioId={scenario.id} signalId={signalId}
           time={shownTime} observedUntil={attempt.elapsed} language={language} {...comparisonView} onInteraction={pauseObservationView} />
-        {scenario.processId === "wafer" ? <details className="pt-reference"><summary>{l("A3 구역의 기존 시계열 비교 · 제출 기준", "Existing A3 time-series comparison · submission reference", "A3区画の既存時系列比較・提出基準")}</summary>{recordChart}</details> : scenario.processId === "oxidation" || scenario.processId === "photo" || scenario.processId === "deposition" || scenario.processId === "metal" ? <details className="pt-reference"><summary>{l("선택 신호의 시계열도 함께 보기", "Also view the selected signal's time series", "選択信号の時系列も確認する")}</summary>{recordChart}</details> : <details className="pt-reference"><summary>{l("선택 신호의 전체 그래프", "Full chart for the selected signal", "選択信号の全体グラフ")}</summary>{recordChart}</details>}
+        <details className="pt-reference" ref={reviewGraph}><summary>{scenario.processId === "wafer" ? l("A3 구역의 기존 시계열 비교 · 제출 기준", "Existing A3 time-series comparison · submission reference", "A3区画の既存時系列比較・提出基準") : scenario.processId === "eds" || scenario.processId === "packaging" ? l("선택 신호의 전체 그래프", "Full chart for the selected signal", "選択信号の全体グラフ") : l("선택 신호의 시계열도 함께 보기", "Also view the selected signal\'s time series", "選択信号の時系列も確認する")}</summary><h3 ref={reviewHeading} tabIndex={-1}>{scenario.processId === "wafer" ? "A3 · " : ""}{localize(selectedSignal.name, language)} · {clock(shownTime)}</h3>{recordChart}</details>
         {scenario.processId !== "wafer" ? <ProcessSnapshot scenario={scenario} time={shownTime} language={language} /> : null}
         {stage === "review" && reviewReturnTarget ? <Button variant="outline" className="pt-review-return" onClick={returnToReview}>{reviewReturnTarget === "criteria" ? l("선택형 피드백으로 돌아가기", "Return to choice feedback", "選択基準のフィードバックに戻る") : l("타임라인 설명으로 돌아가기", "Return to timeline notes", "タイムラインの説明に戻る")}</Button> : null}
         {stage === "review" && coachReviewActive ? <Button variant="outline" onClick={() => coachReturn.current?.()}>{l("읽던 AI 질문으로 돌아가기", "Return to the AI question", "読んでいたAIの問いに戻る")}</Button> : null}
@@ -396,14 +400,14 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
 
       {stage === "review" && matched ? <>
         <section className="et-panel pt-timeline"><p className="et-eyebrow">WHAT THE VIRTUAL SCENARIO CONTAINS</p><h2 ref={timelineHeading} tabIndex={-1}>{l("기록의 변화와 내 판단을 나란히 봅니다.", "Compare the record with your reasoning.", "記録の変化と自分の判断を並べて確認します。")}</h2>
-          <ul>{scenario.events.map((event, index) => <li key={`${event.time}:${index}`}><button type="button" onClick={() => reviewChoicePoint(event.time, "timeline")}><time>{clock(event.time)}</time>{localize(event.label, language)}</button></li>)}</ul>
+          <ul>{scenario.events.map((event, index) => <li key={`${event.time}:${index}`}><button type="button" onClick={() => reviewChoicePoint(event.time, "timeline", processEventReviewSignal(scenario, index))}><time>{clock(event.time)}</time>{localize(event.label, language)}</button></li>)}</ul>
           <p>{l("내 발견 기록", "Your discovery marker", "自分の発見記録")}: {attempt.marker === null ? l("없음", "none", "なし") : clock(attempt.marker)} · {l("내 시작 시점 판단", "Your estimated onset", "自分の開始時点の判断")}: {answer.onset === "none" ? l("없음", "none", "なし") : clock(Number(answer.onset))}</p>
           <p className="et-caption">{l("보라색 선은 시나리오가 구성한 편차의 시작입니다. 편차가 없는 경우에는 표시하지 않습니다. 이 구성 기준은 실제 설비의 고장 기준이 아닙니다. 내 표시는 내가 선택한 가상 시점이며 발견 속도 평가가 아닙니다.", "The purple line marks the designed deviation onset, if present, not a real equipment fault limit. Your marker is a selected virtual time, not a discovery-speed assessment.", "紫の線はシナリオで構成した偏差の開始で、実装置の故障基準ではありません。自分の印は選択した仮想時点で、発見速度の評価ではありません。")}</p>
           <ProcessEvidenceReview scenario={scenario} language={language} onReviewPoint={time => reviewChoicePoint(time, "timeline")} />
         </section>
         <section className="et-panel et-report"><h2 ref={criteriaHeading} tabIndex={-1}>{l("선택형 기준으로 돌아보기", "Review against choice criteria", "選択基準で振り返る")}</h2>
           <p>{l("다음 표시는 이 가상 시나리오의 선택형 기준과 일치했는지만 보여줍니다. 전문성·안전 자격·실제 현장 판단 능력을 평가하지 않으며 서술형 답안을 자동 채점하지 않습니다.", "These checks show agreement with this synthetic scenario's choice criteria only. They do not assess expertise, safety qualifications or workplace ability, and do not grade written answers.", "以下はこの仮想シナリオの選択基準との一致だけを示します。専門性、安全資格、現場の判断能力は評価せず、記述回答を自動採点しません。")}</p>
-          <ProcessCriteriaFeedback scenario={scenario} answer={answer} matched={matched} language={language} onReviewPoint={time => reviewChoicePoint(time, "criteria")} />
+          <ProcessCriteriaFeedback scenario={scenario} answer={answer} matched={matched} language={language} onReviewPoint={(time, signal) => reviewChoicePoint(time, "criteria", signal)} />
           <h3>{l("내가 작성한 사실과 추정", "Your observations and inference", "記入した事実と推測")}</h3><p>{answer.facts}</p>
           <h3>{l("내가 선택한 다음 비교 순서", "Your next record comparisons", "選択した次の比較順序")}</h3><p>{answer.checks}</p>
         </section>
