@@ -6,7 +6,8 @@ import { getWithdrawalStatus, withdrawAccount } from "./accountWithdrawal";
 import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { practiceMetricsReadProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { canReadPracticeMetrics } from "./practiceMetricsAccess";
 import { analyzeData, generateAnomalyData, generateNormalData, generateCautionData, generateWarningData, generateSlightCautionData, generateSlightWarningData } from "./semiguard";
 import { clearAnomalyLogs, getRecentAnomalyLogs, insertAnomalyLog, incrementSampleCount, resetUserSavedCost, getUserDangerResetOffset, incrementVisitor, getTotalVisitors, getAnomalyStats, getDailyMaxRisk, getThresholds, saveThresholds, getRecentScores, getPeriodDashboardOverview, getSensorThresholds, saveSensorThresholds, updateAnomalyLogLlm, getAnomalyLogById, getLlmHistory, getProductUsageMetrics, recordProductActivity, resolveDashboardPeriodRange, getOnboardingProgress, saveOnboardingProgress, getFirstUseFeedback, saveFirstUseFeedback, getPreviousComparableRange } from "./semiguardDb";
 import { getRiskLevel, NORMAL_BASELINE } from "../shared/semiguard";
@@ -99,11 +100,12 @@ function buildSafeFallbackDiagnostic(sensorContext: {
 export const appRouter = router({
   system: systemRouter,
   practiceMeasurement: router({
+    access: publicProcedure.query(({ ctx }) => ({ authenticated: Boolean(ctx.user), canRead: canReadPracticeMetrics(ctx.user) })),
     status: publicProcedure.query(({ ctx }) => { const consent = readMeasurementConsent(ctx.req); return { consented: Boolean(consent), qa: consent?.qa ?? false }; }),
     consent: publicProcedure.input(measurementConsentSchema).mutation(({ ctx, input }) => setMeasurementConsent(ctx.req, ctx.res, input)),
     track: publicProcedure.input(measurementEventSchema).mutation(({ ctx, input }) => recordMeasurementEvent(ctx.req, input.event, Boolean(ctx.user))),
     storage: protectedProcedure.query(() => inspectMeasurementStorage()),
-    report: adminProcedure.input(measurementPeriodSchema).query(({ input }) => getMeasurementReport(input)),
+    report: practiceMetricsReadProcedure.input(measurementPeriodSchema).query(({ input }) => getMeasurementReport(input)),
     qaStatus: protectedProcedure.query(({ ctx }) => getOwnMeasurementQaStatus(ctx.req)),
   }),
   learning: router({
