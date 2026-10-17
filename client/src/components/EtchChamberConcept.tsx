@@ -4,8 +4,10 @@ import { etchSignalName } from "../lib/etchLanguage";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import "./process-concepts.css";
 
-export default function EtchChamberConcept({ time, observedUntil, language }: { time: number; observedUntil: number; language: ProductLanguage }) {
-  const [selected, setSelected] = useState<EtchSignal>("pressure");
+export default function EtchChamberConcept({ time, observedUntil, language, signal, onSignalChange }: { time: number; observedUntil: number; language: ProductLanguage; signal?: EtchSignal; onSignalChange?: (signal: EtchSignal) => void }) {
+  const [localSelected, setLocalSelected] = useState<EtchSignal>("pressure");
+  const selected = signal ?? localSelected;
+  const setSelected = (next: EtchSignal) => { setLocalSelected(next); onSignalChange?.(next); };
   const rows = etchEvidence(time, observedUntil);
   const record = rows.find(row => row.id === selected)!;
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
@@ -30,6 +32,6 @@ export default function EtchChamberConcept({ time, observedUntil, language }: { 
       <dl><div><dt>{l("이번 / 같은 단계 정상 참고", "Current / same-phase reference", "今回 / 同段階の正常参照")}</dt><dd>{record.value.toFixed(1)} / {record.reference.toFixed(1)}</dd></div><div><dt>{l("이 단계의 참고 띠", "This phase's reference band", "この段階の基準帯")}</dt><dd>{record.low}–{record.high} · {record.value >= record.low && record.value <= record.high ? l("띠 안", "Inside band", "基準帯内") : l("띠 밖", "Outside band", "基準帯外")}</dd></div></dl>
       <p>{l("다른 단계의 값이 아니라 같은 단계의 기준과 비교하세요. 한 신호만으로 특정 부품의 고장을 확정하지 않습니다.", "Compare against the same phase, not another phase's values. One signal does not establish a component fault.", "別段階の値ではなく同段階の基準と比較してください。一信号で部品故障は確定しません。")}</p>
     </div></div>
-    <p className="pc-limit">{l("위치 선택은 이 그림만 바꾸며 기존 그래프·재생·답안·저장·AI 입력을 변경하지 않습니다. 온도는 챔버 주변 가상 기록이며 웨이퍼 실측 온도가 아닙니다.", "Location selection changes only this view, not the existing chart, playback, answers, saves or AI input. Temperature is a synthetic chamber-surroundings record, not measured wafer temperature.", "位置選択はこの図のみ変更し、既存グラフ・再生・回答・保存・AI入力は変更しません。温度はチャンバー周囲の仮想記録でウェーハ実測温度ではありません。")}</p>
+    <p className="pc-limit">{onSignalChange ? l("위치와 그래프가 함께 바뀝니다. 선택하면 재생을 멈추며 답안·저장·AI 입력은 바꾸지 않습니다.", "Location and chart change together. Selection pauses playback without changing answers, saves or AI input.", "位置とグラフが連動します。選択すると再生が止まりますが回答・保存・AI入力は変更しません。") : l("위치 선택은 이 그림만 바꿉니다.", "Location selection changes only this view.", "位置選択はこの図のみ変更します。")}{" "}{l("온도는 챔버 주변 가상 기록이며 웨이퍼 실측 온도가 아닙니다.", "Temperature is a synthetic chamber-surroundings record, not measured wafer temperature.", "温度はチャンバー周囲の仮想記録でウェーハ実測温度ではありません。")}</p>
   </section>;
 }

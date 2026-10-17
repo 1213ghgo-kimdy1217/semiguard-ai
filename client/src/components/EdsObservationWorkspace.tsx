@@ -1,11 +1,12 @@
 import React, { useState } from "react";
+import RecordBand from "./RecordBand";
 import { edsObservation } from "../../../shared/edsObservation";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import "./process-evidence-workspaces.css";
 import "./eds-observation.css";
 
-type Props = { time: number; observedUntil: number; language: ProductLanguage };
-export default function EdsObservationWorkspace({ time, observedUntil, language }: Props) {
+type Props = { time: number; observedUntil: number; language: ProductLanguage; onInteraction?: () => void };
+export default function EdsObservationWorkspace({ time, observedUntil, language, onInteraction }: Props) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const rows = edsObservation(time, observedUntil);
   const [region, setRegion] = useState("A");
@@ -31,7 +32,7 @@ export default function EdsObservationWorkspace({ time, observedUntil, language 
       </svg>
       <figcaption>{l("구역 위치·칩 격자는 설명용", "Illustrative region positions and grid", "領域位置・格子は説明用")}</figcaption>
       <div className="eds-region-controls" role="group" aria-label={l("검사 구역 선택", "Select inspection region", "検査領域を選択")}>
-        {["A", "B", "C"].map(name => <button key={name} type="button" disabled={!rows.some(row => row.region === name)} aria-pressed={selected.region === name} onClick={() => setRegion(name)}>{name}{!rows.some(row => row.region === name) ? l(" · 미관측", " · unobserved", "・未観測") : ""}</button>)}
+        {["A", "B", "C"].map(name => <button key={name} type="button" disabled={!rows.some(row => row.region === name)} aria-pressed={selected.region === name} onClick={() => { onInteraction?.(); setRegion(name); }}>{name}{!rows.some(row => row.region === name) ? l(" · 미관측", " · unobserved", "・未観測") : ""}</button>)}
       </div>
     </figure><figure>
       <h4>{l("선택 구역 확대", "Selected region close-up", "選択領域の拡大")} · {selected.region}</h4>
@@ -45,6 +46,7 @@ export default function EdsObservationWorkspace({ time, observedUntil, language 
       </svg>
       <figcaption>{l("접촉 구조만 설명합니다. 실제 검사 동작·측정값·장비 상태가 아닙니다.", "Contact concept only, not actual test motion, measurements or equipment condition.", "接触構造の説明であり、実検査動作・測定値・装置状態ではありません。")}</figcaption>
       <p aria-live="polite">{l("선택 구역의 칩 / 별도 비교 기록", "Selected region die / separate comparison", "選択領域のチップ / 別の比較記録")}: {band(selected.dieBand)} / {band(selected.comparisonBand)}</p>
+      <div className="studio-two"><RecordBand sample={selected.die} title={l(`구역 ${selected.region} · 칩 검사`, `Region ${selected.region} · die inspection`, `領域${selected.region}・チップ検査`)} language={language} /><RecordBand sample={selected.comparison} title={l(`구역 ${selected.region} · 별도 비교`, `Region ${selected.region} · separate comparison`, `領域${selected.region}・別の比較`)} language={language} /></div>
     </figure></div>
     <div className="pe-evidence-cards">{rows.map(row => <article key={row.region} aria-current={row.region === selected.region ? "true" : undefined}>
       <h4>{l("검사 구역", "Inspection region", "検査領域")} {row.region} · {row.end}s</h4>

@@ -11,6 +11,8 @@ describe("existing wafer, oxidation and photo tool context", () => {
       expect(html).not.toContain("<input");
       expect(html).not.toContain("<button");
       expect(html).not.toContain("NaN");
+      // Context can be alongside a tool or inside a disclosure below it.
+      expect(html).not.toMatch(/아래|\b[Bb]elow\b|下の|下では/);
     }
   });
   it("never samples, persists or requests data", () => {

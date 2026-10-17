@@ -4,8 +4,10 @@ import { tr, type ProductLanguage } from "../lib/productLanguage";
 import "./process-concepts.css";
 
 const scenario = getProcessScenario("metal")!;
-export default function MetalLayerConcept({ time, language }: { time: number; language: ProductLanguage }) {
-  const [view, setView] = useState<"connection" | "appearance">("connection");
+export default function MetalLayerConcept({ time, language, signal, onSignalChange }: { time: number; language: ProductLanguage; signal?: "connection" | "appearance"; onSignalChange?: (signal: "connection" | "appearance") => void }) {
+  const [localView, setLocalView] = useState<"connection" | "appearance">("connection");
+  const view = signal ?? localView;
+  const setView = (next: "connection" | "appearance") => { setLocalView(next); onSignalChange?.(next); };
   const sample = processSample(scenario, view, time);
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const connection = view === "connection";
@@ -28,6 +30,6 @@ export default function MetalLayerConcept({ time, language }: { time: number; la
       <p>{l("참고 띠", "Reference band", "基準帯")} {sample.low}–{sample.high} · {sample.value >= sample.low && sample.value <= sample.high ? l("띠 안", "Inside band", "基準帯内") : l("띠 밖", "Outside band", "基準帯外")}</p>
       <p>{l("외관 기록이 띠 안이어도 연결 기록의 편차가 사라지지는 않습니다. 아래 구간 도구에서 일시 복귀 뒤에도 편차가 반복되는지 확인하세요.", "Appearance inside its band does not erase a connection deviation. Use the original interval board below to inspect recurrence after a temporary return.", "外観が帯内でも接続記録の偏差は消えません。下の区間ツールで一時復帰後の再発を確認してください。")}</p>
     </div></div>
-    <p className="pc-limit">{l("색은 검사 관점 선택이며 불량 표시가 아닙니다. 그림 선택은 기존 구간·재생·답안·저장·AI 입력을 바꾸지 않습니다.", "Highlight marks inspection perspective, not a defect. Selection changes no original interval, playback, answer, save or AI input.", "色は検査観点で不良表示ではありません。図の選択は既存区間・再生・回答・保存・AI入力を変更しません。")}</p>
+    <p className="pc-limit">{l("강조는 검사 관점이며 불량 표시가 아닙니다. 연습 화면에서는 그래프도 같은 관점으로 바뀌고 재생이 멈춥니다. 답안·저장·AI 입력은 바꾸지 않습니다.", "Highlight marks a perspective, not a defect. In the exercise, the chart follows the same perspective and playback pauses. Answers, saves and AI input are unchanged.", "強調は検査観点で不良表示ではありません。練習画面ではグラフも同じ観点に変わり再生が止まります。回答・保存・AI入力は変更しません。")}</p>
   </section>;
 }

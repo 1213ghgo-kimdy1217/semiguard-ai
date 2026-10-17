@@ -41,7 +41,7 @@ export function ProcessEvidenceBrief({ processId, language }: { processId: "depo
   </section>;
 }
 
-export function DepositionWorkspace({ time, language, onInteraction }: Props & { onInteraction: () => void }) {
+export function DepositionWorkspace({ time, language, onInteraction, selectedSignal, onSignalChange }: Props & { onInteraction: () => void; selectedSignal?: string; onSignalChange?: (signal: string) => void }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const [claim, setClaim] = useState<EvidenceClaim>("film-difference");
   const [check, setCheck] = useState<{ time: number; claim: EvidenceClaim; source: EvidenceSource } | null>(null);
@@ -54,9 +54,9 @@ export function DepositionWorkspace({ time, language, onInteraction }: Props & {
     <p>{l(`선택 기록 ${clock(view.time)} · 다른 목적의 별도 검사 자료입니다. 같은 웨이퍼·같은 검사라는 뜻이 아닙니다.`, `Selected record ${clock(view.time)} · separate inspections with different purposes, not evidence that they concern the same wafer or inspection.`, `選択記録 ${clock(view.time)}・異なる目的の別の検査資料です。同じウェーハ・同じ検査を意味しません。`)}</p>
     <div className="pe-evidence-cards">{(["film", "electrical"] as const).map(signal => {
       const sample = view[signal];
-      return <article key={signal}>
+      return <article key={signal} data-selected={selectedSignal === signal}>
         <p className="pe-card-code">{signal === "film" ? "RECORD A / FILM" : "RECORD B / ELECTRICAL"}</p>
-        <h4>{signal === "film" ? l("증착 결과의 막 검사", "Deposition-result film inspection", "成膜結果の膜検査") : l("별도 이온 주입 결과의 전기적 검사", "Separate implantation-result electrical inspection", "別のイオン注入結果の電気的検査")}</h4>
+        <h4>{onSignalChange ? <button type="button" aria-pressed={selectedSignal === signal} onClick={() => onSignalChange(signal)}>{signal === "film" ? l("증착 결과의 막 검사", "Deposition-result film inspection", "成膜結果の膜検査") : l("별도 이온 주입 결과의 전기적 검사", "Separate implantation-result electrical inspection", "別のイオン注入結果の電気的検査")}</button> : signal === "film" ? l("증착 결과의 막 검사", "Deposition-result film inspection", "成膜結果の膜検査") : l("별도 이온 주입 결과의 전기적 검사", "Separate implantation-result electrical inspection", "別のイオン注入結果の電気的検査")}</h4>
         <InspectionConceptRecord signal={signal} sample={sample} language={language} />
         <p>{signal === "film" ? l("막 검사 기록이 자기 참고 기준과 다른지 확인하는 자료", "Evidence for comparing film inspection with its own reference", "膜検査記録を自身の参考基準と比較する資料") : l("전기적 검사 기록을 자기 기준과 비교하는 자료 · 막 검사를 대신하지 않음", "Evidence for its own electrical reference comparison, not a substitute for film inspection", "電気的検査を自身の基準と比較する資料・膜検査の代わりにはならない")}</p>
         <details className="pe-exact-evidence"><summary>{l("정확한 수치 비교", "Compare exact values", "正確な数値を比較")}</summary>
@@ -92,7 +92,7 @@ export function DepositionWorkspace({ time, language, onInteraction }: Props & {
   </section>;
 }
 
-export function MetalWorkspace({ time, observedUntil, language, onTimeChange }: Props & { observedUntil: number; onTimeChange: (time: number) => void }) {
+export function MetalWorkspace({ time, observedUntil, language, onTimeChange, selectedSignal, onSignalChange }: Props & { observedUntil: number; onTimeChange: (time: number) => void; selectedSignal?: string; onSignalChange?: (signal: string) => void }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const view = metalObservation(time, observedUntil);
   const bandLabel = (band: "below" | "inside" | "above") => band === "inside" ? l("띠 안", "Inside band", "帯内") : band === "above" ? l("띠 위", "Above band", "帯の上") : l("띠 아래", "Below band", "帯の下");
@@ -101,10 +101,11 @@ export function MetalWorkspace({ time, observedUntil, language, onTimeChange }: 
     <h3>{l("한 구간의 복귀와, 이어지는 기록을 구분하기", "Separate one interval's return from what follows", "一区間の復帰と、その後の記録を区別する")}</h3>
     <p>{l(`관측 누적 ${clock(view.until)}까지 · 선택 시점 ${clock(view.selectedTime)} · 6초 단위로 묶은 가상 기록입니다. 실제 검사 주기가 아닙니다.`, `Observed through ${clock(view.until)} · selected ${clock(view.selectedTime)} · synthetic records grouped into six-second replay intervals, not real inspection cycles.`, `観測済み${clock(view.until)}まで・選択時点${clock(view.selectedTime)}・6秒単位にまとめた仮想記録で、実際の検査周期ではありません。`)}</p>
     <p className="pe-key">{l("각 칸은 ‘띠 밖 기록 수 / 관측 기록 수’입니다. 비율은 이 가상 재생 구간의 기록 수이며 실제 불량률·수율이 아닙니다.", "Each cell shows out-of-band records / observed records. These counts describe the synthetic replay, not real defect rates or yield.", "各枠は「基準帯外の記録数 / 観測記録数」です。仮想再生区間の記録数であり、実際の不良率・歩留まりではありません。")}</p>
-    <MetalLayerConcept time={view.selectedTime} language={language} />
+    <MetalLayerConcept time={view.selectedTime} language={language} signal={selectedSignal === "appearance" ? "appearance" : selectedSignal === "connection" ? "connection" : undefined} onSignalChange={onSignalChange} />
     <div className="pe-window-grid" role="group" aria-label={l("관측한 구간 선택", "Choose an observed interval", "観測済みの区間を選ぶ")}>
       {view.windows.map(window => <button type="button" key={window.start} aria-pressed={window.start === view.selected.start} onClick={() => onTimeChange(window.end)}>
         <strong>{clock(window.start)}–{clock(window.end)}</strong>
+        <span className="studio-pattern" aria-hidden="true">{window.rows.map(row => { const band = selectedSignal === "appearance" ? row.appearanceBand : row.connectionBand; return <i key={row.time} data-outside={band !== "inside"}>{band === "inside" ? "−" : band === "above" ? "↑" : "↓"}</i>; })}</span>
         <span data-outside={window.connectionOutside > 0}>{l("연결", "Connection", "接続")} <b>{window.connectionOutside}/{window.rows.length}</b></span>
         <span data-outside={window.appearanceOutside > 0}>{l("외관", "Appearance", "外観")} <b>{window.appearanceOutside}/{window.rows.length}</b></span>
       </button>)}

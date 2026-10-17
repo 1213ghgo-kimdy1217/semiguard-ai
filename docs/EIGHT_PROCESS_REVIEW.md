@@ -2,6 +2,8 @@
 
 > This is the supplied upstream acceptance checklist. Its original NOT EXECUTED statements describe that source handoff, not the later integration run. Current executed results and remaining external checks are in [EIGHT_PROCESS_VALIDATION.md](EIGHT_PROCESS_VALIDATION.md).
 
+> Later prompt reconciliation: [EIGHT_PROCESS_PROMPT_MERGE.md](EIGHT_PROCESS_PROMPT_MERGE.md). In that branch, etch/metal view selections are explicitly linked to their charts; the original independent-selection description below is historical. Latest executed checks and release limits are appended to [HANDOFF.md](HANDOFF.md).
+
 This is a local integration based on main 6b01414. Existing source read for all eight exercises. NOT an executed software validation, not a physical-process simulation and not an eight-process completion certificate.
 
 | Process | Retained task | Implemented visual/context | Codex checks required |

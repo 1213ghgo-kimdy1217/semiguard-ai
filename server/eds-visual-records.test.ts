@@ -6,8 +6,10 @@ import EdsObservationWorkspace from "../client/src/components/EdsObservationWork
 describe("EDS wafer and probe concepts", () => {
   it.each(["ko", "en", "ja"] as const)("labels conceptual diagrams and native region controls in %s", language => {
     const html = renderToStaticMarkup(createElement(EdsObservationWorkspace, { time: 60, observedUntil: 60, language }));
-    expect(html.match(/<svg/g)).toHaveLength(2);
-    expect(html.match(/role="img"/g)).toHaveLength(2);
+    // Two fixed structure concepts plus two original-data record bands.
+    expect(html.match(/<svg/g)).toHaveLength(4);
+    expect(html.match(/role="img"/g)).toHaveLength(4);
+    expect(html.match(/class="sr-record"/g)).toHaveLength(2);
     expect(html.match(/<button/g)).toHaveLength(3);
     expect(html.match(/<details>/g)).toHaveLength(3);
     expect(html).not.toContain("NaN");
