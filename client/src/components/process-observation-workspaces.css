@@ -1,0 +1,45 @@
+.po-intro{margin:24px 0;border-color:#607352}
+.po-intro h2{margin-top:8px}
+.po-intro ol{padding-left:22px}
+.po-intro li{margin:10px 0}
+.po-workspace{min-width:0;margin:24px 0;padding:24px;border:1px solid #657367;border-radius:12px;background:#151f1b}
+.po-workspace h3{margin:8px 0 16px;font-size:22px}
+.po-workspace p,.po-workspace dt,.po-workspace dd,.po-workspace button{overflow-wrap:anywhere}
+.po-workspace h4{margin:0 0 20px}
+.po-current{color:#cbdace}
+.po-reference-picker,.po-records,.po-frames{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:20px 0}
+.et-app .po-workspace button{font:inherit;text-align:left;cursor:pointer;border:1px solid #657367;border-radius:8px;background:#22342a;color:#edf0eb;padding:14px;min-height:44px;min-width:0}
+.po-reference-picker button strong,.po-reference-picker button span{display:block}
+.po-reference-picker button span{font-size:12px;margin-top:8px;color:#c0cfc3}
+.et-app .po-reference-picker button[aria-pressed=true]{border-color:#e4aa55;box-shadow:inset 3px 0 #e4aa55}
+.et-app .po-workspace button:disabled{opacity:.55;cursor:default}
+.et-app .po-workspace button:focus-visible,.po-workspace input:focus-visible,.po-workspace summary:focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
+.po-warning{border-left:3px solid #e4aa55;padding:12px 16px;background:#362d20;color:#ffe3b5}
+.po-records article,.po-pattern-frame{min-width:0;border:1px solid #435447;border-radius:8px;padding:20px;margin:0;background:#1a2921}
+.po-reading{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.po-reading strong{font-size:32px;font-variant-numeric:tabular-nums;color:#a6ded0}
+.po-reading span{font-size:13px;color:#c0cfc3}
+.po-gauge{position:relative;height:48px;background:linear-gradient(transparent 23px,#5b7264 23px,#5b7264 25px,transparent 25px);margin:12px 0}
+.po-band{position:absolute;top:12px;height:24px;background:#59766388;border:1px solid #8eab99}
+.po-reference-tick{position:absolute;top:8px;height:32px;border-left:2px dashed #edf0eb}
+.po-current-tick{position:absolute;top:18px;width:12px;height:12px;transform:translateX(-50%);background:#e4aa55;border-radius:50%;border:1px solid #151f1b}
+.po-workspace dl{margin:12px 0 0;font-size:13px}
+.po-workspace dl>div{display:flex;justify-content:space-between;gap:16px;margin:10px 0;align-items:baseline}
+.po-workspace dt{color:#c0cfc3;min-width:0}
+.po-workspace dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.po-key,.po-scope{font-size:12px;color:#c0cfc3;line-height:1.7}
+.po-scope{border-top:1px solid #435447;padding-top:16px;margin-bottom:0}
+.po-photo-controls{display:flex;align-items:end;flex-wrap:wrap;gap:16px;margin:20px 0}
+.po-photo-controls label{font-size:13px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.et-app .po-photo-controls input[type=number]{max-width:110px;min-height:44px;font:inherit;padding:10px;border:1px solid #657367;border-radius:6px;background:#111e18;color:#edf0eb}
+.po-photo-controls .po-overlay{flex-direction:row;align-items:center;min-height:44px;cursor:pointer}
+.po-overlay input{width:20px;height:20px;accent-color:#e4aa55}
+.po-pattern-frame figcaption{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;font-weight:650}
+.po-pattern-frame time{color:#e4aa55;font-variant-numeric:tabular-nums}
+.po-pattern-frame svg{display:block;width:100%;max-width:360px;height:auto;margin:16px auto;border:1px solid #435447;border-radius:6px;background:#102019}
+.po-grid{fill:none;stroke:#456253;stroke-width:.5}
+.po-pattern-current{stroke:#91cfc2;stroke-width:2;fill:#91cfc244}
+.po-pattern-reference{stroke:#f1d2a4;stroke-width:2;stroke-dasharray:5 4;fill:none}
+.po-workspace details{border:1px solid #435447;border-radius:6px;padding:12px 16px;margin:16px 0}
+.po-workspace summary{cursor:pointer;min-height:28px}
+@media(max-width:760px){.po-workspace{padding:16px}.po-reference-picker,.po-records,.po-frames{grid-template-columns:minmax(0,1fr);gap:16px}.po-records article,.po-pattern-frame{padding:16px}.po-workspace h3{font-size:20px}.po-photo-controls{align-items:stretch;flex-direction:column}.po-workspace dl>div{flex-wrap:wrap;gap:4px 12px}.po-workspace dd{text-align:left}.po-photo-controls button{width:100%}}
