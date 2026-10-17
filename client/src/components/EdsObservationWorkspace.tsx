@@ -2,6 +2,7 @@ import React from "react";
 import { edsObservation } from "../../../shared/edsObservation";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import "./process-evidence-workspaces.css";
+import "./eds-observation.css";
 
 type Props = { time: number; observedUntil: number; language: ProductLanguage };
 export default function EdsObservationWorkspace({ time, observedUntil, language }: Props) {
@@ -14,8 +15,27 @@ export default function EdsObservationWorkspace({ time, observedUntil, language 
     <p className="et-eyebrow">COMPARE OBSERVED REGIONS</p>
     <h3>{l("어느 구역의 어떤 기록이 다른가요?", "Which record differs in which region?", "どの領域のどの記録が異なりますか？")}</h3>
     <p>{l("각 구역에서 현재 선택 시점까지 관측한 마지막 기록입니다. 같은 제조 시점의 지도나 개별 칩 결과가 아닙니다. 각 자료를 자신의 정상 참고와 비교하세요.", "These are the latest observed records per region through the selected position, not a same-time manufacturing map or individual die results. Compare each record with its own normal reference.", "選択時点までに観測した各領域の最後の記録です。同時点の製造マップや個別チップ結果ではありません。各資料を自身の正常参照と比較してください。")}</p>
+    <p className="eds-legend">{l("● 이번 기록　┆ 정상 참고　▰ 참고 띠 · 같은 상대지수 축 80–120", "● Current record　┆ Normal reference　▰ Reference band · shared index axis 80–120", "● 今回の記録　┆ 正常参照　▰ 基準帯・共通相対指数軸80–120")}</p>
     <div className="pe-evidence-cards">{rows.map(row => <article key={row.region}>
       <h4>{l("검사 구역", "Inspection region", "検査領域")} {row.region}</h4>
+      <div className="eds-diagrams">{(["die", "comparison"] as const).map(signal => {
+        const sample = row[signal];
+        const state = signal === "die" ? row.dieBand : row.comparisonBand;
+        const x = (value: number) => 20 + (value - 80) * 5;
+        const label = signal === "die" ? l("칩 검사", "Die inspection", "チップ検査") : l("별도 비교 기록", "Separate comparison", "別の比較記録");
+        return <figure key={signal}>
+          <figcaption>{label} · <strong>{band(state)}</strong></figcaption>
+          <svg viewBox="0 0 240 100" role="img" aria-label={`${label}: ${sample.value.toFixed(1)}, ${band(state)}; ${l("정상 참고", "Normal reference", "正常参照")} ${sample.reference.toFixed(1)}`}>
+            <rect x="1" y="1" width="238" height="98" rx="12" fill="#15251f" stroke="#52665b" />
+            <path d="M20 60H220" stroke="#81958a" />
+            <rect x={x(sample.low)} y="26" width={x(sample.high) - x(sample.low)} height="49" rx="5" fill="#315d50" stroke="#9ac4b2" />
+            <path d={`M${x(sample.reference)} 20V80`} stroke="#e3e9de" strokeDasharray="4 4" />
+            <path d={`M${x(sample.reference)} 49H${x(sample.value)}`} stroke="#e7ba70" strokeWidth="2" />
+            <circle cx={x(sample.value)} cy="49" r="8" fill={state === "inside" ? "#9bd9c3" : "#ffc078"} stroke="#101a16" strokeWidth="2" />
+            <text x="20" y="92" fill="#cedbd1" fontSize="10">80</text><text x="207" y="92" fill="#cedbd1" fontSize="10">120</text>
+          </svg>
+        </figure>;
+      })}</div>
       <details><summary>{l("이 구역 기록 보기", "Inspect this region record", "この領域の記録を見る")} · {row.end}s</summary>
       <dl>{(["die", "comparison"] as const).map(signal => {
         const sample = row[signal];
