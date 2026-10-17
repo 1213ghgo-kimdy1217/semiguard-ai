@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
+import ObservationComparison, { useObservationComparison } from "../components/ObservationComparison";
 import PracticeMeasurementConsent, { usePracticeMeasurementTracking } from "../components/PracticeMeasurement";
 import ProcessEquipmentReference from "../components/ProcessEquipmentReference";
 import ProcessCriteriaFeedback from "../components/ProcessCriteriaFeedback";
@@ -63,6 +64,7 @@ function ProcessSnapshot({ scenario, time, language }: { scenario: ProcessScenar
   return <div className="et-evidence">
     <h3>{tr(language, `${clock(time)}의 관측 근거`, `Evidence at ${clock(time)}`, `${clock(time)}の観測根拠`)}</h3>
     <ProcessRecordContext scenario={scenario} time={time} language={language} />
+    <details className="pt-exact-snapshot"><summary>{tr(language, "정확한 수치표 보기", "View exact values", "正確な数値表を見る")}</summary>
     <div className="et-table" tabIndex={0} role="region" aria-label={tr(language, "시점별 신호 비교표", "Signal comparison at the selected time", "選択時点の信号比較表")}>
       <table>
         <caption>{tr(language, "모든 수치는 교육용 상대지수입니다. 실제 장비의 운전 범위가 아닙니다.", "All values are training-only relative indices, not real equipment operating limits.", "すべて教育用の相対指数で、実装置の運転範囲ではありません。")}</caption>
@@ -84,6 +86,7 @@ function ProcessSnapshot({ scenario, time, language }: { scenario: ProcessScenar
       </table>
     </div>
     <p className="et-caption">{localize(scenario.referenceRule, language)}</p>
+    </details>
   </div>;
 }
 
@@ -117,6 +120,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const [stage, setStage] = useState<Stage>(initial.attempt.submitted ? "review" : initial.attempt.elapsed > 0 ? "observe" : "brief");
   const [running, setRunning] = useState(false);
   const [retryRevision, setRetryRevision] = useState(0);
+  const comparisonView = useObservationComparison(`${storageKey}:${retryRevision}`);
   const [speed, setSpeed] = useState<1 | 3>(1);
   const [signalId, setSignalId] = useState(scenario.signals[0].id);
   const [waferRegion, setWaferRegion] = useState<WaferRegion>("B2");
@@ -328,6 +332,8 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
             <p className="et-caption">{l("표시는 내가 선택한 가상 기록의 시점입니다. 실제로 그 순간에 발견했다는 뜻이나 발견 속도 평가가 아닙니다.", "This marker represents a virtual-record time you selected, not when you actually discovered it or a discovery-speed assessment.", "この印は選択した仮想記録の時点です。その瞬間に実際に発見したという意味や、発見速度の評価ではありません。")}</p>
           </div>
         </> : <div className="et-marker-picker"><label htmlFor="process-review-time">{l("복기할 시점", "Review time", "振り返る時点")} · {clock(reviewTime)}</label><input id="process-review-time" type="range" min={0} max={scenario.duration} step={1} value={reviewTime} onChange={event => setReviewTime(Number(event.target.value))} /></div>}
+        <ObservationComparison key={`${storageKey}:${retryRevision}`} scenarioId={scenario.id} signalId={signalId}
+          time={shownTime} observedUntil={attempt.elapsed} language={language} {...comparisonView} onInteraction={pauseObservationView} />
         {scenario.processId === "oxidation" ? <OxidationWorkspace language={language} time={shownTime} reference={oxidationReference}
           onReferenceChange={reference => { pauseObservationView(); setOxidationReference(reference); }} /> : null}
         {scenario.processId === "photo" ? <PhotoWorkspace language={language} time={shownTime} signal={signalId === "shape" ? "shape" : "position"} pinnedTime={photoPinnedTime} overlay={photoOverlay}
