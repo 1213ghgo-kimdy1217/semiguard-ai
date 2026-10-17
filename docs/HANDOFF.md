@@ -3,37 +3,36 @@
 ## Base and links
 Base main: [6b01414](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/6b01414fa417c90e11b6d15aa6c5622162f49d7c), PR #92.
 Branch: `feat/eds-observed-region-comparison`.
-Implementation: [77bae0e](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/77bae0e8daad20aa3c92b791f26e82e9815cd746).
-Previous handoff update: [957fb03](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/957fb0305b6412f6223f0562b0cedde528f2b22f).
-Draft PR: [#93](https://github.com/1213ghgo-kimdy1217/semiguard-ai/pull/93). Actual branch creation, file commit and draft PR creation succeeded. No merge performed.
+Initial implementation: [77bae0e](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/77bae0e8daad20aa3c92b791f26e82e9815cd746).
+Handoff links: [957fb03](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/957fb0305b6412f6223f0562b0cedde528f2b22f).
+Superseded generic index diagrams: [17ae802](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/17ae802ad5439c5397f9d4b321cd6b1387c4a9e6).
+Draft PR: [#93](https://github.com/1213ghgo-kimdy1217/semiguard-ai/pull/93). Branch creation, commit and draft PR creation actually succeeded. No merge.
+Latest wafer/probe revision travels with this file; its exact commit is in PR #93 commit history.
 
-## 2026-10-17 — EDS small change and visual follow-up
-### Completed source changes
-- `shared/edsObservation.ts`: latest observed original synthetic sample per unfolded A/B/C region; caps all rows at selected replay position and observation boundary. Rewinding hides later regions. No individual-die map/counts, yield or equipment diagnoses.
-- `client/src/components/EdsObservationWorkspace.tsx`: region cards with two separate evidence diagrams (die / separate comparison), moving current-value circle, dashed reference and reference band on common 80–120 relative-index axis. Positions come directly from existing processSample values. SVG positions recompute when selected time changes, without forecasting. Numeric values remain behind native details/summary. ko/en/ja descriptions and SVG image labels; meaning does not rely on color alone.
-- `client/src/components/eds-observation.css`: scoped responsive SVG rules, no new dependencies.
-- `client/src/components/ProcessEvidenceReview.tsx`: mount only in EDS ProcessRecordContext already used by ProcessSnapshot. Existing context and full review retained.
-- `server/eds-observation-workspace.test.ts`: sample/bounds/region/band/language/integration assertions added in original implementation, NOT RUN.
-- `server/eds-visual-records.test.ts`: separate-diagram count, image-label, language and observed-only rendering assertions added in visual follow-up, NOT RUN.
-- Visual follow-up commit: this handoff travels in the same commit; actual identifier is available in PR #93 commit history. Original implementation links above remain valid.
-- No changes to ProcessTraining.tsx, processScenarios.ts, answers, grading, persistence payloads, checkpoint/share/AI contracts, dependencies, DB, secrets or repository settings.
+## 2026-10-17 — EDS source changes
+- `shared/edsObservation.ts`: original latest observed A/B/C region samples, capped at selected replay time and observation bound. Rewind hides later results. No per-die counts/yield or diagnoses.
+- `client/src/components/EdsObservationWorkspace.tsx`: user requested EDS-specific imagery rather than generic gauges. Replaced generic index diagrams with conceptual wafer grid and native A/B/C buttons plus die/contact-pad/probe-card close-up. Grid positions and number of drawn cells are illustrative only, NOT actual wafer layout or measured dies. Every selected-region cell shares the selection highlight, never a pass/fail color. Unobserved buttons disabled; no unobserved results. Local view selection falls back to an observed row after rewind and is not persisted/transmitted. Probe illustration explains contact structure only; does not simulate real measurements or equipment condition. Selected-region status and exact per-region evidence link pictures to original data. ko/en/ja, image labels, native controls and scoped mobile CSS.
+- `client/src/components/eds-observation.css`: responsive conceptual-diagram layout and visible selection/focus styling.
+- `client/src/components/ProcessEvidenceReview.tsx`: existing EDS-only ProcessRecordContext integration retained.
+- `server/eds-observation-workspace.test.ts`: initial exact-sample/bounds/region/band/language/integration tests retained, NOT RUN.
+- `server/eds-visual-records.test.ts`: revised for two conceptual diagrams, native buttons, disabled unobserved regions, details count and language labels, NOT RUN. Superseded SVG gauge-count expectations removed.
+- Existing scenario numbers, answers, grading, account/checkpoint/share/AI payloads unchanged in source. No ProcessTraining.tsx, processScenarios.ts, DB, dependency, secret or repository setting changes.
 
-### Actual verification and limits
-- Original change: pnpm check -> pnpm test -> pnpm build attempted, each failed to start (pnpm: command not found, exit 127).
-- Visual follow-up: same three commands attempted again in order, each failed to start for the same reason. TypeScript, full tests and production build NOT EXECUTED; this is not a test/compiler failure or success.
-- Main snapshot has no .github/workflows; PR #92 reported only Vercel Preview Comments. No replacement CI or paid runtime added.
-- Source inspection only: native disclosure controls, scoped responsive SVG rules and existing card stacking. No actual browser/320px/390px/keyboard/physical-device verification or accessibility-completion claim.
-- Historical PR #92's 345 files / 1,571 tests is not a rerun for this branch.
-- User-facing static expected-screen renders are design illustrations, NOT React/Vercel/browser screenshots or execution evidence. Diagrams depict summary indices, not physical die layouts or real equipment output.
+## Verification and limits
+- Prior edits attempted pnpm check -> pnpm test -> pnpm build; all failed to start because pnpm is unavailable (exit 127). TypeScript/full tests/build remain NOT EXECUTED. This is not a test/compiler failure or success. No installed replacement runtime or new CI.
+- Earlier main snapshot has no .github/workflows; PR #92 only reported Vercel Preview Comments. Its historical 345 files / 1,571 tests is not a rerun here.
+- No actual React browser/320px/390px/keyboard/physical-device validation; native controls/responsive rules in source do not prove accessibility or runtime success. Stateful button selection/rewind needs actual interaction tests.
+- Static expected-screen illustrations are NOT app/browser/Vercel screenshots. Source positions of wafer sectors/grid are conceptual, not new fabricated measurements. Original sampler remains sole result source.
+- No ordinary-account submission, save/retry/resume/share or live AI call tested. Unchanged source contracts are not end-to-end proof.
 
-### Release and pending work
-Draft only. No main merge or production deployment requested/performed. Existing hosting integration may create automatic branch previews; their status is unverified and not production validation. Protected-preview access is not bypassed.
-No ordinary-account submission, account save/retry/resume/share or live AI call tested. Unchanged source contracts are not end-to-end proof.
-Next: run pnpm check -> pnpm test -> pnpm build in an approved existing execution environment. Check rewind bounds, diagram positions, native disclosures and narrow/keyboard layouts. Review whether index diagrams sufficiently differentiate the learning task with users. Then implement packaging as an independent small change: observed-only trend onset / band exit / returning toward reference / return inside band; no cause-resolution claim. Packaging is NOT implemented in #93.
+## Release and next steps
+Draft only, no main merge or production deployment requested/performed. Existing hosting integration may auto-create branch previews; their status is unverified and not production validation. No protected-preview bypass.
+Run pnpm check -> pnpm test -> pnpm build in an approved existing environment. Check region controls, selection fallback on rewind, exact evidence, keyboard/narrow layouts. Review with learners whether EDS context is now clear; no validated learning claim.
+Packaging is NOT implemented in #93. Next separate small change: observed-only trend onset / band exit / returning toward reference / return inside band, in a packaging-specific concept view, without claiming cause resolution.
 
 ## Remaining release checklist
 - Core: login, all process observation/rewind/submit, rule feedback, account save/retry, checkpoint/resume, history, expiring share, cross-account ownership.
-- AI: consent, bounded context, evidence attribution, unsupported-cause handling, failure state without fabricated generated responses, language handling. Scoped provider-call and privacy verification remains.
-- User validation: representative learners, distinctive reasoning tasks, no validated-learning or equipment-performance claims from software tests.
-- Submission: reconcile README/AI_USAGE/HANDOFF, attribution/licensing, demo script, actually verified features and limitations.
-- Merge/production deployment require user approval after verification; production flows checked separately.
+- AI: consent, bounded context, evidence attribution, unsupported-cause handling, failure state without fabricated generated responses, languages, scoped provider/privacy validation.
+- User validation: representative learners and distinct reasoning tasks; no equipment-performance/learning-outcome claims based on code tests.
+- Submission: reconcile README/AI_USAGE/HANDOFF, attribution/licensing, demo script, verified features and limitations.
+- Merge/production deployment require user approval after results; production flows checked separately.
