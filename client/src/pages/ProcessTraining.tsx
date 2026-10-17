@@ -6,6 +6,8 @@ import ProcessEquipmentReference from "../components/ProcessEquipmentReference";
 import ProcessCriteriaFeedback from "../components/ProcessCriteriaFeedback";
 import WaferInspection, { WaferInspectionBrief } from "../components/WaferInspection";
 import type { WaferRegion } from "../../../shared/waferInspection";
+import { OxidationWorkspace, PhotoWorkspace, ProcessObservationBrief } from "../components/ProcessObservationWorkspaces";
+import type { OxidationReference } from "../../../shared/processObservation";
 import ProcessEvidenceReview, { ProcessRecordContext } from "../components/ProcessEvidenceReview";
 import { toTrainingDraft, restoreTrainingDraft } from "../../../shared/trainingDraft";
 import { Link } from "wouter";
@@ -117,6 +119,9 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const [speed, setSpeed] = useState<1 | 3>(1);
   const [signalId, setSignalId] = useState(scenario.signals[0].id);
   const [waferRegion, setWaferRegion] = useState<WaferRegion>("B2");
+  const [oxidationReference, setOxidationReference] = useState<OxidationReference>("matching");
+  const [photoPinnedTime, setPhotoPinnedTime] = useState(0);
+  const [photoOverlay, setPhotoOverlay] = useState(true);
   const [inspectionSelection, setInspectionSelection] = useState<number | null>(null);
   const [reviewTime, setReviewTime] = useState(scenario.duration);
   const [coachReviewActive, setCoachReviewActive] = useState(false);
@@ -162,6 +167,9 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   usePracticeMeasurementTracking(isRunning, stage === "review" && attempt.submitted, `${storageKey}:${retryRevision}`);
   const inspectionTime = Math.min(inspectionSelection ?? attempt.elapsed, attempt.elapsed);
   const shownTime = stage === "review" ? reviewTime : inspectionTime;
+  const pauseObservationView = () => {
+    if (stage === "observe") { setRunning(false); setInspectionSelection(shownTime); }
+  };
   const selectedSignal = scenario.signals.find(signal => signal.id === signalId)!;
   const nextScenario = processScenarios.find(item => item.order === scenario.order + 1);
 
@@ -236,7 +244,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
     setRetryRevision(revision => revision + 1);
     currentSaveKey.current = undefined;
     setAttempt(emptyProcessAttempt(scenario)); setRunning(false); setSpeed(1); setInspectionSelection(null);
-    setSignalId(scenario.signals[0].id); setWaferRegion("B2"); setReviewTime(scenario.duration); setSaveStatus("idle"); move("brief"); heading.current?.focus();
+    setSignalId(scenario.signals[0].id); setWaferRegion("B2"); setOxidationReference("matching"); setPhotoPinnedTime(0); setPhotoOverlay(true); setReviewTime(scenario.duration); setSaveStatus("idle"); move("brief"); heading.current?.focus();
   };
   const choicesReady = validProcessAnswer(scenario, answer);
   const matched = attempt.submitted ? processCriteria(scenario, answer) : null;
@@ -273,6 +281,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
 
       {stage === "brief" ? <>
         {scenario.processId === "wafer" ? <WaferInspectionBrief language={language} /> : null}
+        {scenario.processId === "oxidation" || scenario.processId === "photo" ? <ProcessObservationBrief processId={scenario.processId} language={language} /> : null}
         <div className="et-columns"><section className="et-panel">
           <p className="et-eyebrow">EQUIPMENT / CONTEXT</p><h2>{localize(scenario.equipment, language)}</h2><p>{localize(scenario.briefing, language)}</p>
           <h3>{l("이번 훈련에서 연습할 판단", "The reasoning to practise", "今回練習する判断")}</h3><p>{localize(scenario.objective, language)}</p>
@@ -295,12 +304,12 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
           <div className="et-clock"><strong>{clock(shownTime)}</strong><span>{l("가상 경과", "Virtual elapsed", "仮想経過")} / {clock(scenario.duration)}</span></div></div>
         <div className="et-sensors pt-sensors">{scenario.signals.map(signal => {
           const sample = processSample(scenario, signal.id, shownTime);
-          return <button type="button" className="et-sensor" key={signal.id} aria-pressed={signal.id === signalId} onClick={() => setSignalId(signal.id)}>
+          return <button type="button" className="et-sensor" key={signal.id} aria-pressed={signal.id === signalId} onClick={() => { if (scenario.processId === "photo" || scenario.processId === "oxidation") pauseObservationView(); setSignalId(signal.id); }}>
             <span>{localize(signal.name, language)}</span><strong>{sample.value.toFixed(1)} <small>{l("상대지수", "relative index", "相対指数")}</small></strong>
             <small>{l("정상 참고", "Normal reference", "正常参照")} {sample.reference.toFixed(1)}</small>
           </button>;
         })}</div>
-        {scenario.processId === "wafer" ? <details className="pt-reference"><summary>{l("A3 구역의 기존 시계열 비교 · 제출 기준", "Existing A3 time-series comparison · submission reference", "A3区画の既存時系列比較・提出基準")}</summary>{recordChart}</details> : recordChart}
+        {scenario.processId === "wafer" ? <details className="pt-reference"><summary>{l("A3 구역의 기존 시계열 비교 · 제출 기준", "Existing A3 time-series comparison · submission reference", "A3区画の既存時系列比較・提出基準")}</summary>{recordChart}</details> : scenario.processId === "oxidation" || scenario.processId === "photo" ? <details className="pt-reference"><summary>{l("선택 신호의 시계열도 함께 보기", "Also view the selected signal's time series", "選択信号の時系列も確認する")}</summary>{recordChart}</details> : recordChart}
         {stage === "observe" ? <>
           <div className="et-actions"><Button className="et-primary" disabled={attempt.elapsed >= scenario.duration} onClick={() => { setRunning(current => !current); setInspectionSelection(null); setNotice(""); }}>{isRunning ? <Pause size={16} /> : <Play size={16} />}{isRunning ? l("일시정지", "Pause", "一時停止") : attempt.elapsed > 0 ? l("재개", "Resume", "再開") : l("재생", "Play", "再生")}</Button>
             <label className="pt-speed">{l("가상 기록 재생 속도", "Virtual-record playback speed", "仮想記録の再生速度")}<select value={speed} onChange={event => setSpeed(event.target.value === "3" ? 3 : 1)}><option value="1">1×</option><option value="3">3×</option></select></label>
@@ -317,6 +326,10 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
             <p className="et-caption">{l("표시는 내가 선택한 가상 기록의 시점입니다. 실제로 그 순간에 발견했다는 뜻이나 발견 속도 평가가 아닙니다.", "This marker represents a virtual-record time you selected, not when you actually discovered it or a discovery-speed assessment.", "この印は選択した仮想記録の時点です。その瞬間に実際に発見したという意味や、発見速度の評価ではありません。")}</p>
           </div>
         </> : <div className="et-marker-picker"><label htmlFor="process-review-time">{l("복기할 시점", "Review time", "振り返る時点")} · {clock(reviewTime)}</label><input id="process-review-time" type="range" min={0} max={scenario.duration} step={1} value={reviewTime} onChange={event => setReviewTime(Number(event.target.value))} /></div>}
+        {scenario.processId === "oxidation" ? <OxidationWorkspace language={language} time={shownTime} reference={oxidationReference}
+          onReferenceChange={reference => { pauseObservationView(); setOxidationReference(reference); }} /> : null}
+        {scenario.processId === "photo" ? <PhotoWorkspace language={language} time={shownTime} signal={signalId === "shape" ? "shape" : "position"} pinnedTime={photoPinnedTime} overlay={photoOverlay}
+          onPinChange={time => { pauseObservationView(); setPhotoPinnedTime(time); }} onOverlayChange={overlay => { pauseObservationView(); setPhotoOverlay(overlay); }} /> : null}
         {scenario.processId === "wafer" ? <>
           <WaferInspection language={language} time={shownTime} region={waferRegion} signal={signalId === "thickness" ? "thickness" : "surface"} review={stage === "review"}
             onRegionChange={region => { setWaferRegion(region); if (stage === "observe") { setRunning(false); setInspectionSelection(shownTime); } }} />
@@ -332,6 +345,8 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
         {scenario.processId === "wafer" ? <p className="et-caption">{l(`지도에서 마지막으로 살펴본 구역은 ${waferRegion}입니다 (관찰용 선택, 제출 답안 아님). 어느 구역의 표면이 어떻게 달랐고 두께 기록은 어땠는지 서술해 보세요. 아래 선택형 답안과 변화 시점은 A3 기준 기록을 대상으로 합니다.`,
           `The last region explored on the map was ${waferRegion} (a viewing choice, not a submitted answer). Explain where surface records differed and what thickness showed. The choices and onset below refer to the A3 record.`,
           `最後にマップで確認した区画は${waferRegion}です（観察用の選択で、提出回答ではありません）。どの区画の表面がどう異なり、厚さはどうだったか記述してください。以下の選択回答と変化時点はA3記録が対象です。`)}</p> : null}
+        {scenario.processId === "oxidation" ? <p className="et-caption">{l("어느 검사 묶음의 기준을 사용했고, 그 참고 띠와 관측값을 어떻게 비교했는지 적어 보세요. 관찰 화면의 기준 선택은 답안에 자동 입력되지 않습니다.", "Describe which group's reference you used and how the readings compared with that group's band. The viewing-tool selection does not automatically fill your answer.", "どの検査グループの基準を使い、その基準帯と観測値をどう比較したか記述してください。観察用の基準選択は回答欄に自動入力されません。")}</p> : null}
+        {scenario.processId === "photo" ? <p className="et-caption">{l("고정한 기록과 뒤의 기록을 비교해, 위치와 형상 중 무엇이 언제 달라졌는지 적어 보세요. 화면상 도형의 이동량은 실제 거리나 고장 원인이 아닙니다.", "Compare pinned and later records: which of position and shape changed, and when? Diagram shifts are not physical distances or fault causes.", "固定した記録と後の記録を比較し、位置・形状のどちらがいつ変わったか記述してください。図の移動量は実際の距離や故障原因ではありません。")}</p> : null}
         <p>{l("이 답안의 다음 확인은 제공된 가상 기록을 비교하는 순서입니다. 장비를 조작하거나 실제 측정·정비를 하는 계획을 작성하지 마세요.", "Your next steps should compare the supplied virtual records. Do not propose equipment operation, new physical measurements, or maintenance.", "次の確認は提供された仮想記録を比較する順序です。装置操作、実測、整備の計画は記入しないでください。")}</p>
         <form className="et-form pt-form" onSubmit={event => { event.preventDefault(); submit(); }}>
           <fieldset><legend>{l("1. 정상 참고와 비교할 때 가장 주목한 항목", "1. What stood out against the normal reference?", "1. 正常参照と比べて最も注目した項目")}</legend>
