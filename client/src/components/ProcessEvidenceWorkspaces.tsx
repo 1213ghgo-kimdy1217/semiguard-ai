@@ -1,4 +1,6 @@
+import MetalLayerConcept from "./MetalLayerConcept";
 import React, { useId, useState } from "react";
+import InspectionConceptRecord from "./InspectionConceptRecord";
 import { depositionEvidence, metalObservation, referenceBandPosition, type EvidenceClaim, type EvidenceSource } from "../../../shared/inspectionEvidence";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import "./process-evidence-workspaces.css";
@@ -55,10 +57,13 @@ export function DepositionWorkspace({ time, language, onInteraction }: Props & {
       return <article key={signal}>
         <p className="pe-card-code">{signal === "film" ? "RECORD A / FILM" : "RECORD B / ELECTRICAL"}</p>
         <h4>{signal === "film" ? l("증착 결과의 막 검사", "Deposition-result film inspection", "成膜結果の膜検査") : l("별도 이온 주입 결과의 전기적 검사", "Separate implantation-result electrical inspection", "別のイオン注入結果の電気的検査")}</h4>
+        <InspectionConceptRecord signal={signal} sample={sample} language={language} />
         <p>{signal === "film" ? l("막 검사 기록이 자기 참고 기준과 다른지 확인하는 자료", "Evidence for comparing film inspection with its own reference", "膜検査記録を自身の参考基準と比較する資料") : l("전기적 검사 기록을 자기 기준과 비교하는 자료 · 막 검사를 대신하지 않음", "Evidence for its own electrical reference comparison, not a substitute for film inspection", "電気的検査を自身の基準と比較する資料・膜検査の代わりにはならない")}</p>
+        <details className="pe-exact-evidence"><summary>{l("정확한 수치 비교", "Compare exact values", "正確な数値を比較")}</summary>
         <dl><div><dt>{l("이번 / 정상 참고", "Current / normal reference", "今回 / 正常参照")}</dt><dd>{sample.value.toFixed(1)} / {sample.reference.toFixed(1)}</dd></div>
           <div><dt>{l("차이", "Difference", "差")}</dt><dd>{signed(sample.value - sample.reference)}</dd></div>
           <div><dt>{l("이 검사의 참고 띠", "This inspection's reference band", "この検査の基準帯")}</dt><dd>{sample.low.toFixed(1)}–{sample.high.toFixed(1)}</dd></div></dl>
+        </details>
       </article>;
     })}</div>
     <div className="pe-classifier">
@@ -96,6 +101,7 @@ export function MetalWorkspace({ time, observedUntil, language, onTimeChange }: 
     <h3>{l("한 구간의 복귀와, 이어지는 기록을 구분하기", "Separate one interval's return from what follows", "一区間の復帰と、その後の記録を区別する")}</h3>
     <p>{l(`관측 누적 ${clock(view.until)}까지 · 선택 시점 ${clock(view.selectedTime)} · 6초 단위로 묶은 가상 기록입니다. 실제 검사 주기가 아닙니다.`, `Observed through ${clock(view.until)} · selected ${clock(view.selectedTime)} · synthetic records grouped into six-second replay intervals, not real inspection cycles.`, `観測済み${clock(view.until)}まで・選択時点${clock(view.selectedTime)}・6秒単位にまとめた仮想記録で、実際の検査周期ではありません。`)}</p>
     <p className="pe-key">{l("각 칸은 ‘띠 밖 기록 수 / 관측 기록 수’입니다. 비율은 이 가상 재생 구간의 기록 수이며 실제 불량률·수율이 아닙니다.", "Each cell shows out-of-band records / observed records. These counts describe the synthetic replay, not real defect rates or yield.", "各枠は「基準帯外の記録数 / 観測記録数」です。仮想再生区間の記録数であり、実際の不良率・歩留まりではありません。")}</p>
+    <MetalLayerConcept time={view.selectedTime} language={language} />
     <div className="pe-window-grid" role="group" aria-label={l("관측한 구간 선택", "Choose an observed interval", "観測済みの区間を選ぶ")}>
       {view.windows.map(window => <button type="button" key={window.start} aria-pressed={window.start === view.selected.start} onClick={() => onTimeChange(window.end)}>
         <strong>{clock(window.start)}–{clock(window.end)}</strong>

@@ -404,7 +404,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
         </section>
         <ScenarioJudgmentCoach key={`${scenario.id}:${userId ?? "guest"}:${attempt.saveKey}:${language}`} processAttempt={attempt} scenario={scenario} language={language} userId={userId} onReviewPoint={reviewCoachPoint} />
         <section className="et-panel et-next"><h2>{l("다음 판단으로 연결합니다.", "Continue to the next reasoning task.", "次の判断につなげます。")}</h2><p>{l("공정은 순서대로 배울 수 있지만 어느 훈련이든 직접 선택할 수 있습니다. 모든 단계가 이상 신호를 포함하는 것은 아닙니다.", "Follow the learning order or choose any exercise directly. Not every stage contains an anomaly.", "工程を順に学ぶことも、どの訓練でも直接選ぶこともできます。すべての段階に異常があるわけではありません。")}</p>
-          <div className="et-actions">{nextScenario ? <Link className="et-linkbutton" href={scenarioHref(nextScenario)}>{l("다음 공정", "Next process", "次の工程")} · {localize(nextScenario.title, language)} <ArrowRight size={16} /></Link> : <Link className="et-linkbutton" href="/live">{l("8대 공정 이후 자유 분석으로", "Continue with free analysis", "8大工程の後は自由分析へ")} <ArrowRight size={16} /></Link>}
+          <div className="et-actions">{nextScenario ? <Link className="et-linkbutton" href={nextScenario.processId === "etch" ? "/training/etch" : scenarioHref(nextScenario)}>{l("다음 공정", "Next process", "次の工程")} · {localize(nextScenario.title, language)} <ArrowRight size={16} /></Link> : <Link className="et-linkbutton" href="/live">{l("8대 공정 이후 자유 분석으로", "Continue with free analysis", "8大工程の後は自由分析へ")} <ArrowRight size={16} /></Link>}
             <Link className="et-inline-link" href="/training">{l("다른 학습·연습 선택", "Choose another exercise", "別の学習・練習を選ぶ")}</Link>
           </div>
         </section>

@@ -1,3 +1,4 @@
+import ProcessLearningContext from "./ProcessLearningContext";
 import React, { useId } from "react";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { waferInspectionComparison, waferInspectionSample, waferRegions, WAFER_TRACE_REGION,
@@ -54,6 +55,7 @@ export default function WaferInspection({ language, region, onRegionChange, sign
   const label = signal === "surface" ? l("표면", "Surface", "表面") : l("두께", "Thickness", "厚さ");
   const timestamp = `${Math.floor(comparison.surface.time / 60).toString().padStart(2, "0")}:${(comparison.surface.time % 60).toString().padStart(2, "0")}`;
   return <section className="wi-workspace" aria-labelledby={`${id}-title`}>
+    <ProcessLearningContext kind="wafer" language={language} />
     <p className="et-eyebrow">SPATIAL EVIDENCE / {label}</p>
     <h2 id={`${id}-title`}>{l("변화가 어느 위치에 모였나요?", "Where are the changes concentrated?", "変化はどの位置に集中していますか？")}</h2>
     <p>{l(`${timestamp} · 같은 조건·같은 시점의 두 지도를 비교하세요. 위의 표면·두께 버튼으로 표시 항목을 바꿀 수 있습니다.`,

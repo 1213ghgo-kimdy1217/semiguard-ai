@@ -1,0 +1,19 @@
+{
+  "provenance": "Historical validation metadata supplied inside the integration ZIP, not the current Codex run. See EIGHT_PROCESS_VALIDATION.md for executed integration results.",
+  "base": "6b01414fa417c90e11b6d15aa6c5622162f49d7c",
+  "patch_check": "PASS",
+  "patch_apply": "PASS",
+  "assembled_files_match": "PASS",
+  "modified_existing_files": [
+    "client/src/components/ProcessEquipmentReference.tsx",
+    "client/src/components/ProcessEvidenceReview.tsx",
+    "client/src/components/ProcessEvidenceWorkspaces.tsx",
+    "client/src/pages/EtchTraining.tsx"
+  ],
+  "typescript": "NOT RUN",
+  "vitest": "NOT RUN",
+  "production_build": "NOT RUN",
+  "browser": "NOT RUN",
+  "github_push": "NOT PERFORMED",
+  "production_deployment": "NOT PERFORMED"
+}

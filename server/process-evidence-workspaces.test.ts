@@ -33,8 +33,16 @@ describe("evidence sorting and recurrence observation workspaces", () => {
   it.each(copy)("shows observed metal intervals and numeric record details in $language", item => {
     const html = renderToStaticMarkup(createElement(MetalWorkspace, { time: 48, observedUntil: 59, language: item.language, onTimeChange: vi.fn() }));
     expect(html).toContain(item.metal); expect(html).toContain(item.counts);
-    expect(html).toContain('aria-pressed="true"'); expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
-    expect(html.match(/<button/g)).toHaveLength(16); // 10 observed intervals plus 6 detail records.
+    const intervals = html.match(/<div class="pe-window-grid"[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? "";
+    const perspectives = html.match(/<div class="pc-controls"[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? "";
+    const details = html.slice(html.indexOf('<div class="pe-interval-detail">'));
+    // Each independent control group must keep exactly one selected item.
+    expect(intervals.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(intervals.match(/<button/g)).toHaveLength(10);
+    expect(perspectives.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(perspectives.match(/<button/g)).toHaveLength(2);
+    expect(details.match(/<button/g)).toHaveLength(6);
+    expect(html.match(/<button/g)).toHaveLength(18); // Original 16 record controls plus 2 perspectives.
     expect(html).toContain('tabindex="0"'); expect(html).toContain('scope="row"'); expect(html).toContain('aria-current="true"');
     for (const row of metalObservation(48, 59).selected.rows) {
       expect(html).toContain(row.connection.value.toFixed(1)); expect(html).toContain(row.appearance.value.toFixed(1));

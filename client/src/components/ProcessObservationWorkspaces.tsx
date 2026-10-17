@@ -1,3 +1,4 @@
+import ProcessLearningContext from "./ProcessLearningContext";
 import React, { useId } from "react";
 import { oxidationComparison, photoObservation, type OxidationReference, type PhotoSignal } from "../../../shared/processObservation";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
@@ -30,6 +31,7 @@ export function OxidationWorkspace({ time, language, reference, onReferenceChang
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const view = oxidationComparison(time, reference);
   return <section className="po-workspace po-oxidation">
+    <ProcessLearningContext kind="oxidation" language={language} />
     <p className="et-eyebrow">INSPECTION GROUP WORKBENCH</p>
     <h3>{l("이전 숫자가 아니라, 맞는 기준과 비교하기", "Compare with a matching reference, not just an earlier number", "以前の数値ではなく対応する基準と比較する")}</h3>
     <p className="po-current">{l(`선택 기록 ${clock(view.time)} · 검사 묶음 ${view.group}`, `Selected record ${clock(view.time)} · inspection group ${view.group}`, `選択記録 ${clock(view.time)}・検査グループ ${view.group}`)}</p>
@@ -91,6 +93,7 @@ export function PhotoWorkspace({ time, language, signal, pinnedTime, overlay, on
   const view = photoObservation(time, pinnedTime, signal);
   const pinId = useId();
   return <section className="po-workspace po-photo">
+    <ProcessLearningContext kind="photo" language={language} />
     <p className="et-eyebrow">PATTERN COMPARISON DESK</p>
     <h3>{l("한 장을 고정하고, 앞뒤를 비교하기", "Compare frames, not just the last one", "一枚を固定して前後を比べる")}</h3>
     <p>{signal === "position" ? l("위치 보기 · 실선 패턴과 점선 참고의 가로 위치를 비교하세요.", "Position view · compare the horizontal locations of the solid pattern and dashed reference.", "位置表示・実線パターンと破線参照の横位置を比較してください。") : l("형상 보기 · 위치 이동과 섞지 않고, 실선과 점선의 폭을 비교하세요.", "Shape view · compare solid and dashed widths separately from position shift.", "形状表示・位置移動と混同せず、実線と破線の幅を比較してください。")}</p>
