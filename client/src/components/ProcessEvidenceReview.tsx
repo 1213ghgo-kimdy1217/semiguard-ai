@@ -1,4 +1,5 @@
 import React from "react";
+import PackagingObservationWorkspace from "./PackagingObservationWorkspace";
 import { processSample, type ProcessScenario } from "../../../shared/processScenarios";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 
@@ -6,6 +7,7 @@ type Props = { scenario: ProcessScenario; language: ProductLanguage };
 const clock = (time: number) => `${Math.floor(time / 60).toString().padStart(2, "0")}:${(time % 60).toString().padStart(2, "0")}`;
 
 export function ProcessRecordContext({ scenario, time, language }: Props & { time: number }) {
+  if (scenario.processId === "packaging") return <PackagingObservationWorkspace time={time} language={language} />;
   if (scenario.processId !== "oxidation" && scenario.processId !== "eds") return null;
   const selectedTime = processSample(scenario, scenario.signals[0].id, time).time;
   if (scenario.processId === "eds") {
