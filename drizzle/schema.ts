@@ -18,6 +18,12 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// Minimal keyed subject digest blocks old sessions and automatic OAuth resurrection.
+export const accountRevocations = mysqlTable("account_revocations", {
+  subjectHash: varchar("subject_hash", { length: 64 }).primaryKey(),
+  revokedAt: timestamp("revoked_at").defaultNow().notNull(),
+});
+
 // 계정별 시나리오 연습 결과. 서술형 원문은 저장하지 않고 선택형 판단 근거만 보관한다.
 export const trainingAttempts = mysqlTable("training_attempts", {
   id: int("id").autoincrement().primaryKey(),

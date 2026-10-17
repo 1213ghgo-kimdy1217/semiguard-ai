@@ -193,13 +193,14 @@ class SDKServer {
       name: payload.name,
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+      .setIssuedAt(Math.floor(issuedAt / 1000))
       .setExpirationTime(expirationSeconds)
       .sign(secretKey);
   }
 
   async verifySession(
     cookieValue: string | undefined | null
-  ): Promise<{ openId: string; appId: string; name: string } | null> {
+  ): Promise<{ openId: string; appId: string; name: string; issuedAt?: number } | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
@@ -225,6 +226,7 @@ class SDKServer {
         openId,
         appId,
         name,
+        ...(typeof payload.iat === "number" ? { issuedAt: payload.iat } : {}),
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
@@ -256,7 +258,7 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
-  async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
+  getRequestSessionToken(req: Request) {
     // 1. Prefer the session cookie (regular OAuth login).
     const cookies = this.parseCookies(req.headers.cookie);
     let sessionToken = cookies.get(COOKIE_NAME);
@@ -271,6 +273,11 @@ class SDKServer {
       }
     }
 
+    return sessionToken;
+  }
+
+  async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
+    const sessionToken = this.getRequestSessionToken(req);
     const session = await this.verifySession(sessionToken);
 
     if (!session) {
@@ -287,11 +294,15 @@ class SDKServer {
     }
 
     const sessionUserId = session.openId;
+    // Checked on every request, including sessions on other devices. Fail closed.
+    if (await db.isUserRevoked(sessionUserId)) throw ForbiddenError("Account is unavailable");
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
     // If user not in DB, sync from OAuth server automatically
     if (!user) {
+      // Local accounts are created only by explicit signup, never by an old cookie.
+      if (sessionUserId.startsWith("local_")) throw ForbiddenError("User not found");
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionToken ?? "");
         await db.upsertUser({
@@ -312,10 +323,8 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
+    // An update cannot recreate a row removed by a concurrent withdrawal.
+    await db.touchUser(user.id);
 
     return user;
   }

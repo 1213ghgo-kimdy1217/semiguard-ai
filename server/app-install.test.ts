@@ -183,7 +183,7 @@ describe("public app packaging and discovery", () => {
     expect([...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(match => match[1])).toEqual(["https://semiguard-ai-five.vercel.app/"]);
     expect(read("client/public/robots.txt")).toContain("Sitemap: https://semiguard-ai-five.vercel.app/sitemap.xml");
     const privateHeader = config.headers.find((item: { source: string }) => item.source.includes(":private"));
-    expect(privateHeader.source).toBe("/:private(login|signup|training|dashboard|live|demo|api)/:path*");
+    expect(privateHeader.source).toBe("/:private(login|signup|account|training|dashboard|live|demo|api)/:path*");
     expect(privateHeader.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });
   });
   it("does not introduce offline caches, tracking, or credential storage", () => {
