@@ -30,7 +30,7 @@ describe("process feedback reconnects choices to their evidence", () => {
     expect(elements(tree).filter(element => element.props.className === "et-revisit")).toHaveLength(2);
     for (const [label, time] of [[ownPoint, 45], [designedPoint, 25]] as const) {
       elements(tree).find(element => element.type === "button" && text(element.props.children) === label)!.props.onClick();
-      expect(onReview).toHaveBeenLastCalledWith(time);
+      expect(onReview).toHaveBeenLastCalledWith(time, "surface");
     }
     expect(onReview).toHaveBeenCalledTimes(2);
   });
@@ -53,14 +53,14 @@ describe("process feedback reconnects choices to their evidence", () => {
     const value = { ...answer, onset: "0" }; const before = JSON.stringify(value); const onReview = vi.fn();
     const tree = render("ko", value, wafer, onReview);
     elements(tree).find(element => element.type === "button" && text(element.props.children) === "0초의 내 시작 판단 보기")!.props.onClick();
-    expect(onReview).toHaveBeenCalledWith(0); expect(JSON.stringify(value)).toBe(before);
+    expect(onReview).toHaveBeenCalledWith(0, "surface"); expect(JSON.stringify(value)).toBe(before);
   });
   it("keeps navigation read-only and focuses the graph with a return to the source section", () => {
     const component = readFileSync("client/src/components/ProcessCriteriaFeedback.tsx", "utf8");
     expect(component).not.toMatch(/useMutation|useEffect|localStorage|sessionStorage|\bfetch\(|\.mutate|saveDraft|saveAttempt/);
     const source = readFileSync("client/src/pages/ProcessTraining.tsx", "utf8");
-    expect(source).toContain('reviewChoicePoint(event.time, "timeline")');
-    expect(source).toContain('onReviewPoint={time => reviewChoicePoint(time, "criteria")}');
+    expect(source).toContain('reviewChoicePoint(event.time, "timeline", processEventReviewSignal(scenario, index))');
+    expect(source).toContain('onReviewPoint={(time, signal) => reviewChoicePoint(time, "criteria", signal)}');
     expect(source).toContain('ref={criteriaHeading} tabIndex={-1}');
     expect(source).toContain('ref={timelineHeading} tabIndex={-1}');
     expect(source).toContain('target?.focus({ preventScroll: true })');

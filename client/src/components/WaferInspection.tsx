@@ -1,3 +1,5 @@
+import ProcessLearningContext from "./ProcessLearningContext";
+import RecordBand from "./RecordBand";
 import React, { useId } from "react";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import { waferInspectionComparison, waferInspectionSample, waferRegions, WAFER_TRACE_REGION,
@@ -75,6 +77,8 @@ export default function WaferInspection({ language, region, onRegionChange, sign
       "両マップは同じ相対指数の目盛です。色は欠陥数・不良率・故障確率ではなく、正常や故障を確定しません。")}</p>
     <div className="wi-selected" role="region" aria-labelledby={`${id}-selected`}>
       <h3 id={`${id}-selected`}>{l(`${region} · 같은 구역의 두 검사 근거`, `${region} · two kinds of evidence at the same location`, `${region}・同じ区画の2種類の検査根拠`)}</h3>
+      <div className="studio-two"><RecordBand sample={comparison.surface} title={l(`${region} · 표면 검사`, `${region} · surface inspection`, `${region}・表面検査`)} language={language} /><RecordBand sample={comparison.thickness} title={l(`${region} · 두께 검사`, `${region} · thickness inspection`, `${region}・厚さ検査`)} language={language} /></div>
+      <details><summary>{l("선택 구역의 정확한 수치", "Exact values for the selected region", "選択区画の正確な数値")}</summary>
       <div className="et-table" tabIndex={0} role="region" aria-label={l("선택 구역의 수치 비교표", "Numeric comparison for the selected region", "選択区画の数値比較表")}><table>
         <caption>{l(`${timestamp} · 교육용 상대지수 · 물리 단위가 같은 센서라는 뜻이 아닙니다.`, `${timestamp} · training-only relative indices, not sensors sharing a physical unit.`, `${timestamp}・教育用相対指数で、センサーの物理単位が同じという意味ではありません。`)}</caption>
         <thead><tr><th scope="col">{l("검사 항목", "Inspection", "検査項目")}</th><th scope="col">{l("정상 참고", "Reference", "正常参照")}</th><th scope="col">{l("이번 기록", "Current", "今回")}</th><th scope="col">{l("차이", "Difference", "差")}</th></tr></thead>
@@ -82,11 +86,12 @@ export default function WaferInspection({ language, region, onRegionChange, sign
           <th scope="row">{kind === "surface" ? l("표면 편차 지수", "Surface deviation index", "表面偏差指数") : l("두께 검사 지수", "Thickness inspection index", "厚さ検査指数")}</th>
           <td>{sample.reference.toFixed(1)}</td><td>{sample.value.toFixed(1)}</td><td>{signed(sample.difference)}</td>
         </tr>)}</tbody>
-      </table></div>
+      </table></div></details>
       <p>{l("같은 구역에서 두께 기록도 같은 방향으로 달라졌나요? 한 검사 결과만으로 웨이퍼 전체나 장비 원인을 단정할 수 있는지도 생각해 보세요.",
         "Did thickness also change in the same direction at this location? Consider whether one inspection can establish a whole-wafer pattern or an equipment cause.",
         "同じ区画で厚さ記録も同じ方向に変化しましたか？一つの検査だけでウェーハ全体や装置原因を断定できるか考えてください。")}</p>
     </div>
+    <details className="studio-detail"><summary>{l("기판 검사 맥락과 지도의 범위", "Substrate inspection context and map scope", "基板検査の背景とマップの範囲")}</summary><ProcessLearningContext kind="wafer" language={language} /></details>
     {review ? <aside className="wi-review" aria-label={l("선택 구역 복기 · 규칙 기반 안내", "Selected-region review · rule-based guidance", "選択区画の振り返り・ルールに基づく案内")}>
       <h3>{l(`${region} 구역을 다시 비교해 보세요.`, `Recheck region ${region}.`, `${region}区画をもう一度比較しましょう。`)}</h3>
       <ul><li>{l(`${timestamp}의 ${region}: 표면 차이 ${signed(comparison.surface.difference)}, 두께 차이 ${signed(comparison.thickness.difference)}입니다.`,

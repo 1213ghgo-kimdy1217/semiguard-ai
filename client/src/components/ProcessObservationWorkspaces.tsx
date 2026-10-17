@@ -1,3 +1,4 @@
+import ProcessLearningContext from "./ProcessLearningContext";
 import React, { useId } from "react";
 import { oxidationComparison, photoObservation, type OxidationReference, type PhotoSignal } from "../../../shared/processObservation";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
@@ -44,7 +45,7 @@ export function OxidationWorkspace({ time, language, reference, onReferenceChang
       </button>
     </div>
     {view.reference === "group-a" ? <p className="po-warning" role="status">{l("다른 묶음의 기준을 적용 중입니다. 이 차이만으로 현재 묶음이 비정상이라고 판단하지 마세요.", "You are applying another group's reference. This difference alone does not establish that the current group is abnormal.", "別グループの基準を使用中です。この差だけでは現在のグループが異常とは判断できません。")}</p> : null}
-    <div className="po-records">{view.records.map(({ signal, sample, compared, difference }) => <article key={signal.id}>
+    <div className="studio-two studio-oxidation"><ProcessLearningContext kind="oxidation" language={language} /><div className="po-records">{view.records.map(({ signal, sample, compared, difference }) => <article key={signal.id}>
       <h4>{l(...signal.name)}</h4>
       <div className="po-reading"><strong>{sample.value.toFixed(1)}</strong><span>{l("이번 기록", "Current record", "今回の記録")}</span></div>
       <div className="po-gauge" aria-hidden="true">
@@ -57,7 +58,7 @@ export function OxidationWorkspace({ time, language, reference, onReferenceChang
         <div><dt>{l("선택 기준과의 차이", "Difference from selected reference", "選択基準との差")}</dt><dd>{signed(difference)}</dd></div>
         <div><dt>{l("선택 기준의 참고 띠", "Selected reference band", "選択基準の範囲")}</dt><dd>{compared.low.toFixed(1)}–{compared.high.toFixed(1)}</dd></div>
       </dl>
-    </article>)}</div>
+    </article>)}</div></div>
     <p className="po-key">{l("● 이번 기록　┊ 선택한 정상 참고　▰ 해당 참고 띠 · 모두 교육용 상대지수", "● Current record　┊ Selected normal reference　▰ Its reference band · teaching-only relative indices", "● 今回の記録　┊ 選択した正常参照　▰ その基準帯・すべて教育用相対指数")}</p>
     <p className="po-scope">{l("기준 선택은 관찰용입니다. 답안·점수·계정 저장·AI 입력을 바꾸지 않습니다. 제출에는 직접 선택한 비교 기준이 사용됩니다.", "This reference selection is a viewing tool. It does not change answers, scores, account saves or AI input. Submission uses the comparison reference you explicitly answer.", "基準選択は観察用です。回答・点数・アカウント保存・AI入力は変わりません。提出には回答欄で選んだ比較基準を使用します。")}</p>
   </section>;
@@ -107,7 +108,8 @@ export function PhotoWorkspace({ time, language, signal, pinnedTime, overlay, on
     </div>
     <p className="po-key">{l("실선·채움: 이번 기록　점선: 같은 위치의 정상 참고", "Solid fill: current record　Dashed: same-location normal reference", "実線・塗り：今回の記録　破線：同じ位置の正常参照")}</p>
     <p>{l("차이가 보이는 기록을 고정한 뒤 재생을 이어 보세요. 위치·형상 중 어느 기록이 언제 달라졌는지, 앞선 기록과 마지막 기록이 같은지 근거를 모아 보세요.", "Pin a record where you notice a difference, then resume. Gather evidence of which record changed and when, and whether earlier and final records agree.", "差に気付いた記録を固定して再生を続けてください。位置・形状のどちらがいつ変化し、前と最後の記録が同じか、根拠を集めましょう。")}</p>
-    <details><summary>{l("도식의 의미와 한계", "What the diagram means and its limits", "模式図の意味と限界")}</summary>
+    <details><summary>{l("노광 개념과 관찰 도식의 한계", "Exposure concept and observation diagram limits", "露光概念と観察模式図の限界")}</summary>
+      <ProcessLearningContext kind="photo" language={language} />
       <p>{l("패턴은 가상 지수의 차이를 눈으로 비교하도록 그린 기호입니다. 위치 보기는 차이×2를 가로 이동으로, 형상 보기는 그 값의 1/4을 폭 변화로 표현하며 표시량은 제한됩니다. 실제 nm·감광막 형상·칩 배치가 아니며 수치는 아래 기록표가 기준입니다. 기록이 돌아와 보여도 실제 원인 해결을 뜻하지 않습니다.", "The pattern is a symbol for comparing synthetic index differences. Position encodes difference ×2 as horizontal shift; shape encodes a quarter of that as width change, with capped display offsets. It is not nanometres, resist geometry or die layout; the numeric records are authoritative. A returning record does not establish that a real cause was resolved.", "パターンは仮想指数の差を比較する記号です。位置は差×2を横移動、形状はその1/4を幅変化として表示し、表示量には上限があります。実際のnm・感光膜形状・チップ配置ではなく、数値記録が基準です。記録が戻っても実際の原因解決を意味しません。")}</p>
     </details>
     <p className="po-scope">{l("고정 시점·겹쳐보기는 관찰용입니다. 답안·점수·계정 저장·AI 입력에는 포함되지 않습니다. 관측 전의 기록은 표시하지 않습니다.", "Pinned frames and overlays are viewing tools only. They are not included in answers, scores, account saves or AI input. Unobserved records are not displayed.", "固定時点・重ね表示は観察用です。回答・点数・保存・AI入力には含まれません。未観測の記録は表示しません。")}</p>

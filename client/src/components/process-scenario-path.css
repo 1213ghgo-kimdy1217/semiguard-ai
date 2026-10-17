@@ -23,3 +23,6 @@
 .et-app .process-path-filters button[aria-pressed="true"] { background: #e4aa55; color: #17201b; border-color: #e4aa55; }
 @media (max-width: 1000px) { .process-path-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .process-path-grid { grid-template-columns: 1fr; } }
+.process-path-scope{margin:12px 0 20px;font-size:14px;color:#c3cec4}
+.process-path-scope summary{min-height:44px;padding:10px 0;cursor:pointer}
+.process-path-scope summary:focus-visible{outline:3px solid #e4aa55;outline-offset:3px}

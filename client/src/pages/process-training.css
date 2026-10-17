@@ -1,4 +1,5 @@
 .pt-app .pt-steps{display:flex;gap:12px;list-style:none;margin:24px 0 18px;padding:0;flex-wrap:wrap}
+.pt-app .et-marker-picker button{max-width:100%;min-width:0;height:auto;min-height:44px}
 .pt-app .pt-steps li{display:flex;align-items:center;gap:8px;color:#b4c1b6;font-size:14px;border:1px solid #3a473e;border-radius:5px;padding:8px 12px}
 .pt-app .pt-steps li span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#29372e;font-size:12px}
 .pt-app .pt-steps li[aria-current=step]{border-color:#e4aa55;color:#efbc70;background:#2b3529}
@@ -8,6 +9,9 @@
 .pt-app .pt-signal-list span,.pt-app .pt-location{display:block;font-size:12px;font-weight:400;color:#b4c1b6}
 .pt-app .pt-reference{margin:24px 0}
 .pt-app .pt-reference summary{cursor:pointer;font-weight:650}
+.pt-app .pt-exact-snapshot{margin:16px 0;border-top:1px solid #435447;padding-top:8px}
+.pt-app .pt-exact-snapshot>summary{min-height:44px;padding:10px 0;cursor:pointer;color:#c3cec4;font-weight:600}
+.pt-app .pt-exact-snapshot>summary:focus-visible{outline:3px solid #e4aa55;outline-offset:3px}
 .pt-app .pt-reference summary:focus-visible{outline:3px solid #e4aa55;outline-offset:4px}
 .pt-app .pt-sensors{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-top:24px}
 .pt-app .pt-sensors .et-sensor strong{font-size:23px}
