@@ -107,3 +107,11 @@ After receiving files: validate archive paths without executing embedded code, c
 - Supplied metadata/checklist now explicitly identify their upstream historical NOT RUN statements and link to [current executed results](EIGHT_PROCESS_VALIDATION.md). After adding documentation, focused repository-link and integration-wiring checks also passed: 2 files / 10 tests.
 - Full evidence, per-process matrix, local-fixture limitations, preserved contracts and remaining external checks: [EIGHT_PROCESS_VALIDATION.md](EIGHT_PROCESS_VALIDATION.md). Original `shared/processScenarios.ts`, `etchScenario.ts`, `trainingDraft.ts`, `trainingRecord.ts`, server routes/storage, app access routes and PR #97 runtime files remain identical to current main.
 - Main was fetched again during validation and remains `226484d`. No main merge, production deployment, protected-preview access or DB/Secret/permission/settings changes. Commit/PR receipt will be recorded below after the review branch is published.
+
+### Publication receipt / remaining gate
+
+- Integration commit: [`a7aaed21f937cef8355fa1f3dde69af73fe52c94`](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/a7aaed21f937cef8355fa1f3dde69af73fe52c94).
+- Pushed successfully to the existing repository's [separate integration branch](https://github.com/1213ghgo-kimdy1217/semiguard-ai/tree/integrate/eight-process-review-20261017). No main merge or production release.
+- Draft PR creation was **NOT executed**: the GitHub connector's automatic approval review returned a usage-limit error. This was a review-availability failure, not an unsafe-action determination. Do not bypass it through another client or create a PR from an assumed success. No PR URL/number exists from this attempt.
+- After the review path is available, create a draft PR from this branch to main, attach it to the chat, record the actual URL, and present completed/unverified results before requesting the user's explicit merge/deployment approval.
+- The separate local QA server and temporary browser viewport are cleaned up after verification. The original user's site/account tab is not changed. Local artifacts remain under `work/verification-artifacts/`.

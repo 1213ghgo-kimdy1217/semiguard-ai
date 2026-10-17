@@ -62,3 +62,9 @@ Final browser checks after rebuilding used a reloaded page; the earlier observat
 - Main merge / public deployment: **not performed and requires user approval after results**.
 - No DB/schema, Secrets, permissions, paid services or repository settings changed; no user data sent to external AI.
 - Synthetic education and choice-based rule matching remain distinct from optional AI explanation. No real equipment control, fault confirmation, fab-performance or learning-effect validation is claimed.
+
+## Integration receipt
+
+- Implementation + verification commit: [`a7aaed2`](https://github.com/1213ghgo-kimdy1217/semiguard-ai/commit/a7aaed21f937cef8355fa1f3dde69af73fe52c94), pushed to [the integration branch](https://github.com/1213ghgo-kimdy1217/semiguard-ai/tree/integrate/eight-process-review-20261017).
+- Draft PR creation: **not performed**. The connector's automatic approval review could not run because of its usage limit; no alternate path was used to bypass that check. No PR number or completed deployment is claimed.
+- Main/public release still requires the user's explicit approval after reviewing these results. External account/provider verification remains separately unverified above.
