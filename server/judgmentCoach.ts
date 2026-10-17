@@ -87,7 +87,7 @@ export function scenarioCoachContext(request: JudgmentCoachRequest) {
     const times = Array.from({ length: Math.floor(scenario.duration / 5) + 1 }, (_, index) => index * 5);
     if (times.at(-1) !== scenario.duration) times.push(scenario.duration);
     return {
-      scope: `${scenario.title[1]}. ${scenario.equipment[1]}. Synthetic educational records only; values are relative indices, not physical units, manufacturer specifications, production thresholds or real equipment logs. Samples are selected at 5-second intervals, not the complete one-second record. Do not infer an exact onset between samples; ask the learner to revisit the full chart. A return to the reference is not evidence that a real fault was fixed.`,
+      scope: `${scenario.title[1]}. ${scenario.equipment[1]}. Synthetic educational records only; values are relative indices, not physical units, manufacturer specifications, production thresholds or real equipment logs. Samples are selected at 5-second intervals, not the complete one-second record. Do not infer an exact onset between samples; ask the learner to revisit the full chart. A return to the reference is not evidence that a real fault was fixed.${scenario.processId === "wafer" ? " The temporal samples below belong to the existing A3 location. The separate nine-region spatial map and selected view are not supplied to the model. Do not validate learner claims about other locations, a largest region, or map-wide patterns; ask for matching-location evidence instead." : ""}`,
       objective: scenario.objective[1],
       rangeEvidence: coachRangeEvidence(request.scenarioId),
       signalDefinitions: scenario.signals.map(({ id, name, location }) => ({ id, name: name[1], location: location[1],

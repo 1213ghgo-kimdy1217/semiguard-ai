@@ -231,6 +231,11 @@ describe("scenario judgment coach", () => {
     expect(context.signalDefinitions).toEqual(scenario.signals.map(({ id, name, location }) => ({ id, name: name[1], location: location[1],
       displayName: name[0], displayLocation: location[0] })));
     expect(context.scope).toContain("relative indices");
+    if (scenario.processId === "wafer") {
+      expect(context.scope).toContain("existing A3 location");
+      expect(context.scope).toContain("spatial map and selected view are not supplied to the model");
+      expect(context.scope).toContain("Do not validate learner claims about other locations");
+    } else expect(context.scope).not.toContain("nine-region spatial map");
     expect(context.evidence["phase-reference"]).toContain(scenario.referenceRule[1]);
     expect(context.samples.flatMap(row => row.signals.map(signal => signal.id))).toEqual(
       context.samples.flatMap(() => scenario.signals.map(signal => signal.id)));
