@@ -1,4 +1,5 @@
 import React from "react";
+import EdsObservationWorkspace from "./EdsObservationWorkspace";
 import { processSample, type ProcessScenario } from "../../../shared/processScenarios";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 
@@ -10,10 +11,10 @@ export function ProcessRecordContext({ scenario, time, language }: Props & { tim
   const selectedTime = processSample(scenario, scenario.signals[0].id, time).time;
   if (scenario.processId === "eds") {
     const region = selectedTime < scenario.events[0].time ? "A" : selectedTime < scenario.events[1].time ? "B" : "C";
-    return <p className="pt-record-context">
+    return <><EdsObservationWorkspace time={selectedTime} observedUntil={selectedTime} language={language} /><p className="pt-record-context">
       <strong>{tr(language, `교육용 검사 구역 ${region}`, `Teaching inspection region ${region}`, `教育用検査領域 ${region}`)}</strong>
       <span>{tr(language, `${clock(selectedTime)}의 선택 기록 · 이 구역의 정상 참고와 비교 · 재생 위치는 실제 생산 시간이 아닙니다.`, `Selected record at ${clock(selectedTime)} · compare with this region's normal reference · playback position is not production time.`, `${clock(selectedTime)}の選択記録・この領域の正常参照と比較・再生位置は実際の生産時間ではありません。`)}</span>
-    </p>;
+    </p></>;
   }
   const group = selectedTime < scenario.events[0].time ? "A" : "B";
   return <p className="pt-record-context">
