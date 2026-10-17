@@ -22,6 +22,7 @@ import AccountLogout from "../components/AccountSession";
 import { etchSignalLocation, etchSignalName } from "../lib/etchLanguage";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
+import { focusPracticeSection } from "../lib/practiceNavigation";
 import { toTrainingSubmission } from "../../../shared/trainingRecord";
 import "./etch-training.css";
 
@@ -121,10 +122,11 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
       : l("SemiGuard — 식각 챔버 판단 훈련", "SemiGuard — Etch chamber reasoning training", "SemiGuard — エッチングチャンバー判断訓練");
   }, [language, stage]);
   useEffect(() => {
+    if (!storageKey || storageKey !== expectedStorageKey) return;
     const target = stage === "home" && historyReturn.current ? historyHeading.current : heading.current;
     historyReturn.current = false;
-    target?.focus({ preventScroll: true }); target?.scrollIntoView({ block: "start" });
-  }, [stage]);
+    focusPracticeSection(target);
+  }, [stage, storageKey, expectedStorageKey]);
   useEffect(() => { if (auth.data?.id) void history.refetch(); }, [auth.data?.id]);
   useEffect(() => {
     if (!expectedStorageKey || expectedStorageKey === storageKey) return;
@@ -151,6 +153,11 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
     return () => document.removeEventListener("visibilitychange", pause);
   }, [running, attempt.submitted, attempt.elapsed >= ETCH_DURATION]);
   const move = (next: Stage) => { if (next !== "observe" && next !== "decision") setRunning(false); setStage(next); setNotice(""); };
+  const openPracticeChoices = () => {
+    historyReturn.current = false;
+    if (stage === "home") focusPracticeSection(heading.current);
+    move("home");
+  };
   const openPracticeHistory = () => { historyReturn.current = true; move("home"); };
   const reset = () => {
     if (saveStatus === "saving") return;
@@ -184,15 +191,16 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
     setAttempt(completed); move("review");
     void saveCompleted(completed);
   };
+  const storageDisclosure = <p className="et-storage">{l("진행 중 답안은 현재 탭에 임시 저장됩니다. 로그인한 계정에는 제출 후 선택형 연습 결과만 저장하며 서술형 원문은 자동 전송하거나 서버에 저장하지 않습니다. AI 코칭을 직접 선택하면 안내 후 NVIDIA에 전달됩니다.", "The draft stays in this tab. For signed-in users, only choice-based practice results are saved after submission; written answers are not automatically transmitted or saved on the server. Optional AI coaching sends them to NVIDIA only after disclosure and your request.", "進行中の回答はこのタブに一時保存します。ログイン中は提出後に選択式の練習結果のみを保存し、記述回答は自動送信せずサーバーに保存しません。AIコーチングを選ぶと、案内と依頼の後にNVIDIAへ送信します。")}</p>;
   if (!expectedStorageKey || storageKey !== expectedStorageKey) return <div className="et-app"><main className="et-main" role="status">{l("훈련 작업 공간을 불러오는 중…", "Loading practice workspace…", "練習画面を読み込み中…")}</main></div>;
   return <div className="et-app">
     <a className="et-skip" href="#etch-main">{l("훈련 내용으로 이동", "Skip to training", "訓練内容へ移動")}</a>
-    <header className="et-header"><Link className="et-brand" href="/training" onClick={() => move("home")}><b>SG</b> SemiGuard <small>TRAINING LAB</small></Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/learn">{l("8대 공정 학습", "Eight processes", "8大工程の学習")}</Link><Button variant="ghost" onClick={() => move("home")}>{l("선택 화면", "Choose practice", "練習を選ぶ")}</Button><Link href="/live">{l("실시간 자유 분석", "Free observation", "自由観察")}</Link><Link href="/welcome">{l("소개", "Introduction", "紹介")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></nav></header>
+    <header className="et-header"><Link className="et-brand" href="/training" onClick={openPracticeChoices}><b>SG</b> SemiGuard <small>TRAINING LAB</small></Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/learn">{l("8대 공정 학습", "Eight processes", "8大工程の学習")}</Link><Button variant="ghost" onClick={openPracticeChoices}>{l("연습 방식 선택", "Practice options", "練習方法を選ぶ")}</Button><Link href="/live">{l("실시간 자유 분석", "Free observation", "自由観察")}</Link><Link href="/welcome">{l("소개", "Introduction", "紹介")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></nav></header>
     <main className="et-main" id="etch-main">
-      <PracticeMeasurementConsent />
+      {stage !== "home" ? <PracticeMeasurementConsent /> : null}
       {stage === "home" && auth.data?.role === "admin" ? <Link href="/training/metrics" className="et-linkbutton">{l("운영자 · 연습 이용 집계", "Admin · practice metrics", "管理者 · 練習利用の集計")}</Link> : null}
       <div className="et-meta"><span>{stage === "home" ? "SEMIGUARD / LEARNING WORKSPACE" : stage === "process-select" ? "EIGHT PROCESSES / CHOOSE A MODULE" : stage === "sensor-brief" ? "FOUR-SENSOR / OBSERVATION WORKSPACE" : "PLASMA ETCH / PROCESS JUDGMENT"}</span><span>{l("교육용 가상 장비 · 실제 제어 없음", "Synthetic training equipment · no physical control", "教育用仮想装置 · 実際の制御なし")}</span></div>
-      {stage !== "sensor-brief" ? <p className="et-storage">{l("진행 중 답안은 현재 탭에 임시 저장됩니다. 로그인한 계정에는 제출 후 선택형 연습 결과만 저장하며 서술형 원문은 자동 전송하거나 서버에 저장하지 않습니다. AI 코칭을 직접 선택하면 안내 후 NVIDIA에 전달됩니다.", "The draft stays in this tab. For signed-in users, only choice-based practice results are saved after submission; written answers are not automatically transmitted or saved on the server. Optional AI coaching sends them to NVIDIA only after disclosure and your request.", "進行中の回答はこのタブに一時保存します。ログイン中は提出後に選択式の練習結果のみを保存し、記述回答は自動送信せずサーバーに保存しません。AIコーチングを選ぶと、案内と依頼の後にNVIDIAへ送信します。")}</p> : null}
+      {stage !== "home" && stage !== "sensor-brief" ? storageDisclosure : null}
       {storageWarning ? <p role="alert" className="et-alert">{storageWarning}</p> : null}
       {(["brief", "observe", "decision", "review"] as string[]).includes(stage) ? <TrainingCheckpoint key={expectedStorageKey} userId={auth.data?.id ?? null} language={language} scenarioId={ETCH_SCENARIO_ID} resumeOnly={attempt.submitted} disabled={saveStatus === "saving"}
         capture={() => toTrainingDraft(ETCH_SCENARIO_ID, attempt, stage as "brief" | "observe" | "decision")}
@@ -204,7 +212,10 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
         <section className="et-panel et-entry-card" aria-labelledby="judgment-option-title"><div className="et-card-top"><span className="et-card-icon"><BookOpen aria-hidden="true" /></span><span className="et-card-kind">{l("제출·피드백·복기", "Submit and review", "提出・振り返り")}</span></div><p className="et-eyebrow">EIGHT-PROCESS JUDGMENT PRACTICE</p><h2 id="judgment-option-title">{l("8대 공정 판단 연습", "Eight-process judgment practice", "8大工程の判断練習")}</h2><p>{l("8개 공정별로 준비된 가상 기록을 관찰하고 판단을 제출하세요. 정상 참고와의 비교, 선택형 결과, 타임라인을 통해 내 판단을 복기합니다.", "Observe prepared synthetic records for eight processes and submit your reasoning. Review it through normal references, choice-based results and the timeline.", "8工程の準備された仮想記録を観察し、判断を提出します。正常参照との比較、選択結果、タイムラインで自分の判断を振り返ります。")}</p><div className="et-tags"><span>{l("8개 연습 모듈", "Eight practice modules", "8つの練習モジュール")}</span><span>{l("선택형 결과·타임라인", "Choices and timeline", "選択結果・タイムライン")}</span></div><Button className="et-primary" onClick={() => move("process-select")}>{l("8개 모듈 선택하기", "Choose from eight modules", "8つのモジュールから選ぶ")}<ArrowRight aria-hidden="true" /></Button></section>
         <section className="et-panel et-entry-card et-navy" aria-labelledby="free-option-title"><div className="et-card-top"><span className="et-card-icon"><Activity aria-hidden="true" /></span><span className="et-card-kind">{l("시간 제한 없는 관찰", "No time limit", "時間制限なし")}</span></div><p className="et-eyebrow">FREE OBSERVATION</p><h2 id="free-option-title">{l("실시간 자유 분석", "Free observation", "自由観察")}</h2><p>{l("매 실행마다 달라지는 가상 식각 센서나 CSV를 비교하고 여러 시점의 근거 메모를 남기세요. 고정 정답 제출 없이 스스로 관찰하는 공간입니다.", "Compare synthetic etch signals that vary with each run, or a CSV, and keep evidence notes at multiple points. Explore without a fixed-answer submission.", "実行ごとに変わる仮想エッチング信号やCSVを比較し、複数の時点で根拠メモを残します。決まった正解を提出せず、自分で観察する画面です。")}</p><p className="et-caption">{l("실행마다 다른 가상 신호이며 식각 판단 연습의 정답 데이터와 분리됩니다. 실제 팹 장비 연결은 아직 지원하지 않습니다.", "Each run produces different synthetic signals, separate from the etch exercise's answer data. Connecting to real fab equipment is not supported.", "実行ごとに異なる仮想信号で、エッチング判断練習の正解データとは分離されています。実際の製造装置への接続には対応していません。")}</p><Link className="et-linkbutton" href="/live">{l("자유 관찰 시작", "Start free observation", "自由観察を始める")} <ArrowRight size={18} aria-hidden="true" /></Link></section>
         <PracticeLearningOptions language={language} onSensorBrief={() => move("sensor-brief")} />
-      </div><AccountPracticeBenefits language={language} /><SavedCheckpointList userId={auth.data?.id ?? null} language={language} onEtch={() => move(attempt.submitted ? "review" : "brief")} /><OgqLearningGuide language={language} /><section className="et-panel et-history" id="practice-history" aria-label={l("내 학습 기록", "My practice history", "自分の練習記録")}>
+      </div>
+      <PracticeMeasurementConsent />
+      {storageDisclosure}
+      <AccountPracticeBenefits language={language} /><SavedCheckpointList userId={auth.data?.id ?? null} language={language} onEtch={() => move(attempt.submitted ? "review" : "brief")} /><OgqLearningGuide language={language} /><section className="et-panel et-history" id="practice-history" aria-label={l("내 학습 기록", "My practice history", "自分の練習記録")}>
         <h2 id="practice-history-heading" ref={historyHeading} tabIndex={-1}>{l("내 학습 기록", "My practice history", "自分の練習記録")}</h2>
         {!auth.data ? <p>{l("로그인하면 완료한 연습의 선택형 판단 결과를 계정별로 볼 수 있습니다.", "Sign in to see your completed choice-based practice results.", "ログインすると、完了した選択式の練習結果をアカウント別に確認できます。")}</p> : history.isError ? <p role="alert">{l("기록을 불러오지 못했습니다. 잠시 후 다시 확인하세요.", "Could not load history. Please try again later.", "記録を読み込めませんでした。後でもう一度お試しください。")}</p> : (history.isLoading || !accountHistory) ? <p>{l("기록을 불러오는 중…", "Loading history…", "記録を読み込み中…")}</p> : accountHistory.length ? <TrainingHistoryList key={auth.data.id} attempts={accountHistory} language={language} /> : <p>{l("아직 계정에 저장된 완료 기록이 없습니다.", "No completed attempts saved to this account yet.", "このアカウントに保存された完了記録はまだありません。")}</p>}
       </section></> : null}
