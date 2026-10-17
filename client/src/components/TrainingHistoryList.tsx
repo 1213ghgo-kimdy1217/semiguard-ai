@@ -4,6 +4,7 @@ import { getProcessScenario } from "../../../shared/processScenarios";
 import { filterTrainingReview, summarizeTrainingReview, trainingReviewCriteria, type TrainingReviewFilter, type TrainingReviewRecord } from "../../../shared/trainingReview";
 import { etchSignalName } from "../lib/etchLanguage";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
+import { trainingHistoryPage } from "../lib/trainingHistoryPagination";
 import "./training-history-list.css";
 
 type HistoryItem = TrainingReviewRecord & {
@@ -26,9 +27,12 @@ const prompts = {
 export default function TrainingHistoryList({ attempts, language }: { attempts: readonly HistoryItem[]; language: ProductLanguage }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const copy = (value: readonly [string, string, string]) => l(value[0], value[1], value[2]);
-  const [filter, setFilter] = useState<TrainingReviewFilter>("all");
+  const [selection, setSelection] = useState<{ filter: TrainingReviewFilter; page: number }>({ filter: "all", page: 1 });
+  const { filter } = selection;
+  const setFilter = (next: TrainingReviewFilter) => setSelection({ filter: next, page: 1 });
   const summary = summarizeTrainingReview(attempts);
   const visible = filterTrainingReview(attempts, filter);
+  const pagination = trainingHistoryPage(visible, selection.page);
   return <>
     <p className="et-caption">{l("최근 저장된 최대 20건 · 같은 모듈의 반복 시도도 각각 포함합니다. 저장된 선택형 결과 기준이며, 현장 역량이나 전체 학습 기록의 통계가 아닙니다.", "Up to 20 recent saved attempts, including repeated attempts at the same module. Based on saved choices, not workplace competency or statistics for your entire learning history.", "直近の保存済み記録、最大20件。同じモジュールの繰り返しも別々に含みます。保存された選択結果に基づくもので、現場能力や全学習記録の統計ではありません。")}</p>
     <h3>{l("다음 복기할 판단 항목", "What to review next", "次に振り返る判断項目")}</h3>
@@ -40,7 +44,14 @@ export default function TrainingHistoryList({ attempts, language }: { attempts: 
     {filter !== "all" ? <p className="et-caption">{copy(prompts[filter])}</p> : null}
     <div id="training-history-records">
       <p role="status" aria-live="polite">{filter === "all" ? l(`전체 기록 ${visible.length}건`, `Saved records: ${visible.length}`, `すべての記録 ${visible.length}件`) : l(`${copy(labels[filter])} · 다시 비교할 기록 ${visible.length}건`, `${copy(labels[filter])} · Records to revisit: ${visible.length}`, `${copy(labels[filter])}・再比較する記録 ${visible.length}件`)}</p>
-      {visible.length ? <ul className="et-record-list">{visible.map(item => {
+      {visible.length ? <>
+        <p className="et-caption" role="status" aria-live="polite">{l(`${pagination.page} / ${pagination.pages}페이지 · ${pagination.start + 1}–${pagination.start + pagination.records.length}번째 기록 · 한 페이지에 5건`, `Page ${pagination.page} of ${pagination.pages} · Records ${pagination.start + 1}–${pagination.start + pagination.records.length} · 5 per page`, `${pagination.page} / ${pagination.pages}ページ・${pagination.start + 1}–${pagination.start + pagination.records.length}件目・1ページ5件`)}</p>
+        <nav className="et-history-pagination" aria-label={l("학습 기록 페이지", "Learning history pages", "学習記録のページ")}>
+          <button type="button" disabled={pagination.page === 1} aria-controls="training-history-records" onClick={() => setSelection({ filter, page: pagination.page - 1 })}>{l("이전", "Previous", "前へ")}</button>
+          {Array.from({ length: pagination.pages }, (_, index) => index + 1).map(page => <button key={page} type="button" aria-current={page === pagination.page ? "page" : undefined} aria-label={l(`${page}페이지`, `Page ${page}`, `${page}ページ`)} aria-controls="training-history-records" onClick={() => setSelection({ filter, page })}>{page}</button>)}
+          <button type="button" disabled={pagination.page === pagination.pages} aria-controls="training-history-records" onClick={() => setSelection({ filter, page: pagination.page + 1 })}>{l("다음", "Next", "次へ")}</button>
+        </nav>
+        <ul className="et-record-list">{pagination.records.map(item => {
         const scenario = getProcessScenario(item.scenarioId);
         const title = scenario ? l(...scenario.title) : item.scenarioId;
         const action = l("기록 열기", "Open record", "記録を開く");
@@ -66,7 +77,7 @@ export default function TrainingHistoryList({ attempts, language }: { attempts: 
           })}</dl>
           <div className="et-record-actions"><Link className="et-inline-link et-record-open" aria-label={`${title} · ${action}`} aria-describedby={`history-record-${item.id}-saved`} href={`/training/history/${item.id}`}>{action} <span aria-hidden="true">→</span></Link></div>
         </article></li>;
-      })}</ul> : <p>{l("이 항목에서 다시 비교할 저장 기록이 없습니다. 전체 기록을 보거나 다른 항목을 선택하세요.", "No saved records to revisit for this dimension. View all records or choose another dimension.", "この項目で再比較する保存記録はありません。全記録を見るか、別の項目を選んでください。")}</p>}
+      })}</ul></> : <p>{l("이 항목에서 다시 비교할 저장 기록이 없습니다. 전체 기록을 보거나 다른 항목을 선택하세요.", "No saved records to revisit for this dimension. View all records or choose another dimension.", "この項目で再比較する保存記録はありません。全記録を見るか、別の項目を選んでください。")}</p>}
     </div>
   </>;
 }

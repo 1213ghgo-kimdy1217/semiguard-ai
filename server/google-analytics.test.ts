@@ -109,7 +109,7 @@ describe("optional Google Analytics boundary", () => {
     { language: "ja" as const, title: "Google Analyticsの設定", decline: "同意せずに利用", boundary: "名前・メール・回答・AI会話・個人記録リンクは送信しません。" },
   ])("renders an accessible, unticked independent choice in $language", item => {
     const html = renderToStaticMarkup(createElement(GoogleAnalyticsNotice, { language: item.language, path: "/training",
-      controls: { enabled: false, qa: false, failed: false, setConsent: () => {}, track: () => {} } }));
+      controls: { enabled: false, qa: false, failed: false, setConsent: () => true, track: () => {} } }));
     for (const text of [item.title, item.decline, item.boundary, "Google LLC", "30", "OFF"]) expect(html).toContain(text);
     expect(html).toContain('type="checkbox"'); expect(html).not.toContain('checked=""');
     expect(html).toContain('disabled=""'); expect(html).toContain('rel="noreferrer"');

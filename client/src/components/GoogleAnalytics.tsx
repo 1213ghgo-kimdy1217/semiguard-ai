@@ -18,9 +18,10 @@ function clearGaCookies() {
     }
   } catch { /* The disable flag remains on even if the browser blocks cookie access. */ }
 }
-type Controls = { enabled: boolean; qa: boolean; failed: boolean; setConsent: (enabled: boolean, qa?: boolean) => void;
+type Controls = { enabled: boolean; qa: boolean; failed: boolean; setConsent: (enabled: boolean, qa?: boolean) => boolean;
   track: (kind: "practice_started" | "practice_completed") => void };
 const Context = createContext<Controls | null>(null);
+export const useGoogleAnalyticsControls = () => useContext(Context);
 
 export function GoogleAnalyticsProvider({ children }: { children: ReactNode }) {
   const [path] = useLocation();
@@ -53,11 +54,11 @@ export function GoogleAnalyticsProvider({ children }: { children: ReactNode }) {
     controller.current?.block();
     try {
       const next = { enabled, qa, expires: Date.now() + GA_CONSENT_DAYS * 86400000 };
-      if (enabled) localStorage.setItem(GA_CONSENT_KEY, JSON.stringify(next));
-      else localStorage.removeItem(GA_CONSENT_KEY);
+      localStorage.setItem(GA_CONSENT_KEY, JSON.stringify(next));
       if (enabled) controller.current?.allow();
       setState(readConsent()); setFailed(false);
-    } catch { setState(parseAnalyticsConsent(null)); setFailed(true); }
+      return true;
+    } catch { setState(parseAnalyticsConsent(null)); setFailed(true); return false; }
   }, []);
   useLayoutEffect(() => { controller.current?.sync(path); }, [path, consent]);
   useEffect(() => {

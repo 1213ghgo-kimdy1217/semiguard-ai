@@ -7,6 +7,7 @@ import LearningAssistant from "./components/LearningAssistant";
 import PracticeAccess from "./components/PracticeAccess";
 import { AccountSessionProvider } from "./components/AccountSession";
 import { PracticeMeasurementProvider } from "./components/PracticeMeasurement";
+import MeasurementPreferences from "./components/MeasurementPreferences";
 import GoogleAnalyticsConsent, { GoogleAnalyticsProvider } from "./components/GoogleAnalytics";
 import TrainingPreview from "./pages/TrainingPreview";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -351,7 +352,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <AccountSessionProvider><GoogleAnalyticsProvider>
-            <PracticeMeasurementProvider><Router /></PracticeMeasurementProvider>
+            <PracticeMeasurementProvider><Router /><MeasurementPreferences /></PracticeMeasurementProvider>
             <GoogleAnalyticsConsent />
           </GoogleAnalyticsProvider>
           <LearningAssistant /></AccountSessionProvider>

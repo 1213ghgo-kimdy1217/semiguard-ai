@@ -8,8 +8,9 @@ import { useGoogleAnalyticsPractice } from "./GoogleAnalytics";
 
 const syncKey = "semiguard:measurement-consent:v1";
 type Controls = { consented: boolean; qa: boolean; busy: boolean; failed: boolean;
-  setConsent: (enabled: boolean, qa?: boolean) => Promise<void>; track: (event: MeasurementEvent) => void };
+  setConsent: (enabled: boolean, qa?: boolean) => Promise<boolean>; track: (event: MeasurementEvent) => void };
 const Context = createContext<Controls | null>(null);
+export const usePracticeMeasurementControls = () => useContext(Context);
 
 export function PracticeMeasurementProvider({ children }: { children: ReactNode }) {
   const [path] = useLocation();
@@ -49,9 +50,11 @@ export function PracticeMeasurementProvider({ children }: { children: ReactNode 
       await consent.mutateAsync({ enabled, qa });
       try { localStorage.setItem(syncKey, JSON.stringify({ enabled, revision: Date.now() })); }
       catch { /* Cookie consent still works when localStorage is unavailable. */ }
-      await status.refetch();
+      const result = await status.refetch();
+      if (result.isError || result.data?.consented !== enabled) { setFailed(true); return false; }
       setBlocked(!enabled);
-    } catch { setFailed(true); }
+      return true;
+    } catch { setFailed(true); return false; }
   };
   useEffect(() => {
     const sync = (e: StorageEvent) => {
