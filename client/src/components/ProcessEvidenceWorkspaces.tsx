@@ -1,4 +1,5 @@
 import React, { useId, useState } from "react";
+import InspectionConceptRecord from "./InspectionConceptRecord";
 import { depositionEvidence, metalObservation, referenceBandPosition, type EvidenceClaim, type EvidenceSource } from "../../../shared/inspectionEvidence";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import "./process-evidence-workspaces.css";
@@ -55,6 +56,7 @@ export function DepositionWorkspace({ time, language, onInteraction }: Props & {
       return <article key={signal}>
         <p className="pe-card-code">{signal === "film" ? "RECORD A / FILM" : "RECORD B / ELECTRICAL"}</p>
         <h4>{signal === "film" ? l("증착 결과의 막 검사", "Deposition-result film inspection", "成膜結果の膜検査") : l("별도 이온 주입 결과의 전기적 검사", "Separate implantation-result electrical inspection", "別のイオン注入結果の電気的検査")}</h4>
+        <InspectionConceptRecord signal={signal} sample={sample} language={language} />
         <p>{signal === "film" ? l("막 검사 기록이 자기 참고 기준과 다른지 확인하는 자료", "Evidence for comparing film inspection with its own reference", "膜検査記録を自身の参考基準と比較する資料") : l("전기적 검사 기록을 자기 기준과 비교하는 자료 · 막 검사를 대신하지 않음", "Evidence for its own electrical reference comparison, not a substitute for film inspection", "電気的検査を自身の基準と比較する資料・膜検査の代わりにはならない")}</p>
         <dl><div><dt>{l("이번 / 정상 참고", "Current / normal reference", "今回 / 正常参照")}</dt><dd>{sample.value.toFixed(1)} / {sample.reference.toFixed(1)}</dd></div>
           <div><dt>{l("차이", "Difference", "差")}</dt><dd>{signed(sample.value - sample.reference)}</dd></div>
