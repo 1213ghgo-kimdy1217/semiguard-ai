@@ -3,9 +3,9 @@ import { Children, isValidElement, type ReactElement, type ReactNode } from "rea
 import { readFileSync } from "node:fs";
 import TrainingHistoryList from "../client/src/components/TrainingHistoryList";
 
-const mock = vi.hoisted(() => ({ filter: "all", language: "ko" }));
+const mock = vi.hoisted(() => ({ selection: { filter: "all", page: 1 }, language: "ko" }));
 vi.mock("react", async original => ({ ...await original<typeof import("react")>(),
-  useState: () => [mock.filter, (value: string) => { mock.filter = value; }],
+  useState: () => [mock.selection, (value: typeof mock.selection) => { mock.selection = value; }],
 }));
 const row = (id: number) => ({ id, scenarioId: "wafer-surface-a-01", signal: "surface", onset: 45, marker: 5,
   signalMatched: 1, onsetMatched: 1, comparisonMatched: 1, certaintyMatched: 1, createdAt: new Date("2026-10-04T00:00:00Z") });
@@ -24,7 +24,7 @@ function choose(tree: ReactNode, startsWith: string) {
 const recordLinks = (tree: ReactNode) => elements(tree).filter(e => typeof e.props.href === "string" && e.props.href.startsWith("/training/history/"));
 
 describe("personal record-to-review navigation", () => {
-  beforeEach(() => { mock.filter = "all"; mock.language = "ko"; });
+  beforeEach(() => { mock.selection = { filter: "all", page: 1 }; mock.language = "ko"; });
   it.each([
     ["ko", "변화 시작 시점", "전체 기록"], ["en", "Change onset", "All records"], ["ja", "変化開始時点", "すべての記録"],
   ])("filters saved records and restores the full list in %s", (language, criterion, all) => {
@@ -47,6 +47,24 @@ describe("personal record-to-review navigation", () => {
     expect(recordLinks(render())).toHaveLength(0);
     expect(text(render())).toContain("이 항목에서 다시 비교할 저장 기록이 없습니다.");
     expect(text(render())).not.toMatch(/전문가 수준|현장 역량 향상|100%/);
+  });
+  it("shows five records per numbered page, resets after filtering, and clamps a shortened result", () => {
+    const attempts = Array.from({ length: 12 }, (_, index) => ({ ...row(12 - index), onsetMatched: index < 2 ? 0 : 1 }));
+    expect(recordLinks(render(attempts)).map(e => e.props.href)).toEqual([12, 11, 10, 9, 8].map(id => `/training/history/${id}`));
+    const go = (page: number) => {
+      const button = elements(render(attempts)).find(e => e.type === "button" && e.props["aria-label"] === `${page}페이지`)!;
+      expect(button).toBeDefined(); button.props.onClick();
+    };
+    go(2);
+    expect(recordLinks(render(attempts)).map(e => e.props.href)).toEqual([7, 6, 5, 4, 3].map(id => `/training/history/${id}`));
+    expect(elements(render(attempts)).find(e => e.props["aria-current"] === "page")?.props["aria-label"]).toBe("2페이지");
+    go(3);
+    expect(recordLinks(render(attempts)).map(e => e.props.href)).toEqual(["/training/history/2", "/training/history/1"]);
+    expect(elements(render(attempts)).find(e => e.type === "button" && text(e.props.children) === "다음")?.props.disabled).toBe(true);
+    expect(recordLinks(render(attempts.slice(0, 1)))).toHaveLength(1);
+    choose(render(attempts), "변화 시작 시점");
+    expect(mock.selection.page).toBe(1);
+    expect(recordLinks(render(attempts)).map(e => e.props.href)).toEqual(["/training/history/12", "/training/history/11"]);
   });
   it("clearly limits the summary to saved, recent choice results", () => {
     expect(text(render())).toContain("최근 저장된 최대 20건");
