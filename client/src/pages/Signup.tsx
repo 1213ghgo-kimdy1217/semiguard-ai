@@ -25,8 +25,9 @@ const SIGNUP_COPY = {
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "계정 만들기",
     formDescription: "대시보드를 이용할 계정을 등록하세요.",
-    badgeNumber: "회사 명찰 번호",
-    badgePlaceholder: "예: EMP-2024-001",
+    badgeNumber: "로그인 아이디",
+    badgePlaceholder: "예: training_01",
+    badgeHint: "SemiGuard에서 쓸 아이디를 직접 정하세요. 실제 사번·학번 대신 별도의 아이디를 사용하세요.",
     name: "이름",
     namePlaceholder: "예: 홍길동",
     dateOfBirth: "생년월일",
@@ -45,8 +46,8 @@ const SIGNUP_COPY = {
     accountPrompt: "이미 계정이 있으신가요?",
     login: "로그인",
     validation: {
-      badgeNumber: "회사 명찰 번호를 입력해주세요.",
-      badgeNumberExists: "이미 가입된 회사 명찰 번호입니다. 로그인하거나 다른 번호를 입력해주세요.",
+      badgeNumber: "로그인 아이디를 입력해주세요.",
+      badgeNumberExists: "이미 가입된 아이디입니다. 로그인하거나 다른 아이디를 입력해주세요.",
       name: "이름을 입력해주세요.",
       dateOfBirth: "생년월일을 입력해주세요.",
       password: "비밀번호를 입력해주세요.",
@@ -72,8 +73,9 @@ const SIGNUP_COPY = {
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "Create an account",
     formDescription: "Register an account for the dashboard.",
-    badgeNumber: "Company badge number",
-    badgePlaceholder: "e.g., EMP-2024-001",
+    badgeNumber: "Sign-in ID",
+    badgePlaceholder: "e.g. training_01",
+    badgeHint: "Choose an ID for SemiGuard. Use a separate ID, not your actual employee or student number.",
     name: "Name",
     namePlaceholder: "e.g., Hong Gildong",
     dateOfBirth: "Date of birth",
@@ -92,8 +94,8 @@ const SIGNUP_COPY = {
     accountPrompt: "Already have an account?",
     login: "Sign in",
     validation: {
-      badgeNumber: "Enter your company badge number.",
-      badgeNumberExists: "This company badge number is already registered. Sign in or enter another number.",
+      badgeNumber: "Enter your sign-in ID.",
+      badgeNumberExists: "This ID is already registered. Sign in or enter another ID.",
       name: "Enter your name.",
       dateOfBirth: "Enter your date of birth.",
       password: "Enter a password.",
@@ -119,8 +121,9 @@ const SIGNUP_COPY = {
     formEyebrow: "STEP 01 / ACCOUNT",
     formTitle: "アカウントを作成",
     formDescription: "ダッシュボード用のアカウントを登録してください。",
-    badgeNumber: "社員証番号",
-    badgePlaceholder: "例: EMP-2024-001",
+    badgeNumber: "ログインID",
+    badgePlaceholder: "例: training_01",
+    badgeHint: "SemiGuard用のIDを決めてください。実際の社員番号・学籍番号とは別のIDを使ってください。",
     name: "氏名",
     namePlaceholder: "例: ホン・ギルドン",
     dateOfBirth: "生年月日",
@@ -139,8 +142,8 @@ const SIGNUP_COPY = {
     accountPrompt: "すでにアカウントをお持ちですか？",
     login: "ログイン",
     validation: {
-      badgeNumber: "社員証番号を入力してください。",
-      badgeNumberExists: "この社員証番号はすでに登録されています。ログインするか、別の番号を入力してください。",
+      badgeNumber: "ログインIDを入力してください。",
+      badgeNumberExists: "このIDはすでに登録されています。ログインするか、別のIDを入力してください。",
       name: "氏名を入力してください。",
       dateOfBirth: "生年月日を入力してください。",
       password: "パスワードを入力してください。",
@@ -366,7 +369,8 @@ export function Signup() {
             )}
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="sg-signup-label">{copy.badgeNumber}</Label>
-              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} inputMode="text" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={[fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ") || undefined} className="sg-signup-input" disabled={isLoading} autoComplete="username" required />
+              <Input id="badgeNumber" name="badgeNumber" type="text" placeholder={copy.badgePlaceholder} value={formData.badgeNumber} onChange={handleChange} inputMode="text" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="next" aria-invalid={fieldError === "badgeNumber" || Boolean(authError)} aria-describedby={["badgeNumber-hint", fieldError === "badgeNumber" ? "badgeNumber-error" : null, authError ? "signup-auth-error" : null].filter(Boolean).join(" ")} className="sg-signup-input" disabled={isLoading} autoComplete="username" required />
+              <p id="badgeNumber-hint" className="sg-signup-hint">{copy.badgeHint}</p>
               {fieldError === "badgeNumber" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.badgeNumber}</p>}
             </div>
             <div className="space-y-2">

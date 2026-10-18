@@ -9,7 +9,8 @@ describe("login required-field accessibility contract", () => {
     expect(loginSource).toContain('setFieldError("badge")');
     expect(loginSource).toContain('document.getElementById("badgeNumber")?.focus()');
     expect(loginSource).toContain('aria-invalid={fieldError === "badge" || Boolean(authError)}');
-    expect(loginSource).toContain('aria-describedby={fieldError === "badge" ? "badgeNumber-error" : authError ? "login-auth-error" : undefined}');
+    expect(loginSource).toContain('aria-describedby={["badgeNumber-hint", fieldError === "badge" ? "badgeNumber-error" : null, authError ? "login-auth-error" : null].filter(Boolean).join(" ")}');
+    expect(loginSource).toContain('id="badgeNumber-hint"');
     expect(loginSource).toContain('id="badgeNumber-error"');
     expect(loginSource).toContain('id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true"');
   });
@@ -26,7 +27,7 @@ describe("login required-field accessibility contract", () => {
   it("keeps required-field messages localized through the existing language message map", () => {
     expect(loginSource).toContain('{loginMessages.badgeRequired}');
     expect(loginSource).toContain('{loginMessages.passwordRequired}');
-    expect(loginSource).toContain('badgeRequired: "Enter your badge number."');
+    expect(loginSource).toContain('badgeRequired: "Enter your sign-in ID."');
     expect(loginSource).toContain('passwordRequired: "パスワードを入力してください。"');
   });
 });

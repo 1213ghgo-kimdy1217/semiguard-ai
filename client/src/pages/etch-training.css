@@ -126,3 +126,13 @@
 .et-checkpoint .et-actions{margin-top:12px}
 .et-account-benefits{border-left:3px solid #e4aa55}
 #training-share-url{display:block;width:100%;max-width:100%;padding:12px;margin:12px 0;background:#17231e;border:1px solid #65796b;border-radius:6px;color:#eaf0ec;overflow-wrap:anywhere}
+.et-first-step{margin:20px 0;padding:18px 20px;border:1px solid #65796b;border-left:3px solid #e4aa55;border-radius:8px;background:#17231e;overflow-wrap:anywhere}
+.et-first-step h2{margin:0 0 8px;font-size:18px}
+.et-first-step p{margin:8px 0;line-height:1.6}
+.et-first-step ol{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 28px;margin:14px 0;padding-left:24px;list-style:decimal}
+.et-first-step li{padding-left:2px;line-height:1.6}
+.et-first-step li::marker{color:#e4aa55;font-weight:700}
+.et-first-step .et-caption{margin-bottom:0}
+.et-live-details{margin:16px 0;overflow-wrap:anywhere}
+.et-live-details summary{cursor:pointer;min-height:44px;padding:10px 0;color:#d4e1d3}
+@media(max-width:600px){.et-first-step{padding:16px}.et-first-step ol{grid-template-columns:minmax(0,1fr);gap:8px}}
