@@ -2,6 +2,7 @@ import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
+import { canReadPracticeMetrics } from "../practiceMetricsAccess";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
@@ -26,6 +27,16 @@ const requireUser = t.middleware(async opts => {
 });
 
 export const protectedProcedure = t.procedure.use(requireUser);
+
+// Deliberately separate from adminProcedure: this grants no mutation or private-record access.
+export const practiceMetricsReadProcedure = t.procedure.use(
+  t.middleware(async ({ ctx, next }) => {
+    if (!canReadPracticeMetrics(ctx.user)) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Practice aggregate read permission required." });
+    }
+    return next({ ctx });
+  }),
+);
 
 export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {

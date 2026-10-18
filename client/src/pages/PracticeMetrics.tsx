@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "../lib/trpc";
 import { kstDay, measurementPeriodSchema } from "../../../shared/practiceMeasurement";
@@ -6,21 +6,24 @@ import PracticeMeasurementConsent from "../components/PracticeMeasurement";
 import "./etch-training.css";
 
 export default function PracticeMetrics() {
-  const auth = trpc.auth.me.useQuery(undefined, { retry: false });
-  const admin = auth.data?.role === "admin";
+  const access = trpc.practiceMeasurement.access.useQuery(undefined, { retry: false });
+  const checkingAccess = access.isLoading || access.isFetching;
+  const canRead = access.isSuccess && !checkingAccess && access.data.canRead;
   const [start, setStart] = useState(kstDay);
   const [end, setEnd] = useState(kstDay);
   const [period, setPeriod] = useState({ start: kstDay(), end: kstDay() });
   const valid = measurementPeriodSchema.safeParse({ start, end }).success;
-  const storage = trpc.practiceMeasurement.storage.useQuery(undefined, { enabled: admin, retry: false });
-  const report = trpc.practiceMeasurement.report.useQuery(period, { enabled: admin && storage.data?.ready === true, retry: false, refetchOnWindowFocus: false });
+  const storage = trpc.practiceMeasurement.storage.useQuery(undefined, { enabled: canRead, retry: false });
+  const report = trpc.practiceMeasurement.report.useQuery(period, { enabled: canRead && storage.data?.ready === true, retry: false, refetchOnWindowFocus: false });
   const data = report.data;
   return <div className="et-app"><main className="et-main">
     <Link href="/training" className="et-back">← 학습·연습 선택</Link>
-    <h1>연습 이용 측정 · 운영자 전용</h1>
+    <h1>연습 이용 측정 · 집계 조회</h1>
     <p className="et-lead">동의한 브라우저의 집계입니다. 실제 사람 수·학습 효과·현장 숙련도를 뜻하지 않습니다.</p>
-    {!admin ? <p role="status">{auth.isLoading ? "운영자 권한을 확인하고 있습니다." : "운영자 계정으로 로그인해야 집계를 볼 수 있습니다."}</p> : <>
-      <p role="status">운영 DB 준비: {storage.isLoading ? "확인 중" : storage.data?.ready ? "열·인덱스 확인 완료" : "확인되지 않음 — 측정 시작 불가"}</p>
+    {!canRead ? access.isError ? <div role="alert"><p>조회 권한을 확인하지 못했습니다. 집계 수치는 표시하지 않습니다.</p><button type="button" className="et-linkbutton" onClick={() => void access.refetch()}>권한 다시 확인</button></div>
+      : <div role="status" aria-busy={checkingAccess}><p>{checkingAccess ? "집계 조회 권한을 확인하고 있습니다." : access.data?.authenticated ? "이 계정에는 집계 조회 권한이 없습니다. 운영자 또는 별도 승인된 조회 계정만 이용할 수 있습니다." : "집계를 보려면 조회 권한이 있는 계정으로 로그인하세요."}</p>{access.isSuccess && !checkingAccess && !access.data.authenticated ? <Link href="/login" className="et-linkbutton">로그인</Link> : null}</div> : <>
+      <p>개별 이용자의 이름·답안·개인 기록은 제공하지 않는 읽기 전용 집계입니다. 다른 설정을 변경할 권한은 부여하지 않습니다.</p>
+      <p role="status">운영 DB 준비: {storage.isLoading ? "확인 중" : storage.data?.ready ? "열·인덱스 확인 완료" : "확인되지 않음 — 집계 확인 불가"}</p>
       <PracticeMeasurementConsent />
       <form className="sg-metrics-form" onSubmit={e => { e.preventDefault(); if (!valid) return; setPeriod({ start, end }); if (period.start === start && period.end === end) void report.refetch(); }}>
         <label>시작일 (한국 시간)<input aria-label="시작일" type="date" value={start} onChange={e => setStart(e.target.value)} /></label>

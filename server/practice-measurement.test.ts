@@ -21,6 +21,7 @@ const indexes = [
 const req = (cookie = "") => ({ headers: { host: "semiguard.example", origin: "https://semiguard.example", cookie }, protocol: "https" }) as any;
 const res = () => ({ cookie: vi.fn(), clearCookie: vi.fn() }) as any;
 const priorSecret = ENV.cookieSecret;
+const priorReader = ENV.practiceMetricsReaderUserId;
 function readyDatabase(...responses: unknown[]) {
   const execute = vi.fn().mockResolvedValueOnce([columns]).mockResolvedValueOnce([indexes]);
   for (const response of responses) execute.mockResolvedValueOnce(response);
@@ -33,8 +34,8 @@ async function consentCookie(qa = false) {
   return `sg_practice_measurement_v1=${response.cookie.mock.calls[0][1]}`;
 }
 describe("practice measurement storage, consent and reporting", () => {
-  beforeEach(() => { vi.clearAllMocks(); ENV.cookieSecret = "synthetic-test-signing-key"; });
-  afterEach(() => { ENV.cookieSecret = priorSecret; vi.useRealTimers(); });
+  beforeEach(() => { vi.clearAllMocks(); ENV.cookieSecret = "synthetic-test-signing-key"; ENV.practiceMetricsReaderUserId = ""; });
+  afterEach(() => { ENV.cookieSecret = priorSecret; ENV.practiceMetricsReaderUserId = priorReader; vi.useRealTimers(); });
   it("checks exact columns and indexes, rejecting incompatible or extra constraints", () => {
     expect(validMeasurementMetadata(columns, indexes)).toBe(true);
     for (const badColumns of [[], columns.slice(1), columns.map(c => c.name === "event_type" ? { ...c, definition: "varchar(30)" } : c),
@@ -128,7 +129,11 @@ describe("practice measurement storage, consent and reporting", () => {
     expect(component).toContain("useState(false)"); expect(component).toContain("retry: false"); expect(component).toContain('window.addEventListener("storage", sync)');
     expect(component).not.toMatch(/localStorage\.setItem\([^\n]*(?:userId|participant|answer|facts)/);
     for (const page of ["ProcessTraining", "EtchTraining"]) expect(read(`client/src/pages/${page}.tsx`)).toContain('stage === "review" && attempt.submitted');
-    expect(read("client/src/pages/PracticeMetrics.tsx")).toContain('auth.data?.role === "admin"');
+    const metrics = read("client/src/pages/PracticeMetrics.tsx");
+    expect(metrics).toContain("trpc.practiceMeasurement.access.useQuery");
+    expect(metrics).toContain("access.isSuccess && !checkingAccess && access.data.canRead");
+    expect(metrics).toContain("enabled: canRead && storage.data?.ready === true");
+    expect(metrics).not.toMatch(/PRACTICE_METRICS_READER_USER_ID|practiceMetricsReaderUserId|role ===/);
   });
   it("reads only this signed QA browser's bounded flags, without widening administrator access", async () => {
     const caller = (cookie: string, user: any) => appRouter.createCaller({ user, req: req(cookie), res: res() } as any);
@@ -145,5 +150,45 @@ describe("practice measurement storage, consent and reporting", () => {
     expect(query.params[0]).toBe(readMeasurementConsent(req(cookie))?.id);
     expect(query.params[2] - query.params[1]).toBe(86400);
     expect(query.sql).not.toMatch(/SELECT \*|GROUP BY|user_id|facts|checks/);
+  });
+  it("returns only permission booleans and rejects guests/other accounts before any aggregate DB query", async () => {
+    ENV.practiceMetricsReaderUserId = "42";
+    for (const user of [null, { id: 41, role: "user" }]) {
+      const caller = appRouter.createCaller({ user, req: req(), res: res() } as any);
+      await expect(caller.practiceMeasurement.access()).resolves.toEqual({ authenticated: Boolean(user), canRead: false });
+      await expect(caller.practiceMeasurement.report({ start: "2026-10-01", end: "2026-10-07" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    }
+    expect(mock.getDb).not.toHaveBeenCalled();
+  });
+  it("allows one configured non-admin to read exactly the existing aggregate response, and revokes on config removal", async () => {
+    ENV.practiceMetricsReaderUserId = "42";
+    const user = { id: 42, role: "user" };
+    const caller = appRouter.createCaller({ user, req: req(), res: res() } as any);
+    await expect(caller.practiceMeasurement.access()).resolves.toEqual({ authenticated: true, canRead: true });
+    expect(mock.getDb).not.toHaveBeenCalled();
+    const execute = readyDatabase([[{ visits: "4", starts: "3", completions: "2", email: "must-not-leak" }]], [[{ cohort: "3", returned: "1" }]], [[{ visits: "9", starts: "8", completions: "7" }]]);
+    const result = await caller.practiceMeasurement.report({ start: "2026-10-01", end: "2026-10-07" });
+    expect(Object.keys(result).sort()).toEqual(["visits", "starts", "completions", "qa", "cohort", "returned", "retentionMature", "timezone", "observedAt", "week2Start", "week2End"].sort());
+    expect(result).toMatchObject({ visits: 4, starts: 3, completions: 2, qa: { visits: 9, starts: 8, completions: 7 } });
+    expect(JSON.stringify(result)).not.toContain("must-not-leak");
+    for (const [query] of execute.mock.calls) expect(new MySqlDialect().sqlToQuery(query).sql).not.toMatch(/INSERT|UPDATE|DELETE|users|training_attempts/);
+    expect(user.role).toBe("user");
+    ENV.practiceMetricsReaderUserId = "";
+    mock.getDb.mockClear();
+    await expect(caller.practiceMeasurement.access()).resolves.toEqual({ authenticated: true, canRead: false });
+    await expect(caller.practiceMeasurement.report({ start: "2026-10-01", end: "2026-10-07" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(mock.getDb).not.toHaveBeenCalled();
+  });
+  it("does not turn the metrics reader into an administrator or accept a caller-chosen account", async () => {
+    ENV.practiceMetricsReaderUserId = "42";
+    const caller = appRouter.createCaller({ user: { id: 42, role: "user" }, req: req(), res: res() } as any);
+    await expect(caller.semiguard.saveThresholds({ normal: 29, caution: 49, warning: 69 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.semiguard.saveSensorThresholds({
+      currentCaution: 7, currentWarning: 9, currentDanger: 11, tempCaution: 55, tempWarning: 70, tempDanger: 85,
+      vibCaution: 2.3, vibWarning: 2.6, vibDanger: 3, noiseCaution: 65, noiseWarning: 75, noiseDanger: 85,
+    })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.semiguard.getProductUsageMetrics({ period: "week" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.practiceMeasurement.report({ start: "2026-10-01", end: "2026-10-07", userId: 99 } as any)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mock.getDb).not.toHaveBeenCalled();
   });
 });
