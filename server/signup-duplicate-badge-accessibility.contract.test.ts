@@ -15,8 +15,8 @@ describe("회원가입 중복 명찰번호 접근성 계약", () => {
     expect(signupSource).toContain('if (errorCode === "CONFLICT")');
     expect(signupSource).toContain('showFieldError("badgeNumber", "badgeNumberExists");');
     expect(signupSource).toContain("{fieldErrorKey ? copy.validation[fieldErrorKey] : copy.validation.badgeNumber}");
-    expect(signupSource).toContain('badgeNumberExists: "이미 가입된 회사 명찰 번호입니다. 로그인하거나 다른 번호를 입력해주세요."');
-    expect(signupSource).toContain('badgeNumberExists: "This company badge number is already registered. Sign in or enter another number."');
-    expect(signupSource).toContain('badgeNumberExists: "この社員証番号はすでに登録されています。ログインするか、別の番号を入力してください。"');
+    expect(signupSource).toContain('badgeNumberExists: "이미 가입된 아이디입니다. 로그인하거나 다른 아이디를 입력해주세요."');
+    expect(signupSource).toContain('badgeNumberExists: "This ID is already registered. Sign in or enter another ID."');
+    expect(signupSource).toContain('badgeNumberExists: "このIDはすでに登録されています。ログインするか、別のIDを入力してください。"');
   });
 });

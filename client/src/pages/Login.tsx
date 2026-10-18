@@ -122,14 +122,14 @@ export function Login() {
   const oauthErrorRetryButtonRef = useRef<HTMLButtonElement | null>(null);
   const oauthPolicyMessage = (() => {
     if (oauthReason === "unlinked") {
-      if (loginLanguage === "ja") return `${oauthProviderLabel}アカウントはまだ連携されていません。先に社員証番号とパスワードで登録・ログインし、ダッシュボードメニューから連携してください。`;
-      if (loginLanguage === "en") return `Your ${oauthProviderLabel} account is not linked yet. Sign up or sign in with your badge number and password, then link it from the dashboard menu.`;
-      return `${oauthProviderLabel} 계정이 아직 연결되지 않았습니다. 먼저 회사 명찰 번호와 비밀번호로 회원가입·로그인한 뒤 대시보드 메뉴에서 연결해주세요.`;
+      if (loginLanguage === "ja") return `${oauthProviderLabel}アカウントはまだ連携されていません。先にログインIDとパスワードで登録・ログインし、ダッシュボードメニューから連携してください。`;
+      if (loginLanguage === "en") return `Your ${oauthProviderLabel} account is not linked yet. Sign up or sign in with your sign-in ID and password, then link it from the dashboard menu.`;
+      return `${oauthProviderLabel} 계정이 아직 연결되지 않았습니다. 먼저 로그인 아이디와 비밀번호로 회원가입·로그인한 뒤 대시보드 메뉴에서 연결해주세요.`;
     }
     if (oauthReason === "link_required") {
-      if (loginLanguage === "ja") return "ソーシャルアカウントを連携するには、先に社員証番号とパスワードでログインしてください。";
-      if (loginLanguage === "en") return "Sign in with your badge number and password before linking a social account.";
-      return "소셜 계정을 연결하려면 먼저 회사 명찰 번호와 비밀번호로 로그인해주세요.";
+      if (loginLanguage === "ja") return "ソーシャルアカウントを連携するには、先にログインIDとパスワードでログインしてください。";
+      if (loginLanguage === "en") return "Sign in with your sign-in ID and password before linking a social account.";
+      return "소셜 계정을 연결하려면 먼저 로그인 아이디와 비밀번호로 로그인해주세요.";
     }
     if (oauthReason === "already_linked") {
       if (loginLanguage === "ja") return "このソーシャルアカウントはすでに別のSemiGuardアカウントに連携されています。";
@@ -148,32 +148,33 @@ export function Login() {
   const loginMessages = loginLanguage === "ja"
     ? {
         previewSocialDisabled: "開発プレビューではソーシャルログインを利用できません。公開サイトで利用してください。",
-        badgeRequired: "社員証番号を入力してください。",
+        badgeRequired: "ログインIDを入力してください。",
         passwordRequired: "パスワードを入力してください。",
-        failed: "ログインに失敗しました。社員証番号またはパスワードを確認してください。",
+        failed: "ログインに失敗しました。ログインIDまたはパスワードを確認してください。",
         succeeded: "ログインが完了しました。",
       }
     : loginLanguage === "en"
       ? {
           previewSocialDisabled: "Social login is unavailable in the development preview. Please use the published site.",
-          badgeRequired: "Enter your badge number.",
+          badgeRequired: "Enter your sign-in ID.",
           passwordRequired: "Enter your password.",
-          failed: "Login failed. Check your badge number or password.",
+          failed: "Login failed. Check your sign-in ID or password.",
           succeeded: "Login successful.",
         }
       : {
           previewSocialDisabled: "개발 미리보기에서는 소셜 로그인을 사용할 수 없습니다. 배포된 사이트에서 이용해주세요.",
-          badgeRequired: "회사 명찰 번호를 입력해주세요.",
+          badgeRequired: "로그인 아이디를 입력해주세요.",
           passwordRequired: "비밀번호를 입력해주세요.",
-          failed: "로그인 실패: 명찰 번호 또는 비밀번호를 확인해주세요.",
+          failed: "로그인 실패: 아이디 또는 비밀번호를 확인해주세요.",
           succeeded: "로그인이 완료되었습니다!",
         };
   const loginUi = loginLanguage === "ja"
     ? {
         subtitle: "半導体装置の信号判断訓練",
-        employeeLogin: "社員証番号ログイン",
-        badgeLabel: "社員証番号",
-        badgePlaceholder: "例: EMP-2024-001",
+        employeeLogin: "IDでログイン",
+        badgeLabel: "ログインID",
+        badgePlaceholder: "登録時に決めたID",
+        badgeHint: "登録時に決めたIDです。以前「社員証番号」として登録した場合は、同じ値を入力してください。",
         passwordLabel: "パスワード",
         passwordPlaceholder: "パスワードを入力",
         showPassword: "パスワードを表示",
@@ -199,9 +200,10 @@ export function Login() {
     : loginLanguage === "en"
       ? {
           subtitle: "Semiconductor sensor reasoning practice",
-          employeeLogin: "Badge number sign-in",
-          badgeLabel: "Company badge number",
-          badgePlaceholder: "e.g. EMP-2024-001",
+          employeeLogin: "Sign in with your ID",
+          badgeLabel: "Sign-in ID",
+          badgePlaceholder: "ID chosen at sign-up",
+          badgeHint: "Use the ID you chose at sign-up. If it was previously called a badge number, enter the same value.",
           passwordLabel: "Password",
           passwordPlaceholder: "Enter password",
           showPassword: "Show password",
@@ -226,9 +228,10 @@ export function Login() {
         }
       : {
           subtitle: "반도체 장비 센서 판단 훈련",
-          employeeLogin: "사번 로그인",
-          badgeLabel: "회사 명찰 번호",
-          badgePlaceholder: "예: EMP-2024-001",
+          employeeLogin: "아이디로 로그인",
+          badgeLabel: "로그인 아이디",
+          badgePlaceholder: "가입할 때 정한 아이디",
+          badgeHint: "가입할 때 정한 아이디입니다. 기존 ‘명찰 번호’로 가입했다면 그 값을 그대로 입력하세요.",
           passwordLabel: "비밀번호",
           passwordPlaceholder: "비밀번호 입력",
           showPassword: "비밀번호 표시",
@@ -438,7 +441,7 @@ export function Login() {
             {isLoading && <p id="login-submit-status" className="sr-only" role="status" aria-live="polite" aria-atomic="true">{loginUi.signingIn}</p>}
             {authError && <p id="login-auth-error" className="rounded-lg border border-rose-400/45 bg-rose-500/10 px-3 py-2 text-sm font-medium text-rose-200" role="alert" aria-atomic="true">{authError}</p>}
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{loginUi.employeeLogin}</p>
-            {/* Badge Number */}
+            {/* Keep the existing badgeNumber field for account compatibility. */}
             <div className="space-y-2">
               <Label htmlFor="badgeNumber" className="text-slate-300 text-sm font-medium">
                 {loginUi.badgeLabel}
@@ -460,10 +463,11 @@ export function Login() {
                 spellCheck={false}
                 enterKeyHint="next"
                 aria-invalid={fieldError === "badge" || Boolean(authError)}
-                aria-describedby={fieldError === "badge" ? "badgeNumber-error" : authError ? "login-auth-error" : undefined}
+                aria-describedby={["badgeNumber-hint", fieldError === "badge" ? "badgeNumber-error" : null, authError ? "login-auth-error" : null].filter(Boolean).join(" ")}
                 className="h-12 bg-slate-700/70 border-slate-600 text-white placeholder-slate-500 text-base"
                 disabled={isLoading}
               />
+              <p id="badgeNumber-hint" className="text-xs leading-relaxed text-slate-300">{loginUi.badgeHint}</p>
               {fieldError === "badge" && <p id="badgeNumber-error" className="text-xs font-medium text-rose-300" role="alert" aria-atomic="true">{loginMessages.badgeRequired}</p>}
             </div>
 

@@ -34,7 +34,7 @@ describe("signup required-field accessibility contract", () => {
   });
 
   it("keeps Korean, English, and Japanese validation messages in the existing copy map", () => {
-    expect(signupSource).toContain('badgeNumber: "회사 명찰 번호를 입력해주세요."');
+    expect(signupSource).toContain('badgeNumber: "로그인 아이디를 입력해주세요."');
     expect(signupSource).toContain('passwordConfirm: "The passwords do not match."');
     expect(signupSource).toContain('dateOfBirth: "生年月日を入力してください。"');
   });

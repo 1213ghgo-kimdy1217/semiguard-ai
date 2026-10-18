@@ -8,6 +8,7 @@ import ScenarioJudgmentCoach from "../components/ScenarioJudgmentCoach";
 import ProcessScenarioPath from "../components/ProcessScenarioPath";
 import { AccountPracticeBenefits, SavedCheckpointList, TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
+import PracticeFirstStep from "../components/PracticeFirstStep";
 import TrainingHistoryList from "../components/TrainingHistoryList";
 import PracticeMeasurementConsent, { usePracticeMeasurementTracking } from "../components/PracticeMeasurement";
 import { toTrainingDraft, restoreTrainingDraft } from "../../../shared/trainingDraft";
@@ -231,6 +232,7 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
       {stage === "review" && attempt.submitted ? <OgqLearningGuide language={language} review /> : null}
       {stage === "brief" ? <EtchEquipmentReference language={language} /> : null}
       {stage === "observe" || stage === "decision" ? <><div className="et-workhead"><div><p className="et-eyebrow">OBSERVE / REASON</p><h1 ref={heading} tabIndex={-1}>{l("챔버 A · 단계", "Chamber A · phase", "チャンバーA · 段階")} {etchPhase(attempt.elapsed)}</h1></div><div className="et-clock"><strong>{clock(attempt.elapsed)}</strong><span>{attempt.elapsed === ETCH_DURATION ? l("관찰 완료", "Observation complete", "観察完了") : isRunning ? l("1초마다 갱신 중", "Updating every second", "1秒ごとに更新中") : l("일시정지", "Paused", "一時停止")}</span></div></div><div className="et-actions"><Button variant="outline" disabled={attempt.elapsed === ETCH_DURATION} onClick={() => setRunning(v => !v)}>{isRunning ? <Pause /> : <Play />}{isRunning ? l("일시정지", "Pause", "一時停止") : l("재개", "Resume", "再開")}</Button><Button className="et-primary" onClick={() => move(stage === "observe" ? "decision" : "observe")}>{stage === "observe" ? l("판단 기록으로", "Record judgment", "判断を記録") : l("실시간 관찰로", "Back to observation", "観察に戻る")}<ArrowRight /></Button></div>
+        {stage === "observe" ? <PracticeFirstStep language={language} /> : null}
         {stage === "observe" ? <EtchChamberConcept time={shownTime} observedUntil={attempt.elapsed} language={language} signal={selected} onSignalChange={signal => { setRunning(false); setSelected(signal); }} /> : null}
         {stage === "observe" ? <ObservationComparison key={`${expectedStorageKey}:${retryRevision}`} scenarioId={ETCH_SCENARIO_ID}
           signalId={selected} time={shownTime} observedUntil={attempt.elapsed}

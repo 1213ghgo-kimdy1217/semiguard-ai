@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
+import PracticeFirstStep from "../components/PracticeFirstStep";
 import "../components/process-studio.css";
 import { processReviewSignal, processEventReviewSignal } from "../lib/processReviewNavigation";
 import ObservationComparison, { useObservationComparison } from "../components/ObservationComparison";
@@ -310,6 +311,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
         </details>
       </> : null}
 
+      {stage === "observe" ? <PracticeFirstStep language={language} /> : null}
       {stage === "observe" || stage === "review" ? <section className="et-monitor">
         <div className="et-workhead"><div><p className="et-eyebrow">{stage === "review" ? "TIMELINE REVIEW" : "VIRTUAL RECORD OBSERVATION"}</p><h2>{localize(selectedSignal.name, language)}</h2></div>
           <div className="et-clock"><strong>{clock(shownTime)}</strong><span>{l("가상 경과", "Virtual elapsed", "仮想経過")} / {clock(scenario.duration)}</span></div></div>
