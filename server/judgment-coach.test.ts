@@ -9,6 +9,9 @@ import { emptyEtchAttempt } from "../shared/etchScenario";
 import { emptyProcessAttempt, processSample, processScenarios, type ProcessScenario } from "../shared/processScenarios";
 
 const original = { ...ENV };
+// Parameterized cases are collected before beforeEach installs the mocked provider.
+// Use the same synthetic key at both stages, never a machine's real environment key.
+const syntheticNvidiaKey = "synthetic-private-key";
 const input = () => ({ consent: true as const, scenarioId: "etch-chamber-a-01" as const, language: "ko" as const,
   elapsed: 180 as const, submitted: true as const, marker: 80,
   answer: { signal: "pressure" as const, onset: "70", comparison: "same-phase" as const, certainty: "uncertain" as const,
@@ -34,7 +37,7 @@ const response = (text = JSON.stringify(output()), model = "nvidia/qa", finish_r
 }), { status: 200 });
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
-  Object.assign(ENV, original, { aiProvider: "nvidia", nvidiaApiKey: "synthetic-private-key", nvidiaModel: "nvidia/qa" });
+  Object.assign(ENV, original, { aiProvider: "nvidia", nvidiaApiKey: syntheticNvidiaKey, nvidiaModel: "nvidia/qa" });
   fetchMock = vi.fn().mockImplementation(async (_url, init) => {
     const payload = JSON.parse(init.body); const request = JSON.parse(payload.messages[1].content);
     const language = request.responseLanguage === "English" ? "en" : request.responseLanguage === "Japanese" ? "ja" : "ko";
@@ -349,7 +352,7 @@ describe("scenario judgment coach", () => {
   it.each([
     ["invalid JSON private-user-answer", "json"], ["{}", "schema"], ["x".repeat(7001), "output-shape"],
     [JSON.stringify({ ...output(), strengths: ["reference", "reference"] }), "schema"],
-    [JSON.stringify({ ...output(), reflections: output().reflections.map(item => ({ ...item, question: ENV.nvidiaApiKey })) }), "safety"],
+    [JSON.stringify({ ...output(), reflections: output().reflections.map(item => ({ ...item, question: syntheticNvidiaKey })) }), "safety"],
     [JSON.stringify({ ...output(), reflections: [{ ...output().reflections[0], evidenceId: "record-comparison" }, output().reflections[1]] }), "schema"],
     [JSON.stringify(output("en")), "language"],
     [JSON.stringify({ ...output(), reflections: [{ ...output().reflections[0], question: "어떤 비교로 원인을 배제했습니까?" }, output().reflections[1]] }), "causal-exclusion"],
@@ -364,7 +367,7 @@ describe("scenario judgment coach", () => {
   it("logs configuration and metadata failures without key, model or user identifiers", async () => {
     ENV.nvidiaApiKey = "";
     await createJudgmentCoach()(27, input());
-    ENV.nvidiaApiKey = "synthetic-private-key";
+    ENV.nvidiaApiKey = syntheticNvidiaKey;
     fetchMock.mockResolvedValue(response(JSON.stringify(output()), ENV.nvidiaApiKey));
     await createJudgmentCoach()(27, input());
     expect(vi.mocked(console.warn).mock.calls).toEqual([
