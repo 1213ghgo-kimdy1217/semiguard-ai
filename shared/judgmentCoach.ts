@@ -90,7 +90,7 @@ export const judgmentCoachModelFeedbackSchema = z.object({
   reflections: z.array(z.object({
     answerSource: z.enum(["facts", "checks"]), focusQuote: z.string().trim().min(2).max(240),
     analysis: z.string().trim().min(20).max(450), question: z.string().trim().min(8).max(300),
-  }).strict()).min(2).max(3),
+  }).strict()).length(2),
 }).strict();
 export type JudgmentCoachResult = {
   status: "ready"; language: "ko" | "en" | "ja"; provider: "nvidia"; model: string;
