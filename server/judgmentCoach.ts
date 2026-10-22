@@ -143,7 +143,13 @@ const unsafeOutput = /https?:\/\/|<[^>]+>|ogqc_[a-f0-9]{32,}|nvapi[-_]|%|\b(?:re
 const unsupportedExclusion = /(?:인과\s*관계|원인|고장)[^?？.!。]{0,60}(?:배제|아니라고\s*(?:확인|판단|결론))|(?:rule[ds]?\s*out|ruling\s*out|exclud(?:e[ds]?|ing)|eliminat(?:e[ds]?|ing))[^?？.!。]{0,60}(?:caus(?:e|al)|fault)|(?:因果関係|原因|故障)[^?？.!。]{0,60}(?:除外|否定|排除)/i;
 
 export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["answer"], language: JudgmentCoachRequest["language"] = "ko", scenarioId = "etch-chamber-a-01") {
-  const feedback = judgmentCoachModelFeedbackSchema.parse(JSON.parse(raw));
+  // Plain completion may wrap an otherwise valid object in one JSON fence.
+  // Accept only a whole-response wrapper, never mixed prose, multiple blocks,
+  // repaired JSON or a replacement answer. All semantic checks below still run.
+  const trimmed = raw.trim();
+  const fenced = /^```json[ \t]*\r?\n([\s\S]*?)\r?\n```$/i.exec(trimmed);
+  const json = fenced && !fenced[1].includes("```") ? fenced[1] : trimmed;
+  const feedback = judgmentCoachModelFeedbackSchema.parse(JSON.parse(json));
   const text = JSON.stringify(feedback);
   // Distinguishing (구분해) is not disassembly (분해). Only normalize the standalone
   // grammar form; compounds such as 기구분해/도구분해 must still be rejected.
