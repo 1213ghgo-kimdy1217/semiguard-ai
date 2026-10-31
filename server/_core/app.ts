@@ -16,6 +16,18 @@ export function accountServicesConfigured() {
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
+  // Stop every API entry before body parsing, authentication, or DB side effects.
+  app.use("/api", (_req, res, next) => {
+    if (process.env.SEMIGUARD_DB_MAINTENANCE !== "1") {
+      next();
+      return;
+    }
+    res.set("Cache-Control", "no-store");
+    res.set("Retry-After", "60");
+    res.status(503).json({
+      error: { code: "DB_MAINTENANCE", message: "Account and saved-record services are temporarily unavailable. Please try again shortly." },
+    });
+  });
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // A deployment without its session secret must not accept authentication.
