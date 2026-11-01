@@ -1,8 +1,8 @@
 # 계정 찾기·비밀번호 재설정
 
-상태: 별도 브랜치의 구현·가상 검증 대상. 운영 DB 변경, 메일 서비스 개설/실발송, main 병합, 배포는 아직 하지 않았습니다.
+상태: 별도 브랜치의 구현·가상 검증 대상. 운영 DB 변경, 실발송, main 병합, 배포는 아직 하지 않았습니다.
 
-2026-11-02 진행: 사용자가 승인한 Gmail로 Brevo 무료 계정 준비를 시작했습니다. 사용자는 가입·인증 완료를 알려왔고, 실제 화면은 추가 프로필/단체 주소 설정 단계입니다. 가입 화면의 단체 주소 공개 안내를 확인한 뒤 사용 가능한 주소를 사용자에게 요청했습니다. 발신자 인증·트랜잭션 발송 활성화·API 연결·실제 수신은 아직 확인하지 않았습니다. 현재 코드의 Resend 후보 어댑터가 Brevo에 연결됐다는 뜻은 아닙니다.
+2026-11-02 진행: 사용자가 승인한 Gmail로 Brevo 무료 계정과 전화 인증을 완료했고, 실제 화면에서 해당 발신 주소의 Verified 상태를 확인했습니다. 소유 도메인 인증은 하지 않았습니다. 사용자가 생성한 1개월·Transactional email 전용 키는 이번 브랜치의 Vercel Preview Secret에만 저장했습니다. 실제 API 접수·메일 수신은 아직 확인하지 않았습니다. 서버의 미연결 Resend 후보를 Brevo REST 어댑터로 교체했으며, 환경값과 명시적 활성화 플래그가 없으면 발송하지 않습니다. 계정 준비 또는 코드 완성은 실제 발송 성공의 근거가 아닙니다.
 
 ## 이용 흐름
 
@@ -27,7 +27,7 @@
 | 일회용 토큰 | 32바이트 난수 원문은 메일로 전달, DB에는 SHA-256 해시·목적·계정·주소·언어·세션 버전·만료만 저장 |
 | 남용 방지 | DB 기반 전역/클라이언트/입력값 제한과 최종 수신함 제한. 서버 키로 해시한 카운터만 저장하고 만료분을 제한된 수로 정리 |
 | 브라우저 | URL fragment를 즉시 제거. local/sessionStorage에 토큰을 저장하지 않고 요청 뒤 비밀번호와 변경 요청 캐시 정리 |
-| 메일 제공자 | 비활성 Resend REST 어댑터 후보. 활성화 시 발신·수신 주소와 안내 문구/아이디 또는 일회용 링크를 제공자에 전송. 비밀번호·회원 답안은 보내지 않음 |
+| 메일 제공자 | Brevo 트랜잭션 REST 어댑터. 명시적 활성화 시 고정 HTTPS API로 발신·수신 주소와 안내 문구/아이디 또는 일회용 링크를 전송. 텍스트 본문만 사용하고 비밀번호·회원 답안은 보내지 않음 |
 | 분석·로그 | 복구 경로는 기존 GA 페이지 허용 목록에 포함하지 않음. 복구 변경 요청의 전송 오류 객체·수신자·토큰·제공자 응답 본문을 출력하지 않음 |
 
 공개 요청은 존재/미존재/미등록/제한 초과에 같은 접수 응답을 반환합니다. 메일 대기 제한 8초보다 긴 공통 접수 시간 하한을 사용합니다. 과부하·DB 지연까지 일정한 시간을 보장하는 부하 검증 결과는 아닙니다. 운영에서는 지연과 발송 도달률을 따로 확인해야 합니다. 프록시 때문에 클라이언트 IP가 한 주소로 보이면 제한이 더 보수적으로 적용될 수 있습니다.
@@ -37,14 +37,14 @@
 1. 운영과 preview 각각의 스키마 변경 범위, 백업/복원 절차를 검토합니다. [수동 추가 마이그레이션](../drizzle/account_recovery.sql)은 자동 실행하지 않습니다. `db:push`로 대체하지 않습니다.
    [메타데이터 전용 사전 점검 도구](ACCOUNT_RECOVERY_PREFLIGHT.md)는 미적용/완료/부분 적용을 구분합니다. 실제 DB에 대한 실행이나 수정은 아직 하지 않았습니다.
 2. **이 코드를 배포하기 전에** 대상 DB에 `auth_version`과 복구 테이블 3개를 준비해야 합니다. 기존 로그인도 users 컬럼을 읽으므로 활성화 플래그 0만으로 누락 컬럼 문제를 피할 수 없습니다.
-3. 발송 서비스·발신 도메인/주소를 선택하고 검증해야 합니다. Resend는 후보이며 계정 개설·유료 약정·DNS 변경·Secret 등록·실제 이메일 전송을 수행하지 않았습니다. 다른 서비스 선택 시 어댑터를 교체할 수 있습니다.
+3. Brevo의 전화 인증·발신 주소 Verified 상태와 이번 QA 브랜치 전용 Secret 저장은 확인했습니다. 트랜잭션 발송 허용·실제 API 접수·수신함 도달은 별도 확인해야 합니다. 무료 이메일 주소는 Brevo가 발신 주소를 임시 대체할 수 있으며, 공식 안내는 장기적으로 소유 도메인 인증을 권장합니다. 도메인 구매·DNS 변경·유료 약정·운영 Secret 등록·실제 이메일 전송은 수행하지 않았습니다. API 접수는 수신함 도달을 뜻하지 않으며, 실제 받은 링크의 fragment 보존 여부와 스팸함도 확인해야 합니다. 추적·링크 가공이 꺼져 있다고 가정하지 않습니다.
 4. 다음 값은 서버 전용으로 환경별 설정합니다. `VITE_` 접두어를 붙이지 않고 개발용 값과 운영 값을 분리합니다.
 
 | 변수 | 값 종류 |
 | --- | --- |
 | `SEMIGUARD_ACCOUNT_RECOVERY_ENABLED` | 기본 미설정/0. 승인 후 1 |
-| `RECOVERY_MAIL_API_KEY` | 발송 전용 최소 권한 Secret |
-| `RECOVERY_MAIL_FROM` | 검증한 발신 주소. 표시명 없이 이메일 주소만 |
+| `RECOVERY_MAIL_API_KEY` | 승인된 Brevo API 키를 서버 Secret으로 저장. 실제 키 권한은 계정 콘솔에서 확인하고 가능한 최소 범위 사용 |
+| `RECOVERY_MAIL_FROM` | Brevo에서 검증한 발신 이메일 주소만 입력. 어댑터는 발신자 이름 `SemiGuard AI`를 별도 전달 |
 | `RECOVERY_PUBLIC_ORIGIN` | 기존 공개 사이트의 HTTPS origin. 경로·인증정보·query·fragment 없음 |
 
 5. 승인된 별도 테스트 계정·수신 주소로 등록/인증/아이디 안내/재설정/이전 세션 거절/새 로그인/재사용 거절/실제 수신·스팸을 확인합니다. 기존 회원 기록을 테스트로 바꾸지 않습니다.
@@ -56,4 +56,4 @@
 
 최종 실행 명령·결과와 남은 실제 환경 검증은 [HANDOFF](HANDOFF.md)를 따릅니다. 가상 저장소/메일 테스트나 브라우저 응답 fixture는 운영 TiDB 트랜잭션·실제 수신 성공의 증거가 아닙니다.
 
-설계 참고: [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html), [Resend 공식 전송 API](https://resend.com/docs/api-reference/emails/send-email).
+설계 참고: [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html), [Brevo 공식 트랜잭션 전송 API](https://developers.brevo.com/docs/send-a-transactional-email), [Brevo 발신 주소 대체 안내](https://help.brevo.com/hc/en-us/articles/14925263522578-Comply-with-Gmail-Yahoo-and-Microsoft-s-requirements-for-email-senders), [Brevo 발송 활성화 안내](https://help.brevo.com/hc/en-us/articles/115000188150-Troubleshooting-Issues-with-Brevo-SMTP).

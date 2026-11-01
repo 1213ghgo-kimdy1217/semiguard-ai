@@ -28,7 +28,7 @@ export interface RecoveryStore extends RecoveryTransaction {
 }
 
 /** Every query uses bound values. No runtime schema creation or imported-email fallback. */
-function transactionAdapter(database: any): RecoveryTransaction {
+function transactionAdapter(database: any, subjectHash: (openId: string) => string): RecoveryTransaction {
   const selection = { id: users.id, openId: users.openId, badgeNumber: users.badgeNumber, passwordHash: users.passwordHash, authVersion: users.authVersion };
   return {
     async user(id, lock = false) {
@@ -54,7 +54,7 @@ function transactionAdapter(database: any): RecoveryTransaction {
     },
     async revoked(openId) {
       const rows = await database.select({ hash: accountRevocations.subjectHash }).from(accountRevocations)
-        .where(eq(accountRevocations.subjectHash, revokedSubjectHash(openId))).limit(1);
+        .where(eq(accountRevocations.subjectHash, subjectHash(openId))).limit(1);
       return rows.length > 0;
     },
     async addToken(token) { await database.insert(accountRecoveryTokens).values(token); },
@@ -89,11 +89,12 @@ function transactionAdapter(database: any): RecoveryTransaction {
   };
 }
 
-export async function getRecoveryStore(): Promise<RecoveryStore> {
-  const database = await getDb();
-  if (!database) throw new Error("RECOVERY_STORAGE_UNAVAILABLE");
+/** Explicit DB/key injection supports isolated QA without changing application configuration. */
+export function createRecoveryStore(
+  database: NonNullable<Awaited<ReturnType<typeof getDb>>>, subjectHash: (openId: string) => string = revokedSubjectHash,
+): RecoveryStore {
   return {
-    ...transactionAdapter(database),
+    ...transactionAdapter(database, subjectHash),
     async ready() {
       try {
         for (const probe of [
@@ -106,6 +107,12 @@ export async function getRecoveryStore(): Promise<RecoveryStore> {
         return true;
       } catch { return false; }
     },
-    transaction: callback => database.transaction(tx => callback(transactionAdapter(tx))),
+    transaction: callback => database.transaction(tx => callback(transactionAdapter(tx, subjectHash))),
   };
+}
+
+export async function getRecoveryStore(): Promise<RecoveryStore> {
+  const database = await getDb();
+  if (!database) throw new Error("RECOVERY_STORAGE_UNAVAILABLE");
+  return createRecoveryStore(database);
 }

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ getDb: vi.fn() }));
 vi.mock("./db", () => ({ getDb: mocks.getDb }));
 vi.mock("./_core/env", () => ({ ENV: { cookieSecret: "synthetic-sql-adapter-test-secret" } }));
-import { getRecoveryStore } from "./accountRecoveryStore";
+import { createRecoveryStore, getRecoveryStore } from "./accountRecoveryStore";
 
 /** Real Drizzle SQL generation with a recording mysql2 connection, no sockets. */
 function connection() {
@@ -21,6 +21,17 @@ function connection() {
 }
 beforeEach(() => vi.resetAllMocks());
 describe("recovery MySQL storage adapter", () => {
+  it("supports an explicitly supplied QA database and revocation digest without calling the application connection factory", async () => {
+    const f = connection();
+    const database = drizzle(f.client as any);
+    mocks.getDb.mockClear();
+    const subjectHash = vi.fn(() => "synthetic-run-owned-digest");
+    const store = createRecoveryStore(database, subjectHash);
+    expect(await store.revoked("local_qa_synthetic")).toBe(false);
+    expect(subjectHash).toHaveBeenCalledWith("local_qa_synthetic");
+    expect(f.statements[0].params).toEqual(["synthetic-run-owned-digest", 1]);
+    expect(mocks.getDb).not.toHaveBeenCalled();
+  });
   it("checks additive stores only with no-row SELECTs, never DDL or account records", async () => {
     const f = connection(); const store = await getRecoveryStore();
     expect(await store.ready()).toBe(true);

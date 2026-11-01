@@ -66,7 +66,7 @@ async function connect(options: ConnectionOptions): Promise<Connection> {
 }
 
 export async function runRecoverySchemaPreflight(
-  args: string[], environment: { DATABASE_URL?: string }, io: IO, openConnection: Connect = connect,
+  args: string[], environment: { DATABASE_URL?: string; [name: string]: string | undefined }, io: IO, openConnection: Connect = connect,
 ): Promise<number> {
   if (args.length === 1 && ["--help", "-h"].includes(args[0])) { io.write(HELP); return 0; }
   const emit = (report: RecoverySchemaReport) => { io.write(`${JSON.stringify(report)}\n`); return codes[report.state]; };

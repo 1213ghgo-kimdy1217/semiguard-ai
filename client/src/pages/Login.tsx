@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { WaferGraphic } from "./Welcome";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { RECOVERY_QA_BUILD, recoveryQaAccountLabel, recoveryQaLoginTarget } from "@/lib/recoveryQa";
 
 export function Login() {
   const [, setLocation] = useLocation();
@@ -28,6 +29,7 @@ export function Login() {
   });
   const selectLoginLanguage = (nextLanguage: "ko" | "en" | "ja") => {
     setLoginLanguage(nextLanguage);
+    if (RECOVERY_QA_BUILD) window.dispatchEvent(new CustomEvent("semiguard-language-change", { detail: nextLanguage }));
     try {
       window.localStorage.setItem("semiguard_lang", nextLanguage);
     } catch {
@@ -337,7 +339,8 @@ export function Login() {
       toast.success(loginMessages.succeeded);
       // 캐시를 무효화하고 대시보드로 이동
       await utils.auth.me.invalidate();
-      window.location.href = "/training";
+      if (RECOVERY_QA_BUILD) window.location.href = "/account";
+      else window.location.href = "/training";
     } catch (error) {
       console.error("Login error:", error);
       setAuthError(loginMessages.failed);
@@ -431,8 +434,8 @@ export function Login() {
           {isAuthenticated && (
             <div className="rounded-lg border border-cyan-400/40 bg-cyan-400/10 p-4 text-center text-sm text-cyan-100" role="status">
               <p>{loginUi.alreadySignedIn}</p>
-              <Button type="button" onClick={() => setLocation("/training")} className="mt-3 bg-cyan-500 font-bold text-slate-950 hover:bg-cyan-400">
-                {loginUi.continuePractice}
+              <Button type="button" onClick={() => { if (RECOVERY_QA_BUILD) setLocation(recoveryQaLoginTarget(true)); else setLocation("/training"); }} className="mt-3 bg-cyan-500 font-bold text-slate-950 hover:bg-cyan-400">
+                {RECOVERY_QA_BUILD ? recoveryQaAccountLabel(loginLanguage) : loginUi.continuePractice}
               </Button>
             </div>
           )}

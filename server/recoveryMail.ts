@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { recoveryQaMailAvailable, reserveRecoveryQaMail } from "./recoveryQa";
 
 type Language = "ko" | "en" | "ja";
 export type RecoveryMail = {
@@ -9,12 +10,13 @@ export type RecoveryMail = {
   loginId?: string;
 };
 
-// A server-only adapter. Nothing is sent until an operator enables recovery,
-// approves a mail provider, and configures a verified sender and public origin.
+// Server-only Brevo transactional API adapter. Account onboarding alone does not
+// enable it: the recovery flag, verified sender, API key and public origin are required.
 function configuration() {
   const apiKey = process.env.RECOVERY_MAIL_API_KEY;
   const from = process.env.RECOVERY_MAIL_FROM;
   const configuredOrigin = process.env.RECOVERY_PUBLIC_ORIGIN;
+  if (!recoveryQaMailAvailable()) return null;
   if (process.env.SEMIGUARD_ACCOUNT_RECOVERY_ENABLED !== "1" || !apiKey || !from || !configuredOrigin) return null;
   if (!z.email().safeParse(from).success || /[\r\n]/.test(apiKey)) return null;
   try {
@@ -77,13 +79,19 @@ export async function sendRecoveryMail(input: RecoveryMail) {
   if (!config) throw new Error("RECOVERY_MAIL_UNAVAILABLE");
   if (!z.email().safeParse(input.to).success) throw new Error("RECOVERY_MAIL_INVALID");
   const content = recoveryMailContent(input, config.origin);
+  await reserveRecoveryQaMail(input.to);
   // Fixed HTTPS destination, bounded timeout, no logging of recipients, tokens,
   // authorization headers, response bodies or provider errors.
   try {
-    const response = await fetch("https://api.resend.com/emails", {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
-      headers: { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: config.from, to: [input.to], ...content }),
+      headers: { "api-key": config.apiKey, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        sender: { name: "SemiGuard AI", email: config.from },
+        to: [{ email: input.to }],
+        subject: content.subject,
+        textContent: content.text,
+      }),
       signal: AbortSignal.timeout(8000),
       redirect: "error",
     });

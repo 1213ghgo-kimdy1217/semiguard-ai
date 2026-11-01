@@ -15,7 +15,8 @@ import { Login } from "./pages/Login";
 import Signup from "./pages/Signup";
 import Welcome from "./pages/Welcome";
 import { useAuth } from "./_core/hooks/useAuth";
-import { readProductLanguage, tr } from "./lib/productLanguage";
+import { readProductLanguage, tr, useProductLanguage } from "./lib/productLanguage";
+import { RECOVERY_QA_BUILD, RecoveryQaBanner } from "./lib/recoveryQa";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -349,11 +350,17 @@ function Router() {
   );
 }
 
+function RecoveryQaNotice() {
+  const [language] = useProductLanguage();
+  return <RecoveryQaBanner enabled={RECOVERY_QA_BUILD} language={language} />;
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
+          {RECOVERY_QA_BUILD && <RecoveryQaNotice />}
           <Toaster />
           <AccountSessionProvider><GoogleAnalyticsProvider>
             <PracticeMeasurementProvider><Router /><MeasurementPreferences /></PracticeMeasurementProvider>
