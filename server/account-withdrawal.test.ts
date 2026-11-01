@@ -12,7 +12,7 @@ vi.mock("./db", () => ({ getDb: mock.getDb }));
 vi.mock("./_core/env", () => ({ ENV: { cookieSecret: "synthetic-withdrawal-test-secret" } }));
 const input = { confirmation: "DELETE", acknowledged: true, password: "qa-only-password" } as const;
 const hash = hashPassword(input.password);
-const direct = ["training_drafts", "training_attempts", "anomaly_logs", "product_activity_events", "user_onboarding_progress", "first_use_feedback", "user_stats", "social_account_links", "chat_feedback"];
+const direct = ["training_drafts", "training_attempts", "anomaly_logs", "product_activity_events", "user_onboarding_progress", "first_use_feedback", "user_stats", "social_account_links", "chat_feedback", "account_recovery_emails", "account_recovery_tokens"];
 
 /** No production DB connection. Compile Drizzle predicates and exercise rollback in memory. */
 function fixture(options: { files?: boolean; admin?: boolean; passwordless?: boolean; failAt?: string } = {}) {
@@ -118,8 +118,10 @@ describe("account withdrawal transaction", () => {
     const f = fixture(); await getWithdrawalStatus(21);
     expect(f.database.transaction).toHaveBeenCalledOnce();
     const queries = f.database.execute.mock.calls.map(([value]: any[]) => new MySqlDialect().sqlToQuery(value).sql);
-    expect(queries).toHaveLength(16);
+    expect(queries).toHaveLength(18);
     expect(queries.every((query: string) => /^SELECT .+ LIMIT 0$/.test(query))).toBe(true);
+    expect(queries.some((query: string) => query.includes("FROM account_recovery_emails LIMIT 0"))).toBe(true);
+    expect(queries.some((query: string) => query.includes("FROM account_recovery_tokens LIMIT 0"))).toBe(true);
   });
 });
 

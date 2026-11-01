@@ -24,6 +24,7 @@ export async function getWithdrawalStatus(userId: number) {
         sql`SELECT user_id FROM product_activity_events LIMIT 0`, sql`SELECT user_id FROM user_onboarding_progress LIMIT 0`,
         sql`SELECT user_id FROM first_use_feedback LIMIT 0`, sql`SELECT user_id FROM user_stats LIMIT 0`,
         sql`SELECT user_id FROM social_account_links LIMIT 0`, sql`SELECT user_id FROM chat_feedback LIMIT 0`,
+        sql`SELECT user_id FROM account_recovery_emails LIMIT 0`, sql`SELECT user_id FROM account_recovery_tokens LIMIT 0`,
         sql`SELECT id, user_id FROM chat_sessions LIMIT 0`, sql`SELECT session_id FROM chat_messages LIMIT 0`,
         sql`SELECT id, user_id, file_key, source_type FROM manual_documents LIMIT 0`, sql`SELECT document_id FROM manual_chunks LIMIT 0`,
       ]) await tx.execute(probe);
@@ -73,6 +74,8 @@ export async function withdrawAccount(userId: number, input: AccountWithdrawalIn
       await tx.delete(tables.firstUseFeedback).where(eq(tables.firstUseFeedback.userId, userId));
       await tx.delete(tables.userStats).where(eq(tables.userStats.userId, userId));
       await tx.delete(tables.socialAccountLinks).where(eq(tables.socialAccountLinks.userId, userId));
+      await tx.delete(tables.accountRecoveryTokens).where(eq(tables.accountRecoveryTokens.userId, userId));
+      await tx.delete(tables.accountRecoveryEmails).where(eq(tables.accountRecoveryEmails.userId, userId));
       await tx.delete(tables.users).where(and(eq(tables.users.id, userId), eq(tables.users.openId, user.openId)));
       // Browser-scoped consent metrics and global aggregates have no account key.
       return { success: true } as const;

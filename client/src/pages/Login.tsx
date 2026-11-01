@@ -536,6 +536,14 @@ export function Login() {
                 {loginUi.signUp}
               </button>
             </p>
+            <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm" aria-label={loginLanguage === "ko" ? "로그인 정보 찾기" : loginLanguage === "ja" ? "ログイン情報の確認" : "Account recovery"}>
+              <button type="button" onClick={() => setLocation("/account/recovery?purpose=id")} className="min-h-11 rounded px-1 text-slate-300 underline underline-offset-4 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                {loginLanguage === "ko" ? "아이디 찾기" : loginLanguage === "ja" ? "IDを確認" : "Find ID"}
+              </button>
+              <button type="button" onClick={() => setLocation("/account/recovery?purpose=password")} className="min-h-11 rounded px-1 text-slate-300 underline underline-offset-4 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                {loginLanguage === "ko" ? "비밀번호 재설정" : loginLanguage === "ja" ? "パスワード再設定" : "Reset password"}
+              </button>
+            </nav>
             <button
               type="button"
               onClick={() => setLocation("/preview")}

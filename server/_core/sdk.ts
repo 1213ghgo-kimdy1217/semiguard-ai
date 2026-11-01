@@ -7,6 +7,7 @@ import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
+import { sessionMatchesUser } from "../accountRecoverySession";
 import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
@@ -22,6 +23,7 @@ export type SessionPayload = {
   openId: string;
   appId: string;
   name: string;
+  authVersion?: number;
 };
 
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
@@ -166,13 +168,14 @@ class SDKServer {
    */
   async createSessionToken(
     openId: string,
-    options: { expiresInMs?: number; name?: string } = {}
+    options: { expiresInMs?: number; name?: string; authVersion?: number } = {}
   ): Promise<string> {
     return this.signSession(
       {
         openId,
         appId: ENV.appId,
         name: options.name || "",
+        authVersion: options.authVersion ?? 0,
       },
       options
     );
@@ -191,6 +194,7 @@ class SDKServer {
       openId: payload.openId,
       appId: payload.appId,
       name: payload.name,
+      authVersion: payload.authVersion ?? 0,
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setIssuedAt(Math.floor(issuedAt / 1000))
@@ -200,7 +204,7 @@ class SDKServer {
 
   async verifySession(
     cookieValue: string | undefined | null
-  ): Promise<{ openId: string; appId: string; name: string; issuedAt?: number } | null> {
+  ): Promise<{ openId: string; appId: string; name: string; authVersion?: number; issuedAt?: number } | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
@@ -212,11 +216,12 @@ class SDKServer {
         algorithms: ["HS256"],
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
+      const authVersion = payload.authVersion === undefined ? 0 : payload.authVersion;
 
       if (
         !isNonEmptyString(openId) ||
         !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
+        !isNonEmptyString(name) || typeof authVersion !== "number" || !Number.isSafeInteger(authVersion) || authVersion < 0
       ) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
@@ -226,6 +231,7 @@ class SDKServer {
         openId,
         appId,
         name,
+        authVersion,
         ...(typeof payload.iat === "number" ? { issuedAt: payload.iat } : {}),
       };
     } catch (error) {
@@ -322,6 +328,8 @@ class SDKServer {
     if (!user) {
       throw ForbiddenError("User not found");
     }
+
+    if (!sessionMatchesUser(session, user)) throw ForbiddenError("Session is no longer current");
 
     // An update cannot recreate a row removed by a concurrent withdrawal.
     await db.touchUser(user.id);

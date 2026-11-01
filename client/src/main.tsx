@@ -41,6 +41,13 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
+    // Recovery failures can involve a one-time credential. Never print the
+    // transport error object, which can contain request context, to the console.
+    const key = event.mutation.options.mutationKey;
+    if (Array.isArray(key?.[0]) && key[0][0] === "accountRecovery") {
+      console.warn("[Account Recovery] Request could not be completed.");
+      return;
+    }
     if (isTemporaryTransportResponse(error)) {
       console.warn("[API Mutation Temporary Transport Error]", error);
     } else {

@@ -94,6 +94,7 @@ describe("social OAuth callbacks", () => {
       id: 42,
       openId: "local_EMP-42",
       name: "Local User",
+      authVersion: 3,
     } as any);
     vi.mocked(db.touchUser).mockResolvedValue(undefined);
     vi.mocked(db.createSocialAccountLink).mockResolvedValue(undefined);
@@ -158,7 +159,7 @@ describe("social OAuth callbacks", () => {
       expect(db.touchUser).toHaveBeenCalledWith(42);
       expect(sdk.createSessionToken).toHaveBeenCalledWith(
         "local_EMP-42",
-        expect.objectContaining({ name: "Local User" }),
+        expect.objectContaining({ name: "Local User", authVersion: 3 }),
       );
     },
   );

@@ -1,0 +1,36 @@
+.sg-recovery-page{min-height:100vh;background:#101716;color:#edf0eb;padding:20px 16px 48px;overflow-wrap:anywhere}
+.sg-recovery-page>header{max-width:1024px;margin:0 auto 40px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.sg-recovery-page a{color:#8ee8ed;text-decoration:underline;text-underline-offset:4px}
+.sg-recovery-page>header>a{font-size:20px;font-weight:700;color:#edf0eb;text-decoration:none}
+.sg-recovery-page .sg-language-select{display:flex;align-items:center;gap:8px;font-size:13px}
+.sg-recovery-page select{background:#18221f;color:#edf0eb;border:1px solid #596e64;border-radius:6px;padding:8px;max-width:100%}
+.sg-recovery-card{max-width:520px;margin:auto;border:1px solid #3e5048;background:#18211e;border-radius:18px;padding:32px;box-shadow:0 20px 70px #0002}
+.sg-recovery-eyebrow{font-size:11px;letter-spacing:.16em;font-weight:700;color:#e4aa55;margin:0 0 12px}
+.sg-recovery-card h1{font-size:28px;line-height:1.25;font-weight:750;margin:0 0 14px}
+.sg-recovery-card p{font-size:14px;line-height:1.75;margin:12px 0;color:#c2cec6}
+.sg-recovery-card form,.sg-recovery-settings form{display:grid;gap:12px;margin-top:24px}
+.sg-recovery-card label,.sg-recovery-settings label{font-size:14px;font-weight:600}
+.sg-recovery-card input:not([type=radio]),.sg-recovery-settings input:not([type=radio]){width:100%;min-width:0;min-height:46px;padding:11px 12px;border:1px solid #64776b;border-radius:8px;background:#101815;color:#f5f7f1;font-size:16px;box-sizing:border-box}
+.sg-recovery-card button,.sg-recovery-settings button{min-height:44px;border-radius:8px;padding:10px 14px;font-size:14px;font-weight:650;cursor:pointer;white-space:normal}
+.sg-recovery-card button:disabled,.sg-recovery-settings button:disabled{cursor:default;opacity:.55}
+.sg-recovery-primary{background:#e4aa55;color:#17201b;border:1px solid #e4aa55;width:100%}
+.sg-recovery-secondary{background:transparent;color:#a9e6e8;border:1px solid #678d87}
+.sg-recovery-options{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 12px}
+.sg-recovery-options button{flex:1;background:transparent;border:1px solid #61776a;color:#c2cec6}
+.sg-recovery-options button[aria-pressed=true]{background:#9be1d61a;border-color:#9be1d6;color:#e6fffa}
+.sg-recovery-options label{display:flex;align-items:center;gap:8px;border:1px solid #526a5c;border-radius:8px;padding:10px 12px;flex:1;min-height:44px;cursor:pointer;font-size:13px}
+.sg-recovery-options input[type=radio]{accent-color:#78ded7;flex-shrink:0;width:16px;height:16px}
+.sg-recovery-card fieldset{border:0;padding:0;margin:0;min-width:0}
+.sg-recovery-card legend{font-size:14px;font-weight:600}
+.sg-recovery-card fieldset .sg-recovery-options{margin:8px 0}
+.sg-recovery-card .sg-recovery-help{margin:0;font-size:12px;line-height:1.6}
+.sg-recovery-card .sg-recovery-notice,.sg-recovery-settings .sg-recovery-notice{border-left:3px solid #e4aa55;background:#e4aa5510;padding:12px 14px;color:#f1ce9b}
+.sg-recovery-card .sg-recovery-success,.sg-recovery-settings .sg-recovery-success{padding:14px;border:1px solid #81b19b;background:#6fba9b14;border-radius:8px;color:#c9f2dd}
+.sg-recovery-card .sg-recovery-error,.sg-recovery-settings .sg-recovery-error{padding:12px 14px;background:#e9787812;border:1px solid #b87575;border-radius:8px;color:#ffcbcb}
+.sg-recovery-guidance{margin-top:24px;border-top:1px solid #45594b;padding-top:18px;font-size:13px}
+.sg-recovery-guidance summary{cursor:pointer;color:#b6d9cf;line-height:1.7}
+.sg-recovery-footer{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px;font-size:13px}
+.sg-recovery-page :focus-visible,.sg-recovery-settings :focus-visible{outline:3px solid #6de2e8;outline-offset:4px}
+.sg-recovery-settings{border:1px solid #4a6254;border-radius:12px;padding:20px;margin:28px 0;color:#d5e0d7;overflow-wrap:anywhere}
+.sg-recovery-settings h2{margin-top:0}.sg-recovery-settings p{font-size:14px;line-height:1.7}.sg-recovery-settings form{max-width:420px}
+@media(max-width:390px){.sg-recovery-page{padding:16px 12px 32px}.sg-recovery-page>header{margin-bottom:24px}.sg-recovery-card{padding:22px 16px;border-radius:12px}.sg-recovery-card h1{font-size:24px}.sg-recovery-options label{flex-basis:100%}.sg-recovery-settings{padding:16px}.sg-recovery-footer{gap:12px}}

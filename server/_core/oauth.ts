@@ -48,8 +48,11 @@ export function registerOAuthRoutes(app: Express) {
         lastSignedIn: new Date(),
       });
 
+      const user = await db.getUserByOpenId(userInfo.openId);
+      if (!user) throw new Error("OAuth account is unavailable");
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",
+        authVersion: user.authVersion ?? 0,
         expiresInMs: ONE_YEAR_MS,
       });
 

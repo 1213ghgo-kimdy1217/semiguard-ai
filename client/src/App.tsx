@@ -29,6 +29,7 @@ const TrainingHistory = lazy(() => import("./pages/TrainingHistory"));
 const SharedTraining = lazy(() => import("./pages/SharedTraining"));
 const PracticeMetrics = lazy(() => import("./pages/PracticeMetrics"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const AccountRecovery = lazy(() => import("./pages/AccountRecovery"));
 const AccountClosed = lazy(() => import("./pages/AccountSettings").then(module => ({ default: module.AccountClosed })));
 
 type LoadingLanguage = "ko" | "en" | "ja";
@@ -280,6 +281,9 @@ function OperationsForCurrentUser() {
 function Router() {
   return (
     <Switch>
+      <Route path="/account/recovery/verify"><Suspense fallback={<TrainingModuleLoading />}><AccountRecovery key="verify" view="verify" /></Suspense></Route>
+      <Route path="/account/recovery/reset"><Suspense fallback={<TrainingModuleLoading />}><AccountRecovery key="reset" view="reset" /></Suspense></Route>
+      <Route path="/account/recovery"><Suspense fallback={<TrainingModuleLoading />}><AccountRecovery key="request" /></Suspense></Route>
       <Route path="/account/closed"><Suspense fallback={<TrainingModuleLoading />}><AccountClosed /></Suspense></Route>
       <Route path="/account"><ProtectedRoute><Suspense fallback={<TrainingModuleLoading />}><AccountSettings /></Suspense></ProtectedRoute></Route>
       <Route path={"/training/metrics"}>
