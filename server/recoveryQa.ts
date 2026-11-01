@@ -15,22 +15,41 @@ const budgetExpiry = new Date("2037-01-01T00:00:00.000Z");
 type Environment = Record<string, string | undefined>;
 type Database = MySql2Database<Record<string, unknown>>;
 
+export type RecoveryQaChecks = {
+  previewEnvironment: boolean;
+  expectedBranch: boolean;
+  connectionScope: boolean;
+  verifiedTls: boolean;
+};
+
+/** Fixed boolean categories only. Never return actual environment/connection values. */
+export function recoveryQaChecks(environment: Environment = process.env): RecoveryQaChecks {
+  const checks: RecoveryQaChecks = {
+    previewEnvironment: environment.VERCEL_ENV === "preview",
+    expectedBranch: environment.VERCEL_GIT_COMMIT_REF === RECOVERY_QA_BRANCH,
+    connectionScope: false,
+    verifiedTls: false,
+  };
+  try {
+    const url = new URL(environment.DATABASE_URL ?? "");
+    // A URL query must not override mysql2's selected database or weaken TLS.
+    const parameters = Array.from(url.searchParams);
+    const sslParameters = parameters.filter(([key]) => key === "ssl");
+    checks.connectionScope = url.protocol === "mysql:" && Boolean(url.hostname && url.username && url.password) && !url.hash
+      && decodeURIComponent(url.pathname) === `/${RECOVERY_QA_DATABASE}` && parameters.length === 1 && sslParameters.length === 1;
+    if (sslParameters.length !== 1) return checks;
+    const ssl = JSON.parse(sslParameters[0][1]) as Record<string, unknown>;
+    checks.verifiedTls = Boolean(ssl && typeof ssl === "object" && !Array.isArray(ssl)
+      && ssl.rejectUnauthorized === true && ssl.verifyIdentity === true
+      && Object.keys(ssl).every(key => ["rejectUnauthorized", "verifyIdentity", "ca"].includes(key)));
+  } catch { /* A malformed value is classified without printing it or an error. */ }
+  return checks;
+}
+
 /** No connection, environment file loading, logging or secret extraction. */
 export function recoveryQaMode(environment: Environment = process.env): "off" | "enabled" | "invalid" {
   if (environment.SEMIGUARD_RECOVERY_QA !== "1") return "off";
-  if (environment.VERCEL_ENV !== "preview" || environment.VERCEL_GIT_COMMIT_REF !== RECOVERY_QA_BRANCH) return "invalid";
-  try {
-    const url = new URL(environment.DATABASE_URL ?? "");
-    if (url.protocol !== "mysql:" || !url.hostname || !url.username || !url.password || url.hash
-      || decodeURIComponent(url.pathname) !== `/${RECOVERY_QA_DATABASE}`) return "invalid";
-    // A URL query must not override mysql2's selected database or weaken TLS.
-    const parameters = Array.from(url.searchParams);
-    if (parameters.length !== 1 || parameters[0][0] !== "ssl") return "invalid";
-    const ssl = JSON.parse(parameters[0][1]) as Record<string, unknown>;
-    if (!ssl || typeof ssl !== "object" || Array.isArray(ssl) || ssl.rejectUnauthorized !== true || ssl.verifyIdentity !== true
-      || Object.keys(ssl).some(key => !["rejectUnauthorized", "verifyIdentity", "ca"].includes(key))) return "invalid";
-    return "enabled";
-  } catch { return "invalid"; }
+  return Object.values(recoveryQaChecks(environment)).every(Boolean) ? "enabled" : "invalid";
 }
 
 // These two existing status queries can share a browser tRPC batch with auth.me.
@@ -58,7 +77,11 @@ export const recoveryQaGate: RequestHandler = (req, res, next) => {
   if (!api && !storage) { next(); return; }
   res.set("Cache-Control", "no-store");
   if (mode === "invalid") {
-    res.status(503).json({ error: { code: "RECOVERY_QA_UNAVAILABLE", message: "The isolated recovery test environment is unavailable." } });
+    const healthRead = req.path === "/api/health" && (req.method === "GET" || req.method === "HEAD");
+    res.status(503).json({
+      error: { code: "RECOVERY_QA_UNAVAILABLE", message: "The isolated recovery test environment is unavailable." },
+      ...(healthRead ? { checks: recoveryQaChecks() } : {}),
+    });
     return;
   }
   if (storage || !recoveryQaRouteAllowed(req.path, req.method)) {

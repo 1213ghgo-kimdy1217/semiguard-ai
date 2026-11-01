@@ -2,7 +2,7 @@ import { createServer, type Server } from "node:http";
 import express from "express";
 import type { MySql2Database } from "drizzle-orm/mysql2";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { RECOVERY_QA_BRANCH, RECOVERY_QA_DATABASE, RECOVERY_QA_MAIL_BUDGET_KEY, recoveryQaGate, recoveryQaMailAvailable, recoveryQaMode, recoveryQaRouteAllowed, reserveRecoveryQaMail } from "./recoveryQa";
+import { RECOVERY_QA_BRANCH, RECOVERY_QA_DATABASE, RECOVERY_QA_MAIL_BUDGET_KEY, recoveryQaChecks, recoveryQaGate, recoveryQaMailAvailable, recoveryQaMode, recoveryQaRouteAllowed, reserveRecoveryQaMail } from "./recoveryQa";
 import { sendRecoveryMail } from "./recoveryMail";
 
 const mockedDb = vi.hoisted(() => ({ open: vi.fn() }));
@@ -42,6 +42,25 @@ describe("isolated Preview recovery scope", () => {
   ])("fails closed for a wrong environment, target or unsafe connection option", override => {
     expect(recoveryQaMode({ ...qaEnvironment(), ...override })).toBe("invalid");
   });
+  it.each([
+    [{ VERCEL_ENV: "private-environment-value" }, { previewEnvironment: false, expectedBranch: true, connectionScope: true, verifiedTls: true }],
+    [{ VERCEL_GIT_COMMIT_REF: "private-branch-value" }, { previewEnvironment: true, expectedBranch: false, connectionScope: true, verifiedTls: true }],
+    [{ DATABASE_URL: "" }, { previewEnvironment: true, expectedBranch: true, connectionScope: false, verifiedTls: false }],
+    [{ DATABASE_URL: "private-malformed-url" }, { previewEnvironment: true, expectedBranch: true, connectionScope: false, verifiedTls: false }],
+    [{ DATABASE_URL: qaEnvironment().DATABASE_URL.replace(RECOVERY_QA_DATABASE, "private-schema-value") }, { previewEnvironment: true, expectedBranch: true, connectionScope: false, verifiedTls: true }],
+    [{ DATABASE_URL: qaEnvironment().DATABASE_URL + "&database=private-schema-value" }, { previewEnvironment: true, expectedBranch: true, connectionScope: false, verifiedTls: true }],
+    [{ DATABASE_URL: qaEnvironment().DATABASE_URL + "&ssl={}" }, { previewEnvironment: true, expectedBranch: true, connectionScope: false, verifiedTls: false }],
+    [{ DATABASE_URL: qaEnvironment().DATABASE_URL.replace(/ssl=.*/, "ssl=%7Bprivate-malformed-json") }, { previewEnvironment: true, expectedBranch: true, connectionScope: true, verifiedTls: false }],
+    [{ DATABASE_URL: `mysql://synthetic:synthetic@db.example.invalid/${RECOVERY_QA_DATABASE}?ssl={"rejectUnauthorized":false,"verifyIdentity":true}` }, { previewEnvironment: true, expectedBranch: true, connectionScope: true, verifiedTls: false }],
+    [{ DATABASE_URL: `mysql://synthetic:synthetic@db.example.invalid/${RECOVERY_QA_DATABASE}?ssl={"rejectUnauthorized":true,"verifyIdentity":true,"database":"private-schema-value"}` }, { previewEnvironment: true, expectedBranch: true, connectionScope: true, verifiedTls: false }],
+  ])("classifies invalid QA configuration with only the four allowlisted booleans", (override, expected) => {
+    const checks = recoveryQaChecks({ ...qaEnvironment(), ...override });
+    expect(checks).toEqual(expected);
+    expect(Object.keys(checks).sort()).toEqual(["connectionScope", "expectedBranch", "previewEnvironment", "verifiedTls"]);
+    expect(Object.values(checks).every(value => typeof value === "boolean")).toBe(true);
+    expect(JSON.stringify(checks)).not.toMatch(/private-|synthetic|example\.invalid|semiguard_recovery_qa/);
+    expect(recoveryQaMode({ ...qaEnvironment(), ...override })).toBe("invalid");
+  });
   it("accepts only approved procedures/methods and wholly permitted read batches", () => {
     expect(recoveryQaRouteAllowed("/api/health", "GET")).toBe(true);
     expect(recoveryQaRouteAllowed("/api/trpc/auth.me,accountRecovery.availability,accountRecovery.status", "GET")).toBe(true);
@@ -72,8 +91,21 @@ describe("isolated Preview recovery scope", () => {
     expect((await fetch(base + "/login")).status).toBe(200);
     expect(reached).toHaveBeenCalledTimes(2);
     vi.stubEnv("VERCEL_ENV", "production");
-    expect((await fetch(base + "/api/health")).status).toBe(503);
+    const invalidHealth = await fetch(base + "/api/health");
+    expect(invalidHealth.status).toBe(503);
+    expect(await invalidHealth.json()).toEqual({
+      error: { code: "RECOVERY_QA_UNAVAILABLE", message: "The isolated recovery test environment is unavailable." },
+      checks: { previewEnvironment: false, expectedBranch: true, connectionScope: true, verifiedTls: true },
+    });
+    const headHealth = await fetch(base + "/api/health", { method: "HEAD" });
+    expect(headHealth.status).toBe(503); expect(await headHealth.text()).toBe("");
+    for (const [path, method] of [["/api/trpc/auth.me", "GET"], ["/api/trpc/auth.login", "POST"], ["/api/health", "POST"], ["/manus-storage/private-object", "GET"]]) {
+      const blocked = await fetch(base + path, { method });
+      expect(blocked.status).toBe(503);
+      expect(Object.keys(await blocked.json())).toEqual(["error"]);
+    }
     expect(reached).toHaveBeenCalledTimes(2);
+    expect(mockedDb.open).not.toHaveBeenCalled();
     vi.stubEnv("SEMIGUARD_RECOVERY_QA", "0");
     expect((await fetch(base + "/api/trpc/ordinary-unrelated-query")).status).toBe(200);
   });

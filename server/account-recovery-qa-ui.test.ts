@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isRecoveryQaBuild, recoveryQaLoginTarget, RecoveryQaBanner } from "../client/src/lib/recoveryQa";
 import { Login } from "../client/src/pages/Login";
 
-const fixture = vi.hoisted(() => ({ qa: false, language: "ko", stateIndex: 0, navigate: vi.fn(), invalidate: vi.fn() }));
+const fixture = vi.hoisted(() => ({ qa: false, language: "ko", stateIndex: 0, navigate: vi.fn(), invalidate: vi.fn(), authError: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn() }));
 // Read the returned element tree so these tests invoke Login's actual callbacks without a DOM.
 vi.mock("react", async original => {
   const actual = await original<typeof import("react")>();
@@ -14,13 +14,14 @@ vi.mock("react", async original => {
     useState: (initial: unknown) => {
       const index = fixture.stateIndex++;
       const value = index === 1 ? "SYNTHETIC-QA" : index === 2 ? "Synthetic-password" : typeof initial === "function" ? initial() : initial;
-      return [value, vi.fn()];
+      return [value, index === 4 ? fixture.authError : vi.fn()];
     },
   };
 });
 vi.mock("wouter", () => ({ useLocation: () => ["/login", fixture.navigate] }));
 vi.mock("../client/src/_core/hooks/useAuth", () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 vi.mock("../client/src/pages/Welcome", () => ({ WaferGraphic: () => null }));
+vi.mock("sonner", () => ({ toast: { error: fixture.toastError, success: fixture.toastSuccess } }));
 vi.mock("../client/src/lib/trpc", () => ({ trpc: { useUtils: () => ({ auth: { me: { invalidate: fixture.invalidate } } }) } }));
 vi.mock("../client/src/lib/recoveryQa", async original => ({
   ...await original<typeof import("../client/src/lib/recoveryQa")>(),
@@ -55,11 +56,12 @@ describe("real Login callbacks keep QA and production destinations separate", ()
   beforeEach(async () => {
     fixture.qa = false; fixture.language = "ko"; fixture.stateIndex = 0;
     fixture.navigate.mockReset(); fixture.invalidate.mockReset(); fixture.invalidate.mockResolvedValue(undefined);
+    fixture.authError.mockReset(); fixture.toastError.mockReset(); fixture.toastSuccess.mockReset();
     vi.stubGlobal("React", await import("react"));
-    vi.stubGlobal("window", { localStorage: { getItem: () => fixture.language }, location: { search: "", href: "/login" } });
+    vi.stubGlobal("window", { localStorage: { getItem: () => fixture.language }, location: { search: "", href: "/login" }, requestAnimationFrame: vi.fn() });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ result: { data: { json: { success: true } } } }) }));
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
   it.each([
     [false, "ko", "연습 방식 선택하기", "/training"],
     [false, "en", "Choose a practice mode", "/training"],
@@ -81,5 +83,39 @@ describe("real Login callbacks keep QA and production destinations separate", ()
     await form!.props.onSubmit({ preventDefault: vi.fn() });
     expect(fetch).toHaveBeenCalledOnce(); expect(fixture.invalidate).toHaveBeenCalledOnce();
     expect(window.location.href).toBe(target); expect(fixture.navigate).not.toHaveBeenCalled();
+  });
+  it.each([
+    ["ko", "테스트 환경 연결 설정을 확인 중입니다. 잠시 후 다시 시도해 주세요."],
+    ["en", "The test environment connection settings are being checked. Please try again shortly."],
+    ["ja", "テスト環境の接続設定を確認中です。しばらくしてからもう一度お試しください。"],
+  ] as const)("classifies QA 503/403 before credential checks in %s and never prints a provider payload", async (language, expectedMessage) => {
+    fixture.qa = true; fixture.language = language;
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const logging = vi.spyOn(console, "error").mockImplementation(() => {});
+    for (const status of [503, 403]) {
+      fixture.stateIndex = 0;
+      const json = vi.fn().mockResolvedValue({ error: { json: { message: "SENSITIVE_PROVIDER_VALUE" } } });
+      vi.mocked(fetch).mockResolvedValue({ ok: false, status, json } as unknown as Response);
+      const form = elements(Login()).find(node => node.type === "form")!;
+      await form.props.onSubmit({ preventDefault: vi.fn() });
+      expect(fixture.authError).toHaveBeenLastCalledWith(expectedMessage);
+      expect(fixture.toastError).toHaveBeenLastCalledWith(expectedMessage);
+      expect(json).not.toHaveBeenCalled();
+    }
+    expect(logging).not.toHaveBeenCalled();
+    expect(warning.mock.calls.flat().join(" ")).not.toContain("SENSITIVE_PROVIDER_VALUE");
+    expect(warning.mock.calls.flat().join(" ")).not.toContain("Synthetic-password");
+    expect(fixture.invalidate).not.toHaveBeenCalled(); expect(window.location.href).toBe("/login");
+  });
+  it.each([[false, 503], [false, 403], [true, 401], [false, 401]] as const)("preserves ordinary credential failure copy when QA=%s and HTTP=%s", async (qa, status) => {
+    fixture.qa = qa;
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(fetch).mockResolvedValue({ ok: false, status, json: async () => ({ error: { json: { message: "SYNTHETIC_FAILURE" } } }) } as unknown as Response);
+    const form = elements(Login()).find(node => node.type === "form")!;
+    await form.props.onSubmit({ preventDefault: vi.fn() });
+    expect(fixture.authError).toHaveBeenLastCalledWith("로그인 실패: 아이디 또는 비밀번호를 확인해주세요.");
+    expect(fixture.toastError).toHaveBeenLastCalledWith("로그인 실패: 아이디 또는 비밀번호를 확인해주세요.");
+    expect(fixture.invalidate).not.toHaveBeenCalled(); expect(window.location.href).toBe("/login");
   });
 });

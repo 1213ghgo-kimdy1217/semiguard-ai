@@ -316,6 +316,7 @@ export function Login() {
     setFieldError(null);
 
     setIsLoading(true);
+    let qaConnectionUnavailable = false;
     try {
       const response = await fetch("/api/trpc/auth.login", {
         method: "POST",
@@ -330,6 +331,10 @@ export function Login() {
         }),
       });
 
+      if (RECOVERY_QA_BUILD && (response.status === 503 || response.status === 403)) {
+        qaConnectionUnavailable = true;
+        throw new Error("RECOVERY_QA_UNAVAILABLE");
+      }
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.error) {
         const message = payload?.error?.json?.message ?? payload?.error?.message;
@@ -342,9 +347,18 @@ export function Login() {
       if (RECOVERY_QA_BUILD) window.location.href = "/account";
       else window.location.href = "/training";
     } catch (error) {
-      console.error("Login error:", error);
-      setAuthError(loginMessages.failed);
-      toast.error(loginMessages.failed);
+      if (RECOVERY_QA_BUILD) console.warn("[Account Recovery QA] Sign-in could not be completed.");
+      else console.error("Login error:", error);
+      if (qaConnectionUnavailable) {
+        const failureMessage = loginLanguage === "ko" ? "테스트 환경 연결 설정을 확인 중입니다. 잠시 후 다시 시도해 주세요."
+          : loginLanguage === "ja" ? "テスト環境の接続設定を確認中です。しばらくしてからもう一度お試しください。"
+            : "The test environment connection settings are being checked. Please try again shortly.";
+        setAuthError(failureMessage);
+        toast.error(failureMessage);
+      } else {
+        setAuthError(loginMessages.failed);
+        toast.error(loginMessages.failed);
+      }
       window.requestAnimationFrame(() => document.getElementById("password")?.focus());
     } finally {
       setIsLoading(false);
