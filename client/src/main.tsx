@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { startLogin } from "./const";
+import { RECOVERY_QA_BUILD } from "./lib/recoveryQa";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -18,6 +19,10 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
+  if (RECOVERY_QA_BUILD) {
+    window.location.replace("/login");
+    return;
+  }
   startLogin();
 };
 
