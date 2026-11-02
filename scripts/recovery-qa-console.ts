@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
-import { pathToFileURL } from "node:url";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { hashPassword } from "../server/password";
 import { inspectRecoverySchema } from "../server/accountRecoverySchema";
 import { recoveryPreflightConnectionOptions } from "./check-account-recovery-schema";
@@ -14,6 +15,8 @@ type Dependencies = {
   prepare: (url: string, target: RecoveryQaTarget) => Promise<RecoveryQaReport>;
   run: (url: string, target: RecoveryQaTarget) => Promise<RecoveryQaReport>;
   validate?: (url: string, target: RecoveryQaTarget) => Promise<RecoveryQaReport>;
+  recover?: (url: string, target: RecoveryQaTarget) => Promise<SeedResult>;
+  auditOwner?: (owner: BrowserOwner, status: "active" | "cleaned") => Promise<void>;
   seed?: (url: string, target: RecoveryQaTarget, password: string) => Promise<SeedResult>;
   cleanup?: (url: string, target: RecoveryQaTarget, owner: BrowserOwner) => Promise<{ passed: boolean }>;
 };
@@ -33,7 +36,7 @@ forget.addEventListener('click',async()=>{try{render(await post('/forget',{}));}
 fetch('/state').then(r=>r.json()).then(render).catch(()=>{status.textContent='연결창 상태를 확인하지 못했습니다.';});`;
 
 const BROWSER_HTML = `<section><h2>실제 Preview의 가상 계정 1개</h2><p>기존 4계정 시험을 다시 돌리지 않습니다. 고정 시험 아이디: <strong>${BROWSER_QA_LOGIN_ID}</strong></p><form id="browser-seed" autocomplete="off" hidden><label for="qa-password">이 가상 계정에만 사용할 새 시험 비밀번호 (10~128자)</label><input id="qa-password" type="password" autocomplete="off" minlength="10" maxlength="128" required><button>가상 계정 1개 만들기</button></form><p id="browser-status" role="status" tabindex="-1"></p><button id="copy-jwt" hidden>Preview 전용 JWT 키 복사</button><button id="browser-cleanup" hidden>메일 검증 후 이 가상 계정만 정리</button></section>`;
-const BROWSER_CLIENT = `const seed=document.querySelector('#browser-seed'),browserStatus=document.querySelector('#browser-status'),jwt=document.querySelector('#copy-jwt'),cleanup=document.querySelector('#browser-cleanup');const baseRender=render;render=function(state){baseRender(state);const active=state.browserPhase==='seeded';seed.hidden=state.phase!=='passed'||state.browserPhase!=='not-seeded';jwt.hidden=!active;cleanup.hidden=!active&&!state.cleanupRequired;cleanup.disabled=state.browserPhase==='cleaning'||state.browserPhase==='cleanup-review';forget.hidden=forget.hidden||state.cleanupRequired;browserStatus.textContent=state.browserPhase==='seeded'?'가상 계정 생성 완료. Preview에서만 사용하고 검증 후 정리하세요.':state.browserPhase==='cleaned'?'이 실행에서 만든 가상 계정을 정리했습니다.':/review/.test(state.browserPhase||'')?'상태 확인이 필요합니다. 연결창을 닫거나 다시 실행하지 마세요.':'';};
+const BROWSER_CLIENT = `const seed=document.querySelector('#browser-seed'),browserStatus=document.querySelector('#browser-status'),jwt=document.querySelector('#copy-jwt'),cleanup=document.querySelector('#browser-cleanup');const baseRender=render;render=function(state){baseRender(state);const active=state.browserPhase==='seeded',recovering=state.mode==='recover-preview';seed.hidden=recovering||state.phase!=='passed'||state.browserPhase!=='not-seeded';jwt.hidden=!active||!state.jwtCopyAvailable;cleanup.hidden=!active&&!state.cleanupRequired;cleanup.disabled=state.browserPhase==='cleaning'||state.browserPhase==='cleanup-review';forget.hidden=forget.hidden||state.cleanupRequired;browserStatus.textContent=state.browserPhase==='seeded'?(recovering?'기존 가상 계정 연결을 복구했습니다. 기존 Preview 서명 키를 그대로 사용하고 검증 후 정리하세요.':'가상 계정 생성 완료. Preview에서만 사용하고 검증 후 정리하세요.'):state.browserPhase==='cleaned'?'확인한 가상 계정을 정리했습니다.':/review/.test(state.browserPhase||'')?'상태 확인이 필요합니다. 연결창을 닫거나 다시 실행하지 마세요.':'';};
 seed.addEventListener('submit',async e=>{e.preventDefault();const field=document.querySelector('#qa-password');let password=field.value;field.value='';seed.querySelector('button').disabled=true;try{const work=post('/seed',{password});password='';render(await work);}catch{browserStatus.textContent='생성 상태를 확인해야 합니다. 다시 실행하지 마세요.';}finally{password='';}});
 jwt.addEventListener('click',async()=>{jwt.disabled=true;try{const result=await post('/copy-jwt',{});await navigator.clipboard.writeText(result.secret);browserStatus.textContent='Preview 전용 JWT 키를 복사했습니다. 채팅에 붙여넣지 마세요.';}catch{browserStatus.textContent='키를 복사하지 못했습니다. 값은 표시하지 않습니다.';}finally{jwt.disabled=false;}});
 cleanup.addEventListener('click',async()=>{cleanup.disabled=true;try{render(await post('/cleanup',{}));}catch{browserStatus.textContent='정리 상태 확인이 필요합니다. 다시 실행하지 마세요.';}});
@@ -61,6 +64,40 @@ async function validateBrowserQa(url: string, target: RecoveryQaTarget): Promise
   try { connection = await privateConnection(url, target); const passed = await checkPrivateSchema(connection, true); return { passed, checks: { isolatedEmptyBrowserQaSchema: passed } }; }
   catch { return { passed: false, checks: { isolatedEmptyBrowserQaSchema: false } }; }
   finally { try { await connection?.end(); } catch { /* No raw driver diagnostics. */ } }
+}
+async function recoverBrowserQa(url: string, target: RecoveryQaTarget): Promise<SeedResult> {
+  let connection: Awaited<ReturnType<typeof privateConnection>> | undefined;
+  try {
+    connection = await privateConnection(url, target);
+    if (!await checkPrivateSchema(connection, false)) return { passed: false };
+    const [users] = await connection.execute<any[]>({ sql: "SELECT COUNT(*) AS count FROM users", timeout: 10_000 });
+    if (Number(users[0]?.count) !== 1) return { passed: false };
+    // Only non-secret identity metadata of the one known synthetic login is read.
+    const [rows] = await connection.execute<any[]>({ sql: "SELECT id,openId,name,loginMethod,badge_number,auth_version,role FROM users WHERE badge_number = ? LIMIT 2", timeout: 10_000 }, [BROWSER_QA_LOGIN_ID]);
+    const row = rows[0];
+    if (rows.length !== 1 || !row || !Number.isSafeInteger(row.id) || row.id <= 0
+      || typeof row.openId !== "string" || !/^local_browser_qa_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(row.openId)
+      || row.name !== "Synthetic recovery browser QA" || row.role !== "user" || row.loginMethod !== "password"
+      || row.badge_number !== BROWSER_QA_LOGIN_ID || !Number.isSafeInteger(row.auth_version) || row.auth_version < 0) return { passed: false };
+    return { passed: true, owner: { id: row.id, openId: row.openId } };
+  } catch { return { passed: false }; }
+  finally { try { await connection?.end(); } catch { /* No raw driver diagnostics. */ } }
+}
+async function auditRecoveredOwner(owner: BrowserOwner, status: "active" | "cleaned") {
+  const directory = new URL("../../verification-artifacts/", import.meta.url);
+  const file = new URL("account-recovery-browser-owner-20261102.json", directory);
+  const record = { id: owner.id, openId: owner.openId, loginId: BROWSER_QA_LOGIN_ID, schema: RECOVERY_QA_DATABASE, status };
+  let existing: Record<string, unknown> | undefined;
+  try { existing = JSON.parse(await readFile(file, "utf8")); }
+  catch (error) { if ((error as NodeJS.ErrnoException)?.code !== "ENOENT") throw new Error("QA_OWNER_AUDIT_REVIEW"); }
+  if (existing) {
+    if (Object.keys(existing).sort().join(",") !== "id,loginId,openId,schema,status" || existing.id !== record.id || existing.openId !== record.openId
+      || existing.loginId !== record.loginId || existing.schema !== record.schema || existing.status !== "active") throw new Error("QA_OWNER_AUDIT_REVIEW");
+    if (status === "active") return;
+  } else if (status !== "active") throw new Error("QA_OWNER_AUDIT_REVIEW");
+  await mkdir(fileURLToPath(directory), { recursive: true });
+  // This fixed, outside-Git audit contains synthetic identity only; no credentials.
+  await writeFile(file, JSON.stringify(record) + "\n", { encoding: "utf8", flag: existing ? "w" : "wx" });
 }
 async function seedBrowserQa(url: string, target: RecoveryQaTarget, password: string): Promise<SeedResult> {
   let connection: Awaited<ReturnType<typeof privateConnection>> | undefined, owner: BrowserOwner | undefined;
@@ -121,7 +158,8 @@ function summarize(reports: RecoveryQaReport[]) {
 }
 
 /** Loopback only. Importing does not listen, load .env, or read credentials. */
-export async function startRecoveryQaConsole(options: { port?: number; previewOnly?: boolean; dependencies?: Dependencies } = {}) {
+export async function startRecoveryQaConsole(options: { port?: number; previewOnly?: boolean; recoverPreview?: boolean; dependencies?: Dependencies } = {}) {
+  if (options.previewOnly && options.recoverPreview) throw new Error("CONSOLE_ARGUMENTS");
   const dependencies: Dependencies = options.dependencies ?? { prepare: prepareRecoveryQaDatabase, run: runRecoveryQa };
   let target: RecoveryQaTarget | undefined, privateUrl: string | undefined, browserOwner: BrowserOwner | undefined, qaJwtSecret: string | undefined;
   let phase: Phase = "configure", attempted = false, passedChecks = 0, totalChecks = 0;
@@ -129,7 +167,7 @@ export async function startRecoveryQaConsole(options: { port?: number; previewOn
   let origin = "";
   const cleanupRequired = () => Boolean(browserOwner) || ["seeding", "seed-review", "cleaning", "cleanup-review"].includes(browserPhase);
   const state = () => ({ configured: Boolean(target), phase, schema: RECOVERY_QA_DATABASE, passed: phase === "passed", passedChecks, totalChecks,
-    mode: options.previewOnly ? "preview-only" : "harness", browserPhase, cleanupRequired: cleanupRequired(), ...(browserPhase === "seeded" ? { loginId: BROWSER_QA_LOGIN_ID, seeded: true } : {}) });
+    mode: options.recoverPreview ? "recover-preview" : options.previewOnly ? "preview-only" : "harness", browserPhase, cleanupRequired: cleanupRequired(), jwtCopyAvailable: browserPhase === "seeded" && Boolean(qaJwtSecret), ...(browserPhase === "seeded" ? { loginId: BROWSER_QA_LOGIN_ID, seeded: true } : {}) });
   const reply = (res: ServerResponse, code: number, value: unknown, type = "application/json") => {
     res.writeHead(code, { "Content-Type": `${type}; charset=utf-8`, "Cache-Control": "no-store", "Content-Security-Policy": CSP, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" });
     res.end(type === "application/json" ? JSON.stringify(value) : value);
@@ -137,9 +175,9 @@ export async function startRecoveryQaConsole(options: { port?: number; previewOn
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     if (req.headers.host !== origin.slice("http://".length)) { req.resume(); reply(res, 403, { blocked: true }); return; }
     if (req.method === "GET") {
-      if (req.url === "/") reply(res, 200, HTML.replace("</main>", `${BROWSER_HTML}</main>`).replace("승인된 가상 시험 실행", options.previewOnly ? "기존 QA DB 범위만 확인" : "승인된 가상 시험 실행")
-        .replace("운영 DB가 아닌 승인된 가상 시험 DB만 준비·점검합니다.", options.previewOnly ? "운영 DB를 건드리지 않고 기존 QA DB의 범위만 확인합니다. 이후 별도 버튼으로 가상 계정 1개를 만듭니다." : "운영 DB가 아닌 승인된 가상 시험 DB만 준비·점검합니다."), "text/html");
-      else if (req.url === "/client.js") reply(res, 200, (options.previewOnly ? CLIENT.replace("가상 시험 검사를 통과했습니다.", "Preview용 스키마 범위 확인 완료.").replace("준비·검사 중입니다. 중복 실행하지 마세요.", "기존 QA DB의 스키마 범위 확인 중입니다. 기존 계정 시험을 다시 실행하지 않습니다.") : CLIENT) + BROWSER_CLIENT, "text/javascript");
+      if (req.url === "/") reply(res, 200, HTML.replace("</main>", `${options.recoverPreview ? BROWSER_HTML.replace("실제 Preview의 가상 계정 1개", "기존 Preview 시험 연결 복구").replace("기존 4계정 시험을 다시 돌리지 않습니다.", "기존 계정과 서명 키를 그대로 사용합니다. 계정을 새로 만들지 않습니다.") : BROWSER_HTML}</main>`).replace("승인된 가상 시험 실행", options.recoverPreview ? "기존 Preview 연결 복구" : options.previewOnly ? "기존 QA DB 범위만 확인" : "승인된 가상 시험 실행")
+        .replace("운영 DB가 아닌 승인된 가상 시험 DB만 준비·점검합니다.", options.recoverPreview ? "운영 DB를 건드리지 않고 기존 QA DB와 알려진 가상 계정 1개를 읽기 전용으로 확인합니다. 기존 시험·계정 생성·서명 키 발급을 다시 실행하지 않습니다." : options.previewOnly ? "운영 DB를 건드리지 않고 기존 QA DB의 범위만 확인합니다. 이후 별도 버튼으로 가상 계정 1개를 만듭니다." : "운영 DB가 아닌 승인된 가상 시험 DB만 준비·점검합니다."), "text/html");
+      else if (req.url === "/client.js") reply(res, 200, (options.recoverPreview ? CLIENT.replace("가상 시험 검사를 통과했습니다.", "기존 Preview 연결 복구 완료.").replace("준비·검사 중입니다. 중복 실행하지 마세요.", "기존 QA DB와 알려진 가상 계정을 확인 중입니다. 시험이나 계정 생성을 다시 실행하지 않습니다.") : options.previewOnly ? CLIENT.replace("가상 시험 검사를 통과했습니다.", "Preview용 스키마 범위 확인 완료.").replace("준비·검사 중입니다. 중복 실행하지 마세요.", "기존 QA DB의 스키마 범위 확인 중입니다. 기존 계정 시험을 다시 실행하지 않습니다.") : CLIENT) + BROWSER_CLIENT, "text/javascript");
       else if (req.url === "/state") reply(res, 200, state());
       else reply(res, 404, { unavailable: true });
       return;
@@ -171,6 +209,20 @@ export async function startRecoveryQaConsole(options: { port?: number; previewOn
       const candidate = url.href;
       url.password = "";
       try {
+        if (options.recoverPreview) {
+          seedAttempted = true;
+          const result = await (dependencies.recover ?? recoverBrowserQa)(candidate, { ...target });
+          const owner = result.owner;
+          const passed = result.passed && owner && Number.isSafeInteger(owner.id) && owner.id > 0
+            && /^local_browser_qa_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(owner.openId);
+          totalChecks = 1; passedChecks = 0;
+          if (passed) {
+            await (dependencies.auditOwner ?? auditRecoveredOwner)(owner, "active");
+            privateUrl = candidate; browserOwner = owner; browserPhase = "seeded"; phase = "passed"; passedChecks = 1;
+          }
+          else { privateUrl = undefined; phase = "review"; }
+          reply(res, 200, state()); return;
+        }
         const prepared = options.previewOnly
           ? await (dependencies.validate ?? validateBrowserQa)(candidate, { ...target })
           : await dependencies.prepare(candidate, { ...target });
@@ -184,7 +236,7 @@ export async function startRecoveryQaConsole(options: { port?: number; previewOn
       reply(res, 200, state()); return;
     }
     if (req.url === "/seed") {
-      if (!target || !privateUrl || phase !== "passed" || seedAttempted || browserPhase !== "not-seeded") { reply(res, 409, state()); return; }
+      if (options.recoverPreview || !target || !privateUrl || phase !== "passed" || seedAttempted || browserPhase !== "not-seeded") { reply(res, 409, state()); return; }
       if (Object.keys(body).join(",") !== "password" || typeof body.password !== "string" || body.password.length < 10 || body.password.length > 128 || /[\r\n\0]/.test(body.password)) { reply(res, 400, { blocked: true }); return; }
       seedAttempted = true; browserPhase = "seeding";
       let password = body.password; body.password = "";
@@ -212,7 +264,10 @@ export async function startRecoveryQaConsole(options: { port?: number; previewOn
       cleanupAttempted = true; browserPhase = "cleaning";
       try {
         const result = await (dependencies.cleanup ?? cleanupBrowserQa)(privateUrl, { ...target }, { ...browserOwner });
-        if (result.passed) { browserOwner = undefined; qaJwtSecret = undefined; browserPhase = "cleaned"; }
+        if (result.passed) {
+          if (options.recoverPreview) await (dependencies.auditOwner ?? auditRecoveredOwner)({ ...browserOwner }, "cleaned");
+          browserOwner = undefined; qaJwtSecret = undefined; browserPhase = "cleaned";
+        }
         else browserPhase = "cleanup-review";
       } catch { browserPhase = "cleanup-review"; }
       reply(res, 200, state()); return;
@@ -225,7 +280,7 @@ export async function startRecoveryQaConsole(options: { port?: number; previewOn
   server.requestTimeout = 15_000; server.headersTimeout = 10_000;
   server.on("close", () => { privateUrl = undefined; target = undefined; qaJwtSecret = undefined; browserOwner = undefined; });
   await new Promise<void>((resolve, reject) => {
-    server.once("error", reject); server.listen(options.port ?? (options.previewOnly ? 4320 : 4319), "127.0.0.1", () => { server.removeListener("error", reject); resolve(); });
+    server.once("error", reject); server.listen(options.port ?? (options.previewOnly || options.recoverPreview ? 4320 : 4319), "127.0.0.1", () => { server.removeListener("error", reject); resolve(); });
   });
   const address = server.address();
   if (!address || typeof address === "string") { server.close(); throw new Error("CONSOLE_UNAVAILABLE"); }
@@ -239,8 +294,8 @@ export async function startRecoveryQaConsole(options: { port?: number; previewOn
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   try {
     const args = process.argv.slice(2);
-    if (args.length > 1 || args.length === 1 && args[0] !== "--preview-only") throw new Error("CONSOLE_ARGUMENTS");
-    const consoleServer = await startRecoveryQaConsole({ previewOnly: args[0] === "--preview-only" }); process.stdout.write(`${consoleServer.url}\n`);
+    if (args.length > 1 || args.length === 1 && !["--preview-only", "--recover-preview"].includes(args[0])) throw new Error("CONSOLE_ARGUMENTS");
+    const consoleServer = await startRecoveryQaConsole({ previewOnly: args[0] === "--preview-only", recoverPreview: args[0] === "--recover-preview" }); process.stdout.write(`${consoleServer.url}\n`);
     const stop = () => { void consoleServer.close().then(() => { process.exitCode = 0; }).catch(() => { process.stderr.write("가상 계정 정리 또는 상태 확인 후 연결창을 종료하세요.\n"); }); };
     process.on("SIGINT", stop); process.on("SIGTERM", stop);
   }

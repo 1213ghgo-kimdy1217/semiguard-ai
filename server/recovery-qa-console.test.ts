@@ -1,32 +1,37 @@
 import http from "node:http";
 import { afterEach, describe, expect, it, vi } from "vitest";
 const database = vi.hoisted(() => ({ connect: vi.fn(), schema: vi.fn() }));
+const audit = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn(), mkdir: vi.fn() }));
 vi.mock("mysql2/promise", () => ({ createConnection: database.connect }));
 vi.mock("./accountRecoverySchema", () => ({ inspectRecoverySchema: database.schema }));
+vi.mock("node:fs/promises", () => ({ readFile: audit.read, writeFile: audit.write, mkdir: audit.mkdir }));
 import { startRecoveryQaConsole, BROWSER_QA_LOGIN_ID } from "../scripts/recovery-qa-console";
 
 const HOST = "synthetic-owned.eu-central-1.aws.tidbcloud.com";
 const USER = "synthetic-owned.root";
 const PASSWORD = "synthetic-private-qa-password:@/?#";
 const QA_PASSWORD = "only-synthetic-browser-qa-password";
-const OWNER = { id: 77, openId: "local_browser_qa_00000000-0000-0000-0000-000000000077" };
+const OWNER = { id: 77, openId: "local_browser_qa_00000000-0000-4000-8000-000000000077" };
 const opened: Awaited<ReturnType<typeof startRecoveryQaConsole>>[] = [];
 afterEach(async () => {
   // Synthetic mocked owners only: normal close must refuse unsettled cleanup.
   await Promise.all(opened.splice(0).map(consoleServer => consoleServer.close().catch(() => new Promise<void>(resolve => { consoleServer.server.close(() => resolve()); consoleServer.server.closeIdleConnections(); }))));
   vi.restoreAllMocks(); database.connect.mockReset(); database.schema.mockReset();
+  audit.read.mockReset(); audit.write.mockReset(); audit.mkdir.mockReset();
 });
-async function fixture(options: { previewOnly?: boolean; storageAdapter?: boolean } = {}) {
+async function fixture(options: { previewOnly?: boolean; recoverPreview?: boolean; storageAdapter?: boolean; auditAdapter?: boolean } = {}) {
   const prepare = vi.fn().mockResolvedValue({ passed: true, checks: { privatePreparationKey: true } });
   const run = vi.fn().mockResolvedValue({ passed: true, checks: { privateCheckKey: true, otherPrivateKey: true } });
   const validate = vi.fn().mockResolvedValue({ passed: true, checks: { privateScopeCheck: true } });
+  const recover = vi.fn().mockResolvedValue({ passed: true, owner: { ...OWNER } });
+  const auditOwner = vi.fn().mockResolvedValue(undefined);
   const seed = vi.fn().mockResolvedValue({ passed: true, owner: { ...OWNER } });
   const cleanup = vi.fn().mockResolvedValue({ passed: true });
-  const consoleServer = await startRecoveryQaConsole({ port: 0, previewOnly: options.previewOnly, dependencies: { prepare, run, validate, ...(options.storageAdapter ? {} : { seed, cleanup }) } }); opened.push(consoleServer);
+  const consoleServer = await startRecoveryQaConsole({ port: 0, previewOnly: options.previewOnly, recoverPreview: options.recoverPreview, dependencies: { prepare, run, validate, ...(options.auditAdapter ? {} : { auditOwner }), ...(options.storageAdapter ? {} : { seed, cleanup, recover }) } }); opened.push(consoleServer);
   const post = (path: string, data: unknown, headers: Record<string, string> = {}) => fetch(consoleServer.url + path, { method: "POST", headers: { Origin: consoleServer.url, "Content-Type": "application/json", ...headers }, body: JSON.stringify(data) });
   const configure = () => post("/configure", { host: HOST, user: USER });
   const passed = async () => { await configure(); await post("/run", { password: PASSWORD }); };
-  return { ...consoleServer, prepare, run, validate, seed, cleanup, post, configure, passed };
+  return { ...consoleServer, prepare, run, validate, recover, auditOwner, seed, cleanup, post, configure, passed };
 }
 function raw(url: string, headers: Record<string, string>) {
   return new Promise<{ status: number; body: string }>((resolve, reject) => {
@@ -169,7 +174,7 @@ describe("loopback-only recovery QA credential console", () => {
 
 function syntheticStorage(existingUsers = 0) {
   const statements: { sql: string; values: unknown[] }[] = [];
-  const users: { id: number; openId: string }[] = existingUsers ? [{ id: 55, openId: "local_unrelated" }] : [];
+  const users: { id: number; openId: string; name?: string; role?: string; loginMethod?: string; badge_number?: string; auth_version?: number }[] = existingUsers ? [{ id: 55, openId: "local_unrelated" }] : [];
   let revocations = 0;
   const connection = {
     execute: vi.fn(async (query: string | { sql: string }, values: unknown[] = []) => {
@@ -178,6 +183,7 @@ function syntheticStorage(existingUsers = 0) {
       if (/information_schema.TABLES/.test(sql)) return [["users", "account_revocations", "account_recovery_emails", "account_recovery_tokens", "account_recovery_limits"].map(name => ({ name })), []];
       if (/SELECT COUNT.+account_revocations/.test(sql)) return [[{ count: revocations }], []];
       if (/SELECT COUNT.+users/.test(sql)) return [[{ count: users.length }], []];
+      if (/^SELECT id,openId,name,loginMethod,badge_number,auth_version,role/.test(sql)) return [users.filter(user => user.badge_number === values[0]).slice(0, 2), []];
       if (/^INSERT INTO users/.test(sql)) { users.push({ id: 77, openId: values[0] as string }); return [{ insertId: 77 }, []]; }
       if (/^SELECT openId FROM users/.test(sql)) return [users.filter(user => user.id === values[0]).map(({ openId }) => ({ openId })), []];
       if (/^DELETE FROM users/.test(sql)) { const index = users.findIndex(user => user.id === values[0] && user.openId === values[1]); if (index < 0) return [{ affectedRows: 0 }, []]; users.splice(index, 1); return [{ affectedRows: 1 }, []]; }
@@ -221,5 +227,73 @@ describe("Preview-only account storage boundary with a recording connection, no 
     const db = syntheticStorage(); const f = await fixture({ previewOnly: true, storageAdapter: true }); await f.passed(); await f.post("/seed", { password: QA_PASSWORD }); db.users[0].openId = "local_replacement";
     expect(await (await f.post("/cleanup", {})).json()).toMatchObject({ browserPhase: "cleanup-review" });
     expect(db.statements.some(row => row.sql.startsWith("DELETE"))).toBe(false); expect(db.connection.rollback).toHaveBeenCalledOnce();
+  });
+});
+
+function recoveredStorage() {
+  const db = syntheticStorage();
+  db.users.push({ ...OWNER, name: "Synthetic recovery browser QA", role: "user", loginMethod: "password", badge_number: BROWSER_QA_LOGIN_ID, auth_version: 2 });
+  return db;
+}
+
+describe("read-only recovery of the already-created Preview account", () => {
+  it("restores URL copy and exact-owner cleanup without a harness, new account, or new JWT", async () => {
+    const db = recoveredStorage(); const f = await fixture({ recoverPreview: true, storageAdapter: true }); await f.passed();
+    const text = await (await fetch(f.url + "/state")).text();
+    expect(JSON.parse(text)).toMatchObject({ mode: "recover-preview", phase: "passed", browserPhase: "seeded", cleanupRequired: true, seeded: true, jwtCopyAvailable: false });
+    for (const value of [HOST, USER, PASSWORD, OWNER.openId, '"id":77', "mysql:"]) expect(text).not.toContain(value);
+    expect(f.prepare).not.toHaveBeenCalled(); expect(f.run).not.toHaveBeenCalled(); expect(f.validate).not.toHaveBeenCalled(); expect(f.seed).not.toHaveBeenCalled();
+    expect(db.statements.every(row => row.sql.startsWith("SELECT"))).toBe(true); expect(db.connection.beginTransaction).not.toHaveBeenCalled();
+    expect(db.statements.some(row => /password_hash|token_hash|email_normalized/.test(row.sql))).toBe(false);
+    expect(db.statements.find(row => row.sql.startsWith("SELECT id,"))?.values).toEqual([BROWSER_QA_LOGIN_ID]);
+    const copied = await (await f.post("/copy", {})).json(); const parsed = new URL(copied.url);
+    expect(parsed.pathname).toBe("/semiguard_recovery_qa_20261102"); expect(parsed.hostname).toBe(HOST); expect(parsed.port).toBe("4000");
+    expect(JSON.parse(parsed.searchParams.get("ssl")!)).toEqual({ rejectUnauthorized: true, verifyIdentity: true });
+    expect((await f.post("/copy-jwt", {})).status).toBe(409); expect((await f.post("/seed", { password: QA_PASSWORD })).status).toBe(409);
+    expect((await f.post("/run", { password: PASSWORD })).status).toBe(409); expect((await f.post("/forget", {})).status).toBe(409);
+    expect(f.auditOwner).toHaveBeenCalledWith(OWNER, "active");
+    const client = await (await fetch(f.url + "/client.js")).text(); expect(client).toContain("기존 Preview 연결 복구 완료."); expect(client).toContain("!state.jwtCopyAvailable"); expect(client).not.toContain("가상 시험 검사를 통과했습니다.");
+    expect(await (await f.post("/cleanup", {})).json()).toMatchObject({ browserPhase: "cleaned", cleanupRequired: false, jwtCopyAvailable: false });
+    expect(db.users).toHaveLength(0); expect(f.auditOwner).toHaveBeenLastCalledWith(OWNER, "cleaned");
+    expect(db.statements.filter(row => row.sql.startsWith("DELETE")).every(row => !/account_recovery_limits|account_revocations/.test(row.sql))).toBe(true);
+  });
+  it.each(["prefix", "uuid", "role", "name", "method", "version", "login", "multiple", "missing", "partial"])("refuses unknown or ambiguous %s account state without mutations", async condition => {
+    const db = recoveredStorage();
+    if (condition === "prefix") db.users[0].openId = "local_other_00000000-0000-4000-8000-000000000077";
+    if (condition === "uuid") db.users[0].openId = "local_browser_qa_00000000-0000-0000-0000-000000000077";
+    if (condition === "role") db.users[0].role = "admin";
+    if (condition === "name") db.users[0].name = "Someone else";
+    if (condition === "method") db.users[0].loginMethod = "google";
+    if (condition === "version") db.users[0].auth_version = -1;
+    if (condition === "login") db.users[0].badge_number = "unrelated";
+    if (condition === "multiple") db.users.push({ ...db.users[0], id: 78 });
+    if (condition === "missing") db.users.splice(0);
+    if (condition === "partial") database.schema.mockResolvedValue({ state: "partial", missing: ["unknown-index"] });
+    const f = await fixture({ recoverPreview: true, storageAdapter: true }); await f.passed();
+    const state = await (await fetch(f.url + "/state")).json();
+    expect(state).toMatchObject({ phase: "review", passed: false, jwtCopyAvailable: false }); expect(state).not.toHaveProperty("seeded");
+    expect((await f.post("/copy", {})).status).toBe(409); expect((await f.post("/copy-jwt", {})).status).toBe(409); expect((await f.post("/seed", { password: QA_PASSWORD })).status).toBe(409);
+    expect(db.statements.every(row => row.sql.startsWith("SELECT"))).toBe(true); expect(f.auditOwner).not.toHaveBeenCalled();
+    expect(f.prepare).not.toHaveBeenCalled(); expect(f.run).not.toHaveBeenCalled();
+  });
+  it("requires a matching active non-secret owner manifest and marks it cleaned without recording credentials", async () => {
+    recoveredStorage(); audit.read.mockRejectedValueOnce(Object.assign(new Error("missing"), { code: "ENOENT" }));
+    const f = await fixture({ recoverPreview: true, storageAdapter: true, auditAdapter: true }); await f.passed();
+    expect(audit.write).toHaveBeenCalledOnce();
+    const [file, content, options] = audit.write.mock.calls[0]; const record = JSON.parse(content);
+    expect(file.href).toContain("/work/verification-artifacts/account-recovery-browser-owner-20261102.json");
+    expect(record).toEqual({ ...OWNER, loginId: BROWSER_QA_LOGIN_ID, schema: "semiguard_recovery_qa_20261102", status: "active" });
+    for (const value of [HOST, USER, PASSWORD, QA_PASSWORD, "mysql:", "JWT", "password_hash", "email"]) expect(content).not.toContain(value);
+    expect(options.flag).toBe("wx"); audit.read.mockResolvedValue(JSON.stringify(record));
+    expect(await (await f.post("/cleanup", {})).json()).toMatchObject({ browserPhase: "cleaned" });
+    expect(JSON.parse(audit.write.mock.calls[1][1])).toEqual({ ...record, status: "cleaned" });
+  });
+  it.each(["cleaned", "different-owner", "extra-fields"])("rejects a %s owner manifest read-only and never overwrites it", async condition => {
+    const db = recoveredStorage(); const record = { ...OWNER, loginId: BROWSER_QA_LOGIN_ID, schema: "semiguard_recovery_qa_20261102", status: "active" };
+    audit.read.mockResolvedValue(JSON.stringify(condition === "cleaned" ? { ...record, status: "cleaned" } : condition === "different-owner" ? { ...record, id: 78 } : { ...record, unexpected: "field" }));
+    const f = await fixture({ recoverPreview: true, storageAdapter: true, auditAdapter: true }); await f.passed();
+    expect(await (await fetch(f.url + "/state")).json()).toMatchObject({ phase: "review", jwtCopyAvailable: false });
+    expect(audit.write).not.toHaveBeenCalled(); expect(db.statements.every(row => row.sql.startsWith("SELECT"))).toBe(true);
+    expect((await f.post("/copy", {})).status).toBe(409); expect((await f.post("/seed", { password: QA_PASSWORD })).status).toBe(409);
   });
 });
