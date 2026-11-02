@@ -7,6 +7,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerTrainingStorageCheck } from "../trainingStorageCheck";
+import { recoveryQaGate } from "../recoveryQa";
 
 export function accountServicesConfigured() {
   return Boolean(process.env.DATABASE_URL && process.env.JWT_SECRET && process.env.VITE_APP_ID);
@@ -28,6 +29,7 @@ export function createApp() {
       error: { code: "DB_MAINTENANCE", message: "Account and saved-record services are temporarily unavailable. Please try again shortly." },
     });
   });
+  app.use(recoveryQaGate);
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // A deployment without its session secret must not accept authentication.

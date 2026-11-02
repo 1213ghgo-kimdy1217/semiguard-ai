@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
 import { getDb, getUserByOpenId } from "./db";
 import { sdk } from "./_core/sdk";
+import { sessionMatchesUser } from "./accountRecoverySession";
 
 const expectedColumns = [
   ["id", "int", false], ["user_id", "int", false],
@@ -70,9 +71,10 @@ export function registerTrainingStorageCheck(app: Express) {
     try {
       const token = parse(req.headers.cookie ?? "")[COOKIE_NAME];
       const session = await sdk.verifySession(token);
+      const user = session ? await getUserByOpenId(session.openId) : undefined;
       // Do not use authenticateRequest here: normal session checks touch lastSignedIn.
       // This endpoint must not change existing user data, even during authentication.
-      if (!session || !await getUserByOpenId(session.openId)) {
+      if (!session || !user || !sessionMatchesUser(session, user)) {
         res.status(401).json({ error: "Authentication required." });
         return;
       }

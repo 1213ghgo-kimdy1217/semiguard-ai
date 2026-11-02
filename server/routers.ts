@@ -1,8 +1,10 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "../shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS, UNAUTHED_ERR_MSG } from "../shared/const";
 import { z } from "zod";
 import { hashPassword, verifyPassword } from "./password";
 import { accountWithdrawalSchema } from "../shared/accountWithdrawal";
 import { getWithdrawalStatus, withdrawAccount } from "./accountWithdrawal";
+import { accountRecovery as accountRecoveryService, assertRecoveryRequestOrigin, recoveryClientKey } from "./accountRecovery";
+import { recoveryEnrollmentSchema, recoveryConfirmationSchema, recoveryRequestSchema, recoveryResetSchema } from "../shared/accountRecovery";
 import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -97,7 +99,42 @@ function buildSafeFallbackDiagnostic(sensorContext: {
   return `**[Rule-based Evidence Summary]**\nNo AI answer was received for your question. This is a fixed summary of the current synthetic sensors, not an answer. Use the retry-same-question button to try again manually.\n\n- Rule-based risk level: **${sensorContext.riskLevel}** (${sensorContext.anomalyScore}/100)\n- Primary deviations: ${gate.evidence.join(" · ")}\n\nA single snapshot cannot establish onset time or a real failure cause.`;
 }
 
+const recoveryPublicProcedure = publicProcedure.use(({ ctx, next }) => {
+  ctx.res.setHeader("Cache-Control", "no-store");
+  return next();
+});
+const recoveryProtectedProcedure = recoveryPublicProcedure.use(({ ctx, next }) => {
+  if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+
 export const appRouter = router({
+  accountRecovery: router({
+    availability: recoveryPublicProcedure.query(({ ctx }) => {
+      return accountRecoveryService.availability();
+    }),
+    status: recoveryProtectedProcedure.query(({ ctx }) => {
+      return accountRecoveryService.status(ctx.user.id);
+    }),
+    enroll: recoveryProtectedProcedure.input(recoveryEnrollmentSchema).mutation(({ ctx, input }) => {
+      assertRecoveryRequestOrigin(ctx.req);
+      return accountRecoveryService.enroll(ctx.user.id, input, recoveryClientKey(ctx.req));
+    }),
+    confirmEmail: recoveryPublicProcedure.input(recoveryConfirmationSchema).mutation(({ ctx, input }) => {
+      assertRecoveryRequestOrigin(ctx.req);
+      return accountRecoveryService.confirmEmail(input.token, recoveryClientKey(ctx.req));
+    }),
+    request: recoveryPublicProcedure.input(recoveryRequestSchema).mutation(({ ctx, input }) => {
+      assertRecoveryRequestOrigin(ctx.req);
+      return accountRecoveryService.request(input, recoveryClientKey(ctx.req));
+    }),
+    reset: recoveryPublicProcedure.input(recoveryResetSchema).mutation(async ({ ctx, input }) => {
+      assertRecoveryRequestOrigin(ctx.req);
+      const result = await accountRecoveryService.reset(input, recoveryClientKey(ctx.req));
+      ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 });
+      return result;
+    }),
+  }),
   system: systemRouter,
   practiceMeasurement: router({
     access: publicProcedure.query(({ ctx }) => ({ authenticated: Boolean(ctx.user), canRead: canReadPracticeMetrics(ctx.user) })),
@@ -204,6 +241,7 @@ export const appRouter = router({
 
         const sessionToken = await sdk.createSessionToken(user.openId, {
           name: user.name ?? "",
+          authVersion: user.authVersion ?? 0,
           expiresInMs: ONE_YEAR_MS,
         });
         const cookieOptions = getSessionCookieOptions(ctx.req);

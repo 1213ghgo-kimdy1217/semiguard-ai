@@ -30,7 +30,9 @@ describe("public introduction to login to training choice", () => {
     expect(welcome).not.toContain('href="/dashboard"');
     expect(welcome).toContain('href="/preview">{t.preview}');
     expect(login).toContain('isAuthenticated &&');
-    expect(login).toContain('onClick={() => setLocation("/training")}');
+    // The normal entry remains training; only the explicit recovery QA build uses account settings.
+    // The real button and successful-login callbacks are exercised in account-recovery-qa-ui.test.ts.
+    expect(login).toMatch(/onClick=\{\(\) => \{ if \(RECOVERY_QA_BUILD\) setLocation\(recoveryQaLoginTarget\(true\)\); else setLocation\("\/training"\); \}\}/);
     expect(dashboard).toContain('href="/training"');
     expect(welcome).toContain('소개 → 로그인 → 연습 방식 선택');
     expect(training).toContain("연습 방식을 선택하세요.");

@@ -113,6 +113,13 @@ describe("read-only training storage preflight", () => {
     expect(response.status).toBe(401);
     expect(mocks.getDb).not.toHaveBeenCalled();
   });
+  it("rejects a signed session from before password recovery without inspecting storage", async () => {
+    mocks.verifySession.mockResolvedValue({ openId: "test-user", authVersion: 0 });
+    mocks.getUserByOpenId.mockResolvedValue({ id: 27, authVersion: 1 });
+    const response = await fetch(await start());
+    expect(response.status).toBe(401);
+    expect(mocks.getDb).not.toHaveBeenCalled();
+  });
   it("returns non-cacheable readiness for an existing authenticated account", async () => {
     configure();
     mocks.verifySession.mockResolvedValue({ openId: "test-user" });

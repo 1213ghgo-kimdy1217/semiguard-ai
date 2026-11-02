@@ -9,14 +9,41 @@ export const users = mysqlTable("users", {
   badgeNumber: varchar("badge_number", { length: 64 }), // 회사 명찰 번호
   dateOfBirth: date("date_of_birth"), // 생년월일
   passwordHash: text("password_hash"), // 비밀번호 해시
+  authVersion: int("auth_version").default(0).notNull(),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
-export type User = typeof users.$inferSelect;
+// Older in-process fixtures may omit this additive, database-defaulted field.
+export type User = Omit<typeof users.$inferSelect, "authVersion"> & { authVersion?: number };
 export type InsertUser = typeof users.$inferInsert;
+
+// Separate from imported/provider profile emails: only explicitly verified addresses qualify.
+export const accountRecoveryEmails = mysqlTable("account_recovery_emails", {
+  userId: int("user_id").primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  emailKey: varchar("email_key", { length: 64 }).notNull(),
+  verifiedAt: timestamp("verified_at").notNull(),
+}, table => ({ emailUnique: uniqueIndex("account_recovery_email_unique").on(table.emailKey) }));
+
+export const accountRecoveryTokens = mysqlTable("account_recovery_tokens", {
+  tokenHash: varchar("token_hash", { length: 64 }).primaryKey(),
+  userId: int("user_id").notNull(),
+  kind: mysqlEnum("kind", ["verify", "password"]).notNull(),
+  language: mysqlEnum("language", ["ko", "en", "ja"]).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  authVersion: int("auth_version").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+}, table => ({ owner: index("account_recovery_token_owner").on(table.userId), expiry: index("account_recovery_token_expiry").on(table.expiresAt) }));
+
+// Bounded fixed-window counters contain keyed digests, never addresses/IPs/IDs.
+export const accountRecoveryLimits = mysqlTable("account_recovery_limits", {
+  key: varchar("limit_key", { length: 64 }).primaryKey(),
+  hits: int("hits").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+}, table => ({ expiry: index("account_recovery_limit_expiry").on(table.expiresAt) }));
 
 // Minimal keyed subject digest blocks old sessions and automatic OAuth resurrection.
 export const accountRevocations = mysqlTable("account_revocations", {

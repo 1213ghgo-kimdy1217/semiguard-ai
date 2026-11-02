@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { WaferGraphic } from "./Welcome";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { RECOVERY_QA_BUILD, recoveryQaAccountLabel, recoveryQaLoginTarget } from "@/lib/recoveryQa";
 
 export function Login() {
   const [, setLocation] = useLocation();
@@ -28,6 +29,7 @@ export function Login() {
   });
   const selectLoginLanguage = (nextLanguage: "ko" | "en" | "ja") => {
     setLoginLanguage(nextLanguage);
+    if (RECOVERY_QA_BUILD) window.dispatchEvent(new CustomEvent("semiguard-language-change", { detail: nextLanguage }));
     try {
       window.localStorage.setItem("semiguard_lang", nextLanguage);
     } catch {
@@ -314,6 +316,7 @@ export function Login() {
     setFieldError(null);
 
     setIsLoading(true);
+    let qaConnectionUnavailable = false;
     try {
       const response = await fetch("/api/trpc/auth.login", {
         method: "POST",
@@ -328,6 +331,10 @@ export function Login() {
         }),
       });
 
+      if (RECOVERY_QA_BUILD && (response.status === 503 || response.status === 403)) {
+        qaConnectionUnavailable = true;
+        throw new Error("RECOVERY_QA_UNAVAILABLE");
+      }
       const payload = await response.json().catch(() => null);
       if (!response.ok || payload?.error) {
         const message = payload?.error?.json?.message ?? payload?.error?.message;
@@ -337,11 +344,21 @@ export function Login() {
       toast.success(loginMessages.succeeded);
       // 캐시를 무효화하고 대시보드로 이동
       await utils.auth.me.invalidate();
-      window.location.href = "/training";
+      if (RECOVERY_QA_BUILD) window.location.href = "/account";
+      else window.location.href = "/training";
     } catch (error) {
-      console.error("Login error:", error);
-      setAuthError(loginMessages.failed);
-      toast.error(loginMessages.failed);
+      if (RECOVERY_QA_BUILD) console.warn("[Account Recovery QA] Sign-in could not be completed.");
+      else console.error("Login error:", error);
+      if (qaConnectionUnavailable) {
+        const failureMessage = loginLanguage === "ko" ? "테스트 환경 연결 설정을 확인 중입니다. 잠시 후 다시 시도해 주세요."
+          : loginLanguage === "ja" ? "テスト環境の接続設定を確認中です。しばらくしてからもう一度お試しください。"
+            : "The test environment connection settings are being checked. Please try again shortly.";
+        setAuthError(failureMessage);
+        toast.error(failureMessage);
+      } else {
+        setAuthError(loginMessages.failed);
+        toast.error(loginMessages.failed);
+      }
       window.requestAnimationFrame(() => document.getElementById("password")?.focus());
     } finally {
       setIsLoading(false);
@@ -431,8 +448,8 @@ export function Login() {
           {isAuthenticated && (
             <div className="rounded-lg border border-cyan-400/40 bg-cyan-400/10 p-4 text-center text-sm text-cyan-100" role="status">
               <p>{loginUi.alreadySignedIn}</p>
-              <Button type="button" onClick={() => setLocation("/training")} className="mt-3 bg-cyan-500 font-bold text-slate-950 hover:bg-cyan-400">
-                {loginUi.continuePractice}
+              <Button type="button" onClick={() => { if (RECOVERY_QA_BUILD) setLocation(recoveryQaLoginTarget(true)); else setLocation("/training"); }} className="mt-3 bg-cyan-500 font-bold text-slate-950 hover:bg-cyan-400">
+                {RECOVERY_QA_BUILD ? recoveryQaAccountLabel(loginLanguage) : loginUi.continuePractice}
               </Button>
             </div>
           )}
@@ -536,6 +553,14 @@ export function Login() {
                 {loginUi.signUp}
               </button>
             </p>
+            <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm" aria-label={loginLanguage === "ko" ? "로그인 정보 찾기" : loginLanguage === "ja" ? "ログイン情報の確認" : "Account recovery"}>
+              <button type="button" onClick={() => setLocation("/account/recovery?purpose=id")} className="min-h-11 rounded px-1 text-slate-300 underline underline-offset-4 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                {loginLanguage === "ko" ? "아이디 찾기" : loginLanguage === "ja" ? "IDを確認" : "Find ID"}
+              </button>
+              <button type="button" onClick={() => setLocation("/account/recovery?purpose=password")} className="min-h-11 rounded px-1 text-slate-300 underline underline-offset-4 hover:text-cyan-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                {loginLanguage === "ko" ? "비밀번호 재설정" : loginLanguage === "ja" ? "パスワード再設定" : "Reset password"}
+              </button>
+            </nav>
             <button
               type="button"
               onClick={() => setLocation("/preview")}

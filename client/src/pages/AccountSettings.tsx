@@ -4,6 +4,7 @@ import { trpc } from "../lib/trpc";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import AccountLogout, { useAccountSession } from "../components/AccountSession";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import RecoveryEmailSettings from "../components/RecoveryEmailSettings";
 import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel } from "../components/ui/alert-dialog";
 import "./account-settings.css";
 import { WITHDRAWAL_COMPLETION_KEY, withdrawalWasConfirmed } from "../lib/withdrawalCleanup";
@@ -70,6 +71,7 @@ export default function AccountSettings() {
     <main><p className="sg-account-eyebrow">ACCOUNT / PRIVACY</p><h1>{l("계정 관리", "Account settings", "アカウント管理")}</h1>
       <p>{l("학습 기록을 남겨두려면 로그아웃을, 계정과 연결된 자료를 지우려면 회원탈퇴를 선택하세요.", "Log out to keep your learning records. Delete your account to remove account-linked data.", "学習記録を残す場合はログアウト、アカウントに紐づく資料を削除する場合は退会を選んでください。")}</p>
       {auth.data?.name ? <p>{l("현재 로그인한 계정", "Currently signed in as", "現在ログイン中のアカウント")} · {auth.data.name}</p> : null}
+      <RecoveryEmailSettings language={language} />
       <section aria-labelledby="withdrawal-heading"><h2 id="withdrawal-heading">{l("회원탈퇴", "Delete account", "退会")}</h2><WithdrawalDisclosure language={language} />
         {status.isLoading ? <p role="status">{l("계정의 삭제 가능 상태를 확인하는 중…", "Checking account deletion availability…", "退会可能な状態か確認中…")}</p> : status.isError ? <div role="alert"><p>{l("상태를 불러오지 못했습니다. 삭제 요청은 보내지 않았습니다.", "Could not load the status. No deletion request was sent.", "状態を取得できませんでした。削除依頼は送信していません。")}</p><button onClick={() => { void status.refetch(); }}>{l("상태 다시 확인", "Check again", "再確認")}</button></div> : status.data?.blocked ? <p role="alert">{withdrawalError(status.data.blocked === "admin" ? "ADMIN" : "FILES", language)}</p> : null}
         <form onSubmit={event => { event.preventDefault(); if (allowed) setConfirmOpen(true); }}>

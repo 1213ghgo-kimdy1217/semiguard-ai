@@ -58,6 +58,7 @@ describe("local authentication", () => {
       badgeNumber: "EMP-TEST-001",
       dateOfBirth: new Date("2000-01-01T00:00:00.000Z"),
       passwordHash: createdUser?.passwordHash ?? null,
+      authVersion: 3,
       role: "user",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -71,7 +72,7 @@ describe("local authentication", () => {
 
     expect(sdk.createSessionToken).toHaveBeenCalledWith(
       "local_EMP-TEST-001",
-      expect.objectContaining({ name: "홍길동" })
+      expect.objectContaining({ name: "홍길동", authVersion: 3 })
     );
     expect(res.cookie).toHaveBeenCalledWith(
       expect.any(String),
