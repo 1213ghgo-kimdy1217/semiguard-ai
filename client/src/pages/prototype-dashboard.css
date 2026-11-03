@@ -1206,73 +1206,61 @@
   }
 }
 
-/* Distinct display models: the cutaway is never drawn inside the cabinet. */
-.kp-model-comparison {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 13px;
-  padding: 22px 24px 14px;
-}
-.kp-model-tile {
+/* One integrated model with an optional educational observation window. */
+.kp-model-view-controls {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  min-width: 0;
-  padding: 15px 12px 12px;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 18px 24px 0;
+}
+.kp-model-view-controls button {
+  min-height: 35px;
+  padding: 7px 12px;
   border: 1px solid #40513e;
-  border-radius: 5px;
-  background: #141d18;
-  color: #d9e4d3;
-  text-align: left;
+  border-radius: 4px;
+  background: #17201b;
+  color: #b4c5ad;
   font: inherit;
+  font-size: 11px;
 }
-.kp-model-cutaway-tile {
-  border-style: dashed;
-  background: #18221b;
+.kp-model-view-controls button:hover {
+  background: #26372a;
+  border-color: #809171;
 }
-.kp-model-tile:hover {
-  background: #1e2b21;
-  border-color: #8b8962;
+.kp-model-view-controls button[aria-pressed="true"] {
+  background: #3c3625;
+  color: #e6c285;
+  border-color: #957a4c;
 }
-.kp-model-tile[aria-pressed="true"] {
-  border-color: #bc985c;
-  background: #292a1d;
+.kp-integrated-stage {
+  padding: 17px 12px 0;
 }
-.kp-model-kicker {
-  color: #a3b79b;
-  font-family: ui-monospace, monospace;
-  font-size: 8px;
-  letter-spacing: 0.7px;
-}
-.kp-model-tile > strong {
-  color: #e4ebdc;
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: 5px;
-  line-height: 1.6;
-}
-.kp-model-tile .kp-equipment-svg {
+.kp-integrated-stage .kp-equipment-svg {
+  display: block;
   width: 100%;
   height: auto;
-  max-height: none;
-  margin-top: 9px;
+  max-height: 440px;
+  margin: 22px auto 0;
 }
-.kp-model-caption {
+.kp-integrated-stage .kp-stage-note {
+  top: 18px;
+  right: 24px;
   font-size: 10px;
-  color: #b0c3a7;
-  line-height: 1.75;
-  margin-top: auto;
+  color: #c2cba8;
 }
-.kp-model-action {
-  display: flex;
+.kp-window-led-state {
+  position: absolute;
+  bottom: 17px;
+  right: 24px;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  color: #b5c8ab;
+  font-family: ui-monospace, monospace;
   font-size: 10px;
-  color: #d5b77b;
-  padding-top: 9px;
 }
-.kp-model-separation {
-  margin: 0 24px 17px !important;
+.kp-model-scope {
+  margin: 0 24px 18px !important;
   border-left: 2px solid #ad8d58;
   padding-left: 10px;
   color: #c5d2ba;
@@ -1315,35 +1303,26 @@
   text-underline-offset: 3px;
 }
 @media (max-width: 1080px) {
-  .kp-model-comparison {
-    padding: 20px 18px 13px;
-    gap: 10px;
+  .kp-model-view-controls {
+    padding-left: 19px;
+    padding-right: 19px;
   }
-  .kp-model-tile {
-    padding: 12px 10px;
-  }
-  .kp-model-tile > strong {
-    font-size: 12px;
-  }
-  .kp-model-kicker {
-    font-size: 7px;
+  .kp-integrated-stage .kp-equipment-svg {
+    max-height: 400px;
   }
   .kp-model-explanation {
     flex-direction: column;
     gap: 10px;
     padding: 16px 19px;
   }
-  .kp-model-separation {
+  .kp-model-scope {
     margin-left: 19px !important;
     margin-right: 19px !important;
   }
 }
 @media (max-width: 800px) {
-  .kp-model-tile > strong {
-    font-size: 13px;
-  }
-  .kp-model-kicker {
-    font-size: 8px;
+  .kp-integrated-stage .kp-equipment-svg {
+    max-height: 440px;
   }
   .kp-model-explanation {
     flex-direction: row;
@@ -1351,30 +1330,32 @@
   }
 }
 @media (max-width: 520px) {
-  .kp-model-comparison {
-    padding: 18px 15px 12px;
-    gap: 12px;
-    grid-template-columns: minmax(0, 1fr);
+  .kp-model-view-controls {
+    padding: 16px 15px 0;
   }
-  .kp-model-tile {
-    padding: 16px 15px 13px;
-  }
-  .kp-model-tile .kp-equipment-svg {
-    max-height: 280px;
-    margin: 8px auto 0;
-  }
-  .kp-model-tile > strong {
-    font-size: 14px;
-  }
-  .kp-model-kicker {
-    font-size: 9px;
-  }
-  .kp-model-caption,
-  .kp-model-action {
+  .kp-model-view-controls button {
+    min-height: 42px;
     font-size: 11px;
   }
-  .kp-model-separation {
-    margin: 0 16px 16px !important;
+  .kp-integrated-stage {
+    padding: 15px 0 0;
+  }
+  .kp-integrated-stage .kp-equipment-svg {
+    max-height: 310px;
+    margin-top: 23px;
+  }
+  .kp-integrated-stage .kp-stage-note {
+    top: 16px;
+    right: 16px;
+    font-size: 9px;
+  }
+  .kp-window-led-state {
+    font-size: 9px;
+    right: 16px;
+    bottom: 12px;
+  }
+  .kp-model-scope {
+    margin: 5px 16px 16px !important;
     font-size: 11px;
   }
   .kp-model-explanation {
@@ -1388,5 +1369,10 @@
   }
   .kp-model-explanation p {
     font-size: 11px;
+  }
+}
+@media (pointer: coarse) {
+  .kp-model-view-controls button {
+    min-height: 44px;
   }
 }

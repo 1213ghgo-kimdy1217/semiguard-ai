@@ -19,13 +19,21 @@ See [firmware/README.md](../firmware/README.md) for the Uno sketch, wiring assum
 - Manufacturer product information: https://www.lamresearch.com/product/kiyo-product-family/
 - Exterior reference with a verified model name, LAM Research 2300v2 KIYO EX Poly: https://www.macquarie.com/au/en/about/company/commodities-and-global-markets/specialised-and-asset-finance/electronics/inventory/semiconductor-fabrication/polysilicon-etch/67445.html
 
-The independently drawn exterior model uses three front load ports, a left-side operator panel and a stack light as exterior cues. The three front doors are wafer-carrier interfaces, not three etch-chamber doors. The cabinet is closed; its side/rear proportions are simplified and do not establish the layout of actual Kiyo process modules.
+The independently drawn exterior model uses three front load ports, a left-side operator panel and a stack light as exterior cues. The three front doors are wafer-carrier interfaces, not three etch-chamber doors. Its side/rear proportions are simplified and do not establish the layout of actual Kiyo process modules.
 
-A separate teaching chamber cutaway is displayed on its own base next to the cabinet. It illustrates public dry-etch concepts and is not drawn inside the equipment exterior. Its dimensions, material and layout are classroom choices; they do not reproduce Kiyo internals or operating specifications. The physical model uses a transparent shell/removable lid for observation. The website's section drawing makes the educational interior easier to understand.
+A transparent teaching chamber is placed inside the model cabinet, visible through a right-side observation window. This is one integrated tabletop model. The window and internal placement are educational design choices, not verified features or positions of the production Kiyo tool. The removable rear panel provides access to the classroom model.
+
+The teaching chamber illustrates public dry-etch concepts. Its dimensions, material and layout do not reproduce Kiyo internals or operating specifications. The physical model uses a transparent shell/removable lid for observation. The website's interior drawing makes the educational concepts easier to understand.
 
 General dry-etch concepts: https://newsroom.lamresearch.com/etch-essentials-semiconductor-manufacturing
 
-Exterior and chamber views have independent selection descriptions. Reference photographs are linked for attribution, not redistributed.
+Exterior and educational-interior tabs show the same integrated model with different visibility and descriptions. Exterior decorations are static; the teaching chamber's LED command is labeled separately from simulated process values. Reference photographs are linked for attribution, not redistributed.
+
+## Review access
+
+`/model-preview.html` is a separate review entry generated only for a Vercel preview build, or a local `model-preview` mode when `VERCEL_ENV` is unset. A production build excludes this HTML entry, including when the local review mode is selected with `VERCEL_ENV=production`.
+
+The review entry mounts only the model dashboard without account providers or account queries. The regular application `/live` route retains `PracticeAccess`. Preview deployment protection is kept; a time-limited Vercel share link lets the requester review this isolated screen without the Vercel or application sign-in flows. Access links and cookies are not stored in source files.
 
 ## Validation
 

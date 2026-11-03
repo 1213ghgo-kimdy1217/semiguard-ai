@@ -56,7 +56,7 @@ function writeToLogFile(source: LogSource, entries: unknown[]) {
   const logPath = path.join(LOG_DIR, `${source}.log`);
 
   // Format entries with timestamps
-  const lines = entries.map((entry) => {
+  const lines = entries.map(entry => {
     const ts = new Date().toISOString();
     return `[${ts}] ${JSON.stringify(entry)}`;
   });
@@ -132,7 +132,7 @@ function vitePluginManusDebugCollector(): Plugin {
         }
 
         let body = "";
-        req.on("data", (chunk) => {
+        req.on("data", chunk => {
           body += chunk.toString();
         });
 
@@ -151,40 +151,67 @@ function vitePluginManusDebugCollector(): Plugin {
 }
 
 // Manus editor instrumentation is only needed inside its authoring environment.
-const plugins = [react(), tailwindcss(), ...(process.env.MANUS_RUNTIME === "1"
-  ? [jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()]
-  : [])];
+const plugins = [
+  react(),
+  tailwindcss(),
+  ...(process.env.MANUS_RUNTIME === "1"
+    ? [
+        jsxLocPlugin(),
+        vitePluginManusRuntime(),
+        vitePluginManusDebugCollector(),
+      ]
+    : []),
+];
 
-export default defineConfig({
-  plugins,
-  resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "client", "src"),
-      "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+export default defineConfig(({ mode }) => {
+  // A standalone model review page is emitted only for Preview deployments or
+  // an explicitly selected local review build. Production always keeps auth.
+  const includeModelPreview =
+    process.env.VERCEL_ENV === "preview" ||
+    (!process.env.VERCEL_ENV && mode === "model-preview");
+
+  return {
+    plugins,
+    resolve: {
+      alias: {
+        "@": path.resolve(import.meta.dirname, "client", "src"),
+        "@shared": path.resolve(import.meta.dirname, "shared"),
+        "@assets": path.resolve(import.meta.dirname, "attached_assets"),
+      },
     },
-  },
-  envDir: path.resolve(import.meta.dirname),
-  root: path.resolve(import.meta.dirname, "client"),
-  publicDir: path.resolve(import.meta.dirname, "client", "public"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-  },
-  server: {
-    host: true,
-    allowedHosts: [
-      ".manuspre.computer",
-      ".manus.computer",
-      ".manus-asia.computer",
-      ".manuscomputer.ai",
-      ".manusvm.computer",
-      "localhost",
-      "127.0.0.1",
-    ],
-    fs: {
-      strict: true,
-      deny: ["**/.*"],
+    envDir: path.resolve(import.meta.dirname),
+    root: path.resolve(import.meta.dirname, "client"),
+    publicDir: path.resolve(import.meta.dirname, "client", "public"),
+    build: {
+      outDir: path.resolve(import.meta.dirname, "dist/public"),
+      emptyOutDir: true,
+      rollupOptions: includeModelPreview
+        ? {
+            input: {
+              index: path.resolve(PROJECT_ROOT, "client/index.html"),
+              modelPreview: path.resolve(
+                PROJECT_ROOT,
+                "client/model-preview.html"
+              ),
+            },
+          }
+        : undefined,
     },
-  },
+    server: {
+      host: true,
+      allowedHosts: [
+        ".manuspre.computer",
+        ".manus.computer",
+        ".manus-asia.computer",
+        ".manuscomputer.ai",
+        ".manusvm.computer",
+        "localhost",
+        "127.0.0.1",
+      ],
+      fs: {
+        strict: true,
+        deny: ["**/.*"],
+      },
+    },
+  };
 });

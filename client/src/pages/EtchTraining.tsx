@@ -221,7 +221,7 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
           <div className="et-card-top"><span className="et-card-icon"><Activity aria-hidden="true" /></span><span className="et-card-kind">{l("모형 연결·모의 체험", "USB model or demo", "模型接続・模擬体験")}</span></div>
           <p className="et-eyebrow">PROTOTYPE / LIVE OBSERVATION</p>
           <h2 id="free-option-title">{l("실시간 자유 분석", "Free observation", "自由観察")}</h2>
-          <p>{l("Kiyo 정면 외관을 참고한 모형과 별도 교육용 챔버 단면을 살펴보고, 모형 입력에 따른 상태 변화와 공정 그래프를 관찰하세요. 모형이 없을 때는 모의 체험을 선택할 수 있습니다.", "Explore a model inspired by Kiyo's front exterior and a separate teaching chamber cutaway. Observe model inputs alongside process charts, or explicitly choose a demo without hardware.", "Kiyoの正面外観を参考にした模型と、別置きの学習用チャンバー断面を確認し、模型入力による状態変化と工程グラフを観察します。模型がない場合は模擬体験を選べます。")}</p>
+          <p>{l("Kiyo 정면 외관을 참고한 장비 모형의 관찰창으로 교육용 챔버를 살펴보고, 모형 입력에 따른 상태 변화와 공정 그래프를 관찰하세요. 모형이 없을 때는 모의 체험을 선택할 수 있습니다.", "Explore the teaching chamber through the observation window of a model inspired by Kiyo's front exterior. Observe model inputs alongside process charts, or explicitly choose a demo without hardware.", "Kiyoの正面外観を参考にした装置模型の観察窓から学習用チャンバーを確認し、模型入力による状態変化と工程グラフを観察します。模型がない場合は模擬体験を選べます。")}</p>
           <p className="et-caption">{l("모형의 버튼 입력과 교육용 모의 공정값을 구분해 표시합니다. 실제 팹 장비의 운전 데이터가 아닙니다.", "Physical model inputs are labeled separately from simulated process values. These are not operating data from a real fab tool.", "模型のボタン入力と学習用の模擬工程値を区別して表示します。実際の製造装置の運転データではありません。")}</p>
           <Link className="et-linkbutton" href="/live">{l("모형 관찰 시작", "Open model observation", "模型観察を開く")} <ArrowRight size={18} aria-hidden="true" /></Link>
         </section>

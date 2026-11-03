@@ -134,7 +134,7 @@ export default function EtchLive() {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const link = usePrototypeLink();
   const [equipmentView, setEquipmentView] = useState<"exterior" | "cutaway">(
-    "exterior"
+    "cutaway"
   );
   const [points, setPoints] = useState<Point[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -476,107 +476,93 @@ export default function EtchLive() {
                 <p className="kp-eyebrow">EQUIPMENT OVERVIEW</p>
                 <h2 id="equipment-heading">
                   {l(
-                    "외관과 교육용 챔버 단면",
-                    "Exterior and teaching cutaway",
-                    "外観と教育用チャンバー断面"
+                    "장비 모형 관찰",
+                    "Equipment model observation",
+                    "装置模型の観察"
                   )}
                 </h2>
               </div>
               <span className="kp-outline-tag">
-                {l("별도 모형 2개", "Two separate models", "独立した模型2つ")}
+                {l("측면 관찰창", "Side observation window", "側面観察窓")}
               </span>
             </div>
             <div
-              className="kp-model-comparison"
+              className="kp-model-view-controls"
               role="group"
               aria-label={l(
-                "설명을 볼 모형 선택",
-                "Choose a model to explain",
-                "説明する模型を選択"
+                "장비 모형 보기 방식",
+                "Equipment model view",
+                "装置模型の表示方法"
               )}
             >
               <button
+                id="model-exterior-view"
                 type="button"
-                className="kp-model-tile"
                 aria-pressed={equipmentView === "exterior"}
-                aria-describedby="model-view-description"
+                aria-controls="model-illustration"
                 onClick={() => setEquipmentView("exterior")}
               >
-                <span className="kp-model-kicker">01 / EXTERIOR MODEL</span>
-                <strong>
-                  {l(
-                    "Kiyo 참고 외관",
-                    "Kiyo-inspired exterior",
-                    "Kiyo参考外観"
-                  )}
-                </strong>
-                <KiyoEquipmentView
-                  view="exterior"
-                  active={fresh}
-                  ledOn={fresh && link.frame?.ledCommand === "on"}
-                  language={language}
-                />
-                <span className="kp-model-caption">
-                  {l(
-                    "닫힌 캐비닛 · 로드포트 3개 · 장식 표시등",
-                    "Closed cabinet · 3 load ports · decorative lights",
-                    "閉じたキャビネット・ロードポート3基・装飾表示灯"
-                  )}
-                </span>
-                <span className="kp-model-action">
-                  {equipmentView === "exterior" ? (
-                    <Check size={13} aria-hidden="true" />
-                  ) : (
-                    <ChevronRight size={13} aria-hidden="true" />
-                  )}
-                  {l("외관 설명", "Exterior details", "外観の説明")}
-                </span>
+                {l("외관 보기", "Exterior view", "外観表示")}
               </button>
               <button
+                id="model-interior-view"
                 type="button"
-                className="kp-model-tile kp-model-cutaway-tile"
                 aria-pressed={equipmentView === "cutaway"}
-                aria-describedby="model-view-description"
+                aria-controls="model-illustration"
                 onClick={() => setEquipmentView("cutaway")}
               >
-                <span className="kp-model-kicker">
-                  02 / SEPARATE TEACHING MODEL
-                </span>
-                <strong>
-                  {l(
-                    "별도 교육용 챔버 단면",
-                    "Separate teaching cutaway",
-                    "独立した教育用チャンバー断面"
-                  )}
-                </strong>
-                <KiyoEquipmentView
-                  view="cutaway"
-                  active={fresh}
-                  ledOn={fresh && link.frame?.ledCommand === "on"}
-                  language={language}
-                />
-                <span className="kp-model-caption">
-                  {l(
-                    "자체 받침 위의 공정 원리 설명 모형",
-                    "Process explanation on its own stand",
-                    "専用台に置いたプロセス原理の説明模型"
-                  )}
-                </span>
-                <span className="kp-model-action">
-                  {equipmentView === "cutaway" ? (
-                    <Check size={13} aria-hidden="true" />
-                  ) : (
-                    <ChevronRight size={13} aria-hidden="true" />
-                  )}
-                  {l("단면 설명", "Cutaway details", "断面の説明")}
-                </span>
+                {l("교육용 내부 보기", "Teaching interior", "教育用内部表示")}
               </button>
             </div>
-            <p className="kp-model-separation">
+            <div
+              className="kp-equipment-stage kp-integrated-stage"
+              id="model-illustration"
+              role="region"
+              aria-labelledby={
+                equipmentView === "exterior"
+                  ? "model-exterior-view"
+                  : "model-interior-view"
+              }
+            >
+              <span className="kp-stage-note">
+                {equipmentView === "cutaway"
+                  ? l(
+                      "관찰창 내부는 교육용 설계",
+                      "Educational layout inside the window",
+                      "観察窓の内部は教育用設計"
+                    )
+                  : l(
+                      "Kiyo 참고 외관 모형",
+                      "Kiyo-inspired exterior model",
+                      "Kiyo参考外観模型"
+                    )}
+              </span>
+              <KiyoEquipmentView
+                view={equipmentView}
+                active={fresh}
+                ledOn={fresh && link.frame?.ledCommand === "on"}
+                language={language}
+              />
+              {equipmentView === "cutaway" ? (
+                <span className="kp-window-led-state">
+                  <span
+                    className={`kp-status-dot ${fresh && link.frame?.ledCommand === "on" ? "is-amber" : ""}`}
+                  />
+                  {l("관찰창 LED 명령", "Window LED command", "観察窓LED命令")}{" "}
+                  {fresh
+                    ? link.frame?.ledCommand === "on"
+                      ? "ON"
+                      : "OFF"
+                    : "—"}
+                  {demo ? l(" · 모의", " · DEMO", "・模擬") : ""}
+                </span>
+              ) : null}
+            </div>
+            <p className="kp-model-scope">
               {l(
-                "외관과 단면은 서로 다른 전시 모형입니다. 교육용 단면은 캐비닛과 별도로 제작하며, 실제 Kiyo 내부의 위치·배치를 재현하지 않습니다.",
-                "These are two separate display models. The teaching cutaway is built independently of the cabinet and does not reproduce Kiyo's internal positions or layout.",
-                "外観と断面は別々の展示模型です。教育用断面はキャビネットと別に製作し、実際のKiyo内部の位置や配置を再現しません。"
+                "하나의 캐비닛 안에 교육용 챔버와 관찰창을 넣은 구성입니다. 내부 배치는 공정 설명용으로 단순화했으며 실제 Kiyo의 내부 구조·위치를 재현하지 않습니다.",
+                "One cabinet contains the teaching chamber and observation window. Its internal layout is simplified for explanation, not a reproduction of Kiyo's actual structure or positions.",
+                "1台のキャビネット内に教育用チャンバーと観察窓を設けた構成です。内部配置は説明用に簡略化しており、実際のKiyo内部構造や位置の再現ではありません。"
               )}
             </p>
             <div className="kp-model-explanation" id="model-view-description">
@@ -584,27 +570,27 @@ export default function EtchLive() {
                 <h3>
                   {equipmentView === "exterior"
                     ? l(
-                        "외관 참고 · 로드포트",
-                        "Exterior reference · load ports",
-                        "外観参考・ロードポート"
+                        "Kiyo 참고 외관 · 로드포트",
+                        "Kiyo-inspired exterior · load ports",
+                        "Kiyo参考外観・ロードポート"
                       )
                     : l(
-                        "공정 원리 · 별도 설명 모형",
-                        "Process principles · separate model",
-                        "プロセス原理・独立した説明模型"
+                        "측면 관찰창 · 교육용 내부 배치",
+                        "Side observation window · teaching layout",
+                        "側面観察窓・教育用内部配置"
                       )}
                 </h3>
                 <p>
                   {equipmentView === "exterior"
                     ? l(
-                        "왼쪽 조작부와 세 개의 전면 로드포트를 살펴보세요. 로드포트는 웨이퍼를 넣고 꺼내는 입구이며, 이 그림은 내부 식각 챔버를 보여주지 않습니다. 외관의 표시등과 빨간 버튼은 장식 표현이며, 실제 USB 입력 상태와 연동하지 않습니다.",
-                        "Explore the left control area and three front load ports, the wafer-loading interfaces. This exterior does not show internal etch chambers. Exterior lights and the red button are decorative and do not represent live USB input state.",
-                        "左側操作部と前面のロードポート3基を確認しましょう。ロードポートはウェーハ搬入出の入口で、この外観図は内部エッチングチャンバーを示しません。外観の表示灯と赤いボタンは装飾表現で、実際のUSB入力状態とは連動しません。"
+                        "왼쪽 조작부와 세 개의 전면 로드포트를 살펴보세요. 로드포트는 웨이퍼를 넣고 꺼내는 입구입니다. 외관 표시등과 빨간 버튼은 장식 표현이며 실제 USB 입력 상태와 연동하지 않습니다.",
+                        "Explore the left control area and three front load ports, the wafer-loading interfaces. Exterior lights and the red button are decorative and do not represent live USB input state.",
+                        "左側操作部と前面ロードポート3基を確認しましょう。ロードポートはウェーハ搬入出の入口です。外観表示灯と赤いボタンは装飾表現で、実際のUSB入力状態とは連動しません。"
                       )
                     : l(
-                        "가스 공급·웨이퍼 받침·배기 경로를 설명하기 위해 단순화했습니다. 빛은 LED 제어 명령을 표현하며 실제 플라즈마나 광센서 측정이 아닙니다. 실제 Kiyo의 단면도·센서 배치도와 구분하세요.",
-                        "Gas supply, wafer support and exhaust are simplified for explanation. The light illustrates an LED command, not physical plasma or an optical measurement. This is separate from Kiyo's actual cross-section or sensor layout.",
-                        "ガス供給・ウェーハ支持部・排気経路を説明用に簡略化しました。光はLED制御命令の表現で、実プラズマや光センサー測定ではありません。実際のKiyo断面図やセンサー配置図とは区別してください。"
+                        "관찰창에서 가스 공급·웨이퍼 받침·배기 경로의 교육용 배치를 볼 수 있습니다. 창 안의 빛은 수신한 LED 제어 명령을 화면에 표현한 것이며 실제 플라즈마나 광센서 측정이 아닙니다.",
+                        "The window shows an educational gas supply, wafer support and exhaust layout. Its light illustrates the received LED command, not physical plasma or an optical measurement.",
+                        "観察窓でガス供給・ウェーハ支持部・排気経路の教育用配置を確認できます。窓内の光は受信したLED制御命令の画面表現で、実プラズマや光センサー測定ではありません。"
                       )}
                 </p>
               </div>
@@ -1269,9 +1255,9 @@ export default function EtchLive() {
         <footer className="kp-footer">
           <p>
             {l(
-              "Kiyo 참고 외관 모형과 별도의 교육용 챔버 단면을 구분해 전시합니다. 단면은 캐비닛과 다른 설명 모형이며 실제 Kiyo의 내부 구조·위치를 재현하지 않습니다. 공정 수치는 교육용 모의 값입니다.",
-              "The Kiyo-inspired exterior and the separate teaching cutaway are distinct display models. The cutaway does not reproduce Kiyo's actual internal structure or position. Process values are educational simulations.",
-              "Kiyo参考外観模型と独立した教育用チャンバー断面を分けて展示します。断面はキャビネットとは別の説明模型で、実際のKiyo内部構造や位置を再現しません。プロセス値は教育用の模擬値です。"
+              "Kiyo 참고 외관 캐비닛에 교육용 측면 관찰창을 통합한 모형입니다. 창 안의 챔버 배치는 공정 원리 설명용 설계이며 실제 Kiyo의 내부 구조·위치를 재현하지 않습니다. 공정 수치는 교육용 모의 값입니다.",
+              "A Kiyo-inspired model cabinet with an integrated teaching observation window. The chamber layout explains process principles, not Kiyo's actual internal structure or positions. Process values are educational simulations.",
+              "Kiyo参考外観キャビネットに教育用の側面観察窓を組み込んだ模型です。窓内のチャンバー配置はプロセス原理の説明用設計で、実際のKiyo内部構造や位置の再現ではありません。プロセス値は教育用の模擬値です。"
             )}
           </p>
           <a
