@@ -1,329 +1,632 @@
-import { useId } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useReducedMotion } from "framer-motion";
 import type { ProductLanguage } from "../lib/productLanguage";
 import { tr } from "../lib/productLanguage";
+import "./kiyo-equipment-view.css";
 
 type EquipmentView = "exterior" | "cutaway";
+export type KiyoSignal =
+  | "pressure"
+  | "gasFlow"
+  | "rfPower"
+  | "chamberAmbientTemp";
+export type KiyoProcessValues = Record<KiyoSignal, number>;
+type Point3 = readonly [number, number, number];
+type Point2 = readonly [number, number];
 
-/** One model cabinet. Its optional observation window shows an educational layout. */
+const SIGNALS = [
+  {
+    id: "pressure",
+    number: 1,
+    color: "#8dc9ec",
+    unit: "mTorr",
+    name: ["챔버 압력", "Chamber pressure", "チャンバー圧力"],
+    meaning: [
+      "챔버 내부 공간의 기체 압력입니다. 특정 부품의 이름이 아니며, 기체가 얼마나 희박한 상태인지 관찰합니다.",
+      "Gas pressure in the chamber volume, not a particular component. Observe how rarefied the gas is.",
+      "特定の部品ではなく、チャンバー内部空間の気体圧力です。気体がどれほど希薄かを観察します。",
+    ],
+    position: [59, 112] as const,
+  },
+  {
+    id: "gasFlow",
+    number: 2,
+    color: "#9ad6ae",
+    unit: "sccm",
+    name: ["가스 유량", "Gas flow", "ガス流量"],
+    meaning: [
+      "상부 유입 경로로 공급되는 가스의 흐름을 나타냅니다. 유량과 챔버 압력은 서로 다른 값입니다.",
+      "Gas delivery through the upper inlet path. Gas flow and chamber pressure are different quantities.",
+      "上部の流入経路から供給するガスの流れです。流量とチャンバー圧力は異なる量です。",
+    ],
+    position: [59, 30] as const,
+  },
+  {
+    id: "rfPower",
+    number: 3,
+    color: "#cbb3ed",
+    unit: "W",
+    name: ["RF 전력", "RF power", "RF電力"],
+    meaning: [
+      "플라즈마에 에너지를 공급하는 영역을 가리킵니다. 표시 LED의 밝기는 RF 전력 측정값이 아닙니다.",
+      "An educational energy-supply region for the plasma. The LED brightness is not a measurement of RF power.",
+      "プラズマへエネルギーを供給する領域の概念表示です。LEDの明るさはRF電力の測定値ではありません。",
+    ],
+    position: [59, 77] as const,
+  },
+  {
+    id: "chamberAmbientTemp",
+    number: 4,
+    color: "#e7c183",
+    unit: "°C",
+    name: ["챔버 주변 온도", "Chamber-area temperature", "チャンバー周辺温度"],
+    meaning: [
+      "챔버 외벽 주변 영역의 온도를 뜻합니다. 웨이퍼 자체의 온도나 챔버 내부 공정 온도가 아닙니다.",
+      "Temperature around the chamber exterior, not the wafer temperature or the internal process temperature.",
+      "チャンバー外壁周辺の温度です。ウェーハ自体や内部プロセスの温度ではありません。",
+    ],
+    position: [105, 141] as const,
+  },
+] as const;
+
+const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** Reprojects model coordinates as the camera moves around the cabinet. */
+function camera(progress: number) {
+  const yaw = (mix(-28, -80, progress) * Math.PI) / 180;
+  const pitch = mix(0.18, 0.08, progress);
+  const zoom = mix(1, 1.68, progress);
+  const focus: Point3 = [170 * progress, 8 * progress, 0];
+  const project = ([x, y, z]: Point3): Point2 => {
+    const dx = x - focus[0],
+      dy = y - focus[1],
+      dz = z - focus[2];
+    const horizontal = dx * Math.cos(yaw) + dz * Math.sin(yaw);
+    const depth = -dx * Math.sin(yaw) + dz * Math.cos(yaw);
+    return [
+      310 + horizontal * zoom,
+      230 + (dy * Math.cos(pitch) + depth * Math.sin(pitch)) * zoom,
+    ];
+  };
+  return { project, zoom, yaw: mix(-28, -80, progress) };
+}
+
+function polygon(points: Point3[], project: (point: Point3) => Point2) {
+  return points.map(point => project(point).join(",")).join(" ");
+}
+
+function planeMatrix(
+  origin: Point3,
+  horizontal: Point3,
+  vertical: Point3,
+  project: (point: Point3) => Point2
+) {
+  const a = project(origin),
+    b = project(horizontal),
+    c = project(vertical);
+  return `matrix(${b[0] - a[0]} ${b[1] - a[1]} ${c[0] - a[0]} ${c[1] - a[1]} ${a[0]} ${a[1]})`;
+}
+
+/** One cabinet; the camera turns left and zooms into its teaching window. */
 export default function KiyoEquipmentView({
   view,
   active,
   ledOn,
   language,
+  demo = false,
+  processValues = null,
+  selectedSignal,
+  onSelectSignal,
 }: {
   view: EquipmentView;
   active: boolean;
   ledOn: boolean;
   language: ProductLanguage;
+  demo?: boolean;
+  processValues?: KiyoProcessValues | null;
+  selectedSignal?: KiyoSignal | null;
+  onSelectSignal?: (signal: KiyoSignal) => void;
 }) {
   const id = useId().replace(/:/g, "");
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const inside = view === "cutaway";
+  const reduceMotion = useReducedMotion();
+  const [progress, setProgress] = useState(inside ? 1 : 0);
+  const progressRef = useRef(progress);
+  const [localSignal, setLocalSignal] = useState<KiyoSignal>("pressure");
+  const selected = selectedSignal ?? localSignal;
+  const showSignals = demo && inside;
+  const signal = SIGNALS.find(item => item.id === selected) ?? SIGNALS[0];
+
+  useEffect(() => {
+    const target = inside ? 1 : 0;
+    if (reduceMotion) {
+      progressRef.current = target;
+      setProgress(target);
+      return;
+    }
+    const start = progressRef.current;
+    if (start === target) return;
+    const started = performance.now();
+    let frame = 0;
+    const tick = (time: number) => {
+      const elapsed = Math.min(1, (time - started) / 1050);
+      const eased =
+        elapsed < 0.5 ? 4 * elapsed ** 3 : 1 - (-2 * elapsed + 2) ** 3 / 2;
+      const next = mix(start, target, eased);
+      progressRef.current = next;
+      setProgress(next);
+      if (elapsed < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [inside, reduceMotion]);
+
+  const { project, zoom, yaw } = camera(progress);
+  const windowPoint = (x: number, y: number): Point3 => [
+    170,
+    -96 + y,
+    96 - (192 * x) / 118,
+  ];
+  const sideMatrix = planeMatrix(
+    windowPoint(0, 0),
+    windowPoint(1, 0),
+    windowPoint(0, 1),
+    project
+  );
+  const frontMatrix = planeMatrix(
+    [-170, -150, 120],
+    [-169, -150, 120],
+    [-170, -149, 120],
+    project
+  );
+  const chosenPoint = project(
+    windowPoint(signal.position[0], signal.position[1])
+  );
+  const select = (next: KiyoSignal) => {
+    setLocalSignal(next);
+    onSelectSignal?.(next);
+  };
+  const valueLabel = (key: KiyoSignal) => {
+    const value = processValues?.[key];
+    return typeof value === "number" && Number.isFinite(value)
+      ? value.toFixed(key === "rfPower" ? 0 : 1)
+      : "—";
+  };
+
   return (
-    <svg
-      className={`kp-equipment-svg kp-equipment-${view}`}
-      viewBox="0 0 620 460"
-      role="img"
-      aria-label={
-        inside
-          ? l(
-              "전면 로드포트 3개가 있는 하나의 장비 모형. 측면 관찰창에 교육용으로 단순화한 챔버와 웨이퍼 받침이 보입니다.",
-              "One equipment model with three front load ports. Its side observation window reveals a simplified educational chamber and wafer support.",
-              "前面ロードポート3基を備えた1台の装置模型。側面観察窓に教育用に簡略化したチャンバーとウェーハ支持部が見えます。"
-            )
-          : l(
-              "닫힌 크림색 캐비닛, 왼쪽 조작 화면과 장식 빨간 버튼, 전면 로드포트 3개를 갖춘 Kiyo 참고 외관 모형",
-              "Kiyo-inspired exterior: a closed cream cabinet, left control screen and decorative red button, and three front load ports",
-              "閉じたクリーム色のキャビネット、左側操作画面と装飾用の赤いボタン、前面ロードポート3基を備えたKiyo参考外観模型"
-            )
-      }
-    >
-      <title>
-        {inside
-          ? l(
-              "장비 모형의 교육용 내부 보기",
-              "Educational interior of the equipment model",
-              "装置模型の教育用内部表示"
-            )
-          : l(
-              "장비 모형 외관 보기",
-              "Equipment model exterior",
-              "装置模型の外観表示"
+    <div className="kev-equipment" data-equipment-view={view}>
+      <div className="kev-scene">
+        <svg
+          className={`kp-equipment-svg kev-svg kp-equipment-${view}`}
+          viewBox="0 0 620 460"
+          role="img"
+          aria-labelledby={`${id}-title ${id}-description`}
+          data-camera-yaw={yaw.toFixed(1)}
+          data-camera-zoom={zoom.toFixed(2)}
+          data-camera-progress={progress.toFixed(3)}
+        >
+          <title id={`${id}-title`}>
+            {inside
+              ? l(
+                  "교육용 내부 관찰창 확대",
+                  "Educational chamber window close-up",
+                  "教育用内部観察窓の拡大"
+                )
+              : l(
+                  "Kiyo 기반 장비 모형 외관",
+                  "Kiyo-inspired model exterior",
+                  "Kiyoを参考にした装置模型の外観"
+                )}
+          </title>
+          <desc id={`${id}-description`}>
+            {l(
+              "하나의 캐비닛 앞면에는 로드포트 세 개가 있습니다. 내부보기는 장비를 왼쪽으로 돌리며 옆 관찰창을 확대합니다. 내부 배치는 교육용 개념이며 실제 Kiyo 내부 구조와 위치를 복제한 것이 아닙니다. LED는 상태 표현이며 공정값 측정이 아닙니다.",
+              "One cabinet has three front load ports. The interior view rotates left and zooms toward the side window. The educational layout does not reproduce actual Kiyo internals. The LED represents state, not a process measurement.",
+              "1つのキャビネット前面に3つのロードポートがあります。内部表示は左へ回転し側面窓へズームします。教育用配置であり実際のKiyo内部の再現ではありません。LEDは状態表示で測定ではありません。"
             )}
-      </title>
-      <desc>
-        {l(
-          "정면의 세 도어는 로드포트입니다. 측면 관찰창과 내부 챔버 배치는 모형 교육을 위해 설계했으며 실제 Kiyo 내부 구조나 위치를 재현한 것이 아닙니다. 외관 표시등과 빨간 버튼은 장식이며 USB 상태를 나타내지 않습니다.",
-          "The three front doors are load ports. The side window and chamber layout are designed for model-based learning, not a reproduction of Kiyo's actual internal structure or positions. Exterior lights and the red button are decorative, not USB state indicators.",
-          "前面の3つのドアはロードポートです。側面観察窓と内部チャンバー配置は模型教育用の設計で、実際のKiyo内部構造や位置の再現ではありません。外観表示灯と赤いボタンは装飾で、USB状態を示しません。"
-        )}
-      </desc>
-      <defs>
-        <linearGradient id={`${id}-cream`} x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#efeee2" />
-          <stop offset="1" stopColor="#d8d9ca" />
-        </linearGradient>
-        <linearGradient id={`${id}-side`} x1="0" y1="0" x2="1" y2="0">
-          <stop stopColor="#a1b09e" />
-          <stop offset="1" stopColor="#c4ccba" />
-        </linearGradient>
-        <linearGradient id={`${id}-top`} x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#fffef1" />
-          <stop offset="1" stopColor="#dfe4d5" />
-        </linearGradient>
-        <linearGradient id={`${id}-glass`} x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#304744" />
-          <stop offset="1" stopColor="#122420" />
-        </linearGradient>
-        <linearGradient id={`${id}-vessel`} x1="0" y1="0" x2="1" y2="0">
-          <stop stopColor="#819b86" />
-          <stop offset=".4" stopColor="#d2dfcd" />
-          <stop offset="1" stopColor="#8da58c" />
-        </linearGradient>
-        <clipPath id={`${id}-window`}>
-          <rect x="0" y="0" width="118" height="208" rx="3" />
-        </clipPath>
-      </defs>
-      <ellipse cx="302" cy="389" rx="250" ry="20" fill="#000" opacity=".2" />
-      <path
-        d="m55 65 140-42h350L395 65z"
-        fill={`url(#${id}-top)`}
-        stroke="#a8b3a1"
-      />
-      <path
-        d="m395 65 150-42v300l-150 42z"
-        fill={`url(#${id}-side)`}
-        stroke="#8f9f89"
-      />
-      {/* The side window belongs to this teaching model; it does not claim a real tool layout. */}
-      {inside ? (
-        <g transform="matrix(1 -0.3 0 1 411 117)">
-          <rect
-            x="0"
-            y="0"
-            width="118"
-            height="208"
-            rx="3"
-            fill="#12261b"
-            stroke="#b2c5a5"
-            strokeWidth="2.5"
+          </desc>
+          <defs>
+            <linearGradient id={`${id}-cream`} x1="0" y1="0" x2="1" y2="1">
+              <stop stopColor="#eeeee1" />
+              <stop offset="1" stopColor="#d6d9c8" />
+            </linearGradient>
+            <linearGradient id={`${id}-side`}>
+              <stop stopColor="#9cab95" />
+              <stop offset="1" stopColor="#c5cfb8" />
+            </linearGradient>
+            <linearGradient id={`${id}-vessel`}>
+              <stop stopColor="#819b86" />
+              <stop offset=".4" stopColor="#d2dfcd" />
+              <stop offset="1" stopColor="#8da58c" />
+            </linearGradient>
+            <clipPath id={`${id}-window`}>
+              <rect width="118" height="208" rx="3" />
+            </clipPath>
+          </defs>
+          <ellipse
+            cx="310"
+            cy="413"
+            rx="236"
+            ry="18"
+            fill="#07130d"
+            opacity={mix(0.3, 0.08, progress)}
           />
-          <g clipPath={`url(#${id}-window)`}>
-            <path
-              d="M16 186V58c0-18 21-28 43-28s43 10 43 28v128"
-              fill={`url(#${id}-vessel)`}
-              stroke="#a0ba96"
-              strokeWidth="2"
+          <polygon
+            points={polygon(
+              [
+                [-170, -150, 120],
+                [170, -150, 120],
+                [170, -150, -120],
+                [-170, -150, -120],
+              ],
+              project
+            )}
+            fill="#e8ecdd"
+            stroke="#a8b3a1"
+          />
+          <polygon
+            points={polygon(
+              [
+                [170, -150, 120],
+                [170, -150, -120],
+                [170, 150, -120],
+                [170, 150, 120],
+              ],
+              project
+            )}
+            fill={`url(#${id}-side)`}
+            stroke="#8f9f89"
+          />
+          <g transform={sideMatrix}>
+            <rect
+              width="118"
+              height="208"
+              rx="3"
+              fill={inside ? "#12261b" : "#afbea6"}
+              stroke="#b2c5a5"
+              strokeWidth="2.5"
             />
-            <path
-              d="M25 184V65c0-12 17-21 34-21s34 9 34 21v119z"
-              fill="#203a27"
-              stroke="#8da680"
-            />
-            <path
-              d="M59 31V10h31"
-              fill="none"
-              stroke="#bdd0ac"
-              strokeWidth="7"
-            />
-            <path
-              d="M59 31V10h31"
-              fill="none"
-              stroke="#5e7c50"
-              strokeWidth="3"
-            />
-            <path d="M29 73h60" stroke="#b6cfa7" strokeWidth="6" />
-            <path
-              d="M35 80v7m12-7v7m12-7v7m12-7v7m12-7v7"
-              stroke="#85ab75"
-              strokeWidth="1.5"
-            />
-            <ellipse
-              cx="59"
-              cy="113"
-              rx="30"
-              ry="15"
-              fill={active && ledOn ? "#79cce2" : "#4c7464"}
-              opacity={active && ledOn ? ".42" : ".08"}
-            />
-            <path
-              d="M33 111h52m-45-7h38m-31 15h24"
-              stroke={active && ledOn ? "#a7e4ed" : "#648666"}
-              strokeWidth="1.6"
-              opacity={active && ledOn ? ".9" : ".2"}
-            />
-            <ellipse
-              cx="59"
-              cy="138"
-              rx="31"
-              ry="7"
-              fill="#719d92"
-              stroke="#b7d1a7"
-            />
-            <path
-              d="M28 140v8c0 10 62 10 62 0v-8"
-              fill="#9fb59a"
-              stroke="#789770"
-            />
-            <path d="M47 158h24v27H47z" fill="#b2c2a2" stroke="#7c9c6e" />
-            <path
-              d="M94 170h18v24"
-              fill="none"
-              stroke="#a2bc94"
-              strokeWidth="7"
-            />
-            <path
-              d="M94 170h18v24"
-              fill="none"
-              stroke="#476b40"
-              strokeWidth="3"
-            />
-            <path d="M10 191h98" stroke="#6f8e65" strokeWidth="4" />
+            {inside ? (
+              <g clipPath={`url(#${id}-window)`}>
+                <path
+                  d="M16 186V58c0-18 21-28 43-28s43 10 43 28v128"
+                  fill={`url(#${id}-vessel)`}
+                  stroke="#a0ba96"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M25 184V65c0-12 17-21 34-21s34 9 34 21v119z"
+                  fill="#203a27"
+                  stroke="#8da680"
+                />
+                <path
+                  d="M59 31V10h31"
+                  fill="none"
+                  stroke={
+                    showSignals && selected === "gasFlow"
+                      ? SIGNALS[1].color
+                      : "#bdd0ac"
+                  }
+                  strokeWidth="7"
+                />
+                <path
+                  d="M59 31V10h31"
+                  fill="none"
+                  stroke="#466448"
+                  strokeWidth="3"
+                />
+                <path
+                  d="M29 73h60"
+                  stroke={
+                    showSignals && selected === "rfPower"
+                      ? SIGNALS[2].color
+                      : "#b6cfa7"
+                  }
+                  strokeWidth="6"
+                />
+                <path
+                  d="M35 80v7m12-7v7m12-7v7m12-7v7m12-7v7"
+                  stroke="#85ab75"
+                  strokeWidth="1.5"
+                />
+                <ellipse
+                  cx="59"
+                  cy="112"
+                  rx="30"
+                  ry="25"
+                  fill={
+                    showSignals && selected === "pressure"
+                      ? SIGNALS[0].color
+                      : "transparent"
+                  }
+                  opacity=".18"
+                />
+                <ellipse
+                  cx="59"
+                  cy="113"
+                  rx="30"
+                  ry="15"
+                  fill={active && ledOn ? "#79cce2" : "#4c7464"}
+                  opacity={active && ledOn ? ".42" : ".08"}
+                />
+                <path
+                  d="M33 111h52m-45-7h38m-31 15h24"
+                  stroke={active && ledOn ? "#a7e4ed" : "#648666"}
+                  strokeWidth="1.6"
+                  opacity={active && ledOn ? ".9" : ".2"}
+                />
+                <ellipse
+                  cx="59"
+                  cy="138"
+                  rx="31"
+                  ry="7"
+                  fill="#719d92"
+                  stroke="#b7d1a7"
+                />
+                <path
+                  d="M28 140v8c0 10 62 10 62 0v-8"
+                  fill="#9fb59a"
+                  stroke="#789770"
+                />
+                <path d="M47 158h24v27H47z" fill="#b2c2a2" stroke="#7c9c6e" />
+                <path
+                  d="M94 170h18v24"
+                  fill="none"
+                  stroke="#a2bc94"
+                  strokeWidth="7"
+                />
+                <path
+                  d="M94 170h18v24"
+                  fill="none"
+                  stroke="#476b40"
+                  strokeWidth="3"
+                />
+                {showSignals && selected === "chamberAmbientTemp" ? (
+                  <path
+                    d="M105 91v77"
+                    stroke={SIGNALS[3].color}
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                  />
+                ) : null}
+                <path d="M10 191h98" stroke="#6f8e65" strokeWidth="4" />
+              </g>
+            ) : (
+              <>
+                <path d="M12 24h94M12 184h94" stroke="#9baf8d" />
+                <path d="M18 91v18" stroke="#6e8662" strokeWidth="4" />
+              </>
+            )}
+            {[7, 111].flatMap(x =>
+              [7, 201].map(y => (
+                <circle key={`${x}-${y}`} cx={x} cy={y} r="2" fill="#d4dec7" />
+              ))
+            )}
           </g>
-          <circle cx="7" cy="7" r="2" fill="#d4dec7" />
-          <circle cx="111" cy="7" r="2" fill="#d4dec7" />
-          <circle cx="7" cy="201" r="2" fill="#d4dec7" />
-          <circle cx="111" cy="201" r="2" fill="#d4dec7" />
-        </g>
-      ) : (
-        <g>
-          <path
-            d="m411 119 118-35v208l-118 35z"
-            fill="#afbea6"
-            stroke="#8da481"
-          />
-          <path d="m422 140 94-28m-94 182 94-28" stroke="#9baf8d" />
-          <path d="m429 210 0 18" stroke="#6e8662" strokeWidth="4" />
-        </g>
-      )}
-      {/* Cream front stays identical in both views. The three interfaces are load ports. */}
-      <rect
-        x="55"
-        y="65"
-        width="340"
-        height="300"
-        rx="2"
-        fill={`url(#${id}-cream)`}
-        stroke="#a6b49f"
-      />
-      <path
-        d="M55 190h340M157 190v175M55 284h102"
-        fill="none"
-        stroke="#a8b69f"
-      />
-      <text
-        x="235"
-        y="121"
-        fill="#71846b"
-        textAnchor="middle"
-        fontSize="19"
-        letterSpacing="3"
-      >
-        SemiGuard
-      </text>
-      <path d="M174 137h122" stroke="#bbc5b1" />
-      <rect
-        x="76"
-        y="207"
-        width="66"
-        height="44"
-        rx="1"
-        fill={`url(#${id}-glass)`}
-        stroke="#6d816a"
-      />
-      <path d="M83 217h32m-32 7h48m-48 7h23" stroke="#749385" opacity=".6" />
-      <rect x="75" y="195" width="34" height="6" rx="1" fill="#7c9076" />
-      <circle cx="82" cy="198" r="2" fill="#7c8b73" />
-      <circle cx="86" cy="268" r="10" fill="#b9a94b" stroke="#8d914d" />
-      <circle cx="86" cy="268" r="6.5" fill="#a84433" stroke="#be6a4a" />
-      <path d="M105 262h28m-28 6h22m-22 6h28" stroke="#85997c" />
-      <rect
-        x="69"
-        y="297"
-        width="74"
-        height="53"
-        fill="none"
-        stroke="#a7b49b"
-      />
-      <path d="M131 307v9" stroke="#7b8e73" strokeWidth="3" />
-      {[0, 1, 2].map(port => (
-        <g key={port} transform={`translate(${port * 72} 0)`}>
-          <rect
-            x="169"
-            y="207"
-            width="61"
-            height="66"
-            rx="2"
-            fill="#a7b5a2"
-            stroke="#859a7d"
-          />
-          <rect
-            x="175"
-            y="214"
-            width="49"
-            height="52"
-            rx="4"
-            fill="#e0e3d5"
-            stroke="#91a486"
-          />
-          <circle cx="184" cy="227" r="3" fill="#426d71" />
-          <circle cx="215" cy="254" r="3" fill="#426d71" />
-          <rect x="181" y="197" width="12" height="4" fill="#84957b" />
-          <path d="m164 282 8-10h59l8 10z" fill="#23322a" stroke="#435b44" />
-          <rect
-            x="164"
-            y="282"
-            width="75"
-            height="8"
-            fill="#101c16"
-            stroke="#3d523b"
-          />
-          <rect
-            x="169"
-            y="293"
-            width="65"
-            height="73"
-            fill={`url(#${id}-cream)`}
-            stroke="#91a183"
-          />
-          <path d="M177 340h48m-48 5h48m-48 5h48" stroke="#bbc7af" />
-          <text
-            x="201"
-            y="315"
-            textAnchor="middle"
-            fill="#6a8063"
-            fontSize="9"
-            letterSpacing="1"
+          <g transform={frontMatrix}>
+            <rect
+              width="340"
+              height="300"
+              rx="2"
+              fill={`url(#${id}-cream)`}
+              stroke="#a6b49f"
+            />
+            <path
+              d="M0 125h340M102 125v175M0 219h102"
+              fill="none"
+              stroke="#a8b69f"
+            />
+            <text
+              x="180"
+              y="56"
+              fill="#71846b"
+              textAnchor="middle"
+              fontSize="19"
+              letterSpacing="3"
+            >
+              SemiGuard
+            </text>
+            <path d="M119 72h122" stroke="#bbc5b1" />
+            <rect
+              x="21"
+              y="142"
+              width="66"
+              height="44"
+              fill="#223b35"
+              stroke="#6d816a"
+            />
+            <path
+              d="M28 152h32m-32 7h48m-48 7h23"
+              stroke="#749385"
+              opacity=".6"
+            />
+            <rect x="20" y="130" width="34" height="6" fill="#7c9076" />
+            <circle cx="31" cy="203" r="10" fill="#b9a94b" stroke="#8d914d" />
+            <circle cx="31" cy="203" r="6.5" fill="#a84433" stroke="#be6a4a" />
+            <path d="M50 197h28m-28 6h22m-22 6h28" stroke="#85997c" />
+            <rect
+              x="14"
+              y="232"
+              width="74"
+              height="53"
+              fill="none"
+              stroke="#a7b49b"
+            />
+            <path d="M76 242v9" stroke="#7b8e73" strokeWidth="3" />
+            {[0, 1, 2].map(port => (
+              <g key={port} transform={`translate(${port * 72} 0)`}>
+                <rect
+                  x="114"
+                  y="142"
+                  width="61"
+                  height="66"
+                  rx="2"
+                  fill="#a7b5a2"
+                  stroke="#859a7d"
+                />
+                <rect
+                  x="120"
+                  y="149"
+                  width="49"
+                  height="52"
+                  rx="4"
+                  fill="#e0e3d5"
+                  stroke="#91a486"
+                />
+                <circle cx="129" cy="162" r="3" fill="#426d71" />
+                <circle cx="160" cy="189" r="3" fill="#426d71" />
+                <rect x="126" y="132" width="12" height="4" fill="#84957b" />
+                <path
+                  d="m109 217 8-10h59l8 10z"
+                  fill="#23322a"
+                  stroke="#435b44"
+                />
+                <rect
+                  x="109"
+                  y="217"
+                  width="75"
+                  height="8"
+                  fill="#101c16"
+                  stroke="#3d523b"
+                />
+                <rect
+                  x="114"
+                  y="228"
+                  width="65"
+                  height="72"
+                  fill={`url(#${id}-cream)`}
+                  stroke="#91a183"
+                />
+                <path d="M122 275h48m-48 5h48m-48 5h48" stroke="#bbc7af" />
+                <text
+                  x="146"
+                  y="250"
+                  textAnchor="middle"
+                  fill="#6a8063"
+                  fontSize="9"
+                  letterSpacing="1"
+                >
+                  LP {port + 1}
+                </text>
+              </g>
+            ))}
+            <path d="M4 302h332v8H4z" fill="#6b8260" />
+            <path d="M17 310v8m305-8v8" stroke="#263a29" strokeWidth="8" />
+            <path d="M328 0v-30" stroke="#738369" strokeWidth="3" />
+            <rect
+              x="323"
+              y="-53"
+              width="10"
+              height="23"
+              rx="2"
+              fill="#829078"
+              stroke="#82967a"
+            />
+            <path d="M323-46h10m-10 8h10" stroke="#576f50" />
+          </g>
+          {showSignals ? (
+            <g className="kev-screen-markers">
+              {SIGNALS.map(item => {
+                const [x, y] = project(
+                  windowPoint(item.position[0], item.position[1])
+                );
+                return (
+                  <g key={item.id} data-signal-marker={item.id}>
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={selected === item.id ? 13 : 10}
+                      fill="#14231c"
+                      stroke={item.color}
+                      strokeWidth={selected === item.id ? 3 : 2}
+                    />
+                    <text
+                      x={x}
+                      y={y + 4}
+                      textAnchor="middle"
+                      fill={item.color}
+                      fontSize="12"
+                      fontWeight="700"
+                    >
+                      {item.number}
+                    </text>
+                  </g>
+                );
+              })}
+              <path
+                d={`M${chosenPoint[0]} ${chosenPoint[1]} L${Math.min(520, Math.max(100, chosenPoint[0]))} 54 L26 54`}
+                fill="none"
+                stroke={signal.color}
+                strokeWidth="1.3"
+                opacity=".75"
+              />
+              <rect
+                x="18"
+                y="19"
+                width="280"
+                height="35"
+                rx="4"
+                fill="#122019"
+                stroke="#52634d"
+              />
+              <text
+                x="29"
+                y="41"
+                fill={signal.color}
+                fontSize="13"
+                fontWeight="600"
+              >
+                {signal.number}.{" "}
+                {l(signal.name[0], signal.name[1], signal.name[2])}
+              </text>
+            </g>
+          ) : null}
+        </svg>
+      </div>
+      {showSignals ? (
+        <div className="kev-signal-guide">
+          <div
+            className="kev-signal-options"
+            aria-label={l(
+              "공정값 위치 선택",
+              "Choose a process quantity",
+              "プロセス値の位置選択"
+            )}
           >
-            LP {port + 1}
-          </text>
-        </g>
-      ))}
-      <path d="M59 367h334v8H59z" fill="#6b8260" />
-      <path d="M72 375v8m305-8v8" stroke="#263a29" strokeWidth="8" />
-      <path d="M383 65V35" stroke="#738369" strokeWidth="3" />
-      <rect
-        x="378"
-        y="12"
-        width="10"
-        height="23"
-        rx="2"
-        fill="#829078"
-        stroke="#82967a"
-      />
-      <path d="M378 19h10m-10 8h10" stroke="#576f50" />
-      <path d="M274 385v15h95" fill="none" stroke="#839c80" />
-      <text x="370" y="420" textAnchor="end" fill="#b0c2a8" fontSize="12">
-        {l("전면 로드포트 3개", "3 front load ports", "前面ロードポート3基")}
-      </text>
-      {inside ? (
-        <g>
-          <path d="M530 283h52v45" fill="none" stroke="#d2b779" />
-          <text x="581" y="347" textAnchor="end" fill="#e1c88f" fontSize="12">
-            {l("교육용 관찰창", "Teaching window", "教育用観察窓")}
-          </text>
-        </g>
+            {SIGNALS.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                className="kev-signal-option"
+                aria-pressed={selected === item.id}
+                onClick={() => select(item.id)}
+                style={{ "--kev-signal": item.color } as CSSProperties}
+              >
+                <span className="kev-signal-number" aria-hidden="true">
+                  {item.number}
+                </span>
+                <span className="kev-signal-name">
+                  {l(item.name[0], item.name[1], item.name[2])}
+                </span>
+                <span className="kev-signal-value">
+                  {valueLabel(item.id)} <small>{item.unit}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="kev-signal-meaning" aria-live="polite">
+            {l(signal.meaning[0], signal.meaning[1], signal.meaning[2])}
+          </p>
+          <p className="kev-signal-disclaimer">
+            {l(
+              "위치와 값은 교육용 모의 표현입니다. 실제 Kiyo 센서의 설치 위치·운전 기준을 뜻하지 않습니다.",
+              "Positions and values are educational illustrations, not actual Kiyo sensor locations or operating specifications.",
+              "位置と値は教育用の模擬表示であり、実際のKiyoセンサー配置や運転基準ではありません。"
+            )}
+          </p>
+        </div>
       ) : null}
-    </svg>
+    </div>
   );
 }

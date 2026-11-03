@@ -1,0 +1,128 @@
+.kev-equipment {
+  min-width: 0;
+}
+.kev-scene {
+  position: relative;
+  overflow: hidden;
+}
+.kev-scene .kev-svg.kp-equipment-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 440px;
+  margin: 22px auto 0;
+  overflow: visible;
+}
+.kev-signal-guide {
+  padding: 0 12px 17px;
+}
+.kev-signal-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.kev-signal-option {
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr);
+  align-items: center;
+  gap: 3px 7px;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid #445348;
+  border-radius: 5px;
+  background: #1d2b22;
+  color: #dce3d7;
+  text-align: left;
+  cursor: pointer;
+}
+.kev-signal-option:hover {
+  background: #28382b;
+}
+.kev-signal-option:focus-visible {
+  outline: 2px solid var(--kev-signal);
+  outline-offset: 3px;
+}
+.kev-signal-option[aria-pressed="true"] {
+  border-color: var(--kev-signal);
+  background: #2c3c2e;
+}
+.kev-signal-number {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border: 1px solid var(--kev-signal);
+  border-radius: 50%;
+  color: var(--kev-signal);
+  font-size: 11px;
+  font-weight: 700;
+}
+.kev-signal-name {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.kev-signal-value {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+.kev-signal-value small {
+  color: #acbcaa;
+  font-size: 10px;
+}
+.kev-signal-meaning {
+  margin: 12px 0 0;
+  color: #d5dfcd;
+  font-size: 12px;
+  line-height: 1.65;
+  min-height: 3.3em;
+}
+.kev-signal-disclaimer {
+  margin: 7px 0 0;
+  color: #94a58f;
+  font-size: 10px;
+  line-height: 1.55;
+}
+@media (max-width: 560px) {
+  .kev-scene .kev-svg.kp-equipment-svg {
+    max-height: 340px;
+    margin-top: 27px;
+  }
+  .kev-signal-guide {
+    padding: 0 13px 16px;
+  }
+  .kev-signal-option {
+    padding: 10px 9px;
+    gap: 3px 6px;
+  }
+  .kev-signal-name {
+    font-size: 11px;
+  }
+  .kev-signal-value {
+    font-size: 13px;
+  }
+  .kev-signal-meaning {
+    min-height: 0;
+  }
+  .kev-screen-markers > g circle {
+    r: 18px;
+    stroke-width: 3px;
+  }
+  .kev-screen-markers > g text {
+    font-size: 22px;
+  }
+  .kev-screen-markers > path,
+  .kev-screen-markers > rect,
+  .kev-screen-markers > text {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kev-equipment * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

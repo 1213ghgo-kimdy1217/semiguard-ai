@@ -24,13 +24,17 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import AccountLogout from "../components/AccountSession";
-import KiyoEquipmentView from "../components/KiyoEquipmentView";
+import KiyoEquipmentView, {
+  type KiyoSignal,
+} from "../components/KiyoEquipmentView";
+import PrototypeCameraView from "../components/PrototypeCameraView";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
 import { usePrototypeLink } from "../hooks/usePrototypeLink";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import "./prototype-dashboard.css";
 
 type Channel = "pressure" | "flow" | "rf" | "temperature";
+type ModelSignal = KiyoSignal;
 type Point = {
   elapsed: number;
   seq: number;
@@ -133,8 +137,13 @@ export default function EtchLive() {
   const [language, setLanguage] = useProductLanguage();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const link = usePrototypeLink();
-  const [equipmentView, setEquipmentView] = useState<"exterior" | "cutaway">(
-    "cutaway"
+  const [equipmentView, setEquipmentView] = useState<
+    "exterior" | "cutaway" | "camera"
+  >("exterior");
+  const [selectedModelSignal, setSelectedModelSignal] =
+    useState<ModelSignal | null>(null);
+  const [pageVisible, setPageVisible] = useState(
+    () => typeof document === "undefined" || !document.hidden
   );
   const [points, setPoints] = useState<Point[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -163,6 +172,21 @@ export default function EtchLive() {
     () => (fresh && link.frame ? illustrativeProcess(link.frame) : null),
     [fresh, link.frame]
   );
+  const usbFresh = link.mode === "usb" && fresh;
+  const cameraAllowed = usbFresh && pageVisible;
+  // A freshness change hides/unmounts the camera immediately, before effects run.
+  const activeView =
+    equipmentView === "camera" && !cameraAllowed ? "exterior" : equipmentView;
+  const cameraActive = activeView === "camera" && cameraAllowed;
+  const modelProcessValues =
+    demo && fresh && activeView === "cutaway" && current
+      ? {
+          pressure: current.pressure,
+          gasFlow: current.flow,
+          rfPower: current.rf,
+          chamberAmbientTemp: current.temperature,
+        }
+      : null;
   const elapsed = points.at(-1)?.elapsed ?? 0;
   const lastAge =
     link.lastReceivedAt === null
@@ -202,6 +226,24 @@ export default function EtchLive() {
                   )
                 : l("모형 미연결", "Model disconnected", "模型未接続");
 
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      const visible = !document.hidden;
+      setPageVisible(visible);
+      if (!visible)
+        setEquipmentView(view => (view === "camera" ? "exterior" : view));
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+  useEffect(() => {
+    if (!cameraAllowed)
+      setEquipmentView(view => (view === "camera" ? "exterior" : view));
+  }, [cameraAllowed]);
+  useEffect(() => {
+    if (!demo) setSelectedModelSignal(null);
+  }, [demo]);
   useEffect(() => {
     document.title = tr(
       language,
@@ -483,7 +525,9 @@ export default function EtchLive() {
                 </h2>
               </div>
               <span className="kp-outline-tag">
-                {l("측면 관찰창", "Side observation window", "側面観察窓")}
+                {cameraActive
+                  ? l("카메라 관찰", "Camera observation", "カメラ観察")
+                  : l("측면 관찰창", "Side observation window", "側面観察窓")}
               </span>
             </div>
             <div
@@ -498,7 +542,7 @@ export default function EtchLive() {
               <button
                 id="model-exterior-view"
                 type="button"
-                aria-pressed={equipmentView === "exterior"}
+                aria-pressed={activeView === "exterior"}
                 aria-controls="model-illustration"
                 onClick={() => setEquipmentView("exterior")}
               >
@@ -507,43 +551,79 @@ export default function EtchLive() {
               <button
                 id="model-interior-view"
                 type="button"
-                aria-pressed={equipmentView === "cutaway"}
+                aria-pressed={activeView === "cutaway"}
                 aria-controls="model-illustration"
                 onClick={() => setEquipmentView("cutaway")}
               >
                 {l("교육용 내부 보기", "Teaching interior", "教育用内部表示")}
               </button>
+              {usbFresh ? (
+                <button
+                  id="model-camera-view"
+                  className="kp-camera-view-button"
+                  type="button"
+                  aria-pressed={cameraActive}
+                  aria-controls="model-illustration"
+                  onClick={() => {
+                    if (cameraAllowed) setEquipmentView("camera");
+                  }}
+                >
+                  {l(
+                    "현재 상태 보기",
+                    "View current state",
+                    "現在の状態を見る"
+                  )}
+                </button>
+              ) : null}
             </div>
             <div
-              className="kp-equipment-stage kp-integrated-stage"
+              className={
+                cameraActive
+                  ? "kp-camera-stage"
+                  : "kp-equipment-stage kp-integrated-stage"
+              }
               id="model-illustration"
               role="region"
               aria-labelledby={
-                equipmentView === "exterior"
-                  ? "model-exterior-view"
-                  : "model-interior-view"
+                activeView === "camera"
+                  ? "model-camera-view"
+                  : activeView === "exterior"
+                    ? "model-exterior-view"
+                    : "model-interior-view"
               }
             >
-              <span className="kp-stage-note">
-                {equipmentView === "cutaway"
-                  ? l(
-                      "관찰창 내부는 교육용 설계",
-                      "Educational layout inside the window",
-                      "観察窓の内部は教育用設計"
-                    )
-                  : l(
-                      "Kiyo 참고 외관 모형",
-                      "Kiyo-inspired exterior model",
-                      "Kiyo参考外観模型"
-                    )}
-              </span>
-              <KiyoEquipmentView
-                view={equipmentView}
-                active={fresh}
-                ledOn={fresh && link.frame?.ledCommand === "on"}
-                language={language}
-              />
-              {equipmentView === "cutaway" ? (
+              {cameraActive ? (
+                <PrototypeCameraView language={language} />
+              ) : (
+                <>
+                  <span className="kp-stage-note">
+                    {activeView === "cutaway"
+                      ? l(
+                          "교육용 내부 확대 관찰",
+                          "Teaching interior · close observation",
+                          "教育用内部の拡大観察"
+                        )
+                      : l(
+                          "Kiyo 참고 외관 모형",
+                          "Kiyo-inspired exterior model",
+                          "Kiyo参考外観模型"
+                        )}
+                  </span>
+                  <KiyoEquipmentView
+                    view={activeView === "cutaway" ? "cutaway" : "exterior"}
+                    active={fresh}
+                    ledOn={fresh && link.frame?.ledCommand === "on"}
+                    language={language}
+                    demo={demo}
+                    processValues={modelProcessValues}
+                    selectedSignal={selectedModelSignal}
+                    onSelectSignal={setSelectedModelSignal}
+                  />
+                </>
+              )}
+            </div>
+            {activeView === "cutaway" ? (
+              <div className="kp-model-observation-caption">
                 <span className="kp-window-led-state">
                   <span
                     className={`kp-status-dot ${fresh && link.frame?.ledCommand === "on" ? "is-amber" : ""}`}
@@ -556,66 +636,95 @@ export default function EtchLive() {
                     : "—"}
                   {demo ? l(" · 모의", " · DEMO", "・模擬") : ""}
                 </span>
-              ) : null}
-            </div>
+                {demo ? (
+                  <span className="kp-callout-hint">
+                    {l(
+                      "번호를 눌러 4개 모의 값의 위치와 의미를 확인하세요.",
+                      "Select a number to explore the four simulated values and their locations.",
+                      "番号を選び、4つの模擬値の位置と意味を確認しましょう。"
+                    )}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
             <p className="kp-model-scope">
-              {l(
-                "하나의 캐비닛 안에 교육용 챔버와 관찰창을 넣은 구성입니다. 내부 배치는 공정 설명용으로 단순화했으며 실제 Kiyo의 내부 구조·위치를 재현하지 않습니다.",
-                "One cabinet contains the teaching chamber and observation window. Its internal layout is simplified for explanation, not a reproduction of Kiyo's actual structure or positions.",
-                "1台のキャビネット内に教育用チャンバーと観察窓を設けた構成です。内部配置は説明用に簡略化しており、実際のKiyo内部構造や位置の再現ではありません。"
-              )}
+              {cameraActive
+                ? l(
+                    "카메라 영상과 아래의 교육용 모의 공정값은 별도의 정보입니다. 영상으로 압력·유량·RF·온도를 측정하지 않습니다.",
+                    "The camera image and educational process simulations below are separate information. The image does not measure pressure, flow, RF or temperature.",
+                    "カメラ映像と下の教育用模擬プロセス値は別の情報です。映像から圧力・流量・RF・温度を測定しません。"
+                  )
+                : l(
+                    "하나의 캐비닛 안에 교육용 챔버와 관찰창을 넣은 구성입니다. 내부 배치는 공정 설명용으로 단순화했으며 실제 Kiyo의 내부 구조·위치를 재현하지 않습니다.",
+                    "One cabinet contains the teaching chamber and observation window. Its internal layout is simplified for explanation, not a reproduction of Kiyo's actual structure or positions.",
+                    "1台のキャビネット内に教育用チャンバーと観察窓を設けた構成です。内部配置は説明用に簡略化しており、実際のKiyo内部構造や位置の再現ではありません。"
+                  )}
             </p>
             <div className="kp-model-explanation" id="model-view-description">
               <div>
                 <h3>
-                  {equipmentView === "exterior"
+                  {cameraActive
                     ? l(
-                        "Kiyo 참고 외관 · 로드포트",
-                        "Kiyo-inspired exterior · load ports",
-                        "Kiyo参考外観・ロードポート"
+                        "현재 상태 · 카메라 관찰",
+                        "Current state · camera observation",
+                        "現在の状態・カメラ観察"
                       )
-                    : l(
-                        "측면 관찰창 · 교육용 내부 배치",
-                        "Side observation window · teaching layout",
-                        "側面観察窓・教育用内部配置"
-                      )}
+                    : activeView === "exterior"
+                      ? l(
+                          "Kiyo 참고 외관 · 로드포트",
+                          "Kiyo-inspired exterior · load ports",
+                          "Kiyo参考外観・ロードポート"
+                        )
+                      : l(
+                          "측면 관찰창 · 교육용 내부 배치",
+                          "Side observation window · teaching layout",
+                          "側面観察窓・教育用内部配置"
+                        )}
                 </h3>
                 <p>
-                  {equipmentView === "exterior"
+                  {cameraActive
                     ? l(
-                        "왼쪽 조작부와 세 개의 전면 로드포트를 살펴보세요. 로드포트는 웨이퍼를 넣고 꺼내는 입구입니다. 외관 표시등과 빨간 버튼은 장식 표현이며 실제 USB 입력 상태와 연동하지 않습니다.",
-                        "Explore the left control area and three front load ports, the wafer-loading interfaces. Exterior lights and the red button are decorative and do not represent live USB input state.",
-                        "左側操作部と前面ロードポート3基を確認しましょう。ロードポートはウェーハ搬入出の入口です。外観表示灯と赤いボタンは装飾表現で、実際のUSB入力状態とは連動しません。"
+                        "USB 제어보드와 카메라는 별도 장치입니다. 모형을 비추는 카메라를 컴퓨터에 연결한 뒤, 패널의 ‘카메라 켜기’를 눌러 촬영 권한을 허용하고 사용할 카메라를 선택하세요.",
+                        "The USB controller and camera are separate devices. Connect a camera aimed at the model, then use ‘Turn on camera’ in the panel to grant permission and choose the device.",
+                        "USB制御ボードとカメラは別の機器です。模型を映すカメラをパソコンに接続し、パネルの「カメラをオン」で撮影を許可して使用するカメラを選んでください。"
                       )
-                    : l(
-                        "관찰창에서 가스 공급·웨이퍼 받침·배기 경로의 교육용 배치를 볼 수 있습니다. 창 안의 빛은 수신한 LED 제어 명령을 화면에 표현한 것이며 실제 플라즈마나 광센서 측정이 아닙니다.",
-                        "The window shows an educational gas supply, wafer support and exhaust layout. Its light illustrates the received LED command, not physical plasma or an optical measurement.",
-                        "観察窓でガス供給・ウェーハ支持部・排気経路の教育用配置を確認できます。窓内の光は受信したLED制御命令の画面表現で、実プラズマや光センサー測定ではありません。"
-                      )}
+                    : activeView === "exterior"
+                      ? l(
+                          "왼쪽 조작부와 세 개의 전면 로드포트를 살펴보세요. 로드포트는 웨이퍼를 넣고 꺼내는 입구입니다. 외관 표시등과 빨간 버튼은 장식 표현이며 실제 USB 입력 상태와 연동하지 않습니다.",
+                          "Explore the left control area and three front load ports, the wafer-loading interfaces. Exterior lights and the red button are decorative and do not represent live USB input state.",
+                          "左側操作部と前面ロードポート3基を確認しましょう。ロードポートはウェーハ搬入出の入口です。外観表示灯と赤いボタンは装飾表現で、実際のUSB入力状態とは連動しません。"
+                        )
+                      : l(
+                          "내부 보기로 전환하면 모형이 회전하고 확대됩니다. 가스 공급·웨이퍼 받침·배기 경로를 살펴보세요. 창 안의 빛은 수신한 LED 명령을 표현하며, 데모의 온도는 웨이퍼 실측 온도가 아닌 ‘챔버 주변 온도’ 모의 값입니다.",
+                          "The model rotates and zooms when you switch to the interior. Explore the gas supply, wafer support and exhaust path. The window light represents the received LED command. Demo temperature is simulated chamber-area temperature, not a wafer measurement.",
+                          "内部表示に切り替えると模型が回転・拡大します。ガス供給・ウェーハ支持部・排気経路を確認しましょう。窓内の光は受信したLED命令の表現で、デモ温度はウェーハ実測値ではなく「チャンバー周辺温度」の模擬値です。"
+                        )}
                 </p>
               </div>
-              <a
-                href={
-                  equipmentView === "exterior"
-                    ? "https://www.lamresearch.com/product/kiyo-product-family/"
-                    : "https://newsroom.lamresearch.com/etch-essentials-semiconductor-manufacturing"
-                }
-                target="_blank"
-                rel="noreferrer"
-              >
-                {equipmentView === "exterior"
-                  ? l(
-                      "Kiyo 제품 자료",
-                      "Kiyo product information",
-                      "Kiyo製品資料"
-                    )
-                  : l(
-                      "식각 원리 자료",
-                      "Etch principles",
-                      "エッチング原理の資料"
-                    )}
-                <ArrowUpRight size={13} aria-hidden="true" />
-              </a>
+              {!cameraActive ? (
+                <a
+                  href={
+                    activeView === "exterior"
+                      ? "https://www.lamresearch.com/product/kiyo-product-family/"
+                      : "https://newsroom.lamresearch.com/etch-essentials-semiconductor-manufacturing"
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {activeView === "exterior"
+                    ? l(
+                        "Kiyo 제품 자료",
+                        "Kiyo product information",
+                        "Kiyo製品資料"
+                      )
+                    : l(
+                        "식각 원리 자료",
+                        "Etch principles",
+                        "エッチング原理の資料"
+                      )}
+                  <ArrowUpRight size={13} aria-hidden="true" />
+                </a>
+              ) : null}
             </div>
           </section>
           <aside
