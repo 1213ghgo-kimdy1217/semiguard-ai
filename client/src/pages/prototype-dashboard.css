@@ -1425,3 +1425,12 @@
     max-width: none;
   }
 }
+.kp-session-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; padding:16px 20px; margin-bottom:20px; border:1px solid #40513e; border-radius:8px; background:#19241b; color:#c5d2ba; }
+.kp-session-bar > div:first-child { flex:1 1 260px; min-width:0; }
+.kp-session-bar p, .kp-recovery li { font-size:13px; line-height:1.7; overflow-wrap:anywhere; }
+.kp-session-bar strong { font-size:14px; }
+.kp-restart-confirm { flex-basis:100%; border-top:1px solid #40513e; padding-top:12px; }
+.kp-restart-confirm button, .kp-recovery button { margin:8px 8px 0 0; white-space:normal; height:auto; min-height:36px; }
+.kp-recovery { padding:14px; margin-top:14px; border:1px solid #8c6a36; border-radius:8px; background:#322c1f; color:#e2ba80; }
+.kp-recovery h3 { font-size:14px; font-weight:600; }
+.kp-recovery ol { padding-left:20px; margin-top:8px; }
