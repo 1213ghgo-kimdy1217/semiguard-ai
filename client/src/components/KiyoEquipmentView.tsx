@@ -13,6 +13,7 @@ export type KiyoSignal =
 export type KiyoProcessValues = Record<KiyoSignal, number>;
 type Point3 = readonly [number, number, number];
 type Point2 = readonly [number, number];
+type EquipmentPose = { camera: number; door: number };
 
 const SIGNALS = [
   {
@@ -254,35 +255,83 @@ export default function KiyoEquipmentView({
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const inside = view === "cutaway";
   const reduceMotion = useReducedMotion();
-  const [progress, setProgress] = useState(inside ? 1 : 0);
-  const progressRef = useRef(progress);
+  const [pose, setPose] = useState<EquipmentPose>({ camera: 0, door: 0 });
+  const poseRef = useRef(pose);
+  const progress = pose.camera;
+  const doorProgress = pose.door;
   const [localSignal, setLocalSignal] = useState<KiyoSignal>("pressure");
   const selected = selectedSignal ?? localSignal;
-  const showSignals = demo && inside;
+  const interiorReady = progress === 1 && doorProgress === 1;
+  const interiorVisible = doorProgress > 0;
+  const showGuide = demo && inside;
+  const showSignals = showGuide && interiorReady;
+  const viewPhase = inside
+    ? progress < 1
+      ? "camera-enter"
+      : doorProgress < 1
+        ? "cover-opening"
+        : "interior"
+    : doorProgress > 0
+      ? "cover-closing"
+      : progress > 0
+        ? "camera-exit"
+        : "exterior";
   const signal = SIGNALS.find(item => item.id === selected) ?? SIGNALS[0];
 
   useEffect(() => {
-    const target = inside ? 1 : 0;
     if (reduceMotion) {
-      progressRef.current = target;
-      setProgress(target);
+      const next = { camera: inside ? 1 : 0, door: inside ? 1 : 0 };
+      poseRef.current = next;
+      setPose(next);
       return;
     }
-    const start = progressRef.current;
-    if (start === target) return;
-    const started = performance.now();
+    // Reversal starts from the currently rendered pose, without timers or stale frames.
+    const stages: {
+      key: keyof EquipmentPose;
+      target: number;
+      duration: number;
+    }[] = inside
+      ? [
+          { key: "camera", target: 1, duration: 1050 },
+          { key: "door", target: 1, duration: 700 },
+        ]
+      : [
+          { key: "door", target: 0, duration: 700 },
+          { key: "camera", target: 0, duration: 1050 },
+        ];
     let frame = 0;
-    const tick = (time: number) => {
-      const elapsed = Math.min(1, (time - started) / 1050);
-      const eased =
-        elapsed < 0.5 ? 4 * elapsed ** 3 : 1 - (-2 * elapsed + 2) ** 3 / 2;
-      const next = mix(start, target, eased);
-      progressRef.current = next;
-      setProgress(next);
-      if (elapsed < 1) frame = requestAnimationFrame(tick);
+    let cancelled = false;
+    const runStage = (index: number) => {
+      if (cancelled || index >= stages.length) return;
+      const { key, target, duration: fullDuration } = stages[index];
+      const start = poseRef.current[key];
+      if (start === target) {
+        runStage(index + 1);
+        return;
+      }
+      const started = performance.now();
+      const duration = Math.max(1, fullDuration * Math.abs(target - start));
+      const tick = (time: number) => {
+        if (cancelled) return;
+        const elapsed = Math.min(1, Math.max(0, (time - started) / duration));
+        const eased =
+          elapsed < 0.5 ? 4 * elapsed ** 3 : 1 - (-2 * elapsed + 2) ** 3 / 2;
+        const next = {
+          ...poseRef.current,
+          [key]: elapsed === 1 ? target : mix(start, target, eased),
+        };
+        poseRef.current = next;
+        setPose(next);
+        if (elapsed < 1) frame = requestAnimationFrame(tick);
+        else runStage(index + 1);
+      };
+      frame = requestAnimationFrame(tick);
     };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+    runStage(0);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
   }, [inside, reduceMotion]);
 
   const { project, zoom, yaw, pitch } = camera(progress);
@@ -291,6 +340,18 @@ export default function KiyoEquipmentView({
     windowPoint(0, 0),
     windowPoint(1, 0),
     windowPoint(0, 1),
+    project
+  );
+  const coverAngle = (doorProgress * 104 * Math.PI) / 180;
+  const coverPoint = (x: number, y: number): Point3 => [
+    170 + x * Math.sin(coverAngle),
+    -96 + y,
+    96 - x * Math.cos(coverAngle),
+  ];
+  const coverMatrix = planeMatrix(
+    coverPoint(0, 0),
+    coverPoint(1, 0),
+    coverPoint(0, 1),
     project
   );
   const frontMatrix = planeMatrix(
@@ -311,7 +372,14 @@ export default function KiyoEquipmentView({
   };
 
   return (
-    <div className="kev-equipment" data-equipment-view={view}>
+    <div
+      className="kev-equipment"
+      data-equipment-view={view}
+      data-view-phase={viewPhase}
+      data-door-progress={doorProgress.toFixed(3)}
+      data-interior-visible={String(interiorVisible)}
+      data-interior-ready={String(interiorReady)}
+    >
       <div className="kev-scene">
         <svg
           className={`kp-equipment-svg kev-svg kp-equipment-${view}`}
@@ -322,6 +390,10 @@ export default function KiyoEquipmentView({
           data-camera-zoom={zoom.toFixed(2)}
           data-camera-progress={progress.toFixed(3)}
           data-camera-pitch={pitch.toFixed(3)}
+          data-view-phase={viewPhase}
+          data-door-progress={doorProgress.toFixed(3)}
+          data-interior-visible={String(interiorVisible)}
+          data-interior-ready={String(interiorReady)}
         >
           <title id={`${id}-title`}>
             {inside
@@ -400,24 +472,21 @@ export default function KiyoEquipmentView({
               width="192"
               height="208"
               rx="5"
-              fill={inside ? "#12261b" : "#afbea6"}
+              fill="#12261b"
               stroke="#b2c5a5"
               strokeWidth="1.5"
             />
-            {inside ? (
-              <g clipPath={`url(#${id}-window)`}>
-                <ChamberInterior
-                  active={active}
-                  ledOn={ledOn}
-                  highlighted={showSignals ? selected : null}
-                />
-              </g>
-            ) : (
-              <>
-                <path d="M18 24h156M18 184h156" stroke="#9baf8d" />
-                <path d="M28 91v18" stroke="#6e8662" strokeWidth="4" />
-              </>
-            )}
+            <g
+              clipPath={`url(#${id}-window)`}
+              visibility={interiorVisible ? "visible" : "hidden"}
+            >
+              <ChamberInterior
+                active={active}
+                ledOn={ledOn}
+                highlighted={showSignals ? selected : null}
+              />
+            </g>
+            <path d="M0 40v17m0 101v17" stroke="#8ea487" strokeWidth="3" />
           </g>
           <g transform={frontMatrix}>
             <rect
@@ -540,6 +609,30 @@ export default function KiyoEquipmentView({
             />
             <path d="M323-46h10m-10 8h10" stroke="#576f50" />
           </g>
+          <g
+            transform={coverMatrix}
+            data-observation-cover="true"
+            data-cover-angle={(doorProgress * 104).toFixed(1)}
+            aria-hidden="true"
+          >
+            <rect
+              width="192"
+              height="208"
+              rx="5"
+              fill={doorProgress > 90 / 104 ? "#94a58e" : "#afbea6"}
+              stroke="#8da481"
+              strokeWidth="1.5"
+            />
+            <path
+              d="M18 24h156M18 184h156"
+              stroke="#8fa285"
+              strokeWidth=".8"
+              opacity=".55"
+            />
+            {doorProgress < 90 / 104 ? (
+              <path d="M166 94v20" stroke="#5f7858" strokeWidth="4" />
+            ) : null}
+          </g>
           {showSignals ? (
             <g className="kev-screen-markers">
               {SIGNALS.map(item => {
@@ -573,8 +666,13 @@ export default function KiyoEquipmentView({
           ) : null}
         </svg>
       </div>
-      {showSignals ? (
-        <div className="kev-signal-guide">
+      {showGuide ? (
+        <div
+          className="kev-signal-guide"
+          data-ready={String(interiorReady)}
+          aria-hidden={!interiorReady}
+          inert={!interiorReady}
+        >
           <div
             className="kev-signal-options"
             aria-label={l(
@@ -589,6 +687,7 @@ export default function KiyoEquipmentView({
                 type="button"
                 className="kev-signal-option"
                 aria-pressed={selected === item.id}
+                disabled={!interiorReady}
                 onClick={() => select(item.id)}
                 style={{ "--kev-signal": item.color } as CSSProperties}
               >

@@ -31,7 +31,9 @@ Exterior and educational-interior tabs show the same integrated model with diffe
 
 ## Interior focus and live camera
 
-The teaching-interior view rotates toward the observation window and zooms in on the chamber. Reduced-motion preferences use the final view without animated movement. In an explicitly selected model-free demonstration, four educational callouts explain chamber pressure (the gas-filled chamber volume), gas flow (the inlet path), RF power (energy supplied for plasma generation), and chamber ambient temperature (around the outside of the vessel, not the wafer temperature). Values come from the existing teaching simulation, not from the drawn locations or a camera measurement.
+The teaching-interior view first completes its rotation and zoom toward the observation window, then opens a rendered cabinet cover to reveal the chamber. Returning to the exterior closes the cover before reversing the camera movement. Interrupted transitions continue from their current pose; reduced-motion preferences use the final open or closed view immediately. This cover motion is a local illustration and sends no door commands to hardware.
+
+In an explicitly selected model-free demonstration, four educational callouts become available after the cover fully opens. They explain chamber pressure (the gas-filled chamber volume), gas flow (the inlet path), RF power (energy supplied for plasma generation), and chamber ambient temperature (around the outside of the vessel, not the wafer temperature). Values come from the existing teaching simulation, not from the drawn locations or a camera measurement.
 
 The Current state view is available only while valid USB model telemetry is fresh. Its camera panel uses a separate video-only browser media stream after an explicit Camera on action. Users can select the video device; leaving the camera tab, changing input mode, losing fresh USB telemetry, or closing the page stops the stream. Video is displayed locally without microphone capture, recording, image analysis, or server upload.
 
