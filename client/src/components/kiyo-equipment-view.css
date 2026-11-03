@@ -59,7 +59,7 @@
   font-weight: 700;
 }
 .kev-signal-name {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -73,20 +73,35 @@
   color: #acbcaa;
   font-size: 10px;
 }
-.kev-signal-meaning {
-  margin: 12px 0 0;
-  color: #d5dfcd;
+.kev-signal-detail {
+  margin-top: 12px;
+  padding: 11px 12px;
+  border-left: 3px solid var(--kev-signal);
+  background: #233126;
+}
+.kev-signal-detail-title {
+  margin: 0;
+  color: var(--kev-signal);
   font-size: 12px;
-  line-height: 1.65;
-  min-height: 3.3em;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.kev-signal-meaning {
+  margin: 5px 0 0;
+  color: #d5dfcd;
+  font-size: 13px;
+  line-height: 1.7;
 }
 .kev-signal-disclaimer {
   margin: 7px 0 0;
   color: #94a58f;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.55;
 }
 @media (max-width: 560px) {
+  .kp-integrated-stage > .kp-stage-note {
+    display: none;
+  }
   .kev-scene .kev-svg.kp-equipment-svg {
     max-height: 340px;
     margin-top: 27px;
@@ -99,10 +114,10 @@
     gap: 3px 6px;
   }
   .kev-signal-name {
-    font-size: 11px;
+    font-size: 12px;
   }
   .kev-signal-value {
-    font-size: 13px;
+    font-size: 14px;
   }
   .kev-signal-meaning {
     min-height: 0;

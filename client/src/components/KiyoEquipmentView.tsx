@@ -22,9 +22,9 @@ const SIGNALS = [
     unit: "mTorr",
     name: ["챔버 압력", "Chamber pressure", "チャンバー圧力"],
     meaning: [
-      "챔버 내부 공간의 기체 압력입니다. 특정 부품의 이름이 아니며, 기체가 얼마나 희박한 상태인지 관찰합니다.",
-      "Gas pressure in the chamber volume, not a particular component. Observe how rarefied the gas is.",
-      "特定の部品ではなく、チャンバー内部空間の気体圧力です。気体がどれほど希薄かを観察します。",
+      "챔버 내부 공간의 기체 압력입니다. 특정 부품을 뜻하지 않습니다. 가스 공급과 하부 배기가 이루어지는 동안 압력이 어떻게 변하는지, 변화가 언제 시작됐는지 관찰하세요.",
+      "Gas pressure in the chamber volume, not a component. Observe how pressure changes while gas enters and is exhausted below, and when the change begins.",
+      "特定の部品ではなく、チャンバー内部空間の気体圧力です。ガス供給と下部排気の間に圧力がどう変化するか、変化の開始時点を観察します。",
     ],
     position: [59, 112] as const,
   },
@@ -35,9 +35,9 @@ const SIGNALS = [
     unit: "sccm",
     name: ["가스 유량", "Gas flow", "ガス流量"],
     meaning: [
-      "상부 유입 경로로 공급되는 가스의 흐름을 나타냅니다. 유량과 챔버 압력은 서로 다른 값입니다.",
-      "Gas delivery through the upper inlet path. Gas flow and chamber pressure are different quantities.",
-      "上部の流入経路から供給するガスの流れです。流量とチャンバー圧力は異なる量です。",
+      "상부 유입관과 분배 구멍을 통해 공급되는 가스의 양을 나타냅니다. 유량과 챔버 압력은 서로 다른 값입니다. 압력이 바뀔 때 가스 공급량도 함께 변했는지 비교하세요.",
+      "Gas delivery through the upper inlet and distribution holes. Flow and pressure are different quantities. Compare whether gas delivery changes when the chamber pressure changes.",
+      "上部流入管と分配穴から供給するガス量です。流量と圧力は異なります。圧力が変化したときにガス供給量も変わったかを比較します。",
     ],
     position: [59, 30] as const,
   },
@@ -48,11 +48,11 @@ const SIGNALS = [
     unit: "W",
     name: ["RF 전력", "RF power", "RF電力"],
     meaning: [
-      "플라즈마에 에너지를 공급하는 영역을 가리킵니다. 표시 LED의 밝기는 RF 전력 측정값이 아닙니다.",
-      "An educational energy-supply region for the plasma. The LED brightness is not a measurement of RF power.",
-      "プラズマへエネルギーを供給する領域の概念表示です。LEDの明るさはRF電力の測定値ではありません。",
+      "RF 공급 경로와 플라즈마에 에너지가 전달되는 영역의 개념 표시입니다. RF 전력이 유지되는지, 중단됐는지와 그 시점을 관찰하세요. LED 밝기는 RF 전력 측정값이 아닙니다.",
+      "A conceptual RF supply path and energy-delivery region for the plasma. Observe whether RF power continues or stops and when it changes. LED brightness is not an RF power measurement.",
+      "RF供給経路とプラズマへのエネルギー供給領域の概念表示です。RF電力の継続・停止と変化の時点を観察します。LEDの明るさはRF電力測定ではありません。",
     ],
-    position: [59, 77] as const,
+    position: [17, 100] as const,
   },
   {
     id: "chamberAmbientTemp",
@@ -61,9 +61,9 @@ const SIGNALS = [
     unit: "°C",
     name: ["챔버 주변 온도", "Chamber-area temperature", "チャンバー周辺温度"],
     meaning: [
-      "챔버 외벽 주변 영역의 온도를 뜻합니다. 웨이퍼 자체의 온도나 챔버 내부 공정 온도가 아닙니다.",
-      "Temperature around the chamber exterior, not the wafer temperature or the internal process temperature.",
-      "チャンバー外壁周辺の温度です。ウェーハ自体や内部プロセスの温度ではありません。",
+      "챔버 외벽 주변 영역의 온도입니다. 웨이퍼 온도나 내부 공정 온도가 아닙니다. 주변 온도가 천천히 올라가거나 유지되는지, 다른 값의 변화와 같은 시점에 움직이는지 살펴보세요.",
+      "Temperature around the chamber exterior, not the wafer or internal process temperature. Observe gradual rises or stability, and compare its timing with changes in the other quantities.",
+      "チャンバー外壁周辺の温度で、ウェーハや内部プロセスの温度ではありません。緩やかな上昇・安定と、他の値が変化する時点との関係を観察します。",
     ],
     position: [105, 141] as const,
   },
@@ -73,9 +73,9 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** Reprojects model coordinates as the camera moves around the cabinet. */
 function camera(progress: number) {
-  const yaw = (mix(-28, -80, progress) * Math.PI) / 180;
-  const pitch = mix(0.18, 0.08, progress);
-  const zoom = mix(1, 1.68, progress);
+  const yaw = (mix(-28, -90, progress) * Math.PI) / 180;
+  const pitch = mix(0.18, 0, progress);
+  const zoom = mix(1, 2, progress);
   const focus: Point3 = [170 * progress, 8 * progress, 0];
   const project = ([x, y, z]: Point3): Point2 => {
     const dx = x - focus[0],
@@ -88,7 +88,7 @@ function camera(progress: number) {
       230 + (dy * Math.cos(pitch) + depth * Math.sin(pitch)) * zoom,
     ];
   };
-  return { project, zoom, yaw: mix(-28, -80, progress) };
+  return { project, zoom, yaw: mix(-28, -90, progress) };
 }
 
 function polygon(points: Point3[], project: (point: Point3) => Point2) {
@@ -243,6 +243,18 @@ export default function KiyoEquipmentView({
             <clipPath id={`${id}-window`}>
               <rect width="118" height="208" rx="3" />
             </clipPath>
+            <pattern
+              id={`${id}-wall-section`}
+              width="5"
+              height="5"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M-1 1 1-1m-1 6 6-6m-1 6 2-2"
+                stroke="#657d62"
+                strokeWidth=".7"
+              />
+            </pattern>
           </defs>
           <ellipse
             cx="310"
@@ -278,7 +290,7 @@ export default function KiyoEquipmentView({
             fill={`url(#${id}-side)`}
             stroke="#8f9f89"
           />
-          <g transform={sideMatrix}>
+          <g transform={sideMatrix} data-side-window-plane="true">
             <rect
               width="118"
               height="208"
@@ -290,7 +302,7 @@ export default function KiyoEquipmentView({
             {inside ? (
               <g clipPath={`url(#${id}-window)`}>
                 <path
-                  d="M16 186V58c0-18 21-28 43-28s43 10 43 28v128"
+                  d="M16 186V58c0-18 21-28 43-28s43 10 43 28v128z"
                   fill={`url(#${id}-vessel)`}
                   stroke="#a0ba96"
                   strokeWidth="2"
@@ -301,7 +313,31 @@ export default function KiyoEquipmentView({
                   stroke="#8da680"
                 />
                 <path
-                  d="M59 31V10h31"
+                  d="M16 186V58c0-18 21-28 43-28s43 10 43 28v128zM25 178V65c0-12 17-21 34-21s34 9 34 21v113z"
+                  fill={`url(#${id}-wall-section)`}
+                  fillRule="evenodd"
+                  opacity=".85"
+                />
+                <path
+                  d="M25 177h68v7H25z"
+                  fill="#a5b49b"
+                  stroke="#6b8664"
+                  strokeWidth="1"
+                />
+                <path d="M30 180h58" stroke="#69865e" strokeWidth=".6" />
+                {[42, 76].map(x => (
+                  <circle
+                    key={x}
+                    cx={x}
+                    cy="38"
+                    r="1.9"
+                    fill="#5f785d"
+                    stroke="#d5dfc8"
+                    strokeWidth=".7"
+                  />
+                ))}
+                <path
+                  d="M59 59V10h31"
                   fill="none"
                   stroke={
                     showSignals && selected === "gasFlow"
@@ -311,25 +347,98 @@ export default function KiyoEquipmentView({
                   strokeWidth="7"
                 />
                 <path
-                  d="M59 31V10h31"
+                  d="M59 59V10h31"
                   fill="none"
                   stroke="#466448"
                   strokeWidth="3"
                 />
                 <path
-                  d="M29 73h60"
+                  d="M29 61h60"
                   stroke={
-                    showSignals && selected === "rfPower"
-                      ? SIGNALS[2].color
+                    showSignals && selected === "gasFlow"
+                      ? SIGNALS[1].color
                       : "#b6cfa7"
                   }
                   strokeWidth="6"
                 />
-                <path
-                  d="M35 80v7m12-7v7m12-7v7m12-7v7m12-7v7"
-                  stroke="#85ab75"
-                  strokeWidth="1.5"
-                />
+                {[34, 44, 54, 64, 74, 84].map(x => (
+                  <circle key={x} cx={x} cy="64" r="1.4" fill="#132e21" />
+                ))}
+                <g
+                  fill="none"
+                  stroke={
+                    showSignals && selected === "gasFlow"
+                      ? SIGNALS[1].color
+                      : "#83a87a"
+                  }
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                >
+                  <path d="M59 16v12m-3-4 3 4 3-4" />
+                  {[36, 59, 82].map(x => (
+                    <path key={x} d={`M${x} 70v13m-3-4 3 4 3-4`} />
+                  ))}
+                </g>
+                <g data-concept-part="rf-energy-supply">
+                  <rect
+                    x="2"
+                    y="90"
+                    width="12"
+                    height="22"
+                    rx="2"
+                    fill="#28332b"
+                    stroke={
+                      showSignals && selected === "rfPower"
+                        ? SIGNALS[2].color
+                        : "#a59cba"
+                    }
+                    strokeWidth="1"
+                  />
+                  <path
+                    d="M4 101q2-8 4 0t4 0"
+                    fill="none"
+                    stroke="#bba9d3"
+                    strokeWidth="1"
+                  />
+                  <path
+                    d="M14 101h14l5-4 5 8 5-8 5 8 5-4h19"
+                    fill="none"
+                    stroke={
+                      showSignals && selected === "rfPower"
+                        ? SIGNALS[2].color
+                        : "#9a8eaf"
+                    }
+                    strokeWidth={
+                      showSignals && selected === "rfPower" ? 2.6 : 1.4
+                    }
+                  />
+                  <path
+                    d="m69 98 5 3-5 3"
+                    fill="none"
+                    stroke={
+                      showSignals && selected === "rfPower"
+                        ? SIGNALS[2].color
+                        : "#9a8eaf"
+                    }
+                    strokeWidth="1.2"
+                  />
+                  <ellipse
+                    cx="59"
+                    cy="111"
+                    rx="31"
+                    ry="18"
+                    fill="none"
+                    stroke={
+                      showSignals && selected === "rfPower"
+                        ? SIGNALS[2].color
+                        : "#7d758e"
+                    }
+                    strokeWidth={
+                      showSignals && selected === "rfPower" ? 1.6 : 0.6
+                    }
+                    opacity={showSignals && selected === "rfPower" ? 0.9 : 0.35}
+                  />
+                </g>
                 <ellipse
                   cx="59"
                   cy="112"
@@ -358,30 +467,63 @@ export default function KiyoEquipmentView({
                 />
                 <ellipse
                   cx="59"
-                  cy="138"
+                  cy="136"
                   rx="31"
-                  ry="7"
-                  fill="#719d92"
-                  stroke="#b7d1a7"
+                  ry="2.8"
+                  fill="#91c6cb"
+                  stroke="#d6eff0"
+                  strokeWidth=".8"
                 />
                 <path
-                  d="M28 140v8c0 10 62 10 62 0v-8"
+                  d="M28 136v2.2c0 3.7 62 3.7 62 0V136"
+                  fill="#447981"
+                  stroke="#b8d6d4"
+                  strokeWidth=".6"
+                />
+                <path
+                  d="M30 143v8c0 8 58 8 58 0v-8z"
                   fill="#9fb59a"
                   stroke="#789770"
                 />
-                <path d="M47 158h24v27H47z" fill="#b2c2a2" stroke="#7c9c6e" />
+                <ellipse
+                  cx="59"
+                  cy="143"
+                  rx="29"
+                  ry="4"
+                  fill="#c1cbb3"
+                  stroke="#738c69"
+                />
+                <path d="M49 158h20v19H49z" fill="#b2c2a2" stroke="#7c9c6e" />
                 <path
-                  d="M94 170h18v24"
+                  d="M52 161h14m-14 4h14m-14 4h14"
+                  stroke="#839976"
+                  strokeWidth=".7"
+                />
+                <path
+                  d="M82 168h27v24H87"
                   fill="none"
                   stroke="#a2bc94"
                   strokeWidth="7"
                 />
                 <path
-                  d="M94 170h18v24"
+                  d="M82 168h27v24H87"
                   fill="none"
                   stroke="#476b40"
                   strokeWidth="3"
                 />
+                <g
+                  data-concept-part="exhaust-path"
+                  fill="none"
+                  stroke="#85b6ac"
+                  strokeWidth="1.1"
+                >
+                  <path d="M84 168h16m-4-3 4 3-4 3M109 186v5m0 1H90m4-3-4 3 4 3" />
+                  <path
+                    d="M105 176l8 7v-7l-8 7z"
+                    fill="#5b806c"
+                    stroke="#c2d5ba"
+                  />
+                </g>
                 {showSignals && selected === "chamberAmbientTemp" ? (
                   <path
                     d="M105 91v77"
@@ -390,6 +532,16 @@ export default function KiyoEquipmentView({
                     strokeLinecap="round"
                   />
                 ) : null}
+                <path
+                  d="M108 106q-3 4 0 8t0 8m5-8q-3 4 0 8t0 8"
+                  fill="none"
+                  stroke={
+                    showSignals && selected === "chamberAmbientTemp"
+                      ? SIGNALS[3].color
+                      : "#93a183"
+                  }
+                  strokeWidth="1"
+                />
                 <path d="M10 191h98" stroke="#6f8e65" strokeWidth="4" />
               </g>
             ) : (
@@ -615,9 +767,20 @@ export default function KiyoEquipmentView({
               </button>
             ))}
           </div>
-          <p className="kev-signal-meaning" aria-live="polite">
-            {l(signal.meaning[0], signal.meaning[1], signal.meaning[2])}
-          </p>
+          <div
+            className="kev-signal-detail"
+            style={{ "--kev-signal": signal.color } as CSSProperties}
+            aria-live="polite"
+          >
+            <p className="kev-signal-detail-title">
+              {signal.number}.{" "}
+              {l(signal.name[0], signal.name[1], signal.name[2])} ·{" "}
+              {l("관찰 포인트", "What to observe", "観察ポイント")}
+            </p>
+            <p className="kev-signal-meaning">
+              {l(signal.meaning[0], signal.meaning[1], signal.meaning[2])}
+            </p>
+          </div>
           <p className="kev-signal-disclaimer">
             {l(
               "위치와 값은 교육용 모의 표현입니다. 실제 Kiyo 센서의 설치 위치·운전 기준을 뜻하지 않습니다.",
