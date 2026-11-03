@@ -8,16 +8,13 @@ describe("live observation integration", () => {
     expect(app).toContain('path={"/dashboard/legacy"}');
     expect(app).toContain('path={"/live"}');
     const page = readFileSync("client/src/pages/EtchLive.tsx", "utf8");
+    // The /live product was intentionally replaced by a model-driven workspace.
+    // Protocol behavior is exercised separately by prototype-protocol.test.ts.
+    expect(page).toContain("usePrototypeLink");
     expect(page).not.toContain("ETCH_STORAGE_KEY");
-    expect(page).not.toContain("localStorage");
-    expect(page).toContain("restoreLiveSession(sessionStorage.getItem(STORAGE_KEY))");
-    expect(page).toContain("sessionStorage.setItem(STORAGE_KEY");
-    expect(page).toContain("탭을 닫으면 사라질 수 있으니");
-    expect(page).toContain("visibilitychange");
-    expect(page).toContain("기록 파일 내려받기");
-    expect(page).toContain("freeSignalSamples(selected, elapsed, seed, time)");
-    expect(page).toContain("실행마다 신호가 달라지는");
-    expect(page).toContain('href="/dashboard">{l("4센서 대시보드"');
+    expect(page).not.toContain("restoreLiveSession");
+    expect(app).toContain("<EtchLive />");
+
   });
   it("links training to the same equipment's live page", () => {
     const training = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");
