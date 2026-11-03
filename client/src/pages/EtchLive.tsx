@@ -133,7 +133,9 @@ export default function EtchLive() {
   const [language, setLanguage] = useProductLanguage();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const link = usePrototypeLink();
-  const [chamber, setChamber] = useState<"A" | "B">("A");
+  const [equipmentView, setEquipmentView] = useState<"exterior" | "cutaway">(
+    "exterior"
+  );
   const [points, setPoints] = useState<Point[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [notes, setNotes] = useState<Observation[]>([]);
@@ -474,81 +476,162 @@ export default function EtchLive() {
                 <p className="kp-eyebrow">EQUIPMENT OVERVIEW</p>
                 <h2 id="equipment-heading">
                   {l(
-                    "Kiyo 참고 모형 관찰",
-                    "Kiyo-inspired model observation",
-                    "Kiyo参考模型の観察"
+                    "외관과 교육용 챔버 단면",
+                    "Exterior and teaching cutaway",
+                    "外観と教育用チャンバー断面"
                   )}
                 </h2>
               </div>
               <span className="kp-outline-tag">
-                {l("교육용 구조", "Teaching structure", "教育用構造")}
+                {l("별도 모형 2개", "Two separate models", "独立した模型2つ")}
               </span>
             </div>
-            <div className="kp-equipment-stage">
-              <span className="kp-stage-note">
-                {l(
-                  "전면 로드포트 · 후면 공정 모듈",
-                  "Front load ports · rear process modules",
-                  "前面ロードポート・後部プロセスモジュール"
-                )}
-              </span>
-              <KiyoEquipmentView
-                selected={chamber}
-                active={fresh}
-                fault={fresh && Boolean(link.frame?.faultActive)}
-                ledOn={fresh && link.frame?.ledCommand === "on"}
-                language={language}
-              />
-              <div className="kp-stage-state">
-                <span className={`kp-status-dot ${fresh ? "is-amber" : ""}`} />
-                {fresh
-                  ? link.frame?.faultActive
-                    ? l("이상 입력 상태", "Fault input active", "異常入力状態")
-                    : l("정상 입력 상태", "Normal input state", "正常入力状態")
-                  : l(
-                      "입력 연결을 기다립니다",
-                      "Waiting for an input connection",
-                      "入力接続を待っています"
-                    )}
-              </div>
-            </div>
-            <div className="kp-equipment-bottom">
-              <div
-                className="kp-chamber-picker"
-                role="group"
-                aria-label={l(
-                  "모형 위치 보기",
-                  "View model location",
-                  "模型の位置を表示"
-                )}
+            <div
+              className="kp-model-comparison"
+              role="group"
+              aria-label={l(
+                "설명을 볼 모형 선택",
+                "Choose a model to explain",
+                "説明する模型を選択"
+              )}
+            >
+              <button
+                type="button"
+                className="kp-model-tile"
+                aria-pressed={equipmentView === "exterior"}
+                aria-describedby="model-view-description"
+                onClick={() => setEquipmentView("exterior")}
               >
-                <button
-                  type="button"
-                  aria-pressed={chamber === "A"}
-                  onClick={() => setChamber("A")}
-                >
-                  <span>A</span>
-                  {l("공정 모듈", "Process module", "プロセス部")}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={chamber === "B"}
-                  onClick={() => setChamber("B")}
-                >
-                  <span>B</span>
-                  {l("확장 모듈", "Extension module", "拡張部")}
-                </button>
+                <span className="kp-model-kicker">01 / EXTERIOR MODEL</span>
+                <strong>
+                  {l(
+                    "Kiyo 참고 외관",
+                    "Kiyo-inspired exterior",
+                    "Kiyo参考外観"
+                  )}
+                </strong>
+                <KiyoEquipmentView
+                  view="exterior"
+                  active={fresh}
+                  ledOn={fresh && link.frame?.ledCommand === "on"}
+                  language={language}
+                />
+                <span className="kp-model-caption">
+                  {l(
+                    "닫힌 캐비닛 · 로드포트 3개 · 장식 표시등",
+                    "Closed cabinet · 3 load ports · decorative lights",
+                    "閉じたキャビネット・ロードポート3基・装飾表示灯"
+                  )}
+                </span>
+                <span className="kp-model-action">
+                  {equipmentView === "exterior" ? (
+                    <Check size={13} aria-hidden="true" />
+                  ) : (
+                    <ChevronRight size={13} aria-hidden="true" />
+                  )}
+                  {l("외관 설명", "Exterior details", "外観の説明")}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="kp-model-tile kp-model-cutaway-tile"
+                aria-pressed={equipmentView === "cutaway"}
+                aria-describedby="model-view-description"
+                onClick={() => setEquipmentView("cutaway")}
+              >
+                <span className="kp-model-kicker">
+                  02 / SEPARATE TEACHING MODEL
+                </span>
+                <strong>
+                  {l(
+                    "별도 교육용 챔버 단면",
+                    "Separate teaching cutaway",
+                    "独立した教育用チャンバー断面"
+                  )}
+                </strong>
+                <KiyoEquipmentView
+                  view="cutaway"
+                  active={fresh}
+                  ledOn={fresh && link.frame?.ledCommand === "on"}
+                  language={language}
+                />
+                <span className="kp-model-caption">
+                  {l(
+                    "자체 받침 위의 공정 원리 설명 모형",
+                    "Process explanation on its own stand",
+                    "専用台に置いたプロセス原理の説明模型"
+                  )}
+                </span>
+                <span className="kp-model-action">
+                  {equipmentView === "cutaway" ? (
+                    <Check size={13} aria-hidden="true" />
+                  ) : (
+                    <ChevronRight size={13} aria-hidden="true" />
+                  )}
+                  {l("단면 설명", "Cutaway details", "断面の説明")}
+                </span>
+              </button>
+            </div>
+            <p className="kp-model-separation">
+              {l(
+                "외관과 단면은 서로 다른 전시 모형입니다. 교육용 단면은 캐비닛과 별도로 제작하며, 실제 Kiyo 내부의 위치·배치를 재현하지 않습니다.",
+                "These are two separate display models. The teaching cutaway is built independently of the cabinet and does not reproduce Kiyo's internal positions or layout.",
+                "外観と断面は別々の展示模型です。教育用断面はキャビネットと別に製作し、実際のKiyo内部の位置や配置を再現しません。"
+              )}
+            </p>
+            <div className="kp-model-explanation" id="model-view-description">
+              <div>
+                <h3>
+                  {equipmentView === "exterior"
+                    ? l(
+                        "외관 참고 · 로드포트",
+                        "Exterior reference · load ports",
+                        "外観参考・ロードポート"
+                      )
+                    : l(
+                        "공정 원리 · 별도 설명 모형",
+                        "Process principles · separate model",
+                        "プロセス原理・独立した説明模型"
+                      )}
+                </h3>
+                <p>
+                  {equipmentView === "exterior"
+                    ? l(
+                        "왼쪽 조작부와 세 개의 전면 로드포트를 살펴보세요. 로드포트는 웨이퍼를 넣고 꺼내는 입구이며, 이 그림은 내부 식각 챔버를 보여주지 않습니다. 외관의 표시등과 빨간 버튼은 장식 표현이며, 실제 USB 입력 상태와 연동하지 않습니다.",
+                        "Explore the left control area and three front load ports, the wafer-loading interfaces. This exterior does not show internal etch chambers. Exterior lights and the red button are decorative and do not represent live USB input state.",
+                        "左側操作部と前面のロードポート3基を確認しましょう。ロードポートはウェーハ搬入出の入口で、この外観図は内部エッチングチャンバーを示しません。外観の表示灯と赤いボタンは装飾表現で、実際のUSB入力状態とは連動しません。"
+                      )
+                    : l(
+                        "가스 공급·웨이퍼 받침·배기 경로를 설명하기 위해 단순화했습니다. 빛은 LED 제어 명령을 표현하며 실제 플라즈마나 광센서 측정이 아닙니다. 실제 Kiyo의 단면도·센서 배치도와 구분하세요.",
+                        "Gas supply, wafer support and exhaust are simplified for explanation. The light illustrates an LED command, not physical plasma or an optical measurement. This is separate from Kiyo's actual cross-section or sensor layout.",
+                        "ガス供給・ウェーハ支持部・排気経路を説明用に簡略化しました。光はLED制御命令の表現で、実プラズマや光センサー測定ではありません。実際のKiyo断面図やセンサー配置図とは区別してください。"
+                      )}
+                </p>
               </div>
-              <p>
-                {l(
-                  "위치 선택은 구조 확인용이며, 입력은 모형 공통입니다.",
-                  "Location selection shows the structure. Input is shared by the model.",
-                  "位置選択は構造確認用です。入力は模型全体で共通です。"
-                )}
-              </p>
+              <a
+                href={
+                  equipmentView === "exterior"
+                    ? "https://www.lamresearch.com/product/kiyo-product-family/"
+                    : "https://newsroom.lamresearch.com/etch-essentials-semiconductor-manufacturing"
+                }
+                target="_blank"
+                rel="noreferrer"
+              >
+                {equipmentView === "exterior"
+                  ? l(
+                      "Kiyo 제품 자료",
+                      "Kiyo product information",
+                      "Kiyo製品資料"
+                    )
+                  : l(
+                      "식각 원리 자료",
+                      "Etch principles",
+                      "エッチング原理の資料"
+                    )}
+                <ArrowUpRight size={13} aria-hidden="true" />
+              </a>
             </div>
           </section>
-
           <aside
             className="kp-connection-panel"
             aria-labelledby="connection-heading"
@@ -1186,9 +1269,9 @@ export default function EtchLive() {
         <footer className="kp-footer">
           <p>
             {l(
-              "Lam Research Kiyo의 공개 외관과 식각 원리를 참고한 교육용 모형입니다. 실제 장비의 정확한 복제나 운전·고장 진단을 제공하지 않습니다.",
-              "An educational model inspired by Lam Research Kiyo's public appearance and etch principles. It is not an exact replica, operating system or fault diagnosis for real equipment.",
-              "Lam Research Kiyoの公開外観とエッチング原理を参考にした教育用模型です。実装置の正確な複製、運転、故障診断を提供するものではありません。"
+              "Kiyo 참고 외관 모형과 별도의 교육용 챔버 단면을 구분해 전시합니다. 단면은 캐비닛과 다른 설명 모형이며 실제 Kiyo의 내부 구조·위치를 재현하지 않습니다. 공정 수치는 교육용 모의 값입니다.",
+              "The Kiyo-inspired exterior and the separate teaching cutaway are distinct display models. The cutaway does not reproduce Kiyo's actual internal structure or position. Process values are educational simulations.",
+              "Kiyo参考外観模型と独立した教育用チャンバー断面を分けて展示します。断面はキャビネットとは別の説明模型で、実際のKiyo内部構造や位置を再現しません。プロセス値は教育用の模擬値です。"
             )}
           </p>
           <a

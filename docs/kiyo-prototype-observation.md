@@ -19,7 +19,13 @@ See [firmware/README.md](../firmware/README.md) for the Uno sketch, wiring assum
 - Manufacturer product information: https://www.lamresearch.com/product/kiyo-product-family/
 - Exterior reference with a verified model name, LAM Research 2300v2 KIYO EX Poly: https://www.macquarie.com/au/en/about/company/commodities-and-global-markets/specialised-and-asset-finance/electronics/inventory/semiconductor-fabrication/polysilicon-etch/67445.html
 
-The independently drawn diagram uses three front load ports, a left-side operator panel and a stack light as exterior cues. Rear module positions and the observation window are teaching-model design choices, not a reconstruction of the original internal layout. Reference photographs are not redistributed.
+The independently drawn exterior model uses three front load ports, a left-side operator panel and a stack light as exterior cues. The three front doors are wafer-carrier interfaces, not three etch-chamber doors. The cabinet is closed; its side/rear proportions are simplified and do not establish the layout of actual Kiyo process modules.
+
+A separate teaching chamber cutaway is displayed on its own base next to the cabinet. It illustrates public dry-etch concepts and is not drawn inside the equipment exterior. Its dimensions, material and layout are classroom choices; they do not reproduce Kiyo internals or operating specifications. The physical model uses a transparent shell/removable lid for observation. The website's section drawing makes the educational interior easier to understand.
+
+General dry-etch concepts: https://newsroom.lamresearch.com/etch-essentials-semiconductor-manufacturing
+
+Exterior and chamber views have independent selection descriptions. Reference photographs are linked for attribution, not redistributed.
 
 ## Validation
 
