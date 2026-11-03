@@ -372,6 +372,7 @@ export default function EtchLive() {
     } catch {
       boardReset = false;
     }
+    lastStatus.current = "disconnected";
     await link.disconnect();
     previous.current = null;
     origin.current = 0;
