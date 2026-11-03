@@ -152,6 +152,8 @@ export default function EtchLive() {
   const [cause, setCause] = useState("");
   const [next, setNext] = useState("");
   const [notice, setNotice] = useState("");
+  const [restartPending, setRestartPending] = useState(false);
+  const [restarting, setRestarting] = useState(false);
   const [now, setNow] = useState(Date.now);
   const previous = useRef<{
     mode: string;
@@ -360,6 +362,35 @@ export default function EtchLive() {
       note: l("관찰 근거 기록", "Observation recorded", "観察根拠を記録"),
     })[kind];
 
+  async function restartExperience() {
+    if (restarting) return;
+    setRestarting(true);
+    setEquipmentView("exterior");
+    let boardReset = true;
+    try {
+      if (usbFresh) await link.reset();
+    } catch {
+      boardReset = false;
+    }
+    await link.disconnect();
+    previous.current = null;
+    origin.current = 0;
+    eventId.current = 0;
+    noteId.current = 0;
+    setPoints([]);
+    setEvents([]);
+    setNotes([]);
+    setFact("");
+    setCause("");
+    setNext("");
+    setSelectedModelSignal(null);
+    setRestartPending(false);
+    setRestarting(false);
+    setNotice(boardReset
+      ? l("체험을 초기화했습니다. USB 연결 또는 모형 없이 체험을 선택하세요.", "Experience cleared. Connect USB or start a model-free demo.", "体験を初期化しました。USB接続またはデモを選んでください。")
+      : l("화면과 기록을 초기화했습니다. 보드 초기화는 확인되지 않았으니 실물 버튼과 LED를 확인하고 다시 연결하세요.", "Screen and records cleared. Board reset was not confirmed; check the physical button and LED before reconnecting.", "画面と記録を初期化しました。ボードの初期化は未確認です。ボタンとLEDを確認して再接続してください。"));
+  }
+
   async function resetModel() {
     if (!fresh) return;
     try {
@@ -508,6 +539,21 @@ export default function EtchLive() {
           </div>
         </div>
 
+        <section className="kp-session-bar" aria-label={l("체험 상태와 초기화", "Experience status and reset", "体験の状態と初期化")}>
+          <div>
+            <strong>{sourceLabel} · {statusLabel}</strong>
+            <p>{l("압력·가스 유량·RF 전력·온도는 항상 교육용 모의값입니다. 카메라는 실제 영상만 보여줍니다.", "Pressure, gas flow, RF and temperature are always educational simulations. The camera shows live video only.", "圧力・流量・RF・温度は常に教育用の模擬値です。カメラは実際の映像のみを表示します。")}</p>
+          </div>
+          <Button variant="outline" className="kp-button kp-secondary" disabled={restarting} onClick={() => setRestartPending(true)}>
+            <RotateCcw size={16} aria-hidden="true" />
+            {l("체험 처음부터", "Restart experience", "体験を最初から")}
+          </Button>
+          {restartPending ? <div className="kp-restart-confirm" role="group" aria-label={l("초기화 확인", "Confirm restart", "初期化の確認")}>
+            <p>{l("현재 기록과 입력 내용을 지우고 카메라·USB 연결을 종료합니다. 필요한 기록은 먼저 내려받으세요.", "Clear records and drafts, and stop camera and USB. Download any records you need first.", "記録と入力を消去し、カメラとUSBを終了します。必要な記録は先に保存してください。")}</p>
+            <Button className="kp-button kp-primary" disabled={restarting} onClick={() => void restartExperience()}>{restarting ? l("초기화 중…", "Clearing…", "初期化中…") : l("초기화하기", "Clear experience", "初期化する")}</Button>
+            <Button variant="outline" disabled={restarting} onClick={() => setRestartPending(false)}>{l("취소", "Cancel", "キャンセル")}</Button>
+          </div> : null}
+        </section>
         <div className="kp-overview-grid">
           <section
             className="kp-equipment-panel"
@@ -593,7 +639,7 @@ export default function EtchLive() {
               }
             >
               {cameraActive ? (
-                <PrototypeCameraView language={language} />
+                <PrototypeCameraView language={language} onClose={() => setEquipmentView("exterior")} />
               ) : (
                 <>
                   <div className="kp-stage-heading">
@@ -626,6 +672,7 @@ export default function EtchLive() {
             </div>
             {activeView === "cutaway" ? (
               <div className="kp-model-observation-caption">
+                <p>{l("문 열림은 내부 이해를 위한 교육용 연출입니다.", "Door opening is an educational reveal of the interior.", "扉の開閉は内部理解のための教育用演出です。")}</p>
                 <span className="kp-window-led-state">
                   <span
                     className={`kp-status-dot ${fresh && link.frame?.ledCommand === "on" ? "is-amber" : ""}`}
@@ -817,6 +864,18 @@ export default function EtchLive() {
               <p className="kp-error" role="alert">
                 {link.error}
               </p>
+            ) : null}
+            {link.error || link.status === "disconnected" || link.status === "stale" ? (
+              <div className="kp-recovery">
+                <h3>{l("연결 복구", "Restore connection", "接続の復旧")}</h3>
+                <ol>
+                  <li>{l("보드 USB 케이블과 전원을 확인하세요.", "Check the board USB cable and power.", "ボードのUSBケーブルと電源を確認してください。")}</li>
+                  <li>{l("아두이노 시리얼 모니터 등 포트를 쓰는 앱을 닫으세요.", "Close apps using the port, including Serial Monitor.", "シリアルモニターなどポートを使うアプリを閉じてください。")}</li>
+                  <li>{l("다시 연결하거나 모형 없이 체험을 시작하세요.", "Reconnect, or continue with a model-free demo.", "再接続するか、デモを開始してください。")}</li>
+                </ol>
+                <Button variant="outline" className="kp-button kp-secondary" disabled={!link.canSerial || link.status === "connecting"} onClick={() => void link.connectUsb()}>{l("USB 다시 연결", "Reconnect USB", "USB再接続")}</Button>
+                <Button variant="outline" className="kp-button kp-secondary" onClick={link.startDemo}>{l("모형 없이 체험", "Start demo", "デモを開始")}</Button>
+              </div>
             ) : null}
             <div className="kp-input-heading">
               <h3>
