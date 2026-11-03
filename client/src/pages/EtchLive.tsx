@@ -596,19 +596,21 @@ export default function EtchLive() {
                 <PrototypeCameraView language={language} />
               ) : (
                 <>
-                  <span className="kp-stage-note">
-                    {activeView === "cutaway"
-                      ? l(
-                          "교육용 내부 확대 관찰",
-                          "Teaching interior · close observation",
-                          "教育用内部の拡大観察"
-                        )
-                      : l(
-                          "Kiyo 참고 외관 모형",
-                          "Kiyo-inspired exterior model",
-                          "Kiyo参考外観模型"
-                        )}
-                  </span>
+                  <div className="kp-stage-heading">
+                    <span className="kp-stage-note">
+                      {activeView === "cutaway"
+                        ? l(
+                            "교육용 내부 확대 관찰",
+                            "Teaching interior · close observation",
+                            "教育用内部の拡大観察"
+                          )
+                        : l(
+                            "Kiyo 참고 외관 모형",
+                            "Kiyo-inspired exterior model",
+                            "Kiyo参考外観模型"
+                          )}
+                    </span>
+                  </div>
                   <KiyoEquipmentView
                     view={activeView === "cutaway" ? "cutaway" : "exterior"}
                     active={fresh}

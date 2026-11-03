@@ -267,13 +267,32 @@
   background: radial-gradient(ellipse at 50% 55%, #60766713, transparent 70%);
   overflow: hidden;
 }
-.kp-stage-note {
-  position: absolute;
-  top: 19px;
-  right: 24px;
-  font-size: 9px;
-  color: #82978b;
+.kp-stage-heading {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  height: auto;
+  padding: 0 12px 10px;
+}
+.kp-stage-heading > .kp-stage-note {
+  position: static;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.75;
+  color: #c2cba8;
   letter-spacing: 0.3px;
+  text-align: right;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-overflow: clip;
 }
 .kp-equipment-svg {
   display: block;
@@ -1081,11 +1100,6 @@
   .kp-equipment-stage {
     padding: 8px 0 0;
   }
-  .kp-stage-note {
-    font-size: 8px;
-    top: 15px;
-    right: 16px;
-  }
   .kp-equipment-svg {
     margin-top: 22px;
   }
@@ -1240,13 +1254,7 @@
   width: 100%;
   height: auto;
   max-height: 440px;
-  margin: 22px auto 0;
-}
-.kp-integrated-stage .kp-stage-note {
-  top: 18px;
-  right: 24px;
-  font-size: 10px;
-  color: #c2cba8;
+  margin: 0 auto;
 }
 .kp-window-led-state {
   position: absolute;
@@ -1342,12 +1350,7 @@
   }
   .kp-integrated-stage .kp-equipment-svg {
     max-height: 310px;
-    margin-top: 23px;
-  }
-  .kp-integrated-stage .kp-stage-note {
-    top: 16px;
-    right: 16px;
-    font-size: 9px;
+    margin-top: 0;
   }
   .kp-window-led-state {
     font-size: 9px;

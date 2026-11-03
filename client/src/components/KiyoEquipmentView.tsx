@@ -26,7 +26,7 @@ const SIGNALS = [
       "Gas pressure in the chamber volume, not a component. Observe how pressure changes while gas enters and is exhausted below, and when the change begins.",
       "特定の部品ではなく、チャンバー内部空間の気体圧力です。ガス供給と下部排気の間に圧力がどう変化するか、変化の開始時点を観察します。",
     ],
-    position: [59, 112] as const,
+    position: [111, 113] as const,
   },
   {
     id: "gasFlow",
@@ -39,7 +39,7 @@ const SIGNALS = [
       "Gas delivery through the upper inlet and distribution holes. Flow and pressure are different quantities. Compare whether gas delivery changes when the chamber pressure changes.",
       "上部流入管と分配穴から供給するガス量です。流量と圧力は異なります。圧力が変化したときにガス供給量も変わったかを比較します。",
     ],
-    position: [59, 30] as const,
+    position: [120, 17] as const,
   },
   {
     id: "rfPower",
@@ -52,7 +52,7 @@ const SIGNALS = [
       "A conceptual RF supply path and energy-delivery region for the plasma. Observe whether RF power continues or stops and when it changes. LED brightness is not an RF power measurement.",
       "RF供給経路とプラズマへのエネルギー供給領域の概念表示です。RF電力の継続・停止と変化の時点を観察します。LEDの明るさはRF電力測定ではありません。",
     ],
-    position: [17, 100] as const,
+    position: [22, 104] as const,
   },
   {
     id: "chamberAmbientTemp",
@@ -65,7 +65,7 @@ const SIGNALS = [
       "Temperature around the chamber exterior, not the wafer or internal process temperature. Observe gradual rises or stability, and compare its timing with changes in the other quantities.",
       "チャンバー外壁周辺の温度で、ウェーハや内部プロセスの温度ではありません。緩やかな上昇・安定と、他の値が変化する時点との関係を観察します。",
     ],
-    position: [105, 141] as const,
+    position: [170, 124] as const,
   },
 ] as const;
 
@@ -75,7 +75,7 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 function camera(progress: number) {
   const yaw = (mix(-28, -90, progress) * Math.PI) / 180;
   const pitch = mix(0.18, 0, progress);
-  const zoom = mix(1, 2, progress);
+  const zoom = mix(1, 1.82, progress);
   const focus: Point3 = [170 * progress, 8 * progress, 0];
   const project = ([x, y, z]: Point3): Point2 => {
     const dx = x - focus[0],
@@ -88,7 +88,7 @@ function camera(progress: number) {
       230 + (dy * Math.cos(pitch) + depth * Math.sin(pitch)) * zoom,
     ];
   };
-  return { project, zoom, yaw: mix(-28, -90, progress) };
+  return { project, zoom, yaw: mix(-28, -90, progress), pitch };
 }
 
 function polygon(points: Point3[], project: (point: Point3) => Point2) {
@@ -105,6 +105,129 @@ function planeMatrix(
     b = project(horizontal),
     c = project(vertical);
   return `matrix(${b[0] - a[0]} ${b[1] - a[1]} ${c[0] - a[0]} ${c[1] - a[1]} ${a[0]} ${a[1]})`;
+}
+
+/** Native 192 × 208 coordinates match the world-space window without stretching. */
+function ChamberInterior({
+  active,
+  ledOn,
+  highlighted,
+}: {
+  active: boolean;
+  ledOn: boolean;
+  highlighted: KiyoSignal | null;
+}) {
+  const pressure = highlighted === "pressure";
+  const gas = highlighted === "gasFlow";
+  const rf = highlighted === "rfPower";
+  const temperature = highlighted === "chamberAmbientTemp";
+  return (
+    <g
+      data-chamber-coordinate-space="192x208"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect
+        x="38"
+        y="41"
+        width="116"
+        height="137"
+        rx="22"
+        fill="#8d9c8f"
+        stroke="#bbc7b6"
+        strokeWidth="1"
+      />
+      <rect
+        x="48"
+        y="51"
+        width="96"
+        height="117"
+        rx="14"
+        fill="#1a2d25"
+        stroke="#637c68"
+        strokeWidth=".8"
+      />
+      <path
+        d="M48 163v5h96v-5"
+        fill="#6f8775"
+        stroke="#a4b49f"
+        strokeWidth=".8"
+      />
+      <g data-concept-part="gas-inlet">
+        <path
+          d="M151 17H96v47M68 66h56"
+          fill="none"
+          stroke={gas ? SIGNALS[1].color : "#9dae9f"}
+          strokeWidth={gas ? 3.4 : 2.8}
+        />
+        {[76, 96, 116].map(x => (
+          <circle key={x} cx={x} cy="68" r="1.5" fill="#10281c" />
+        ))}
+        <g
+          fill="none"
+          stroke={gas ? SIGNALS[1].color : "#719779"}
+          strokeWidth="1"
+        >
+          {[76, 96, 116].map(x => (
+            <path key={x} d={`M${x} 76v9m-3-3 3 3 3-3`} />
+          ))}
+        </g>
+      </g>
+      <rect
+        x="54"
+        y="89"
+        width="84"
+        height="37"
+        rx="9"
+        fill={SIGNALS[0].color}
+        opacity={pressure ? 0.13 : 0}
+      />
+      <g data-concept-part="rf-energy-supply">
+        <path
+          d="M13 104h55"
+          fill="none"
+          stroke={rf ? SIGNALS[2].color : "#958ca5"}
+          strokeWidth={rf ? 2.6 : 1.6}
+        />
+        <ellipse
+          cx="96"
+          cy="106"
+          rx="29"
+          ry="14"
+          fill={SIGNALS[2].color}
+          opacity={rf ? 0.17 : 0.04}
+        />
+      </g>
+      <rect
+        x="72"
+        y="103"
+        width="48"
+        height="7"
+        rx="3.5"
+        fill={SIGNALS[0].color}
+        opacity={active && ledOn ? 0.45 : 0.06}
+      />
+      <g data-concept-part="wafer-support">
+        <rect x="62" y="131" width="68" height="3" rx="1" fill="#dbe4d8" />
+        <rect x="69" y="135" width="54" height="10" rx="2" fill="#adbcab" />
+        <path d="M88 145h16v23H88z" fill="#7f9785" />
+      </g>
+      <path
+        data-concept-part="exhaust-path"
+        d="M133 158h35v32"
+        fill="none"
+        stroke="#a6b7a7"
+        strokeWidth="3"
+      />
+      <path
+        d="M162 95v42"
+        fill="none"
+        stroke={SIGNALS[3].color}
+        strokeWidth="3"
+        opacity={temperature ? 0.9 : 0.12}
+      />
+    </g>
+  );
 }
 
 /** One cabinet; the camera turns left and zooms into its teaching window. */
@@ -162,12 +285,8 @@ export default function KiyoEquipmentView({
     return () => cancelAnimationFrame(frame);
   }, [inside, reduceMotion]);
 
-  const { project, zoom, yaw } = camera(progress);
-  const windowPoint = (x: number, y: number): Point3 => [
-    170,
-    -96 + y,
-    96 - (192 * x) / 118,
-  ];
+  const { project, zoom, yaw, pitch } = camera(progress);
+  const windowPoint = (x: number, y: number): Point3 => [170, -96 + y, 96 - x];
   const sideMatrix = planeMatrix(
     windowPoint(0, 0),
     windowPoint(1, 0),
@@ -179,9 +298,6 @@ export default function KiyoEquipmentView({
     [-169, -150, 120],
     [-170, -149, 120],
     project
-  );
-  const chosenPoint = project(
-    windowPoint(signal.position[0], signal.position[1])
   );
   const select = (next: KiyoSignal) => {
     setLocalSignal(next);
@@ -205,6 +321,7 @@ export default function KiyoEquipmentView({
           data-camera-yaw={yaw.toFixed(1)}
           data-camera-zoom={zoom.toFixed(2)}
           data-camera-progress={progress.toFixed(3)}
+          data-camera-pitch={pitch.toFixed(3)}
         >
           <title id={`${id}-title`}>
             {inside
@@ -235,26 +352,9 @@ export default function KiyoEquipmentView({
               <stop stopColor="#9cab95" />
               <stop offset="1" stopColor="#c5cfb8" />
             </linearGradient>
-            <linearGradient id={`${id}-vessel`}>
-              <stop stopColor="#819b86" />
-              <stop offset=".4" stopColor="#d2dfcd" />
-              <stop offset="1" stopColor="#8da58c" />
-            </linearGradient>
             <clipPath id={`${id}-window`}>
-              <rect width="118" height="208" rx="3" />
+              <rect width="192" height="208" rx="5" />
             </clipPath>
-            <pattern
-              id={`${id}-wall-section`}
-              width="5"
-              height="5"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M-1 1 1-1m-1 6 6-6m-1 6 2-2"
-                stroke="#657d62"
-                strokeWidth=".7"
-              />
-            </pattern>
           </defs>
           <ellipse
             cx="310"
@@ -290,270 +390,33 @@ export default function KiyoEquipmentView({
             fill={`url(#${id}-side)`}
             stroke="#8f9f89"
           />
-          <g transform={sideMatrix} data-side-window-plane="true">
+          <g
+            transform={sideMatrix}
+            data-side-window-plane="true"
+            data-native-width="192"
+            data-native-height="208"
+          >
             <rect
-              width="118"
+              width="192"
               height="208"
-              rx="3"
+              rx="5"
               fill={inside ? "#12261b" : "#afbea6"}
               stroke="#b2c5a5"
-              strokeWidth="2.5"
+              strokeWidth="1.5"
             />
             {inside ? (
               <g clipPath={`url(#${id}-window)`}>
-                <path
-                  d="M16 186V58c0-18 21-28 43-28s43 10 43 28v128z"
-                  fill={`url(#${id}-vessel)`}
-                  stroke="#a0ba96"
-                  strokeWidth="2"
+                <ChamberInterior
+                  active={active}
+                  ledOn={ledOn}
+                  highlighted={showSignals ? selected : null}
                 />
-                <path
-                  d="M25 184V65c0-12 17-21 34-21s34 9 34 21v119z"
-                  fill="#203a27"
-                  stroke="#8da680"
-                />
-                <path
-                  d="M16 186V58c0-18 21-28 43-28s43 10 43 28v128zM25 178V65c0-12 17-21 34-21s34 9 34 21v113z"
-                  fill={`url(#${id}-wall-section)`}
-                  fillRule="evenodd"
-                  opacity=".85"
-                />
-                <path
-                  d="M25 177h68v7H25z"
-                  fill="#a5b49b"
-                  stroke="#6b8664"
-                  strokeWidth="1"
-                />
-                <path d="M30 180h58" stroke="#69865e" strokeWidth=".6" />
-                {[42, 76].map(x => (
-                  <circle
-                    key={x}
-                    cx={x}
-                    cy="38"
-                    r="1.9"
-                    fill="#5f785d"
-                    stroke="#d5dfc8"
-                    strokeWidth=".7"
-                  />
-                ))}
-                <path
-                  d="M59 59V10h31"
-                  fill="none"
-                  stroke={
-                    showSignals && selected === "gasFlow"
-                      ? SIGNALS[1].color
-                      : "#bdd0ac"
-                  }
-                  strokeWidth="7"
-                />
-                <path
-                  d="M59 59V10h31"
-                  fill="none"
-                  stroke="#466448"
-                  strokeWidth="3"
-                />
-                <path
-                  d="M29 61h60"
-                  stroke={
-                    showSignals && selected === "gasFlow"
-                      ? SIGNALS[1].color
-                      : "#b6cfa7"
-                  }
-                  strokeWidth="6"
-                />
-                {[34, 44, 54, 64, 74, 84].map(x => (
-                  <circle key={x} cx={x} cy="64" r="1.4" fill="#132e21" />
-                ))}
-                <g
-                  fill="none"
-                  stroke={
-                    showSignals && selected === "gasFlow"
-                      ? SIGNALS[1].color
-                      : "#83a87a"
-                  }
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                >
-                  <path d="M59 16v12m-3-4 3 4 3-4" />
-                  {[36, 59, 82].map(x => (
-                    <path key={x} d={`M${x} 70v13m-3-4 3 4 3-4`} />
-                  ))}
-                </g>
-                <g data-concept-part="rf-energy-supply">
-                  <rect
-                    x="2"
-                    y="90"
-                    width="12"
-                    height="22"
-                    rx="2"
-                    fill="#28332b"
-                    stroke={
-                      showSignals && selected === "rfPower"
-                        ? SIGNALS[2].color
-                        : "#a59cba"
-                    }
-                    strokeWidth="1"
-                  />
-                  <path
-                    d="M4 101q2-8 4 0t4 0"
-                    fill="none"
-                    stroke="#bba9d3"
-                    strokeWidth="1"
-                  />
-                  <path
-                    d="M14 101h14l5-4 5 8 5-8 5 8 5-4h19"
-                    fill="none"
-                    stroke={
-                      showSignals && selected === "rfPower"
-                        ? SIGNALS[2].color
-                        : "#9a8eaf"
-                    }
-                    strokeWidth={
-                      showSignals && selected === "rfPower" ? 2.6 : 1.4
-                    }
-                  />
-                  <path
-                    d="m69 98 5 3-5 3"
-                    fill="none"
-                    stroke={
-                      showSignals && selected === "rfPower"
-                        ? SIGNALS[2].color
-                        : "#9a8eaf"
-                    }
-                    strokeWidth="1.2"
-                  />
-                  <ellipse
-                    cx="59"
-                    cy="111"
-                    rx="31"
-                    ry="18"
-                    fill="none"
-                    stroke={
-                      showSignals && selected === "rfPower"
-                        ? SIGNALS[2].color
-                        : "#7d758e"
-                    }
-                    strokeWidth={
-                      showSignals && selected === "rfPower" ? 1.6 : 0.6
-                    }
-                    opacity={showSignals && selected === "rfPower" ? 0.9 : 0.35}
-                  />
-                </g>
-                <ellipse
-                  cx="59"
-                  cy="112"
-                  rx="30"
-                  ry="25"
-                  fill={
-                    showSignals && selected === "pressure"
-                      ? SIGNALS[0].color
-                      : "transparent"
-                  }
-                  opacity=".18"
-                />
-                <ellipse
-                  cx="59"
-                  cy="113"
-                  rx="30"
-                  ry="15"
-                  fill={active && ledOn ? "#79cce2" : "#4c7464"}
-                  opacity={active && ledOn ? ".42" : ".08"}
-                />
-                <path
-                  d="M33 111h52m-45-7h38m-31 15h24"
-                  stroke={active && ledOn ? "#a7e4ed" : "#648666"}
-                  strokeWidth="1.6"
-                  opacity={active && ledOn ? ".9" : ".2"}
-                />
-                <ellipse
-                  cx="59"
-                  cy="136"
-                  rx="31"
-                  ry="2.8"
-                  fill="#91c6cb"
-                  stroke="#d6eff0"
-                  strokeWidth=".8"
-                />
-                <path
-                  d="M28 136v2.2c0 3.7 62 3.7 62 0V136"
-                  fill="#447981"
-                  stroke="#b8d6d4"
-                  strokeWidth=".6"
-                />
-                <path
-                  d="M30 143v8c0 8 58 8 58 0v-8z"
-                  fill="#9fb59a"
-                  stroke="#789770"
-                />
-                <ellipse
-                  cx="59"
-                  cy="143"
-                  rx="29"
-                  ry="4"
-                  fill="#c1cbb3"
-                  stroke="#738c69"
-                />
-                <path d="M49 158h20v19H49z" fill="#b2c2a2" stroke="#7c9c6e" />
-                <path
-                  d="M52 161h14m-14 4h14m-14 4h14"
-                  stroke="#839976"
-                  strokeWidth=".7"
-                />
-                <path
-                  d="M82 168h27v24H87"
-                  fill="none"
-                  stroke="#a2bc94"
-                  strokeWidth="7"
-                />
-                <path
-                  d="M82 168h27v24H87"
-                  fill="none"
-                  stroke="#476b40"
-                  strokeWidth="3"
-                />
-                <g
-                  data-concept-part="exhaust-path"
-                  fill="none"
-                  stroke="#85b6ac"
-                  strokeWidth="1.1"
-                >
-                  <path d="M84 168h16m-4-3 4 3-4 3M109 186v5m0 1H90m4-3-4 3 4 3" />
-                  <path
-                    d="M105 176l8 7v-7l-8 7z"
-                    fill="#5b806c"
-                    stroke="#c2d5ba"
-                  />
-                </g>
-                {showSignals && selected === "chamberAmbientTemp" ? (
-                  <path
-                    d="M105 91v77"
-                    stroke={SIGNALS[3].color}
-                    strokeWidth="5"
-                    strokeLinecap="round"
-                  />
-                ) : null}
-                <path
-                  d="M108 106q-3 4 0 8t0 8m5-8q-3 4 0 8t0 8"
-                  fill="none"
-                  stroke={
-                    showSignals && selected === "chamberAmbientTemp"
-                      ? SIGNALS[3].color
-                      : "#93a183"
-                  }
-                  strokeWidth="1"
-                />
-                <path d="M10 191h98" stroke="#6f8e65" strokeWidth="4" />
               </g>
             ) : (
               <>
-                <path d="M12 24h94M12 184h94" stroke="#9baf8d" />
-                <path d="M18 91v18" stroke="#6e8662" strokeWidth="4" />
+                <path d="M18 24h156M18 184h156" stroke="#9baf8d" />
+                <path d="M28 91v18" stroke="#6e8662" strokeWidth="4" />
               </>
-            )}
-            {[7, 111].flatMap(x =>
-              [7, 201].map(y => (
-                <circle key={`${x}-${y}`} cx={x} cy={y} r="2" fill="#d4dec7" />
-              ))
             )}
           </g>
           <g transform={frontMatrix}>
@@ -706,32 +569,6 @@ export default function KiyoEquipmentView({
                   </g>
                 );
               })}
-              <path
-                d={`M${chosenPoint[0]} ${chosenPoint[1]} L${Math.min(520, Math.max(100, chosenPoint[0]))} 54 L26 54`}
-                fill="none"
-                stroke={signal.color}
-                strokeWidth="1.3"
-                opacity=".75"
-              />
-              <rect
-                x="18"
-                y="19"
-                width="280"
-                height="35"
-                rx="4"
-                fill="#122019"
-                stroke="#52634d"
-              />
-              <text
-                x="29"
-                y="41"
-                fill={signal.color}
-                fontSize="13"
-                fontWeight="600"
-              >
-                {signal.number}.{" "}
-                {l(signal.name[0], signal.name[1], signal.name[2])}
-              </text>
             </g>
           ) : null}
         </svg>
