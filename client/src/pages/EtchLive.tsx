@@ -2,13 +2,11 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Activity,
   ArrowUpRight,
-  Check,
   ChevronRight,
   CircleHelp,
   Download,
   Link2,
   Play,
-  Radio,
   RotateCcw,
   Unplug,
   Usb,
@@ -27,9 +25,13 @@ import AccountLogout from "../components/AccountSession";
 import KiyoEquipmentView, {
   type KiyoSignal,
 } from "../components/KiyoEquipmentView";
-import PrototypeCameraView from "../components/PrototypeCameraView";
+import BoothCameraOverlay from "../components/BoothCameraOverlay";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
-import { usePrototypeLink } from "../hooks/usePrototypeLink";
+import { useBoothDevice } from "../hooks/useBoothDevice";
+import {
+  applyBoothAction, BOOTH_CONTROL_LIMITS, BOOTH_SIGNALS, createBoothState,
+  getBoothSnapshot, stepBoothState, type BoothAction, type BoothControlKey, type SignalKey,
+} from "@shared/boothExperience";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import "./prototype-dashboard.css";
 
@@ -54,7 +56,7 @@ type EventKind =
   | "disconnected"
   | "reset"
   | "note";
-type EventItem = { id: number; at: number; kind: EventKind; source: string };
+type EventItem = { id: number; at: number; kind: EventKind; source: string; message?: string };
 type Observation = {
   id: number;
   at: number;
@@ -88,7 +90,7 @@ const CHANNELS: {
     name: ["가스 유량", "Gas flow", "ガス流量"],
     unit: "sccm",
     baseline: 100,
-    domain: [90, 110],
+    domain: [65, 135],
   },
   {
     id: "rf",
@@ -96,7 +98,7 @@ const CHANNELS: {
     name: ["RF 전력", "RF power", "RF電力"],
     unit: "W",
     baseline: 500,
-    domain: [0, 550],
+    domain: [0, 750],
   },
   {
     id: "temperature",
@@ -104,7 +106,7 @@ const CHANNELS: {
     name: ["챔버 주변 온도", "Chamber-area temperature", "チャンバー周辺温度"],
     unit: "°C",
     baseline: 35,
-    domain: [30, 40],
+    domain: [25, 45],
   },
 ];
 
@@ -117,36 +119,23 @@ const clock = (seconds: number) =>
 const displayValue = (value: number, channel: Channel) =>
   value.toFixed(channel === "rf" ? 0 : 1);
 
-/** Educational process illustration, derived from a button. These are never sensor measurements. */
-function illustrativeProcess(frame: {
-  faultActive: boolean;
-  uptimeMs: number;
-}) {
-  const t = frame.uptimeMs / 1000;
-  return {
-    pressure: frame.faultActive
-      ? 36 + Math.sin(t * 0.24) * 0.6
-      : 20 + Math.sin(t * 0.31) * 0.25,
-    flow: 100 + Math.sin(t * 0.18) * 0.4,
-    rf: frame.faultActive ? 0 : 500 + Math.sin(t * 0.23) * 1.5,
-    temperature: 35 + Math.sin(t * 0.09) * 0.12 + (frame.faultActive ? 0.2 : 0),
-  };
-}
+const SIGNAL_FOR_CHANNEL: Record<Channel, SignalKey> = {
+  pressure: "pressure", flow: "gasFlow", rf: "rfPower", temperature: "chamberAmbientTemp",
+};
+const CONTROL_ORDER: BoothControlKey[] = ["matching", "rfSetpoint", "gasSetpoint", "exhaustValve"];
 
+/** The existing /live screen owns one scenario for the model, webcam values, charts and USB lamp. */
 export default function EtchLive() {
   const [language, setLanguage] = useProductLanguage();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
-  const link = usePrototypeLink();
-  const [equipmentView, setEquipmentView] = useState<
-    "exterior" | "cutaway" | "camera"
-  >("exterior");
-  const [selectedModelSignal, setSelectedModelSignal] =
-    useState<ModelSignal | null>(null);
-  const [pageVisible, setPageVisible] = useState(
-    () => typeof document === "undefined" || !document.hidden
-  );
+  const device = useBoothDevice();
+  const [engine, setEngine] = useState(() => createBoothState());
+  const snapshot = useMemo(() => getBoothSnapshot(engine), [engine]);
+  const act = (action: BoothAction) => setEngine(previous => applyBoothAction(previous, action));
+  const [equipmentView, setEquipmentView] = useState<"exterior" | "cutaway" | "camera">("exterior");
+  const [selectedModelSignal, setSelectedModelSignal] = useState<ModelSignal | null>(null);
+  const [pageVisible, setPageVisible] = useState(() => typeof document === "undefined" || !document.hidden);
   const [points, setPoints] = useState<Point[]>([]);
-  const [events, setEvents] = useState<EventItem[]>([]);
   const [notes, setNotes] = useState<Observation[]>([]);
   const [fact, setFact] = useState("");
   const [cause, setCause] = useState("");
@@ -154,331 +143,137 @@ export default function EtchLive() {
   const [notice, setNotice] = useState("");
   const [restartPending, setRestartPending] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const [showHint, setShowHint] = useState(false);
   const [now, setNow] = useState(Date.now);
-  const previous = useRef<{
-    mode: string;
-    seq: number;
-    uptimeMs: number;
-    fault: boolean;
-  } | null>(null);
-  const origin = useRef(0);
-  const lastStatus = useRef(link.status);
-  const eventId = useRef(0);
   const noteId = useRef(0);
-  const fresh =
-    link.status === "live" &&
-    link.mode !== "disconnected" &&
-    link.frame !== null;
-  const demo = link.mode === "demo";
-  const current = useMemo(
-    () => (fresh && link.frame ? illustrativeProcess(link.frame) : null),
-    [fresh, link.frame]
-  );
-  const usbFresh = link.mode === "usb" && fresh;
-  const cameraAllowed = usbFresh && pageVisible;
-  // A freshness change hides/unmounts the camera immediately, before effects run.
-  const activeView =
-    equipmentView === "camera" && !cameraAllowed ? "exterior" : equipmentView;
+  const sessionStart = useRef(Date.now());
+  const lastTick = useRef(0);
+  const lastSample = useRef(-500);
+  const fresh = true; // These are local educational values, independent of USB availability.
+  const demo = !device.connected;
+  const usbFresh = device.connected;
+  const devicePending = device.status === "connecting" || device.status === "waiting";
+  const cameraAllowed = pageVisible;
+  const activeView = equipmentView === "camera" && !cameraAllowed ? "exterior" : equipmentView;
   const cameraActive = activeView === "camera" && cameraAllowed;
-  const modelProcessValues =
-    demo && fresh && activeView === "cutaway" && current
-      ? {
-          pressure: current.pressure,
-          gasFlow: current.flow,
-          rfPower: current.rf,
-          chamberAmbientTemp: current.temperature,
-        }
-      : null;
-  const elapsed = points.at(-1)?.elapsed ?? 0;
-  const lastAge =
-    link.lastReceivedAt === null
-      ? null
-      : Math.max(0, Math.floor((now - link.lastReceivedAt) / 1000));
-  const sourceLabel = demo
-    ? l("모형 없이 체험", "Model-free demo", "模型なしの体験")
-    : link.mode === "usb"
-      ? l("USB 모형 입력", "USB model input", "USB模型入力")
-      : l("입력 없음", "No input", "入力なし");
-  const statusLabel =
-    link.status === "connecting"
-      ? l("USB 연결 중", "Connecting USB", "USB接続中")
-      : link.status === "waiting"
-        ? l("모형 데이터 대기", "Waiting for model data", "模型データを待機")
-        : fresh
-          ? demo
-            ? l("모의 체험 중", "Demo running", "模擬体験中")
-            : l(
-                "모형 입력 수신 중",
-                "Receiving model input",
-                "模型入力を受信中"
-              )
-          : link.status === "stale"
-            ? l(
-                "수신 지연 · 값 확인 불가",
-                "Data delayed · values unavailable",
-                "受信遅延・値を確認できません"
-              )
-            : link.status === "disconnected"
-              ? l("연결 끊김", "Connection lost", "接続が切れました")
-              : link.status === "error"
-                ? l(
-                    "연결 확인 필요",
-                    "Check connection",
-                    "接続を確認してください"
-                  )
-                : l("모형 미연결", "Model disconnected", "模型未接続");
+  const modelProcessValues = snapshot.values;
+  const current = useMemo(() => ({
+    pressure: snapshot.values.pressure, flow: snapshot.values.gasFlow,
+    rf: snapshot.values.rfPower, temperature: snapshot.values.chamberAmbientTemp,
+  }), [snapshot.values]);
+  const elapsed = snapshot.elapsedMs / 1000;
+  const missionActive = snapshot.mission.status === "active";
+  const missionFinished = snapshot.mode === "mission" && ["won", "failed"].includes(snapshot.mission.status);
+  const anyAlarm = Object.values(snapshot.alarms).some(Boolean);
+  const sourceLabel = usbFresh
+    ? l("실물 램프 연동 · 모의 공정값", "Lamp linked · simulated process", "模型ランプ連動・模擬プロセス値")
+    : l("화면 모의 체험", "Screen simulation", "画面での模擬体験");
+  const statusLabel = snapshot.mode === "mission" && snapshot.mission.status === "won"
+    ? l("복구 미션 성공", "Recovery mission completed", "復旧ミッション成功")
+    : snapshot.mode === "mission" && snapshot.mission.status === "failed"
+      ? l("미션 시간 종료 · 다시 도전해요", "Time is up · try again", "時間終了・再挑戦しましょう")
+      : snapshot.phase === "cancelled"
+        ? l("미션 중단 · 다시 시작할 수 있어요", "Mission cancelled · ready to restart", "ミッション中断・再開できます")
+        : snapshot.phase === "stabilizing"
+        ? l("정상 상태 유지 확인 중", "Confirming stable operation", "正常状態の維持を確認中")
+        : snapshot.alarms.rfPower
+          ? l("RF가 불안정해요", "RF is unstable", "RFが不安定です")
+          : anyAlarm
+            ? l("정상 범위를 벗어났어요", "Outside the normal range", "正常範囲を外れています")
+            : l("정상 상태", "Normal operation", "正常状態");
+  const lastAge = device.lastReceivedAt === null ? null : Math.max(0, Math.floor((now - device.lastReceivedAt) / 1000));
+  const events: EventItem[] = snapshot.events.slice(-20).reverse().map(event => ({
+    id: event.id, at: sessionStart.current + event.atMs,
+    kind: event.type === "fault" ? "fault" : event.type === "clear" || event.type === "success" ? "normal" : event.type === "reset" ? "reset" : "note",
+    source: "demo", message: language === "ko" ? event.message : event.type === "control"
+      ? l(event.message, `${event.control}: ${event.value}`, `${event.control}: ${event.value}`)
+      : ({
+          fault: l(event.message, "Fault injected · RF matching disturbed", "異常注入・RFマッチングの変動"),
+          clear: l(event.message, "Fault cleared", "異常解除"),
+          mission: l(event.message, "Recovery mission started", "復旧ミッション開始"),
+          success: l(event.message, "Recovery mission completed", "復旧ミッション成功"),
+          timeout: l(event.message, "Mission time expired", "ミッション時間終了"),
+          reset: l(event.message, "Controls reset", "設定を初期化"),
+          mode: l(event.message, "Experience mode changed", "体験モード変更"),
+        } as Record<string, string>)[event.type] ?? event.message,
+  }));
 
   useEffect(() => {
+    lastTick.current = performance.now();
+    const timer = window.setInterval(() => {
+      const time = performance.now();
+      const dt = time - lastTick.current;
+      lastTick.current = time;
+      if (!document.hidden) setEngine(previous => stepBoothState(previous, dt));
+      if (!document.hidden) setNow(Date.now());
+    }, 100);
     const onVisibilityChange = () => {
       const visible = !document.hidden;
+      lastTick.current = performance.now();
       setPageVisible(visible);
-      if (!visible)
-        setEquipmentView(view => (view === "camera" ? "exterior" : view));
+      if (!visible) setEquipmentView(view => view === "camera" ? "exterior" : view);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisibilityChange); };
   }, []);
   useEffect(() => {
-    if (!cameraAllowed)
-      setEquipmentView(view => (view === "camera" ? "exterior" : view));
-  }, [cameraAllowed]);
-  useEffect(() => {
-    if (!demo) setSelectedModelSignal(null);
-  }, [demo]);
-  useEffect(() => {
-    document.title = tr(
-      language,
-      "Kiyo 참고 모형 관찰 | SemiGuard",
-      "Kiyo-inspired model observation | SemiGuard",
-      "Kiyo参考模型の観察 | SemiGuard"
-    );
-  }, [language]);
-  useEffect(() => {
-    if (link.lastReceivedAt === null) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [link.lastReceivedAt === null]);
-  useEffect(() => {
-    if (!fresh || !link.frame) return;
-    const frame = link.frame;
-    const before = previous.current;
-    if (
-      before?.mode === link.mode &&
-      before.seq === frame.seq &&
-      before.uptimeMs === frame.uptimeMs
-    )
-      return;
-    const newRun =
-      !before || before.mode !== link.mode || frame.uptimeMs < before.uptimeMs;
-    if (newRun) origin.current = frame.uptimeMs;
+    if (!document.hidden) device.sendState({ lampBrightness: snapshot.lampBrightness, faultActive: snapshot.faultActive });
+    if (snapshot.elapsedMs < lastSample.current) {
+      lastSample.current = -500;
+      setPoints([]);
+    }
+    if (snapshot.elapsedMs - lastSample.current < 500) return;
+    lastSample.current = snapshot.elapsedMs;
     const point: Point = {
-      elapsed: Math.max(0, (frame.uptimeMs - origin.current) / 1000),
-      seq: frame.seq,
-      source: link.mode === "usb" ? "usb" : "demo",
-      ...illustrativeProcess(frame),
-      faultActive: frame.faultActive,
+      elapsed: snapshot.elapsedMs / 1000, seq: Math.floor(snapshot.elapsedMs / 100), source: "demo",
+      pressure: snapshot.values.pressure, flow: snapshot.values.gasFlow,
+      rf: snapshot.values.rfPower, temperature: snapshot.values.chamberAmbientTemp,
+      faultActive: snapshot.faultActive,
     };
-    setPoints(list => (newRun ? [point] : [...list, point].slice(-MAX_POINTS)));
-    const kind: EventKind | null = newRun
-      ? link.mode === "demo"
-        ? "demo"
-        : "connected"
-      : before.fault !== frame.faultActive
-        ? frame.faultActive
-          ? "fault"
-          : "normal"
-        : null;
-    if (kind) {
-      const item: EventItem = {
-        id: ++eventId.current,
-        at: Date.now(),
-        kind,
-        source: link.mode,
-      };
-      setEvents(list => [item, ...list].slice(0, 20));
-    }
-    previous.current = {
-      mode: link.mode,
-      seq: frame.seq,
-      uptimeMs: frame.uptimeMs,
-      fault: frame.faultActive,
-    };
-    setNow(Date.now());
-  }, [fresh, link.frame, link.mode]);
+    setPoints(previous => [...previous, point].slice(-MAX_POINTS));
+  }, [snapshot.elapsedMs, snapshot.lampBrightness, snapshot.faultActive, snapshot.values, device.sendState]);
   useEffect(() => {
-    if (lastStatus.current === link.status) return;
-    const kind: EventKind | null =
-      link.status === "stale"
-        ? "stale"
-        : link.status === "disconnected"
-          ? "disconnected"
-          : null;
-    if (kind) {
-      const item: EventItem = {
-        id: ++eventId.current,
-        at: Date.now(),
-        kind,
-        source: link.mode,
-      };
-      setEvents(list => [item, ...list].slice(0, 20));
-    }
-    lastStatus.current = link.status;
-  }, [link.status, link.mode]);
-
-  const eventName = (kind: EventKind) =>
-    ({
-      connected: l(
-        "USB 모형 입력 수신 시작",
-        "USB model input received",
-        "USB模型入力の受信開始"
-      ),
-      demo: l(
-        "모형 없는 체험 시작",
-        "Model-free demo started",
-        "模型なしの体験を開始"
-      ),
-      fault: l(
-        "이상 버튼 입력 · 모의 압력 상승 / RF 정지",
-        "Fault input · simulated pressure rises / RF stops",
-        "異常ボタン入力・模擬圧力上昇／RF停止"
-      ),
-      normal: l(
-        "이상 입력 해제 · 모의 정상 상태",
-        "Fault input cleared · normal illustration",
-        "異常入力解除・模擬正常状態"
-      ),
-      stale: l(
-        "새 입력 없음 · 현재 값 표시 중단",
-        "No new input · current values hidden",
-        "新しい入力なし・現在値の表示を中断"
-      ),
-      disconnected: l(
-        "모형 연결 끊김",
-        "Model connection lost",
-        "模型の接続が切れました"
-      ),
-      reset: l("초기화 요청", "Reset requested", "初期化を要求"),
-      note: l("관찰 근거 기록", "Observation recorded", "観察根拠を記録"),
-    })[kind];
+    document.title = tr(language, "식각 모형 체험 | SemiGuard", "Etch model experience | SemiGuard", "エッチング模型体験 | SemiGuard");
+  }, [language]);
 
   async function restartExperience() {
     if (restarting) return;
     setRestarting(true);
     setEquipmentView("exterior");
-    let boardReset = true;
-    try {
-      if (usbFresh) await link.reset();
-    } catch {
-      boardReset = false;
-    }
-    lastStatus.current = "disconnected";
-    await link.disconnect();
-    previous.current = null;
-    origin.current = 0;
-    eventId.current = 0;
-    noteId.current = 0;
-    setPoints([]);
-    setEvents([]);
-    setNotes([]);
-    setFact("");
-    setCause("");
-    setNext("");
-    setSelectedModelSignal(null);
-    setRestartPending(false);
-    setRestarting(false);
-    setNotice(boardReset
-      ? l("체험을 초기화했습니다. USB 연결 또는 모형 없이 체험을 선택하세요.", "Experience cleared. Connect USB or start a model-free demo.", "体験を初期化しました。USB接続またはデモを選んでください。")
-      : l("화면과 기록을 초기화했습니다. 보드 초기화는 확인되지 않았으니 실물 버튼과 LED를 확인하고 다시 연결하세요.", "Screen and records cleared. Board reset was not confirmed; check the physical button and LED before reconnecting.", "画面と記録を初期化しました。ボードの初期化は未確認です。ボタンとLEDを確認して再接続してください。"));
+    await device.disconnect();
+    setEngine(createBoothState());
+    setPoints([]); setNotes([]); setFact(""); setCause(""); setNext("");
+    noteId.current = 0; sessionStart.current = Date.now(); lastSample.current = -500;
+    setSelectedModelSignal(null); setRestartPending(false); setRestarting(false);
+    setNotice(l("체험 기록과 조절값을 초기화했어요. 모의 체험을 바로 계속할 수 있어요.", "Records and controls cleared. You can continue the simulation.", "記録と設定を初期化しました。模擬体験を続けられます。"));
   }
-
-  async function resetModel() {
-    if (!fresh) return;
-    try {
-      await link.reset();
-      const item: EventItem = {
-        id: ++eventId.current,
-        at: Date.now(),
-        kind: "reset",
-        source: link.mode,
-      };
-      setEvents(list => [item, ...list].slice(0, 20));
-      setNotice(
-        l(
-          "초기화 입력을 확인했습니다.",
-          "Reset input confirmed.",
-          "初期化入力を確認しました。"
-        )
-      );
-    } catch {
-      setNotice(
-        l(
-          "초기화를 확인하지 못했습니다. 연결과 모형 입력을 확인하세요.",
-          "Reset was not confirmed. Check the connection and model input.",
-          "初期化を確認できませんでした。接続と模型入力を確認してください。"
-        )
-      );
-    }
+  function resetModel() {
+    act({ type: "reset" });
+    setNotice(l("조절값을 초기화했어요. 진행 중인 미션은 중단돼요.", "Controls reset. An active mission is cancelled.", "設定を初期化しました。進行中のミッションは中断されます。"));
   }
   function recordObservation(event: FormEvent) {
     event.preventDefault();
-    if (!fresh || !link.frame || !current || !fact.trim()) return;
-    const note = {
-      id: ++noteId.current,
-      at: Date.now(),
-      source: link.mode,
-      fact: fact.trim(),
-      cause: cause.trim(),
-      next: next.trim(),
-      frameSeq: link.frame.seq,
-      process: current,
+    if (!fact.trim()) return;
+    const note: Observation = {
+      id: ++noteId.current, at: Date.now(), source: "demo",
+      fact: fact.trim(), cause: cause.trim(), next: next.trim(),
+      frameSeq: Math.floor(snapshot.elapsedMs / 100), process: current,
     };
-    setNotes(list => [note, ...list].slice(0, 30));
-    const item: EventItem = {
-      id: ++eventId.current,
-      at: note.at,
-      kind: "note",
-      source: link.mode,
-    };
-    setEvents(list => [item, ...list].slice(0, 20));
-    setFact("");
-    setCause("");
-    setNext("");
-    setNotice(
-      l(
-        "관찰 근거를 이 화면에 기록했습니다.",
-        "Observation recorded in this page.",
-        "観察根拠をこの画面に記録しました。"
-      )
-    );
+    setNotes(previous => [note, ...previous].slice(0, 30));
+    setFact(""); setCause(""); setNext("");
+    setNotice(l("선택한 관찰 메모를 기록했어요.", "Optional observation recorded.", "観察メモを記録しました。"));
   }
   function exportRecord() {
     const record = {
-      kind: "semiguard-prototype-observation",
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      currentConnectionMode: link.mode,
-      streamSource: points.at(-1)?.source ?? null,
+      kind: "semiguard-booth-experience", version: 2, exportedAt: new Date().toISOString(),
       processValues: "educational-simulation-not-physical-measurements",
-      points,
-      events,
-      observations: notes,
+      physicalLampConnected: device.connected, mission: snapshot.mission,
+      controls: snapshot.controls, points, events: snapshot.events, observations: notes,
     };
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(record, null, 2)], { type: "application/json" })
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "semiguard-model-observation.json";
-    a.click();
+    const url = URL.createObjectURL(new Blob([JSON.stringify(record, null, 2)], { type: "application/json" }));
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = "semiguard-experience-record.json"; anchor.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setNotice(
-      l(
-        "입력 출처와 모의 공정값을 구분한 기록을 내려받았습니다.",
-        "Downloaded the record with its input source and simulated process labels.",
-        "入力元と模擬プロセス値を区別した記録をダウンロードしました。"
-      )
-    );
+    setNotice(l("체험 기록을 내려받았어요.", "Experience record downloaded.", "体験記録をダウンロードしました。"));
   }
 
   return (
@@ -525,9 +320,9 @@ export default function EtchLive() {
             </h1>
             <p className="kp-subtitle">
               {l(
-                "모형의 변화를 보고, 판단의 근거를 남기세요.",
-                "Observe the model. Leave evidence for your reasoning.",
-                "模型の変化を観察し、判断の根拠を残しましょう。"
+                "이상을 주입하고 직접 조절하며 정상 상태를 되찾아보세요.",
+                "Inject a fault, adjust the controls, and restore normal operation.",
+                "異常を注入し、設定を調整して正常状態に戻しましょう。"
               )}
             </p>
           </div>
@@ -543,7 +338,7 @@ export default function EtchLive() {
         <section className="kp-session-bar" aria-label={l("체험 상태와 초기화", "Experience status and reset", "体験の状態と初期化")}>
           <div>
             <strong>{sourceLabel} · {statusLabel}</strong>
-            <p>{l("압력·가스 유량·RF 전력·온도는 항상 교육용 모의값입니다. 카메라는 실제 영상만 보여줍니다.", "Pressure, gas flow, RF and temperature are always educational simulations. The camera shows live video only.", "圧力・流量・RF・温度は常に教育用の模擬値です。カメラは実際の映像のみを表示します。")}</p>
+            <p>{l("①압력·②가스 유량·③RF 전력·④챔버 주변 온도는 교육용 모의값입니다. 카메라는 실제 영상 위에 같은 모의값을 표시합니다.", "Pressure, gas flow, RF and temperature are always educational simulations. The camera overlays the same simulated values on live video.", "圧力・流量・RF・温度は常に教育用の模擬値です。カメラは実際の映像に同じ模擬値を表示します。")}</p>
           </div>
           <Button variant="outline" className="kp-button kp-secondary" disabled={restarting} onClick={() => setRestartPending(true)}>
             <RotateCcw size={16} aria-hidden="true" />
@@ -602,9 +397,9 @@ export default function EtchLive() {
                 aria-controls="model-illustration"
                 onClick={() => setEquipmentView("cutaway")}
               >
-                {l("교육용 내부 보기", "Teaching interior", "教育用内部表示")}
+                {l("내부 구조 그림", "Interior diagram", "内部構造図")}
               </button>
-              {usbFresh ? (
+              {pageVisible ? (
                 <button
                   id="model-camera-view"
                   className="kp-camera-view-button"
@@ -616,9 +411,9 @@ export default function EtchLive() {
                   }}
                 >
                   {l(
-                    "현재 상태 보기",
-                    "View current state",
-                    "現在の状態を見る"
+                    "내부 보기 · 카메라",
+                    "Look inside · camera",
+                    "内部を見る・カメラ"
                   )}
                 </button>
               ) : null}
@@ -640,7 +435,7 @@ export default function EtchLive() {
               }
             >
               {cameraActive ? (
-                <PrototypeCameraView language={language} onClose={() => setEquipmentView("exterior")} />
+                <BoothCameraOverlay values={snapshot.values} alarms={snapshot.alarms} onClose={() => setEquipmentView("exterior")} />
               ) : (
                 <>
                   <div className="kp-stage-heading">
@@ -661,9 +456,11 @@ export default function EtchLive() {
                   <KiyoEquipmentView
                     view={activeView === "cutaway" ? "cutaway" : "exterior"}
                     active={fresh}
-                    ledOn={fresh && link.frame?.ledCommand === "on"}
+                    ledOn={snapshot.lampBrightness > 0}
+                    lampBrightness={snapshot.lampBrightness}
+                    signalAlarms={snapshot.alarms}
                     language={language}
-                    demo={demo}
+                    demo={true}
                     processValues={modelProcessValues}
                     selectedSignal={selectedModelSignal}
                     onSelectSignal={setSelectedModelSignal}
@@ -675,16 +472,8 @@ export default function EtchLive() {
               <div className="kp-model-observation-caption">
                 <p>{l("문 열림은 내부 이해를 위한 교육용 연출입니다.", "Door opening is an educational reveal of the interior.", "扉の開閉は内部理解のための教育用演出です。")}</p>
                 <span className="kp-window-led-state">
-                  <span
-                    className={`kp-status-dot ${fresh && link.frame?.ledCommand === "on" ? "is-amber" : ""}`}
-                  />
-                  {l("관찰창 LED 명령", "Window LED command", "観察窓LED命令")}{" "}
-                  {fresh
-                    ? link.frame?.ledCommand === "on"
-                      ? "ON"
-                      : "OFF"
-                    : "—"}
-                  {demo ? l(" · 모의", " · DEMO", "・模擬") : ""}
+                  <span className={`kp-status-dot ${snapshot.lampBrightness > 0 ? "is-amber" : ""}`} />
+                  {l("보라색 램프 모의 밝기", "Purple lamp simulation", "紫ランプの模擬明るさ")} {Math.round(snapshot.lampBrightness / 255 * 100)}%
                 </span>
                 {demo ? (
                   <span className="kp-callout-hint">
@@ -700,9 +489,9 @@ export default function EtchLive() {
             <p className="kp-model-scope">
               {cameraActive
                 ? l(
-                    "카메라 영상과 아래의 교육용 모의 공정값은 별도의 정보입니다. 영상으로 압력·유량·RF·온도를 측정하지 않습니다.",
-                    "The camera image and educational process simulations below are separate information. The image does not measure pressure, flow, RF or temperature.",
-                    "カメラ映像と下の教育用模擬プロセス値は別の情報です。映像から圧力・流量・RF・温度を測定しません。"
+                    "실제 카메라 영상 위에 같은 체험의 모의값을 표시합니다. 번호와 값 상자는 촬영 구도에 맞춰 옮길 수 있어요. 영상으로 압력·유량·RF·온도를 측정하지 않습니다.",
+                    "The live camera shows simulated values from this same experience. Move the numbers and value cards to match the view. The image does not measure pressure, flow, RF or temperature.",
+                    "実際のカメラ映像に同じ体験の模擬値を表示します。番号と値の位置を映像に合わせて移動できます。映像から圧力・流量・RF・温度を測定するものではありません。"
                   )
                 : l(
                     "하나의 캐비닛 안에 교육용 챔버와 관찰창을 넣은 구성입니다. 내부 배치는 공정 설명용으로 단순화했으며 실제 Kiyo의 내부 구조·위치를 재현하지 않습니다.",
@@ -734,9 +523,9 @@ export default function EtchLive() {
                 <p>
                   {cameraActive
                     ? l(
-                        "USB 제어보드와 카메라는 별도 장치입니다. 모형을 비추는 카메라를 컴퓨터에 연결한 뒤, 패널의 ‘카메라 켜기’를 눌러 촬영 권한을 허용하고 사용할 카메라를 선택하세요.",
-                        "The USB controller and camera are separate devices. Connect a camera aimed at the model, then use ‘Turn on camera’ in the panel to grant permission and choose the device.",
-                        "USB制御ボードとカメラは別の機器です。模型を映すカメラをパソコンに接続し、パネルの「カメラをオン」で撮影を許可して使用するカメラを選んでください。"
+                        "USB 제어보드와 카메라는 별도 장치입니다. 모형을 비추는 카메라를 컴퓨터에 연결한 뒤, 패널의 카메라 연결 버튼을 눌러 촬영 권한을 허용하고 사용할 카메라를 선택하세요.",
+                        "The USB controller and camera are separate devices. Connect a camera aimed at the model, then use the camera connection button in the panel to grant permission and choose the device.",
+                        "USB制御ボードとカメラは別の機器です。模型を映すカメラをパソコンに接続し、パネルのカメラ接続ボタンで撮影を許可して使用するカメラを選んでください。"
                       )
                     : activeView === "exterior"
                       ? l(
@@ -745,9 +534,9 @@ export default function EtchLive() {
                           "左側操作部と前面ロードポート3基を確認しましょう。ロードポートはウェーハ搬入出の入口です。外観表示灯と赤いボタンは装飾表現で、実際のUSB入力状態とは連動しません。"
                         )
                       : l(
-                          "내부 보기로 전환하면 모형이 회전하고 확대됩니다. 가스 공급·웨이퍼 받침·배기 경로를 살펴보세요. 창 안의 빛은 수신한 LED 명령을 표현하며, 데모의 온도는 웨이퍼 실측 온도가 아닌 ‘챔버 주변 온도’ 모의 값입니다.",
-                          "The model rotates and zooms when you switch to the interior. Explore the gas supply, wafer support and exhaust path. The window light represents the received LED command. Demo temperature is simulated chamber-area temperature, not a wafer measurement.",
-                          "内部表示に切り替えると模型が回転・拡大します。ガス供給・ウェーハ支持部・排気経路を確認しましょう。窓内の光は受信したLED命令の表現で、デモ温度はウェーハ実測値ではなく「チャンバー周辺温度」の模擬値です。"
+                          "내부 보기로 전환하면 모형이 회전하고 확대됩니다. 가스 공급·웨이퍼 받침·배기 경로를 살펴보세요. 창 안의 보라색 빛은 RF 모의 상태와 함께 변하며, 온도는 웨이퍼 실측 온도가 아닌 ‘챔버 주변 온도’ 모의 값입니다.",
+                          "The model rotates and zooms when you switch to the interior. Explore the gas supply, wafer support and exhaust path. The purple window light follows the simulated RF state. Temperature is simulated chamber-area temperature, not a wafer measurement.",
+                          "内部表示に切り替えると模型が回転・拡大します。ガス供給・ウェーハ支持部・排気経路を確認しましょう。窓内の紫色の光は模擬RF状態と連動し、温度はウェーハ実測値ではなく「チャンバー周辺温度」の模擬値です。"
                         )}
                 </p>
               </div>
@@ -777,180 +566,51 @@ export default function EtchLive() {
               ) : null}
             </div>
           </section>
-          <aside
-            className="kp-connection-panel"
-            aria-labelledby="connection-heading"
-          >
+          <aside className="kp-connection-panel kp-experience-panel" aria-labelledby="connection-heading">
             <div className="kp-section-head">
-              <div>
-                <p className="kp-eyebrow">MODEL CONNECTION</p>
-                <h2 id="connection-heading">
-                  {l("모형과 연결하기", "Connect your model", "模型と接続")}
-                </h2>
-              </div>
+              <div><p className="kp-eyebrow">HANDS-ON EXPERIENCE</p><h2 id="connection-heading">{l("직접 조작하고 복구하기", "Adjust and recover", "操作して復旧する")}</h2></div>
               <Link2 size={20} aria-hidden="true" />
             </div>
-            <p className="kp-connection-copy">
-              {l(
-                "모형의 버튼 입력을 화면으로 가져옵니다. 압력·유량·RF·온도는 입력에 반응하는 교육용 모의 값입니다.",
-                "Bring the model's button input to this screen. Pressure, flow, RF and temperature are educational illustrations driven by that input.",
-                "模型のボタン入力を画面に取り込みます。圧力・流量・RF・温度は、その入力に反応する教育用の模擬値です。"
-              )}
-            </p>
-            <div className="kp-connect-actions">
-              <Button
-                className="kp-button kp-primary"
-                onClick={() => {
-                  void link.connectUsb();
-                }}
-                disabled={
-                  !link.canSerial ||
-                  link.status === "connecting" ||
-                  (link.mode === "usb" && (fresh || link.status === "waiting"))
-                }
-                aria-busy={link.status === "connecting" || undefined}
-              >
-                <Usb size={17} aria-hidden="true" />
-                {link.status === "connecting"
-                  ? l("연결 중…", "Connecting…", "接続中…")
-                  : l("USB 모형 연결", "Connect USB model", "USB模型を接続")}
-              </Button>
-              {link.mode !== "disconnected" ? (
-                <Button
-                  className="kp-button kp-secondary"
-                  variant="outline"
-                  onClick={() => {
-                    void link.disconnect();
-                  }}
-                >
-                  <Unplug size={16} aria-hidden="true" />
-                  {l("연결 종료", "Disconnect", "接続を終了")}
-                </Button>
-              ) : null}
-              <button
-                type="button"
-                className="kp-demo-link"
-                onClick={link.startDemo}
-                disabled={demo && fresh}
-              >
-                <Play size={14} aria-hidden="true" />
-                {l("모형 없이 체험", "Try without a model", "模型なしで体験")}
-                {demo && fresh ? (
-                  <Check size={14} aria-hidden="true" />
-                ) : (
-                  <ArrowUpRight size={14} aria-hidden="true" />
-                )}
-              </button>
+            <div className="kp-experience-mode" role="group" aria-label={l("체험 모드", "Experience mode", "体験モード")}>
+              <button type="button" aria-pressed={snapshot.mode === "free"} onClick={() => act({ type: "set-mode", mode: "free" })}>{l("자유 체험", "Free play", "自由体験")}</button>
+              <button type="button" aria-pressed={snapshot.mode === "mission"} onClick={() => act({ type: "set-mode", mode: "mission" })}>{l("복구 미션", "Recovery mission", "復旧ミッション")}</button>
             </div>
-            {!link.canSerial ? (
-              <p className="kp-hint">
-                {l(
-                  "USB 연결은 컴퓨터의 Chrome·Edge에서 사용할 수 있습니다.",
-                  "Use desktop Chrome or Edge for USB connection.",
-                  "USB接続はパソコンのChrome・Edgeで利用できます。"
-                )}
-              </p>
-            ) : null}
-            {demo ? (
-              <p className="kp-demo-notice">
-                <Radio size={15} aria-hidden="true" />
-                {l(
-                  "모의 체험입니다. 실제 모형은 연결되어 있지 않습니다.",
-                  "Demo mode. No physical model is connected.",
-                  "模擬体験です。実際の模型は接続されていません。"
-                )}
-              </p>
-            ) : null}
-            {link.error ? (
-              <p className="kp-error" role="alert">
-                {link.error}
-              </p>
-            ) : null}
-            {link.error || link.status === "disconnected" || link.status === "stale" ? (
-              <div className="kp-recovery">
-                <h3>{l("연결 복구", "Restore connection", "接続の復旧")}</h3>
-                <ol>
-                  <li>{l("보드 USB 케이블과 전원을 확인하세요.", "Check the board USB cable and power.", "ボードのUSBケーブルと電源を確認してください。")}</li>
-                  <li>{l("아두이노 시리얼 모니터 등 포트를 쓰는 앱을 닫으세요.", "Close apps using the port, including Serial Monitor.", "シリアルモニターなどポートを使うアプリを閉じてください。")}</li>
-                  <li>{l("다시 연결하거나 모형 없이 체험을 시작하세요.", "Reconnect, or continue with a model-free demo.", "再接続するか、デモを開始してください。")}</li>
-                </ol>
-                <Button variant="outline" className="kp-button kp-secondary" disabled={!link.canSerial || link.status === "connecting"} onClick={() => void link.connectUsb()}>{l("USB 다시 연결", "Reconnect USB", "USB再接続")}</Button>
-                <Button variant="outline" className="kp-button kp-secondary" onClick={link.startDemo}>{l("모형 없이 체험", "Start demo", "デモを開始")}</Button>
-              </div>
-            ) : null}
-            <div className="kp-input-heading">
-              <h3>
-                {l("모형 입력 상태", "Model input state", "模型入力の状態")}
-              </h3>
-              <span>
-                {demo
-                  ? l("모의 입력", "Demo input", "模擬入力")
-                  : l("USB 입력", "USB input", "USB入力")}
-              </span>
+            <p className="kp-connection-copy">{snapshot.mode === "free"
+              ? l("이상을 주입한 뒤 빛과 수치를 보며 조절해요. 조작 과정은 자동으로 기록돼요.", "Inject a fault and adjust while observing the light and values. Actions are recorded automatically.", "異常を注入し、光と数値を見ながら調整しましょう。操作は自動記録されます。")
+              : l("90초 안에 정상 상태를 5초 유지하세요. RF 매칭부터 조절해보세요.", "Keep all values normal for five seconds within 90 seconds. Start with RF matching.", "90秒以内に正常状態を5秒維持しましょう。RFマッチングから調整してください。")}</p>
+            {snapshot.mode === "mission" ? <div className="kp-experience-mission">
+              <div><strong>{Math.ceil(snapshot.mission.remainingMs / 1000)}{l("초", "s", "秒")}</strong><span>{l("정상 유지", "Stable", "正常維持")} {(snapshot.mission.stableMs / 1000).toFixed(1)} / 5{l("초", "s", "秒")}</span></div>
+              <progress aria-label={l("정상 상태 유지 시간", "Stable operation duration", "正常状態の維持時間")} value={snapshot.mission.stableMs} max={snapshot.mission.goalMs} />
+              {snapshot.mission.status === "won" ? <p className="kp-success" role="status">{l(`복구 성공! ${snapshot.mission.score}점`, `Recovered! Score ${snapshot.mission.score}`, `復旧成功！${snapshot.mission.score}点`)}</p> : null}
+              {snapshot.mission.status === "failed" ? <p className="kp-error" role="status">{l("시간이 끝났어요. 기록을 보고 다시 도전해요.", "Time is up. Review the record and try again.", "時間終了です。記録を見て再挑戦しましょう。")}</p> : null}
+              {snapshot.mission.status === "cancelled" ? <p>{l("미션이 중단됐어요. 다시 시작할 수 있어요.", "Mission cancelled. You can start again.", "ミッションは中断されました。再開できます。")}</p> : null}
+              <Button className="kp-button kp-primary" disabled={missionActive} onClick={() => act({ type: "start-mission" })}><Play size={15} aria-hidden="true" />{missionActive ? l("정상 상태를 찾아보세요", "Find normal operation", "正常状態を探しましょう") : l("복구 미션 시작", "Start recovery mission", "復旧ミッション開始")}</Button>
+            </div> : <div className="kp-process-actions">
+              <Button className="kp-button kp-primary" onClick={() => act({ type: "inject-fault" })}>{l("이상 주입", "Inject fault", "異常を注入")}</Button>
+              <Button className="kp-button kp-secondary" variant="outline" disabled={!snapshot.faultActive} onClick={() => act({ type: "clear-fault" })}>{l("이상 해제", "Clear fault", "異常を解除")}</Button>
+            </div>}
+            <button className="kp-demo-link" type="button" aria-expanded={showHint} onClick={() => setShowHint(value => !value)}><CircleHelp size={14} aria-hidden="true" />{l("어떻게 복구하나요?", "How do I recover?", "復旧のヒント")}</button>
+            {showHint ? <p className="kp-hint">{l("RF 매칭을 조금씩 옮기며 ③ RF 값과 보라색 빛의 흔들림이 줄어드는 위치를 찾아요. 정상 범위로 돌아온 뒤 5초를 기다려요. 밝기를 낮추기만 해서는 미션을 해결할 수 없어요.", "Move RF matching gradually and look for less fluctuation in ③ RF and the purple light. Hold the normal range for five seconds. Dimming alone will not complete the mission.", "RFマッチングを少しずつ動かし、③RFと紫の光の揺れが減る位置を探します。正常範囲で5秒維持しましょう。明るさを下げるだけでは完了しません。")}</p> : null}
+            {missionFinished ? <p className="kp-hint">{l("결과를 확인한 뒤 다시 시작하거나 자유 체험으로 계속 조작하세요.", "Review the result, then restart or continue in free play.", "結果を確認して再挑戦するか、自由体験を続けてください。")}</p> : null}
+            <div className="kp-experience-controls">
+              {CONTROL_ORDER.map(control => {
+                const rule = BOOTH_CONTROL_LIMITS[control];
+                const labels: Record<BoothControlKey, [string, string, string]> = {
+                  matching: ["RF 매칭 조정", "RF matching", "RFマッチング"], rfSetpoint: ["RF 설정", "RF setpoint", "RF設定"],
+                  gasSetpoint: ["가스 유량 설정", "Gas flow setpoint", "ガス流量設定"], exhaustValve: ["배기 밸브", "Exhaust valve", "排気バルブ"],
+                };
+                return <label key={control} htmlFor={`live-control-${control}`}><span>{l(...labels[control])}<output htmlFor={`live-control-${control}`}>{snapshot.controls[control]} {rule.unit}</output></span><input id={`live-control-${control}`} type="range" min={rule.min} max={rule.max} step={rule.step} value={snapshot.controls[control]} disabled={missionFinished} onChange={event => act({ type: "set-control", control, value: Number(event.target.value) })} /></label>;
+              })}
             </div>
-            <dl className="kp-input-list">
-              <div>
-                <dt>
-                  {l("이상 버튼 입력", "Fault button input", "異常ボタン入力")}
-                </dt>
-                <dd>
-                  {fresh ? (
-                    link.frame?.faultActive ? (
-                      <span className="kp-amber">ON</span>
-                    ) : (
-                      "OFF"
-                    )
-                  ) : (
-                    "—"
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>
-                  {l("LED 제어 상태", "LED command state", "LED制御状態")}
-                </dt>
-                <dd>
-                  {fresh
-                    ? link.frame?.ledCommand === "on"
-                      ? "ON"
-                      : "OFF"
-                    : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt>{l("수신 번호", "Received sequence", "受信番号")}</dt>
-                <dd>
-                  {fresh ? String(link.frame?.seq).padStart(4, "0") : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt>{l("마지막 수신", "Last received", "最終受信")}</dt>
-                <dd>
-                  {lastAge === null
-                    ? "—"
-                    : lastAge < 1
-                      ? l("방금", "Just now", "たった今")
-                      : l(
-                          `${lastAge}초 전`,
-                          `${lastAge}s ago`,
-                          `${lastAge}秒前`
-                        )}
-                </dd>
-              </div>
-            </dl>
             <details className="kp-connection-help">
-              <summary>
-                <CircleHelp size={14} aria-hidden="true" />
-                {l("연결 전 확인", "Before connecting", "接続前の確認")}
-              </summary>
-              <p>
-                {l(
-                  "모형을 USB로 연결한 뒤 포트를 선택하세요. 입력 데이터가 도착해야 수신 상태가 표시됩니다. 실제 압력·유량·RF·온도 센서를 읽는 연결은 아닙니다.",
-                  "Connect the model by USB, then choose its port. The receiving state appears only after input arrives. This does not read physical pressure, flow, RF or temperature sensors.",
-                  "模型をUSBで接続し、ポートを選んでください。入力データが届くと受信状態が表示されます。実際の圧力・流量・RF・温度センサーを読み取る接続ではありません。"
-                )}
-              </p>
+              <summary><Usb size={15} aria-hidden="true" />{l("실물 보라색 램프 연결", "Connect the purple model lamp", "模型の紫ランプを接続")}</summary>
+              <p>{l("웹캠 USB와 제어보드 USB는 별도 장치예요. v2 체험 펌웨어가 확인되면 같은 모의 상태를 보라색 램프로 보냅니다. 흰 보조등 두 개는 계속 켜두세요.", "Webcam and controller use separate USB connections. After v2 firmware is confirmed, this scenario drives the purple lamp. Keep both white fill lights on.", "ウェブカメラと制御ボードは別々のUSB機器です。v2ファームウェア確認後、同じ模擬状態で紫ランプを制御します。白い補助灯2つは点灯したままにします。")}</p>
+              <div className="kp-connect-actions"><Button className="kp-button kp-primary" disabled={!device.supported && !usbFresh && !devicePending} onClick={() => { if (usbFresh || devicePending) void device.disconnect(); else void device.connect(); }} aria-busy={devicePending || undefined}>{usbFresh || devicePending ? <Unplug size={15} aria-hidden="true" /> : <Usb size={15} aria-hidden="true" />}{usbFresh ? l("램프 연결 해제", "Disconnect lamp", "ランプを切断") : devicePending ? l("연결 취소", "Cancel connection", "接続をキャンセル") : l("USB 램프 연결", "Connect USB lamp", "USBランプ接続")}</Button></div>
+              {!device.supported ? <p className="kp-hint">{l("USB 연결은 HTTPS의 데스크톱 Chrome·Edge에서 지원해요.", "Use desktop Chrome or Edge over HTTPS for USB.", "USB接続にはHTTPSのパソコン版Chrome・Edgeを使用してください。")}</p> : null}
+              <dl className="kp-input-list"><div><dt>{l("연결 상태", "Connection", "接続状態")}</dt><dd>{usbFresh ? l("v2 응답 확인", "v2 verified", "v2応答確認") : devicePending ? l("응답 확인 중", "Waiting for response", "応答確認中") : l("연결 안 됨", "Not connected", "未接続")}</dd></div><div><dt>{l("보드가 확인한 밝기 명령", "Board-acknowledged command", "ボード確認済み明るさ命令")}</dt><dd>{usbFresh && device.acknowledgedBrightness !== null ? `${Math.round(device.acknowledgedBrightness / 255 * 100)}%` : "—"}</dd></div><div><dt>{l("마지막 보드 수신", "Last board response", "最終ボード応答")}</dt><dd>{lastAge === null ? "—" : `${lastAge}${l("초 전", "s ago", "秒前")}`}</dd></div></dl>
+              <p>{l("응답은 명령 처리 확인이며 실제 밝기 측정값은 아니에요. 보드·LED·드라이버의 정격은 선정 후 확인해야 해요.", "An acknowledgement confirms a command, not measured light. Verify board, LED and driver ratings after selection.", "応答は命令処理の確認であり、明るさの実測ではありません。選定後にボード・LED・ドライバーの定格を確認してください。")}</p>
             </details>
+            {device.error ? <p className="kp-error" role="alert">{device.error}</p> : null}
           </aside>
         </div>
 
@@ -987,10 +647,9 @@ export default function EtchLive() {
           <div className="kp-metric-grid">
             {CHANNELS.map(channel => {
               const value = current?.[channel.id];
-              const changed =
-                fresh &&
-                link.frame?.faultActive &&
-                (channel.id === "pressure" || channel.id === "rf");
+              const signal = SIGNAL_FOR_CHANNEL[channel.id];
+              const changed = snapshot.alarms[signal];
+              const normalRange = BOOTH_SIGNALS.find(item => item.key === signal)!.normal;
               return (
                 <article
                   className={`kp-metric ${changed ? "is-changed" : ""}`}
@@ -1009,14 +668,14 @@ export default function EtchLive() {
                   <div className="kp-metric-foot">
                     <span>
                       {l(
-                        "교육용 모의 값",
-                        "Educational simulation",
-                        "教育用模擬値"
+                        `모의 정상 ${normalRange[0]}–${normalRange[1]} ${channel.unit}`,
+                        `Sim normal ${normalRange[0]}–${normalRange[1]} ${channel.unit}`,
+                        `模擬正常 ${normalRange[0]}–${normalRange[1]} ${channel.unit}`
                       )}
                     </span>
                     <span>
                       {changed
-                        ? l("변화", "Changed", "変化")
+                        ? l("이상", "Abnormal", "異常")
                         : value === undefined
                           ? l("입력 대기", "Awaiting input", "入力待機")
                           : l("기준 부근", "Near reference", "基準付近")}
@@ -1027,56 +686,10 @@ export default function EtchLive() {
             })}
           </div>
           <div className="kp-control-strip">
-            <div>
-              <Activity size={16} aria-hidden="true" />
-              <p>
-                {fresh
-                  ? demo
-                    ? l(
-                        "이상 상황을 눌러 모의 압력과 RF의 변화를 비교해 보세요.",
-                        "Trigger a demo fault and compare simulated pressure and RF.",
-                        "模擬異常を発生させ、模擬圧力とRFの変化を比べてみましょう。"
-                      )
-                    : l(
-                        "실물 모형의 이상 버튼을 눌러 화면의 변화를 확인하세요.",
-                        "Press the physical model's fault button to observe the change.",
-                        "実際の模型の異常ボタンを押して、画面の変化を確認してください。"
-                      )
-                  : l(
-                      "입력이 연결되면 공정 변화와 관찰 기능이 활성화됩니다.",
-                      "Process illustration and observation become available after input arrives.",
-                      "入力が接続されると、プロセス変化と観察機能を利用できます。"
-                    )}
-              </p>
-            </div>
+            <div><Activity size={16} aria-hidden="true" /><p>{l("이상 주입 → 빛과 값 관찰 → 직접 조절 → 정상 상태 유지. 네 항목은 같은 체험 상태를 보여줘요.", "Inject → observe light and values → adjust → hold normal operation. All four channels share one scenario.", "異常注入→光と値を観察→調整→正常状態維持。4項目は同じ体験状態を表示します。")}</p></div>
             <div className="kp-process-actions">
-              {demo ? (
-                <Button
-                  className="kp-button kp-secondary"
-                  variant="outline"
-                  onClick={link.toggleDemoFault}
-                  disabled={!fresh}
-                >
-                  {link.frame?.faultActive
-                    ? l("모의 이상 해제", "Clear demo fault", "模擬異常を解除")
-                    : l(
-                        "모의 이상 발생",
-                        "Trigger demo fault",
-                        "模擬異常を発生"
-                      )}
-                </Button>
-              ) : null}
-              <Button
-                className="kp-button kp-quiet"
-                variant="ghost"
-                onClick={() => {
-                  void resetModel();
-                }}
-                disabled={!fresh}
-              >
-                <RotateCcw size={14} aria-hidden="true" />
-                {l("모형 초기화", "Reset model", "模型を初期化")}
-              </Button>
+              {snapshot.mode === "free" ? <Button className="kp-button kp-secondary" variant="outline" onClick={() => act({ type: snapshot.faultActive ? "clear-fault" : "inject-fault" })}>{snapshot.faultActive ? l("이상 해제", "Clear fault", "異常解除") : l("이상 주입", "Inject fault", "異常注入")}</Button> : null}
+              <Button className="kp-button kp-quiet" variant="ghost" onClick={resetModel}><RotateCcw size={14} aria-hidden="true" />{l("조절값 초기화", "Reset controls", "設定を初期化")}</Button>
             </div>
           </div>
         </section>
@@ -1250,7 +863,7 @@ export default function EtchLive() {
                             : "USB"}
                         </small>
                       </span>
-                      <p>{eventName(event.kind)}</p>
+                      <p>{event.message}</p>
                     </div>
                   </li>
                 ))}
@@ -1277,10 +890,8 @@ export default function EtchLive() {
           </section>
         </div>
 
-        <section
-          className="kp-observation-section"
-          aria-labelledby="notes-heading"
-        >
+        <details className="kp-observation-section kp-optional-notes">
+          <summary>{l("선택 활동 · 관찰 메모 남기기", "Optional · write observation notes", "任意・観察メモを書く")}</summary>
           <div className="kp-section-head">
             <div>
               <p className="kp-eyebrow">OBSERVE / REASON / CHECK</p>
@@ -1319,9 +930,9 @@ export default function EtchLive() {
                 value={fact}
                 onChange={event => setFact(event.target.value)}
                 placeholder={l(
-                  "예: 이상 버튼 입력 후 모의 압력이 상승하고 RF가 0이 되었다.",
-                  "e.g. After fault input, simulated pressure rose and RF dropped to zero.",
-                  "例：異常ボタン入力後、模擬圧力が上昇しRFが0になった。"
+                  "예: 이상 주입 후 RF 값과 보라색 빛이 흔들렸고, 매칭을 조절하자 정상 범위로 돌아왔다.",
+                  "e.g. RF and the purple light fluctuated after injection, then returned to normal after matching adjustment.",
+                  "例：異常注入後にRFと紫の光が揺れ、マッチング調整後に正常範囲に戻った。"
                 )}
               />
             </label>
@@ -1422,7 +1033,7 @@ export default function EtchLive() {
           <p className="kp-notice" role="status" aria-live="polite">
             {notice}
           </p>
-        </section>
+        </details>
         <footer className="kp-footer">
           <p>
             {l(

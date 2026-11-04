@@ -111,13 +111,14 @@ function planeMatrix(
 /** Native 192 × 208 coordinates match the world-space window without stretching. */
 function ChamberInterior({
   active,
-  ledOn,
+  lampBrightness,
   highlighted,
 }: {
   active: boolean;
-  ledOn: boolean;
+  lampBrightness: number;
   highlighted: KiyoSignal | null;
 }) {
+  const light = active ? lampBrightness / 255 : 0;
   const pressure = highlighted === "pressure";
   const gas = highlighted === "gasFlow";
   const rf = highlighted === "rfPower";
@@ -128,6 +129,10 @@ function ChamberInterior({
       strokeLinecap="round"
       strokeLinejoin="round"
     >
+      <g data-concept-part="steady-white-fill-lights" stroke="#e7eddf" strokeWidth="4">
+        <path d="M15 34l15 14" />
+        <path d="M162 48l15-14" />
+      </g>
       <rect
         x="38"
         y="41"
@@ -199,15 +204,10 @@ function ChamberInterior({
           opacity={rf ? 0.17 : 0.04}
         />
       </g>
-      <rect
-        x="72"
-        y="103"
-        width="48"
-        height="7"
-        rx="3.5"
-        fill={SIGNALS[0].color}
-        opacity={active && ledOn ? 0.45 : 0.06}
-      />
+      <g data-concept-part="purple-plasma-lamp" data-lamp-brightness={Math.round(active ? lampBrightness : 0)}>
+        <ellipse cx="96" cy="106" rx="35" ry="19" fill="#bb83ed" opacity={light * .2} />
+        <rect x="72" y="103" width="48" height="7" rx="3.5" fill="#d2a2ff" opacity={.04 + light * .86} />
+      </g>
       <g data-concept-part="wafer-support">
         <rect x="62" y="131" width="68" height="3" rx="1" fill="#dbe4d8" />
         <rect x="69" y="135" width="54" height="10" rx="2" fill="#adbcab" />
@@ -239,6 +239,8 @@ export default function KiyoEquipmentView({
   language,
   demo = false,
   processValues = null,
+  lampBrightness,
+  signalAlarms,
   selectedSignal,
   onSelectSignal,
 }: {
@@ -248,10 +250,15 @@ export default function KiyoEquipmentView({
   language: ProductLanguage;
   demo?: boolean;
   processValues?: KiyoProcessValues | null;
+  lampBrightness?: number;
+  signalAlarms?: Record<KiyoSignal, boolean>;
   selectedSignal?: KiyoSignal | null;
   onSelectSignal?: (signal: KiyoSignal) => void;
 }) {
   const id = useId().replace(/:/g, "");
+  const brightness = typeof lampBrightness === "number" && Number.isFinite(lampBrightness)
+    ? Math.max(0, Math.min(255, lampBrightness))
+    : ledOn ? 255 : 0;
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const inside = view === "cutaway";
   const reduceMotion = useReducedMotion();
@@ -482,7 +489,7 @@ export default function KiyoEquipmentView({
             >
               <ChamberInterior
                 active={active}
-                ledOn={ledOn}
+                lampBrightness={brightness}
                 highlighted={showSignals ? selected : null}
               />
             </g>
@@ -640,20 +647,23 @@ export default function KiyoEquipmentView({
                   windowPoint(item.position[0], item.position[1])
                 );
                 return (
-                  <g key={item.id} data-signal-marker={item.id}>
+                  <g key={item.id} data-signal-marker={item.id} data-alarm={String(Boolean(signalAlarms?.[item.id]))}>
                     <circle
                       cx={x}
                       cy={y}
                       r={selected === item.id ? 13 : 10}
                       fill="#14231c"
-                      stroke={item.color}
+                      stroke={signalAlarms?.[item.id] ? "#ff5566" : item.color}
                       strokeWidth={selected === item.id ? 3 : 2}
                     />
                     <text
                       x={x}
                       y={y + 4}
                       textAnchor="middle"
-                      fill={item.color}
+                      fill={signalAlarms?.[item.id] ? "#ff5566" : "#ffffff"}
+                      stroke="#000000"
+                      strokeWidth="1.8"
+                      paintOrder="stroke fill"
                       fontSize="12"
                       fontWeight="700"
                     >
@@ -686,6 +696,7 @@ export default function KiyoEquipmentView({
                 key={item.id}
                 type="button"
                 className="kev-signal-option"
+                data-alarm={String(Boolean(signalAlarms?.[item.id]))}
                 aria-pressed={selected === item.id}
                 disabled={!interiorReady}
                 onClick={() => select(item.id)}
