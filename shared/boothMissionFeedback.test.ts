@@ -78,4 +78,23 @@ describe("normal-value guidance", () => {
     snapshot.mission.status = "won";
     expect(recoveryGuideStage(snapshot)).toBe("complete");
   });
+
+  it("keeps the compact control guide brief while recovery criteria remain available on demand", () => {
+    const snapshot = getBoothSnapshot(createBoothState());
+    snapshot.mode = "mission"; snapshot.mission.status = "active"; snapshot.matchingQuality = .866;
+    const markup = renderToStaticMarkup(createElement(BoothNormalGuide, { snapshot, language: "ko", onRecommended: () => {}, compact: true }));
+    expect(markup).not.toContain("<table");
+    expect(markup).not.toContain("현재");
+    expect(markup).toContain("수치는 정상 · RF 매칭을 안정화해요");
+    expect(markup).toContain("86.6%");
+    expect(markup).toContain('data-stable="false"');
+    const details = markup.match(/<details\b[^>]*>[\s\S]*?<\/details>/)?.[0];
+    expect(details).toBeDefined();
+    expect(details).not.toMatch(/<details[^>]*\bopen\b/);
+    expect(details).toContain("정상 판정 기준");
+    expect(details).toContain(`${BOOTH_ALARM_CLEAR_MS / 1000}초`);
+    for (const signal of BOOTH_SIGNALS) {
+      expect(details).toContain(`${BOOTH_RECOVERY_RANGES[signal.key][0]}–${BOOTH_RECOVERY_RANGES[signal.key][1]} ${signal.unit}`);
+    }
+  });
 });

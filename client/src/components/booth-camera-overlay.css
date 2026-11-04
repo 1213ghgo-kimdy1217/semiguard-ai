@@ -47,3 +47,26 @@
 .bc-normal-guide ul { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 3px 16px; padding-left: 17px; margin: 7px 0 0; }
 @media(max-width:600px) { .bc-normal-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .bc-module-registration { padding: 11px; } .bc-register-confirm > .bc-button { width: 100%; } }
 @media(max-width:360px) { .bc-normal-grid { grid-template-columns: 1fr; } .bc-normal-guide ul { grid-template-columns: 1fr; } }
+.bc-camera-compact { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.bc-camera-compact .bc-heading { gap: 8px; }
+.bc-camera-compact .bc-heading > div:first-child { flex: 0 1 auto; }
+.bc-camera-compact .bc-heading h2 { font-size: 13px; font-weight: 650; }
+.bc-camera-compact .bc-status { padding: 4px 7px; font-size: 10px; }
+.bc-compact-actions { display: flex; gap: 6px; margin-left: auto; }
+.bc-camera-compact .bc-button { min-height: 33px; padding: 6px 9px; border-radius: 5px; font-size: 11px; }
+.bc-camera-compact .bc-module-registration { margin: 12px 0 0; padding: 12px; border-radius: 6px; }
+.bc-camera-compact .bc-video-frame { width: min(100%, calc(350px * var(--bc-aspect, 1.7778))); min-height: 0; margin: 12px auto 0; border-radius: 7px; }
+.bc-camera-compact .bc-placeholder { gap: 9px; padding: 16px; }
+.bc-camera-compact .bc-placeholder > span { font-size: 28px; }
+.bc-camera-compact .bc-placeholder strong { font-size: 15px; }
+.bc-camera-compact .bc-placeholder p { max-width: 320px; font-size: 12px; }
+.bc-camera-compact .bc-calibration { margin-top: 9px; gap: 7px; }
+.bc-camera-compact .bc-calibration p { font-size: 11px; }
+.bc-camera-compact .bc-error { margin: 10px 0; padding: 8px 10px; font-size: 11px; }
+@media(max-width:520px) {
+  .bc-camera-compact .bc-heading { align-items: center; }
+  .bc-compact-actions { flex-wrap: wrap; }
+  .bc-camera-compact .bc-video-frame { width: min(100%, calc(300px * var(--bc-aspect, 1.7778))); }
+  .bc-camera-compact .bc-calibration > .bc-button { width: auto; }
+  .bc-camera-compact .bc-placeholder strong { font-size: 13px; }
+}

@@ -27,9 +27,9 @@ function camera(overrides: Partial<Camera> = {}): Camera {
   };
 }
 
-function render(current: Camera, alarms: Record<SignalKey, boolean> = healthy) {
+function render(current: Camera, alarms: Record<SignalKey, boolean> = healthy, compact = false) {
   cameraHook.mockReturnValue(current);
-  return renderToStaticMarkup(createElement(BoothCameraOverlay, { values, alarms }));
+  return renderToStaticMarkup(createElement(BoothCameraOverlay, { values, alarms, compact }));
 }
 
 function normalGuide(markup: string) {
@@ -126,5 +126,40 @@ describe("module camera UI without a connected module webcam", () => {
     expect(playing).toContain('class="bc-video-badge"');
     expect(playing).toContain('class="bc-active-device">현재 영상 · ABKO APC850');
     expect(playing).toContain("카메라 실시간 · 수치는 교육용 모의");
+  });
+
+  it("keeps compact setup clear without rendering duplicate value guides or a registration form", () => {
+    const current = camera({ devices: [{ deviceId: "laptop", label: "Integrated Camera" }] });
+    const markup = render(current, healthy, true);
+    expect(markup).toContain('class="bc-camera bc-camera-compact"');
+    expect(markup).toContain("모듈 카메라 미연결");
+    expect(markup).toContain("모듈 웹캠을 PC에 USB로 연결한 뒤 등록하세요");
+    expect(markup).toContain(">모듈 카메라 등록</button>");
+    expect(markup).toContain('aria-expanded="false"');
+    expect(markup).not.toContain('class="bc-normal-guide"');
+    expect(markup).not.toContain('class="bc-source"');
+    expect(markup).not.toContain('class="bc-footnote"');
+    expect(markup).not.toContain('class="bc-module-registration"');
+    expect(markup).not.toContain('class="bc-calibration"');
+    expect(markup).not.toContain("Integrated Camera");
+    expect(current.start).not.toHaveBeenCalled();
+    expect(current.registerModuleCamera).not.toHaveBeenCalled();
+  });
+
+  it("prioritizes the live feed in compact mode while keeping camera settings closed", () => {
+    const markup = render(camera({
+      status: "playing", width: 1280, height: 720, devices: [webcam], eligibleModuleDevices: [webcam],
+      selectedDeviceId: webcam.deviceId, registeredDeviceId: webcam.deviceId,
+      registeredDeviceLabel: webcam.label, moduleRegistrationState: "ready", canStart: true,
+      activeDeviceId: webcam.deviceId, activeDeviceLabel: webcam.label,
+    }), healthy, true);
+    expect(markup).toContain("모듈 카메라 실시간");
+    expect(markup).toContain(">영상 중지</button>");
+    expect(markup).toContain(">카메라 설정</button>");
+    expect(markup).toContain('class="bc-video-badge"');
+    expect(markup).toContain('class="bc-calibration"');
+    expect(markup).not.toContain('class="bc-module-registration"');
+    expect(markup).not.toContain('class="bc-normal-guide"');
+    expect(markup).toContain("--bc-aspect:1.7777777777777777");
   });
 });

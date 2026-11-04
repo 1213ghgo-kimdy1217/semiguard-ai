@@ -15,7 +15,7 @@ const names: Record<SignalKey, [string, string, string]> = {
 };
 const numberText = (key: SignalKey, value: number) => value.toFixed(key === "rfPower" ? 0 : 1);
 
-export function BoothNormalGuide({ snapshot, language, onRecommended, disabled = false }: Props & { onRecommended(): void; disabled?: boolean }) {
+export function BoothNormalGuide({ snapshot, language, onRecommended, disabled = false, compact = false }: Props & { onRecommended(): void; disabled?: boolean; compact?: boolean }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const stage = recoveryGuideStage(snapshot);
   const messages = {
@@ -25,6 +25,21 @@ export function BoothNormalGuide({ snapshot, language, onRecommended, disabled =
     holding: l("정상 유지 중 · 조절을 멈추고 기다려요", "Holding normal · keep controls steady", "正常維持中・設定を動かさず待ちましょう"),
     complete: l("정상 5초 유지 완료", "Five seconds of normal operation complete", "正常状態を5秒維持しました"),
   };
+  if (compact) return <section className="bm-normal-guide bm-guide-compact" aria-label={l("조작 안내", "Control guidance", "操作ガイド")} data-recovery-stage={stage}>
+    <p className={`bm-guide-stage ${stage === "abnormal" ? "is-alarm" : ""}`}>{messages[stage]}</p>
+    <div className="bm-compact-meta">
+      {snapshot.mode === "mission" && <span className="bm-compact-matching" data-stable={String(snapshot.matchingQuality >= BOOTH_MIN_STABLE_MATCH_QUALITY)}>{l("매칭", "Matching", "マッチング")} <strong>{matchingQualityPercent(snapshot.matchingQuality)}%</strong> · {snapshot.matchingQuality >= BOOTH_MIN_STABLE_MATCH_QUALITY ? l("안정", "Stable", "安定") : l("조정 필요", "Adjust", "調整が必要")}</span>}
+      <details className="bm-criteria">
+        <summary>{l("정상 판정 기준", "Recovery criteria", "正常判定の基準")}</summary>
+        <div>
+          <p>{l(`빨간 값은 아래 범위에서 ${BOOTH_ALARM_CLEAR_MS / 1000}초 유지하면 흰색으로 돌아와요.`, `Red values return to white after ${BOOTH_ALARM_CLEAR_MS / 1000}s in these ranges.`, `赤い値は次の範囲を${BOOTH_ALARM_CLEAR_MS / 1000}秒維持すると白に戻ります。`)}</p>
+          <ul>{BOOTH_SIGNALS.map(signal => <li key={signal.key}>{signal.number} {l(...names[signal.key])}<span>{BOOTH_RECOVERY_RANGES[signal.key][0]}–{BOOTH_RECOVERY_RANGES[signal.key][1]} {signal.unit}</span></li>)}</ul>
+          {snapshot.mode === "mission" && <p>{l(`네 항목이 모두 흰색이고 매칭 안정도가 ${Math.round(BOOTH_MIN_STABLE_MATCH_QUALITY * 100)}% 이상인 상태를 5초 유지하면 미션 완료예요. 다시 불안정해지면 0초부터 세어요.`, `Complete the mission by holding all four values white and matching stability at least ${Math.round(BOOTH_MIN_STABLE_MATCH_QUALITY * 100)}% for five seconds. Instability restarts the count.`, `4項目が白、マッチング安定度${Math.round(BOOTH_MIN_STABLE_MATCH_QUALITY * 100)}%以上の状態を5秒維持すると完了。不安定になると0秒から数え直します。`)}</p>}
+          <div className="bm-recommended"><button type="button" onClick={onRecommended} disabled={disabled}>{l("기본 운전값 맞추기", "Use starting settings", "基本設定に合わせる")}</button></div>
+        </div>
+      </details>
+    </div>
+  </section>;
   return <section className="bm-normal-guide" aria-labelledby="live-normal-guide-heading">
     <div className="bm-guide-heading"><h3 id="live-normal-guide-heading">{l("어디까지 맞추면 정상인가요?", "What counts as normal?", "どこまで合わせると正常？")}</h3><span>{l("교육용 기준", "Training reference", "教育用の基準")}</span></div>
     <p className={`bm-guide-stage ${stage === "abnormal" ? "is-alarm" : ""}`}>{messages[stage]}</p>
@@ -64,7 +79,7 @@ export default function BoothMissionFeedback({ snapshot, language, onRetry, onFr
   const free = () => { setOpen(false); onFreePlay(); };
   return <>
     {won && <section className="bm-completion-banner" aria-label={l("복구 미션 완료 결과", "Recovery mission result", "復旧ミッション結果")}>
-      <CheckCircle2 size={28} aria-hidden="true" /><div><h2>{l("복구 미션 완료!", "Recovery mission complete!", "復旧ミッション完了！")}</h2><p>{l(`정상 상태를 5초 유지했어요. ${snapshot.mission.score}점 · ${seconds}초`, `Normal operation held for five seconds. Score ${snapshot.mission.score} · ${seconds}s`, `正常状態を5秒維持しました。${snapshot.mission.score}点・${seconds}秒`)}</p></div><button type="button" ref={reviewButton} onClick={() => setOpen(true)}>{l("완료 결과 보기", "View result", "結果を見る")}</button><button type="button" onClick={retry}>{l("다시 도전", "Try again", "再挑戦")}</button></section>}
+      <CheckCircle2 size={22} aria-hidden="true" /><div><h2>{l("복구 미션 완료!", "Recovery mission complete!", "復旧ミッション完了！")}</h2><p>{l(`${snapshot.mission.score}점 · ${seconds}초`, `${snapshot.mission.score} pts · ${seconds}s`, `${snapshot.mission.score}点・${seconds}秒`)}</p></div><button type="button" ref={reviewButton} onClick={() => setOpen(true)}>{l("결과 보기", "View result", "結果を見る")}</button><button type="button" onClick={retry}>{l("다시 도전", "Try again", "再挑戦")}</button></section>}
     <Dialog open={open && won} onOpenChange={setOpen}>
       <DialogContent className="bm-completion-dialog" showCloseButton={false} onCloseAutoFocus={event => {
         event.preventDefault();

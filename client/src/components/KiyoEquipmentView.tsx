@@ -239,6 +239,7 @@ export default function KiyoEquipmentView({
   language,
   demo = false,
   processValues = null,
+  compact = false,
   lampBrightness,
   signalAlarms,
   selectedSignal,
@@ -250,6 +251,7 @@ export default function KiyoEquipmentView({
   language: ProductLanguage;
   demo?: boolean;
   processValues?: KiyoProcessValues | null;
+  compact?: boolean;
   lampBrightness?: number;
   signalAlarms?: Record<KiyoSignal, boolean>;
   selectedSignal?: KiyoSignal | null;
@@ -676,7 +678,7 @@ export default function KiyoEquipmentView({
           ) : null}
         </svg>
       </div>
-      {showGuide ? (
+      {showGuide && !compact ? (
         <div
           className="kev-signal-guide"
           data-ready={String(interiorReady)}
