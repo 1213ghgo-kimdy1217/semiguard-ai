@@ -5,6 +5,7 @@ import {
   defaultBoothCameraLayout, fitBoothOverlayPoint, readBoothCameraLayout,
   type BoothCameraLayout, type BoothCameraSignal, type OverlayPart, type OverlayPoint,
 } from "../../../shared/boothCameraLayout";
+import { BOOTH_SIGNALS, BOOTH_RECOVERY_RANGES, BOOTH_ALARM_CLEAR_MS } from "../../../shared/boothExperience";
 import "./booth-camera-overlay.css";
 
 export type BoothSignal = BoothCameraSignal;
@@ -43,7 +44,7 @@ function formatValue(signal: BoothSignal, value: number) {
 
 /** Values and alarm flags are props from the same scenario clock as the lamp. */
 export default function BoothCameraOverlay({ values, alarms, onClose }: BoothCameraOverlayProps) {
-  const camera = usePrototypeCamera();
+  const camera = usePrototypeCamera({ moduleOnly: true });
   const heading = useId(), select = useId();
   const frameRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -52,13 +53,16 @@ export default function BoothCameraOverlay({ values, alarms, onClose }: BoothCam
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState(false);
   const [selected, setSelected] = useState<Target>({ signal: "pressure", part: "marker" });
+  const [moduleConfirmed, setModuleConfirmed] = useState(false);
+  const [registrationNotice, setRegistrationNotice] = useState("");
   const playing = camera.status === "playing";
   const active = ["requesting", "connected", "ready", "playing"].includes(camera.status);
   const ratio = camera.width > 0 && camera.height > 0 ? camera.width / camera.height : 16 / 9;
-  // Choosing the next device must not move labels on the stream still playing.
-  const activeIdentity = camera.activeDeviceLabel
-    ? camera.devices.find(device => device.label === camera.activeDeviceLabel)?.deviceId || camera.activeDeviceLabel
-    : camera.selectedDeviceId;
+  const selectedModule = camera.eligibleModuleDevices.find(device => device.deviceId === camera.selectedDeviceId);
+  const registeredSelected = camera.selectedDeviceId === camera.registeredDeviceId;
+  const blockedContext = !camera.supported || !camera.secureContext || camera.cameraPolicyAllowed === false;
+  const canConnect = camera.canStart && registeredSelected && camera.status !== "requesting" && !blockedContext;
+  const activeIdentity = camera.activeDeviceId || camera.registeredDeviceId || camera.selectedDeviceId;
   const storageKey = cameraLayoutStorageKey(activeIdentity || "default", camera.width, camera.height);
   const error = camera.error ?? (!camera.secureContext ? "insecure-context" : !camera.supported ? "unsupported" : camera.cameraPolicyAllowed === false ? "iframe-blocked" : null);
 
@@ -91,6 +95,10 @@ export default function BoothCameraOverlay({ values, alarms, onClose }: BoothCam
   useEffect(() => {
     if (!playing) { drag.current = null; setAdjusting(false); }
   }, [playing]);
+  useEffect(() => {
+    setModuleConfirmed(false);
+    setRegistrationNotice("");
+  }, [camera.selectedDeviceId]);
 
   function position(signal: BoothSignal, part: OverlayPart) {
     return fitBoothOverlayPoint(layout[signal][part], part, size.width, size.height);
@@ -129,28 +137,54 @@ export default function BoothCameraOverlay({ values, alarms, onClose }: BoothCam
     if (event.key === "Escape") { setAdjusting(false); drag.current = null; }
   }
   function close() { camera.stop(); onClose?.(); }
+  function registerSelected() {
+    if (!selectedModule || !moduleConfirmed) return;
+    const registered = camera.registerModuleCamera(selectedModule.deviceId);
+    setRegistrationNotice(registered ? `${selectedModule.label}을 모듈 카메라로 등록했어요. 아래 연결 버튼을 눌러주세요.` : "장치가 변경됐어요. USB 연결을 확인하고 목록을 새로고침해주세요.");
+    if (registered) setModuleConfirmed(false);
+  }
+  function forgetModule() {
+    camera.forgetModuleCamera();
+    setModuleConfirmed(false);
+    setRegistrationNotice("모듈 카메라 등록을 해제했어요. 사용할 외부 웹캠을 다시 확인해주세요.");
+  }
 
   return <section className="bc-camera" aria-labelledby={heading} data-camera-status={camera.status}>
     <header className="bc-heading">
       <div><p className="bc-eyebrow">MODEL CAMERA</p><h2 id={heading}>모형 내부 보기</h2></div>
-      <span className={`bc-status ${playing ? "is-live" : ""}`}>{playing ? "카메라 실시간" : active ? "영상 연결 중" : "카메라 미연결"}</span>
+      <span className={`bc-status ${playing ? "is-live" : ""}`}>{playing ? "모듈 카메라 실시간" : active ? "모듈 카메라 연결 중" : "모듈 카메라 미연결"}</span>
       {onClose && <button type="button" className="bc-button bc-close" onClick={close} aria-label="카메라 화면 닫기">닫기 ×</button>}
     </header>
-    <p className="bc-source">화면 위 수치는 교육용 모의 값이에요. 카메라는 실제 모형의 모습을 보여줍니다.</p>
-    <div className="bc-controls">
-      <label className="bc-device" htmlFor={select}><span>카메라</span><select id={select} value={camera.selectedDeviceId} onChange={event => camera.selectDevice(event.target.value)} disabled={camera.status === "requesting"}>
-        <option value="">기본 카메라</option>
-        {camera.devices.map((device, index) => <option key={device.deviceId || index} value={device.deviceId}>{device.label || `카메라 ${index + 1}`}{device.deviceId === camera.recommendedDeviceId ? " · 모형용 권장" : ""}</option>)}
-      </select></label>
-      <button type="button" className="bc-button" onClick={() => { void camera.refreshDevices(); }}>목록 새로고침</button>
-      <button type="button" className="bc-button bc-primary" disabled={camera.status === "requesting" || Boolean(error && ["unsupported", "insecure-context", "iframe-blocked"].includes(error))} onClick={() => { void camera.start(); }}>{active ? "선택한 카메라 다시 연결" : "카메라 연결"}</button>
-      {active && <button type="button" className="bc-button" onClick={() => camera.stop()}>영상 중지</button>}
+    <p className="bc-source">등록한 모듈 웹캠만 연결해요. 화면 위 수치는 이 체험의 교육용 모의 값입니다.</p>
+    <div className="bc-module-registration" data-registration-state={camera.moduleRegistrationState}>
+      <div className="bc-registration-heading"><strong>{camera.moduleRegistrationState === "ready" ? "등록된 모듈 카메라" : "모듈 카메라 등록"}</strong><span>내장 카메라 자동 연결 차단</span></div>
+      <div className="bc-controls">
+        <label className="bc-device" htmlFor={select}><span>모듈에 장착한 외부 웹캠</span><select id={select} value={selectedModule ? camera.selectedDeviceId : ""} onChange={event => camera.selectDevice(event.target.value)} disabled={camera.status === "requesting"}>
+          <option value="" disabled>모듈 웹캠을 선택하세요</option>
+          {camera.eligibleModuleDevices.map(device => <option key={device.deviceId} value={device.deviceId}>{device.label}{device.deviceId === camera.recommendedDeviceId ? " · APC850 후보" : ""}</option>)}
+        </select></label>
+        <button type="button" className="bc-button" onClick={() => { void camera.refreshDevices(); }}>목록 새로고침</button>
+      </div>
+      {camera.moduleRegistrationState === "labels-hidden" ? <div className="bc-registration-help" role="status"><strong>브라우저가 카메라 이름을 숨기고 있어요.</strong><p>브라우저의 이 사이트 카메라 권한을 허용하고, 모듈 웹캠을 선택한 뒤 목록을 새로고침해주세요. 이름과 장치를 확인할 수 있기 전에는 영상을 시작하지 않아요.</p><p>이름 확인을 위해 노트북 카메라를 잠깐 켜는 동작도 하지 않습니다.</p></div>
+        : !camera.eligibleModuleDevices.length ? <div className="bc-registration-help" role="status"><strong>등록할 수 있는 모듈 웹캠이 없어요.</strong><p>모듈 웹캠의 USB를 PC에 연결하고 목록을 새로고침해주세요. 내장·IR·가상 카메라는 연결 목록에서 제외됩니다.</p></div> : null}
+      {camera.moduleRegistrationState === "missing" && camera.registeredDeviceLabel ? <p className="bc-error" role="status">등록한 {camera.registeredDeviceLabel}을 찾지 못했어요. 해당 웹캠을 다시 연결해주세요. 다른 카메라로 전환하지 않습니다.</p> : null}
+      {selectedModule && (!registeredSelected || camera.moduleRegistrationState !== "ready") ? <div className="bc-register-confirm">
+        <label><input type="checkbox" checked={moduleConfirmed} onChange={event => setModuleConfirmed(event.target.checked)} disabled={camera.status === "requesting"} /><span>이 장치는 모듈에 장착한 웹캠입니다.</span></label>
+        <button type="button" className="bc-button" disabled={!moduleConfirmed || camera.status === "requesting" || blockedContext} onClick={registerSelected}>선택한 웹캠을 모듈 카메라로 등록</button>
+      </div> : null}
+      {camera.registeredDeviceLabel && <div className="bc-registered-device"><span><b>등록 장치</b> {camera.registeredDeviceLabel}</span><button type="button" className="bc-text-button" onClick={forgetModule}>등록 해제</button></div>}
+      <p className="bc-registration-note">처음 한 번 모듈에 장착한 웹캠을 직접 확인해 등록해주세요. 브라우저는 카메라의 설치 위치를 자동으로 판별할 수 없어요.</p>
+      {registrationNotice && <p className="bc-registration-notice" role="status">{registrationNotice}</p>}
     </div>
-    {camera.recommendedDeviceId && camera.selectedDeviceId !== camera.recommendedDeviceId && <p className="bc-hint"><button className="bc-text-button" type="button" onClick={() => camera.selectDevice(camera.recommendedDeviceId!)}>APC850 권장 카메라 선택</button><span>선택 후 연결 버튼을 눌러주세요.</span></p>}
+    <div className="bc-controls bc-stream-actions">
+      <button type="button" className="bc-button bc-primary" disabled={!canConnect} onClick={() => { void camera.start(); }}>{active ? "등록한 모듈 카메라 다시 연결" : "모듈 카메라 연결"}</button>
+      {active && <button type="button" className="bc-button" onClick={() => camera.stop()}>영상 중지</button>}
+      {playing && <span className="bc-active-device">현재 영상 · {camera.activeDeviceLabel || camera.registeredDeviceLabel}</span>}
+    </div>
     {error && <p className="bc-error" role="alert">{errors[error]}{camera.inIframe && typeof window !== "undefined" && <a href={window.location.href} target="_blank" rel="noreferrer">별도 창으로 열기 ↗</a>}</p>}
     <div ref={frameRef} className={`bc-video-frame ${adjusting ? "is-adjusting" : ""}`} style={{ aspectRatio: String(ratio) }}>
       <video ref={camera.videoRef} autoPlay muted playsInline aria-label="실물 교육용 챔버 카메라" className={playing ? "is-playing" : ""} />
-      {!playing && <div className="bc-placeholder"><span aria-hidden="true">◉</span><strong>{active ? "카메라 영상이 들어오면 표시됩니다" : "실물 카메라를 연결해주세요"}</strong><p>{camera.stoppedForBackground ? "다른 창으로 이동해 영상이 중지됐어요. 다시 연결할 수 있어요." : "웹캠 USB를 PC에 연결하고 위의 카메라 연결 버튼을 누르세요."}</p></div>}
+      {!playing && <div className="bc-placeholder"><span aria-hidden="true">◉</span><strong>{active ? "등록한 모듈 카메라의 영상을 기다려요" : "모듈 카메라가 연결되지 않았어요"}</strong><p>{camera.stoppedForBackground ? "다른 창으로 이동해 영상이 중지됐어요. 등록한 모듈 카메라에 다시 연결해주세요." : camera.moduleRegistrationState === "ready" ? "위의 모듈 카메라 연결 버튼을 눌러주세요." : "모듈 웹캠을 PC에 USB로 연결한 뒤 등록하세요. 노트북 내장 카메라는 사용하지 않습니다."}</p></div>}
       {playing && <>
         <span className="bc-video-badge"><i />카메라 실시간 · 수치는 교육용 모의</span>
         <svg className="bc-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
@@ -174,7 +208,12 @@ export default function BoothCameraOverlay({ values, alarms, onClose }: BoothCam
       <button type="button" className={`bc-button ${adjusting ? "is-selected" : ""}`} aria-pressed={adjusting} disabled={!playing} onClick={() => setAdjusting(value => !value)}>{adjusting ? "위치 맞춤 완료" : "번호·수치 위치 맞추기"}</button>
       {adjusting && <><p>번호와 숫자 표시를 각각 끌어 빈 공간에 놓으세요. 방향키로도 움직일 수 있어요.</p><div className="bc-nudge"><span>{metadata[selected.signal].number} · {selected.part === "marker" ? "번호" : "수치"}</span>{[["←", -.01, 0], ["↑", 0, -.01], ["↓", 0, .01], ["→", .01, 0]].map(([label, dx, dy]) => <button type="button" className="bc-button" key={String(label)} aria-label={`선택 위치 ${label} 이동`} onClick={() => move(Number(dx), Number(dy))}>{label}</button>)}<button type="button" className="bc-button" onClick={() => setLayout(defaultBoothCameraLayout())}>기본 위치</button></div></>}
     </div>
-    <p className="bc-footnote"><span className="bc-normal-sample">흰색</span> 정상 · <span className="bc-alarm-sample">빨간색</span> 이상 · 정상 범위로 돌아오면 흰색으로 바뀝니다.</p>
+    <section className="bc-normal-guide" aria-label="카메라 수치의 모의 정상 기준">
+      <h3>목표값과 정상 범위</h3><p>모의값을 목표 부근으로 맞추세요. 같은 기준으로 카메라 표시와 복구 미션을 판정해요.</p>
+      <div className="bc-normal-grid">{BOOTH_SIGNALS.map(signal => <div key={signal.key} data-alarm={String(alarms[signal.key])}><strong>{signal.number} · {signal.label}</strong><span>목표 {signal.target} {signal.unit}</span><small>정상 {signal.normal[0]}–{signal.normal[1]} {signal.unit}</small><b>{alarms[signal.key] ? "복구 필요" : "정상"}</b></div>)}</div>
+      <details><summary>빨간 표시가 바로 흰색으로 바뀌지 않을 때</summary><p>경계에서 색이 계속 바뀌지 않도록, 경보가 발생한 항목은 아래 복구 범위에서 {(BOOTH_ALARM_CLEAR_MS / 1000).toFixed(1)}초 유지하면 흰색으로 돌아와요.</p><ul>{BOOTH_SIGNALS.map(signal => <li key={signal.key}>{signal.number} · {signal.label}: {BOOTH_RECOVERY_RANGES[signal.key][0]}–{BOOTH_RECOVERY_RANGES[signal.key][1]} {signal.unit}</li>)}</ul></details>
+    </section>
+    <p className="bc-footnote"><span className="bc-normal-sample">흰색</span> 정상 · <span className="bc-alarm-sample">빨간색</span> 복구 필요 · 표시 범위와 목표는 이번 교육용 체험의 기준이에요.</p>
     <dl className="bc-sr-only">{BOOTH_CAMERA_SIGNALS.map(signal => <div key={signal}><dt>{metadata[signal].label}</dt><dd>{formatValue(signal, values[signal])} {metadata[signal].unit}, {alarms[signal] ? "이상" : "정상"}</dd></div>)}</dl>
   </section>;
 }

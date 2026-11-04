@@ -16,6 +16,9 @@ export default defineConfig({
     environment: "node",
     include: [
       "shared/booth*.test.ts",
+      "shared/moduleCamera*.test.ts",
+      "server/module-camera.test.ts",
+      "server/prototype-camera.test.ts",
       "client/src/**/booth*.test.ts",
       "client/src/**/Booth*.test.ts",
     ],

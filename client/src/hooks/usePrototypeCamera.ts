@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  MODULE_CAMERA_STORAGE_KEY, createModuleCameraRegistration, isEligibleModuleCamera,
+  isRegisteredModuleCameraPresent, readModuleCameraRegistration, recommendedModuleCameraId,
+  type ModuleCameraRegistration,
+} from "@shared/moduleCameraPolicy";
 
 export type PrototypeCameraStatus =
   | "idle"
@@ -22,6 +27,8 @@ export type PrototypeCameraError =
   | "stream-unavailable"
   | "unknown";
 export type PrototypeCameraDevice = { deviceId: string; label: string };
+export type PrototypeCameraOptions = { moduleOnly?: boolean };
+export type ModuleCameraRegistrationState = "unregistered" | "ready" | "missing" | "labels-hidden";
 export type PrototypeCameraSnapshot = {
   status: PrototypeCameraStatus;
   error: PrototypeCameraError | null;
@@ -36,6 +43,13 @@ export type PrototypeCameraSnapshot = {
   inIframe: boolean;
   cameraPolicyAllowed: boolean | null;
   stoppedForBackground: boolean;
+  moduleOnly: boolean;
+  eligibleModuleDevices: PrototypeCameraDevice[];
+  registeredDeviceId: string | null;
+  registeredDeviceLabel: string | null;
+  moduleRegistrationState: ModuleCameraRegistrationState;
+  canStart: boolean;
+  activeDeviceId: string | null;
 };
 
 type CameraMediaDevices = Pick<
@@ -52,6 +66,7 @@ export type PrototypeCameraEnvironment = {
   cameraPolicyAllowed: boolean | null;
   visibility?: EventTarget & { readonly hidden: boolean };
   page?: EventTarget;
+  storage?: Pick<Storage, "getItem" | "setItem" | "removeItem"> | null;
 };
 
 function browserCameraEnvironment(): PrototypeCameraEnvironment {
@@ -71,6 +86,8 @@ function browserCameraEnvironment(): PrototypeCameraEnvironment {
       })
     | undefined;
   let cameraPolicyAllowed: boolean | null = null;
+  let storage: PrototypeCameraEnvironment["storage"] = null;
+  try { if (typeof window !== "undefined") storage = window.localStorage; } catch { /* Memory-only registration remains available. */ }
   try {
     const policy =
       policyDocument?.permissionsPolicy ?? policyDocument?.featurePolicy;
@@ -88,6 +105,7 @@ function browserCameraEnvironment(): PrototypeCameraEnvironment {
     cameraPolicyAllowed,
     visibility: doc,
     page: typeof window !== "undefined" ? window : undefined,
+    storage,
   };
 }
 
@@ -132,9 +150,15 @@ export class PrototypeCameraController {
   private video: HTMLVideoElement | null = null;
   private videoCleanup: (() => void) | null = null;
   private trackCleanups: Array<() => void> = [];
+  private moduleOnly: boolean;
+  private registration: ModuleCameraRegistration | null = null;
 
-  constructor(environment: PrototypeCameraEnvironment) {
+  constructor(environment: PrototypeCameraEnvironment, options: PrototypeCameraOptions = {}) {
     this.environment = environment;
+    this.moduleOnly = options.moduleOnly === true;
+    if (this.moduleOnly) {
+      try { this.registration = readModuleCameraRegistration(environment.storage?.getItem(MODULE_CAMERA_STORAGE_KEY) ?? null); } catch { /* Storage can be disabled by browser policy. */ }
+    }
     this.snapshot = {
       status: "idle",
       error: null,
@@ -149,6 +173,13 @@ export class PrototypeCameraController {
       inIframe: environment.inIframe,
       cameraPolicyAllowed: environment.cameraPolicyAllowed,
       stoppedForBackground: false,
+      moduleOnly: this.moduleOnly,
+      eligibleModuleDevices: [],
+      registeredDeviceId: this.registration?.deviceId ?? null,
+      registeredDeviceLabel: this.registration?.label ?? null,
+      moduleRegistrationState: this.registration ? "missing" : "unregistered",
+      canStart: !this.moduleOnly && Boolean(environment.mediaDevices?.getUserMedia) && environment.secureContext && environment.cameraPolicyAllowed !== false,
+      activeDeviceId: null,
     };
   }
 
@@ -160,7 +191,24 @@ export class PrototypeCameraController {
     };
   };
   private publish(patch: Partial<PrototypeCameraSnapshot>) {
-    this.snapshot = { ...this.snapshot, ...patch };
+    const next = { ...this.snapshot, ...patch };
+    const eligible = next.devices.filter(isEligibleModuleCamera);
+    const present = isRegisteredModuleCameraPresent(this.registration, next.devices);
+    const labelsHidden = next.devices.length > 0 && next.devices.every(device => !device.label.trim());
+    const moduleRegistrationState: ModuleCameraRegistrationState = present ? "ready"
+      : labelsHidden ? "labels-hidden" : this.registration ? "missing" : "unregistered";
+    this.snapshot = {
+      ...next,
+      moduleOnly: this.moduleOnly,
+      eligibleModuleDevices: eligible,
+      registeredDeviceId: this.registration?.deviceId ?? null,
+      registeredDeviceLabel: this.registration?.label ?? null,
+      moduleRegistrationState,
+      canStart: this.mounted && next.supported && next.secureContext && next.cameraPolicyAllowed !== false &&
+        !this.environment.visibility?.hidden && next.status !== "requesting" &&
+        (!this.moduleOnly || present && next.selectedDeviceId === this.registration?.deviceId),
+      activeDeviceId: this.activeDeviceId || null,
+    };
     this.subscribers.forEach(subscriber => subscriber(this.snapshot));
   }
 
@@ -214,10 +262,31 @@ export class PrototypeCameraController {
 
   selectDevice = (deviceId: string) => {
     // Selection is not permission or capture consent. A separate start click confirms it.
+    const next = typeof deviceId === "string" && deviceId.length <= 512 ? deviceId : "";
+    if (this.moduleOnly && next !== this.snapshot.selectedDeviceId) this.stop();
     this.publish({
-      selectedDeviceId:
-        typeof deviceId === "string" && deviceId.length <= 512 ? deviceId : "",
+      selectedDeviceId: next,
     });
+  };
+
+  registerModuleCamera = (deviceId: string): boolean => {
+    if (!this.moduleOnly || !this.mounted) return false;
+    this.stop();
+    const candidate = this.snapshot.devices.find(device => device.deviceId === deviceId);
+    const registration = candidate ? createModuleCameraRegistration(candidate) : null;
+    if (!registration) { this.fail("constraints"); return false; }
+    this.registration = registration;
+    try { this.environment.storage?.setItem(MODULE_CAMERA_STORAGE_KEY, JSON.stringify(registration)); } catch { /* Current session registration still works. */ }
+    this.publish({ selectedDeviceId: registration.deviceId, error: null });
+    return true;
+  };
+
+  forgetModuleCamera = () => {
+    if (!this.moduleOnly) return;
+    this.stop();
+    this.registration = null;
+    try { this.environment.storage?.removeItem(MODULE_CAMERA_STORAGE_KEY); } catch { /* Current session still forgets it. */ }
+    this.publish({ selectedDeviceId: "", error: null });
   };
 
   async refreshDevices(checkRemoval = false) {
@@ -238,20 +307,32 @@ export class PrototypeCameraController {
       const recommended =
         devices.find(device => /APC[\s_-]?850/i.test(device.label)) ??
         devices.find(device => /ABKO|앱코/i.test(device.label));
+      const recommendedDeviceId = this.moduleOnly ? recommendedModuleCameraId(devices) : recommended?.deviceId ?? null;
+      let selectedDeviceId = this.snapshot.selectedDeviceId;
+      if (this.moduleOnly) {
+        if (!devices.some(device => device.deviceId === selectedDeviceId && isEligibleModuleCamera(device))) selectedDeviceId = "";
+        if (!selectedDeviceId) selectedDeviceId = isRegisteredModuleCameraPresent(this.registration, devices)
+          ? this.registration!.deviceId : recommendedDeviceId ?? "";
+      }
       this.publish({
         devices,
-        recommendedDeviceId: recommended?.deviceId ?? null,
+        recommendedDeviceId,
+        selectedDeviceId,
       });
       if (
-        checkRemoval &&
-        this.stream &&
-        this.activeDeviceId &&
-        !devices.some(device => device.deviceId === this.activeDeviceId)
+        (this.stream || checkRemoval && this.snapshot.status === "requesting") &&
+        (this.moduleOnly
+          ? !isRegisteredModuleCameraPresent(this.registration, devices) || Boolean(this.activeDeviceId && this.activeDeviceId !== this.registration?.deviceId)
+          : checkRemoval && Boolean(this.activeDeviceId) && !devices.some(device => device.deviceId === this.activeDeviceId))
       ) {
         this.fail("device-lost");
       }
     } catch {
-      // Device names may be hidden before permission. Starting remains an explicit choice.
+      // Strict mode does not trust stale discovery or open the default camera to reveal names.
+      if (this.moduleOnly && this.mounted && request === this.enumeration) {
+        this.publish({ devices: [], recommendedDeviceId: null, selectedDeviceId: "" });
+        if (this.stream || checkRemoval && this.snapshot.status === "requesting") this.fail("device-lost");
+      }
     }
   }
 
@@ -330,7 +411,6 @@ export class PrototypeCameraController {
       return;
     }
     const token = ++this.generation;
-    const deviceId = this.snapshot.selectedDeviceId;
     this.releaseStream();
     this.publish({
       status: "requesting",
@@ -340,6 +420,19 @@ export class PrototypeCameraController {
       activeDeviceLabel: null,
       stoppedForBackground: false,
     });
+    let deviceId = this.snapshot.selectedDeviceId;
+    if (this.moduleOnly) {
+      // Discovery cannot activate a camera. First-time setup never uses a generic stream.
+      await this.refreshDevices();
+      if (!this.mounted || token !== this.generation || this.environment.visibility?.hidden) return;
+      if (!isRegisteredModuleCameraPresent(this.registration, this.snapshot.devices)) {
+        this.fail(this.registration ? "no-device" : "constraints");
+        return;
+      }
+      const registeredId = this.registration!.deviceId;
+      if (deviceId !== registeredId || this.snapshot.selectedDeviceId !== registeredId) { this.fail("constraints"); return; }
+      deviceId = registeredId;
+    }
     try {
       const stream = await this.environment.mediaDevices.getUserMedia({
         audio: false,
@@ -368,6 +461,19 @@ export class PrototypeCameraController {
         this.stopTracks(stream);
         this.fail("no-device");
         return;
+      }
+      if (this.moduleOnly) {
+        let verified = false;
+        try {
+          verified = tracks.every(track => track.readyState !== "ended" && track.getSettings().deviceId === deviceId &&
+            (!track.label || isEligibleModuleCamera({ deviceId, label: track.label }))) &&
+            isRegisteredModuleCameraPresent(this.registration, this.snapshot.devices);
+        } catch { /* Missing exact identity fails verification; never substitute a default device. */ }
+        if (!verified) {
+          this.stopTracks(stream);
+          this.fail("constraints");
+          return;
+        }
       }
       this.stream = stream;
       const track = tracks.find(candidate => candidate.readyState !== "ended")!;
@@ -499,11 +605,11 @@ export class PrototypeCameraController {
   }
 }
 
-export function usePrototypeCamera() {
+export function usePrototypeCamera(options: PrototypeCameraOptions = {}) {
   const controllerRef = useRef<PrototypeCameraController | null>(null);
   if (!controllerRef.current)
     controllerRef.current = new PrototypeCameraController(
-      browserCameraEnvironment()
+      browserCameraEnvironment(), options
     );
   const controller = controllerRef.current;
   const [snapshot, setSnapshot] = useState(controller.getSnapshot);
@@ -527,5 +633,7 @@ export function usePrototypeCamera() {
     stop: controller.stop,
     selectDevice: controller.selectDevice,
     refreshDevices: () => controller.refreshDevices(),
+    registerModuleCamera: controller.registerModuleCamera,
+    forgetModuleCamera: controller.forgetModuleCamera,
   };
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyBoothAction, BOOTH_MAX_TICK_MS, BOOTH_MISSION_DURATION_MS,
+  applyBoothAction, BOOTH_MAX_TICK_MS, BOOTH_MISSION_DURATION_MS, BOOTH_RECOVERY_RANGES, BOOTH_SIGNALS,
   createBoothState, getBoothSnapshot, stepBoothState, type BoothState,
 } from "./boothExperience";
 
@@ -120,6 +120,39 @@ describe("one coherent educational booth state", () => {
     expect(state.events.filter(event => event.type === "timeout")).toHaveLength(1);
   });
 
+  it("awards a full stable interval at the exact deadline even when a timer tick crosses it", () => {
+    const settled = advance(match(start(61)), 3_000);
+    const nearDeadline: BoothState = { ...settled, mission: { ...settled.mission,
+      status: "active", elapsedMs: 89_950, remainingMs: 50, stableMs: 4_950 } };
+    const finished = stepBoothState(nearDeadline, 100);
+    expect(finished.mission.status).toBe("won");
+    expect(finished.mission.elapsedMs).toBe(BOOTH_MISSION_DURATION_MS);
+    expect(finished.mission.stableMs).toBe(5_000);
+    expect(finished.events.filter(event => event.type === "success")).toHaveLength(1);
+    expect(advance(finished, 2_000).events.filter(event => event.type === "success")).toHaveLength(1);
+  });
+
+  it("does not count stability earned after the deadline", () => {
+    const settled = advance(match(start(62)), 3_000);
+    const nearDeadline: BoothState = { ...settled, mission: { ...settled.mission,
+      status: "active", elapsedMs: 89_950, remainingMs: 50, stableMs: 4_949 } };
+    const finished = stepBoothState(nearDeadline, 100);
+    expect(finished.mission.status).toBe("failed");
+    expect(finished.mission.elapsedMs).toBe(BOOTH_MISSION_DURATION_MS);
+    expect(finished.mission.score).toBeNull();
+    expect(finished.events.some(event => event.type === "success")).toBe(false);
+  });
+
+  it("publishes recovery ranges that contain each target and fit inside the normal range", () => {
+    for (const signal of BOOTH_SIGNALS) {
+      const [low, high] = BOOTH_RECOVERY_RANGES[signal.key];
+      expect(low).toBeGreaterThanOrEqual(signal.normal[0]);
+      expect(high).toBeLessThanOrEqual(signal.normal[1]);
+      expect(signal.target).toBeGreaterThanOrEqual(low);
+      expect(signal.target).toBeLessThanOrEqual(high);
+    }
+  });
+
   it("returns to live free-play status after a completed mission", () => {
     const won = advance(match(start(22)), 8_000);
     expect(won.mission.status).toBe("won");
@@ -127,6 +160,23 @@ describe("one coherent educational booth state", () => {
     expect(getBoothSnapshot(free).phase).toBe("normal");
     const faultAgain = applyBoothAction(free, { type: "inject-fault" });
     expect(getBoothSnapshot(faultAgain).phase).toBe("fault");
+  });
+
+  it("does not reuse an old win when returning to mission selection after free-play changes", () => {
+    const won = advance(match(start(22)), 8_000);
+    expect(won.mission.status).toBe("won");
+    const free = applyBoothAction(won, { type: "set-mode", mode: "free" });
+    const changed = advance(applyBoothAction(free, { type: "set-control", control: "rfSetpoint", value: 300 }), 3_000);
+    expect(changed.alarms.rfPower).toBe(true);
+    const ready = applyBoothAction(changed, { type: "set-mode", mode: "mission" });
+    expect(ready.mission.status).toBe("idle");
+    expect(ready.mission.score).toBeNull();
+    expect(ready.mission.remainingMs).toBe(BOOTH_MISSION_DURATION_MS);
+    expect(getBoothSnapshot(ready).phase).toBe("fault");
+    expect(ready.events.filter(event => event.type === "success")).toHaveLength(1);
+    const retry = applyBoothAction(ready, { type: "start-mission" });
+    expect(retry.mission.status).toBe("active");
+    expect(retry.controls.rfSetpoint).toBe(500);
   });
 
   it("validates ticks/controls, clamps runaway ticks, and bounds replay memory", () => {

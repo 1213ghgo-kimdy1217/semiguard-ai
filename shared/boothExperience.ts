@@ -87,8 +87,11 @@ export const BOOTH_SIGNALS: ReadonlyArray<{ key: SignalKey; number: 1 | 2 | 3 | 
 export const BOOTH_MISSION_DURATION_MS = 90_000;
 export const BOOTH_STABLE_GOAL_MS = 5_000;
 export const BOOTH_MAX_TICK_MS = 1_000;
+export const BOOTH_ALARM_CLEAR_MS = 600;
+export const BOOTH_MATCHING_TOLERANCE = 6;
+export const BOOTH_MIN_STABLE_MATCH_QUALITY = 1 - 0.65 * BOOTH_MATCHING_TOLERANCE / 30;
 const SIGNAL_KEYS: SignalKey[] = ["pressure", "gasFlow", "rfPower", "chamberAmbientTemp"];
-const CLEAR_RANGES: Record<SignalKey, readonly [number, number]> = {
+export const BOOTH_RECOVERY_RANGES: Readonly<Record<SignalKey, readonly [number, number]>> = {
   pressure: [18, 22], gasFlow: [92, 108], rfPower: [460, 540], chamberAmbientTemp: [32, 38],
 };
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
@@ -168,6 +171,9 @@ export function applyBoothAction(previous: BoothState, action: BoothAction): Boo
       state.mission.status = "cancelled"; state.mission.stableMs = 0;
     }
     state.mode = action.mode;
+    // Returning from free play starts a fresh mission selection. A historical
+    // win must not label newly disturbed values as recovered or lock controls.
+    if (action.mode === "mission") state.mission = initialMission();
     log(state, "mode", action.mode === "free" ? "자유 체험으로 전환" : "복구 미션 선택");
   } else if (action.type === "start-mission") {
     state.mode = "mission";
@@ -199,7 +205,7 @@ function quality(state: BoothState): number {
 }
 function isStable(state: BoothState): boolean {
   return !SIGNAL_KEYS.some(key => state.alarms[key]) &&
-    Math.abs(state.controls.matching - state.matchingOptimum) <= 6;
+    Math.abs(state.controls.matching - state.matchingOptimum) <= BOOTH_MATCHING_TOLERANCE;
 }
 function integrate(state: BoothState, dt: number) {
   state.elapsedMs += dt;
@@ -231,9 +237,9 @@ function integrate(state: BoothState, dt: number) {
         state.alarms[signal.key] = true; state.alarmRecoveryMs[signal.key] = 0;
       }
     } else {
-      const [low, high] = CLEAR_RANGES[signal.key];
+      const [low, high] = BOOTH_RECOVERY_RANGES[signal.key];
       state.alarmRecoveryMs[signal.key] = value >= low && value <= high ? state.alarmRecoveryMs[signal.key] + dt : 0;
-      if (state.alarmRecoveryMs[signal.key] >= 600) state.alarms[signal.key] = false;
+      if (state.alarmRecoveryMs[signal.key] >= BOOTH_ALARM_CLEAR_MS) state.alarms[signal.key] = false;
     }
   }
   const stable = isStable(state);
@@ -243,7 +249,7 @@ function integrate(state: BoothState, dt: number) {
     state.mission.remainingMs = Math.max(0, BOOTH_MISSION_DURATION_MS - state.mission.elapsedMs);
     state.mission.stableMs = stable && state.mission.controlActions > 0 ? state.mission.stableMs + dt : 0;
     // Reaching a deadline without the full stability interval is a timeout.
-    if (state.mission.stableMs >= state.mission.goalMs && state.mission.remainingMs > 0) {
+    if (state.mission.stableMs >= state.mission.goalMs && state.mission.elapsedMs <= BOOTH_MISSION_DURATION_MS) {
       state.mission.stableMs = state.mission.goalMs;
       state.mission.status = "won";
       state.mission.score = Math.round(clamp(100 - Math.max(0, state.mission.elapsedMs / 1000 - 5) * 0.6 - state.mission.controlActions * 0.15, 30, 100));
@@ -259,13 +265,15 @@ function integrate(state: BoothState, dt: number) {
   }
 }
 
-/** Bounded CPU work after a delayed/background timer: at most 1 second/10 steps. */
+/** Bounded CPU work after a delayed/background timer: at most 1 second/11 steps. */
 export function stepBoothState(previous: BoothState, dtMs: number): BoothState {
   if (!Number.isFinite(dtMs) || dtMs <= 0) return previous;
   let remaining = Math.min(dtMs, BOOTH_MAX_TICK_MS);
   const state = clone(previous);
   while (remaining > 0) {
-    const dt = Math.min(100, remaining);
+    // Evaluate the exact deadline, including a final fractional timer tick.
+    const untilDeadline = state.mission.status === "active" ? state.mission.remainingMs : 100;
+    const dt = Math.min(100, remaining, Math.max(untilDeadline, 0.001));
     integrate(state, dt); remaining -= dt;
   }
   return state;

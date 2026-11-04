@@ -26,6 +26,7 @@ import KiyoEquipmentView, {
   type KiyoSignal,
 } from "../components/KiyoEquipmentView";
 import BoothCameraOverlay from "../components/BoothCameraOverlay";
+import BoothMissionFeedback, { BoothNormalGuide } from "../components/BoothMissionFeedback";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
 import { useBoothDevice } from "../hooks/useBoothDevice";
 import {
@@ -146,7 +147,6 @@ export default function EtchLive() {
   const [showHint, setShowHint] = useState(false);
   const [now, setNow] = useState(Date.now);
   const noteId = useRef(0);
-  const sessionStart = useRef(Date.now());
   const lastTick = useRef(0);
   const lastSample = useRef(-500);
   const fresh = true; // These are local educational values, independent of USB availability.
@@ -183,7 +183,7 @@ export default function EtchLive() {
             : l("정상 상태", "Normal operation", "正常状態");
   const lastAge = device.lastReceivedAt === null ? null : Math.max(0, Math.floor((now - device.lastReceivedAt) / 1000));
   const events: EventItem[] = snapshot.events.slice(-20).reverse().map(event => ({
-    id: event.id, at: sessionStart.current + event.atMs,
+    id: event.id, at: event.atMs,
     kind: event.type === "fault" ? "fault" : event.type === "clear" || event.type === "success" ? "normal" : event.type === "reset" ? "reset" : "note",
     source: "demo", message: language === "ko" ? event.message : event.type === "control"
       ? l(event.message, `${event.control}: ${event.value}`, `${event.control}: ${event.value}`)
@@ -243,13 +243,20 @@ export default function EtchLive() {
     await device.disconnect();
     setEngine(createBoothState());
     setPoints([]); setNotes([]); setFact(""); setCause(""); setNext("");
-    noteId.current = 0; sessionStart.current = Date.now(); lastSample.current = -500;
+    noteId.current = 0; lastSample.current = -500;
     setSelectedModelSignal(null); setRestartPending(false); setRestarting(false);
     setNotice(l("체험 기록과 조절값을 초기화했어요. 모의 체험을 바로 계속할 수 있어요.", "Records and controls cleared. You can continue the simulation.", "記録と設定を初期化しました。模擬体験を続けられます。"));
   }
   function resetModel() {
     act({ type: "reset" });
     setNotice(l("조절값을 초기화했어요. 진행 중인 미션은 중단돼요.", "Controls reset. An active mission is cancelled.", "設定を初期化しました。進行中のミッションは中断されます。"));
+  }
+  function applyRecommendedSetpoints() {
+    setEngine(previous => (["rfSetpoint", "gasSetpoint", "exhaustValve"] as const).reduce(
+      (state, control) => applyBoothAction(state, { type: "set-control", control, value: BOOTH_CONTROL_LIMITS[control].initial }),
+      previous
+    ));
+    setNotice(l("RF·유량·배기를 기본 운전값에 맞췄어요. 이제 RF 매칭을 조절해 빛과 ③ RF를 안정화하세요.", "RF, flow and exhaust are at their starting settings. Now adjust RF matching to stabilize the light and RF value.", "RF・流量・排気を基本設定に合わせました。RFマッチングを調整し、光と③RFを安定化してください。"));
   }
   function recordObservation(event: FormEvent) {
     event.preventDefault();
@@ -350,6 +357,7 @@ export default function EtchLive() {
             <Button variant="outline" disabled={restarting} onClick={() => setRestartPending(false)}>{l("취소", "Cancel", "キャンセル")}</Button>
           </div> : null}
         </section>
+        <BoothMissionFeedback snapshot={snapshot} language={language} onRetry={() => act({ type: "start-mission" })} onFreePlay={() => act({ type: "set-mode", mode: "free" })} />
         <div className="kp-overview-grid">
           <section
             className="kp-equipment-panel"
@@ -578,10 +586,11 @@ export default function EtchLive() {
             <p className="kp-connection-copy">{snapshot.mode === "free"
               ? l("이상을 주입한 뒤 빛과 수치를 보며 조절해요. 조작 과정은 자동으로 기록돼요.", "Inject a fault and adjust while observing the light and values. Actions are recorded automatically.", "異常を注入し、光と数値を見ながら調整しましょう。操作は自動記録されます。")
               : l("90초 안에 정상 상태를 5초 유지하세요. RF 매칭부터 조절해보세요.", "Keep all values normal for five seconds within 90 seconds. Start with RF matching.", "90秒以内に正常状態を5秒維持しましょう。RFマッチングから調整してください。")}</p>
+            <BoothNormalGuide snapshot={snapshot} language={language} onRecommended={applyRecommendedSetpoints} disabled={missionFinished} />
             {snapshot.mode === "mission" ? <div className="kp-experience-mission">
               <div><strong>{Math.ceil(snapshot.mission.remainingMs / 1000)}{l("초", "s", "秒")}</strong><span>{l("정상 유지", "Stable", "正常維持")} {(snapshot.mission.stableMs / 1000).toFixed(1)} / 5{l("초", "s", "秒")}</span></div>
               <progress aria-label={l("정상 상태 유지 시간", "Stable operation duration", "正常状態の維持時間")} value={snapshot.mission.stableMs} max={snapshot.mission.goalMs} />
-              {snapshot.mission.status === "won" ? <p className="kp-success" role="status">{l(`복구 성공! ${snapshot.mission.score}점`, `Recovered! Score ${snapshot.mission.score}`, `復旧成功！${snapshot.mission.score}点`)}</p> : null}
+              {snapshot.mission.status === "won" ? <p className="kp-success">{l(`복구 미션 완료 · ${snapshot.mission.score}점`, `Recovery mission complete · ${snapshot.mission.score} points`, `復旧ミッション完了・${snapshot.mission.score}点`)}</p> : null}
               {snapshot.mission.status === "failed" ? <p className="kp-error" role="status">{l("시간이 끝났어요. 기록을 보고 다시 도전해요.", "Time is up. Review the record and try again.", "時間終了です。記録を見て再挑戦しましょう。")}</p> : null}
               {snapshot.mission.status === "cancelled" ? <p>{l("미션이 중단됐어요. 다시 시작할 수 있어요.", "Mission cancelled. You can start again.", "ミッションは中断されました。再開できます。")}</p> : null}
               <Button className="kp-button kp-primary" disabled={missionActive} onClick={() => act({ type: "start-mission" })}><Play size={15} aria-hidden="true" />{missionActive ? l("정상 상태를 찾아보세요", "Find normal operation", "正常状態を探しましょう") : l("복구 미션 시작", "Start recovery mission", "復旧ミッション開始")}</Button>
@@ -849,14 +858,7 @@ export default function EtchLive() {
                     />
                     <div>
                       <span className="kp-event-time">
-                        {new Date(event.at).toLocaleTimeString(
-                          language === "ko"
-                            ? "ko-KR"
-                            : language === "ja"
-                              ? "ja-JP"
-                              : "en-US",
-                          { hour12: false }
-                        )}
+                        {l("체험 경과", "Experience elapsed", "体験の経過")} {clock(event.at / 1000)}
                         <small>
                           {event.source === "demo"
                             ? l("모의 체험", "DEMO", "模擬体験")
