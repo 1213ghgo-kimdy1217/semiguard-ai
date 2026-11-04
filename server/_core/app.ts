@@ -34,7 +34,11 @@ export function createApp() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // A deployment without its session secret must not accept authentication.
   app.use("/api", (req, res, next) => {
-    if (!accountServicesConfigured() && req.path !== "/health" && req.path !== "/trpc/auth.me") {
+    // Status-only GET batches remain readable so an unconfigured preview can
+    // explain its availability. A batch containing any other procedure fails closed.
+    const publicStatus = req.method === "GET" &&
+      /^\/trpc\/(?:auth\.me|learning\.status)(?:,(?:auth\.me|learning\.status))*$/.test(req.path);
+    if (!accountServicesConfigured() && req.path !== "/health" && !publicStatus) {
       res.status(503).json({ error: { message: "Account services are not configured on this deployment." } });
       return;
     }

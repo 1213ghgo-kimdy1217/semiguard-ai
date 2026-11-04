@@ -30,7 +30,9 @@ export function getLearningAssistantStatus(): {
   aiReady: boolean;
 } {
   return {
-    loginReady: Boolean(ENV.cookieSecret?.trim() && ENV.databaseUrl?.trim()),
+    loginReady: Boolean(
+      ENV.appId?.trim() && ENV.cookieSecret?.trim() && ENV.databaseUrl?.trim()
+    ),
     aiReady: Boolean(
       ENV.nvidiaApiKey.trim() &&
         (!ENV.aiProvider.trim() || ENV.aiProvider.trim() === "nvidia")

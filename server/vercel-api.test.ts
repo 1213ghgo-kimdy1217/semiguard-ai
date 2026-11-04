@@ -41,6 +41,28 @@ describe("portable API deployment", () => {
     }
   });
 
+  it("allows only read-only readiness and session batches before account setup", async () => {
+    vi.stubEnv("DATABASE_URL", "");
+    vi.stubEnv("JWT_SECRET", "");
+    const base = await start();
+    const status = await fetch(`${base}/api/trpc/learning.status`);
+    expect(status.status).toBe(200);
+    const readiness = (await status.json()).result.data.json;
+    expect(Object.keys(readiness).sort()).toEqual(["aiReady", "loginReady"]);
+    expect(typeof readiness.aiReady).toBe("boolean");
+    expect(readiness.loginReady).toBe(false);
+    const batch = await fetch(`${base}/api/trpc/auth.me,learning.status?batch=1`);
+    expect(batch.status).toBe(200);
+    expect(await batch.json()).toEqual([
+      { result: { data: { json: null } } },
+      { result: { data: { json: readiness } } },
+    ]);
+    for (const path of ["learning.status,learning.ask", "auth.me,auth.login", "learning.status,training.history"]) {
+      expect((await fetch(`${base}/api/trpc/${path}?batch=1`)).status).toBe(503);
+    }
+    expect((await fetch(`${base}/api/trpc/learning.status`, { method: "POST" })).status).toBe(503);
+  });
+
   it("reports configured account services without exposing environment values", async () => {
     vi.stubEnv("DATABASE_URL", "mysql://test.invalid/example");
     vi.stubEnv("JWT_SECRET", "test-only-signing-secret");

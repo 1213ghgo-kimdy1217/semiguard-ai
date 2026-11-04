@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
     nvidiaApiKey: "configured-test-value",
     aiProvider: "nvidia",
     nvidiaModel: "test/model",
+    appId: "configured-app-test-value",
     cookieSecret: "configured-cookie-test-value",
     databaseUrl: "configured-database-test-value",
   },
@@ -46,6 +47,7 @@ describe("learning assistant", () => {
     vi.clearAllMocks();
     mocks.env.aiProvider = "nvidia";
     mocks.env.nvidiaApiKey = "configured-test-value";
+    mocks.env.appId = "configured-app-test-value";
     mocks.env.cookieSecret = "configured-cookie-test-value";
     mocks.env.databaseUrl = "configured-database-test-value";
     mocks.invoke.mockResolvedValue(response());
@@ -520,7 +522,11 @@ describe("learning assistant", () => {
       loginReady: true,
       aiReady: true,
     });
-    for (const patch of [{ cookieSecret: "" }, { databaseUrl: " " }]) {
+    for (const patch of [
+      { appId: " " },
+      { cookieSecret: "" },
+      { databaseUrl: " " },
+    ]) {
       const previous = { ...mocks.env };
       Object.assign(mocks.env, patch);
       expect(getLearningAssistantStatus()).toEqual({
