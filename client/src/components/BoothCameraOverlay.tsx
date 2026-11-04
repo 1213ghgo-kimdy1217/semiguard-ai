@@ -14,6 +14,7 @@ export type BoothCameraOverlayProps = {
   alarms: Record<BoothSignal, boolean>;
   onClose?: () => void;
   compact?: boolean;
+  valuesFrozen?: boolean;
 };
 
 const metadata: Record<BoothSignal, { number: number; label: string; unit: string; decimals: number }> = {
@@ -44,7 +45,7 @@ function formatValue(signal: BoothSignal, value: number) {
 }
 
 /** Values and alarm flags are props from the same scenario clock as the lamp. */
-export default function BoothCameraOverlay({ values, alarms, onClose, compact = false }: BoothCameraOverlayProps) {
+export default function BoothCameraOverlay({ values, alarms, onClose, compact = false, valuesFrozen = false }: BoothCameraOverlayProps) {
   const camera = usePrototypeCamera({ moduleOnly: true });
   const heading = useId(), select = useId(), settingsId = useId();
   const frameRef = useRef<HTMLDivElement>(null);
@@ -215,7 +216,7 @@ export default function BoothCameraOverlay({ values, alarms, onClose, compact = 
       <video ref={camera.videoRef} autoPlay muted playsInline aria-label="실물 교육용 챔버 카메라" className={playing ? "is-playing" : ""} />
       {!playing && <div className="bc-placeholder"><span aria-hidden="true">◉</span><strong>{active ? "등록한 모듈 카메라의 영상을 기다려요" : "모듈 카메라가 연결되지 않았어요"}</strong><p>{compact ? camera.stoppedForBackground ? "영상이 중지됐어요. 다시 연결해주세요." : camera.moduleRegistrationState === "ready" ? "위의 연결 버튼을 눌러주세요." : camera.moduleRegistrationState === "missing" ? "등록한 모듈 웹캠을 다시 연결해주세요." : "모듈 웹캠을 PC에 USB로 연결한 뒤 등록하세요." : camera.stoppedForBackground ? "다른 창으로 이동해 영상이 중지됐어요. 등록한 모듈 카메라에 다시 연결해주세요." : camera.moduleRegistrationState === "ready" ? "위의 모듈 카메라 연결 버튼을 눌러주세요." : "모듈 웹캠을 PC에 USB로 연결한 뒤 등록하세요. 노트북 내장 카메라는 사용하지 않습니다."}</p>{compact && !active && camera.moduleRegistrationState !== "ready" && <button type="button" className="bc-button" onClick={() => setSettingsOpen(true)}>모듈 카메라 등록</button>}</div>}
       {playing && <>
-        <span className="bc-video-badge"><i />카메라 실시간 · 수치는 교육용 모의</span>
+        <span className="bc-video-badge"><i />{valuesFrozen ? "카메라 실시간 · 수치는 종료 시점 기록" : "카메라 실시간 · 수치는 교육용 모의"}</span>
         <svg className="bc-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
           {BOOTH_CAMERA_SIGNALS.map(signal => { const a = position(signal, "marker"), c = position(signal, "card"); return <line key={signal} x1={a.x * 1000} y1={a.y * 1000} x2={c.x * 1000} y2={c.y * 1000} className={alarms[signal] ? "is-alarm" : ""} />; })}
         </svg>

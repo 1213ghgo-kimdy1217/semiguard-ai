@@ -26,6 +26,22 @@ function opening(root: ts.Node, name: string) {
 function call(root: ts.Node, name: string) {
   return nodes(root, ts.isCallExpression).find(item => item.expression.getText() === name);
 }
+const compact = (node: ts.Node | undefined) => node?.getText().replace(/\s+/g, "");
+function variables(root: ts.Node) {
+  return new Map(nodes(root, ts.isVariableDeclaration)
+    .filter(item => ts.isIdentifier(item.name) && item.initializer)
+    .map(item => [item.name.getText(), item.initializer!]));
+}
+function payloadValue(payload: ts.Expression, name: string) {
+  if (!ts.isObjectLiteralExpression(payload)) return undefined;
+  const property = payload.properties.find(item => ts.isPropertyAssignment(item) && item.name.getText() === name);
+  return property && ts.isPropertyAssignment(property) ? property.initializer : undefined;
+}
+function ancestors(node: ts.Node) {
+  const result: ts.Node[] = [];
+  for (let current = node.parent; current; current = current.parent) result.push(current);
+  return result;
+}
 
 describe("live observation integration", () => {
   it("mounts the integrated experience on the existing protected /live route", () => {
@@ -61,36 +77,37 @@ describe("live observation integration", () => {
     expect(html).not.toContain("experience-preview.html");
     expect(html).not.toContain("chatgpt.site");
   });
-  it("uses one scenario for camera readouts, the Kiyo model and the USB lamp", () => {
+  it("shares live values and freezes camera/model evidence to the completed attempt during review", () => {
     const page = parse("client/src/pages/EtchLive.tsx");
-    const declarations = nodes(page, ts.isVariableDeclaration);
-    const variables = new Map(declarations.filter(item => ts.isIdentifier(item.name) && item.initializer)
-      .map(item => [item.name.getText(), item.initializer!]));
-    const scenario = declarations.find(item => item.initializer && call(item.initializer, "getBoothSnapshot"))?.name.getText();
-    expect(scenario).toBeDefined();
+    const values = variables(page);
+    expect(call(values.get("liveSnapshot")!, "getBoothSnapshot")).toBeDefined();
+    const display = values.get("displaySnapshot");
+    expect(display && ts.isConditionalExpression(display)).toBe(true);
+    if (display && ts.isConditionalExpression(display)) {
+      expect(compact(display.condition)).toBe('stage==="review"&&completedAttempt');
+      expect(compact(display.whenTrue)).toBe("completedAttempt.finalSnapshot");
+      expect(compact(display.whenFalse)).toBe("liveSnapshot");
+    }
     function resolved(expression: ts.Expression | undefined): string | undefined {
       if (!expression) return undefined;
-      if (ts.isIdentifier(expression) && variables.has(expression.text)) return resolved(variables.get(expression.text));
-      return expression.getText().replace(/\s+/g, "");
+      if (ts.isIdentifier(expression) && values.has(expression.text)) return resolved(values.get(expression.text));
+      return compact(expression);
     }
     const camera = opening(page, "BoothCameraOverlay")!;
     const model = opening(page, "KiyoEquipmentView")!;
     expect(camera).toBeDefined();
     expect(model).toBeDefined();
-    expect(resolved(attribute(camera, "values"))).toBe(`${scenario}.values`);
-    expect(resolved(attribute(camera, "alarms"))).toBe(`${scenario}.alarms`);
-    expect(resolved(attribute(model, "processValues"))).toBe(`${scenario}.values`);
-    expect(resolved(attribute(model, "signalAlarms"))).toBe(`${scenario}.alarms`);
-    expect(resolved(attribute(model, "lampBrightness"))).toBe(`${scenario}.lampBrightness`);
-    const deviceName = declarations.find(item => item.initializer && call(item.initializer, "useBoothDevice"))?.name.getText();
-    const lampCommand = call(page, `${deviceName}.sendState`);
-    const payload = lampCommand?.arguments[0];
-    expect(payload && ts.isObjectLiteralExpression(payload)).toBe(true);
-    if (payload && ts.isObjectLiteralExpression(payload)) {
-      const value = (name: string) => payload.properties.find(item => ts.isPropertyAssignment(item) && item.name.getText() === name);
-      const brightness = value("lampBrightness"), fault = value("faultActive");
-      expect(brightness && ts.isPropertyAssignment(brightness) && resolved(brightness.initializer)).toBe(`${scenario}.lampBrightness`);
-      expect(fault && ts.isPropertyAssignment(fault) && resolved(fault.initializer)).toBe(`${scenario}.faultActive`);
+    expect(resolved(attribute(camera, "values"))).toBe("displaySnapshot.values");
+    expect(resolved(attribute(camera, "alarms"))).toBe("displaySnapshot.alarms");
+    expect(compact(attribute(camera, "valuesFrozen"))).toBe('stage==="review"');
+    expect(resolved(attribute(model, "processValues"))).toBe("displaySnapshot.values");
+    expect(resolved(attribute(model, "signalAlarms"))).toBe("displaySnapshot.alarms");
+    const brightness = attribute(model, "lampBrightness");
+    expect(brightness && ts.isConditionalExpression(brightness)).toBe(true);
+    if (brightness && ts.isConditionalExpression(brightness)) {
+      expect(compact(brightness.condition)).toBe('stage==="experience"');
+      expect(compact(brightness.whenTrue)).toBe("displaySnapshot.lampBrightness");
+      expect(compact(brightness.whenFalse)).toBe("0");
     }
     // Webcam availability must depend on page visibility, not lamp-port freshness.
     const dependencies = new Set<string>();
@@ -99,12 +116,39 @@ describe("live observation integration", () => {
       for (const id of nodes(expression, ts.isIdentifier)) {
         if (dependencies.has(id.text)) continue;
         dependencies.add(id.text);
-        visitDependencies(variables.get(id.text));
+        visitDependencies(values.get(id.text));
       }
     };
-    expect(variables.has("cameraAllowed")).toBe(true);
-    visitDependencies(variables.get("cameraAllowed"));
-    expect(dependencies.has(deviceName!)).toBe(false);
+    expect(values.has("cameraActive")).toBe(true);
+    visitDependencies(values.get("cameraActive"));
+    expect(dependencies.has("pageVisible")).toBe(true);
+    expect(dependencies.has("device")).toBe(false);
+  });
+  it("keeps a 100ms USB heartbeat using live lamp state during a run and explicit OFF otherwise", () => {
+    const page = parse("client/src/pages/EtchLive.tsx");
+    const values = variables(page);
+    expect(compact(values.get("latestSnapshotRef"))).toBe("useRef(liveSnapshot)");
+    expect(nodes(page, ts.isBinaryExpression).some(node =>
+      compact(node.left) === "latestSnapshotRef.current" && compact(node.right) === "liveSnapshot" &&
+      node.operatorToken.kind === ts.SyntaxKind.EqualsToken)).toBe(true);
+    const command = call(page, "device.sendState")!;
+    expect(command).toBeDefined();
+    const payload = command.arguments[0];
+    expect(ts.isConditionalExpression(payload)).toBe(true);
+    if (ts.isConditionalExpression(payload)) {
+      expect(compact(payload.condition)).toBe("runningRef.current&&!terminal(latest)");
+      expect(compact(values.get("latest"))).toBe("latestSnapshotRef.current");
+      expect(compact(payloadValue(payload.whenTrue, "lampBrightness"))).toBe("latest.lampBrightness");
+      expect(compact(payloadValue(payload.whenTrue, "faultActive"))).toBe("latest.faultActive");
+      expect(compact(payloadValue(payload.whenFalse, "lampBrightness"))).toBe("0");
+      expect(compact(payloadValue(payload.whenFalse, "faultActive"))).toBe("false");
+    }
+    const interval = ancestors(command).find((node): node is ts.CallExpression =>
+      ts.isCallExpression(node) && node.expression.getText() === "window.setInterval");
+    expect(compact(interval?.arguments[1])).toBe("100");
+    const effect = ancestors(command).find((node): node is ts.CallExpression =>
+      ts.isCallExpression(node) && node.expression.getText() === "useEffect");
+    expect(compact(effect?.arguments[1])).toBe("[device.sendState]");
   });
   it("links training to the same equipment's live page", () => {
     const training = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");

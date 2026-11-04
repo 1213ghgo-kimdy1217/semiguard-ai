@@ -162,4 +162,20 @@ describe("module camera UI without a connected module webcam", () => {
     expect(markup).not.toContain('class="bc-normal-guide"');
     expect(markup).toContain("--bc-aspect:1.7777777777777777");
   });
+
+  it("labels end-of-run values as recorded even when the module video remains live", () => {
+    cameraHook.mockReturnValue(camera({
+      status: "playing", width: 1280, height: 720, devices: [webcam], eligibleModuleDevices: [webcam],
+      selectedDeviceId: webcam.deviceId, registeredDeviceId: webcam.deviceId,
+      registeredDeviceLabel: webcam.label, moduleRegistrationState: "ready", canStart: true,
+      activeDeviceId: webcam.deviceId, activeDeviceLabel: webcam.label,
+    }));
+    const markup = renderToStaticMarkup(createElement(BoothCameraOverlay, {
+      values, alarms: healthy, compact: true, valuesFrozen: true,
+    }));
+    expect(markup).toContain("카메라 실시간 · 수치는 종료 시점 기록");
+    expect(markup).not.toContain("카메라 실시간 · 수치는 교육용 모의");
+    expect(markup).toContain('class="bc-video-badge"');
+    expect(markup).toContain('aria-label="실물 교육용 챔버 카메라" class="is-playing"');
+  });
 });

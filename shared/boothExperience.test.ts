@@ -1,19 +1,61 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyBoothAction, BOOTH_MAX_TICK_MS, BOOTH_MISSION_DURATION_MS, BOOTH_RECOVERY_RANGES, BOOTH_SIGNALS,
-  createBoothState, getBoothSnapshot, stepBoothState, type BoothState,
+  applyBoothAction,
+  BOOTH_MAX_TICK_MS,
+  BOOTH_MISSION_DURATION_MS,
+  BOOTH_RECOVERY_RANGES,
+  BOOTH_SIGNALS,
+  BOOTH_SCENARIOS,
+  createBoothState,
+  getBoothScenario,
+  getBoothSnapshot,
+  stepBoothState,
+  type BoothState,
+  type BoothScenarioId,
 } from "./boothExperience";
 
 function advance(initial: BoothState, ms: number): BoothState {
   let state = initial;
-  for (let passed = 0; passed < ms; passed += 100) state = stepBoothState(state, Math.min(100, ms - passed));
+  for (let passed = 0; passed < ms; passed += 100)
+    state = stepBoothState(state, Math.min(100, ms - passed));
   return state;
 }
 function start(seed = 37) {
   return applyBoothAction(createBoothState(seed), { type: "start-mission" });
 }
 function match(state: BoothState) {
-  return applyBoothAction(state, { type: "set-control", control: "matching", value: Math.round(state.matchingOptimum) });
+  return applyBoothAction(state, {
+    type: "set-control",
+    control: "matching",
+    value: Math.round(state.matchingOptimum),
+  });
+}
+function startScenario(scenario: BoothScenarioId, seed = 37) {
+  return applyBoothAction(
+    applyBoothAction(createBoothState(seed), {
+      type: "set-scenario",
+      scenario,
+    }),
+    { type: "start-mission" }
+  );
+}
+/** A reference operator for test solvability, never exposed to the UI. */
+function recoverPlant(state: BoothState, deliveredFlow = 100) {
+  let next = applyBoothAction(state, {
+    type: "set-control",
+    control: "gasSetpoint",
+    value: Math.round(deliveredFlow / state.gasGain),
+  });
+  next = applyBoothAction(next, {
+    type: "set-control",
+    control: "exhaustValve",
+    value: Math.round((50 * deliveredFlow) / 100 + state.exhaustOffset),
+  });
+  return applyBoothAction(next, {
+    type: "set-control",
+    control: "matching",
+    value: Math.round(state.matchingOptimum),
+  });
 }
 
 describe("one coherent educational booth state", () => {
@@ -33,8 +75,22 @@ describe("one coherent educational booth state", () => {
 
   it("uses gas and exhaust together to change pressure instead of random independent cards", () => {
     const base = createBoothState(55);
-    const higherFlow = advance(applyBoothAction(base, { type: "set-control", control: "gasSetpoint", value: 125 }), 10_000);
-    const openValve = advance(applyBoothAction(base, { type: "set-control", control: "exhaustValve", value: 75 }), 10_000);
+    const higherFlow = advance(
+      applyBoothAction(base, {
+        type: "set-control",
+        control: "gasSetpoint",
+        value: 125,
+      }),
+      10_000
+    );
+    const openValve = advance(
+      applyBoothAction(base, {
+        type: "set-control",
+        control: "exhaustValve",
+        value: 75,
+      }),
+      10_000
+    );
     expect(higherFlow.values.gasFlow).toBeGreaterThan(124);
     expect(higherFlow.values.pressure).toBeGreaterThan(24);
     expect(higherFlow.alarms.gasFlow).toBe(true);
@@ -47,26 +103,42 @@ describe("one coherent educational booth state", () => {
   });
 
   it("faults make RF and its brightness breathe, while unaffected gas stays normal", () => {
-    let state = applyBoothAction(createBoothState(91), { type: "inject-fault" });
+    let state = applyBoothAction(createBoothState(91), {
+      type: "inject-fault",
+    });
     const brightness: number[] = [];
     const rf: number[] = [];
     for (let n = 0; n < 60; n++) {
       state = stepBoothState(state, 100);
-      if (n > 10) { brightness.push(state.lampBrightness); rf.push(state.values.rfPower); }
+      if (n > 10) {
+        brightness.push(state.lampBrightness);
+        rf.push(state.values.rfPower);
+      }
     }
     expect(state.alarms.rfPower).toBe(true);
     expect(state.alarms.gasFlow).toBe(false);
-    expect(Math.max(...brightness) - Math.min(...brightness)).toBeGreaterThan(20);
+    expect(Math.max(...brightness) - Math.min(...brightness)).toBeGreaterThan(
+      20
+    );
     expect(Math.max(...rf) - Math.min(...rf)).toBeGreaterThan(30);
-    expect(brightness.every(value => Number.isInteger(value) && value >= 0 && value <= 255)).toBe(true);
+    expect(
+      brightness.every(
+        value => Number.isInteger(value) && value >= 0 && value <= 255
+      )
+    ).toBe(true);
     for (let n = 1; n < rf.length; n++) {
       // The light always comes from this same RF snapshot, not a second timer.
-      expect(Math.sign(brightness[n] - brightness[n - 1]) || 0).toBe(Math.sign(rf[n] - rf[n - 1]) || 0);
+      expect(Math.sign(brightness[n] - brightness[n - 1]) || 0).toBe(
+        Math.sign(rf[n] - rf[n - 1]) || 0
+      );
     }
   });
 
   it("clears the RF alarm only after recovery, so its red overlay returns to white", () => {
-    const bad = advance(applyBoothAction(createBoothState(11), { type: "inject-fault" }), 2_000);
+    const bad = advance(
+      applyBoothAction(createBoothState(11), { type: "inject-fault" }),
+      2_000
+    );
     expect(getBoothSnapshot(bad).alarms.rfPower).toBe(true);
     const tuned = match(bad);
     const firstTick = stepBoothState(tuned, 100);
@@ -96,7 +168,11 @@ describe("one coherent educational booth state", () => {
   it("resets the stability interval when another control disturbs the process", () => {
     let state = advance(match(start(3)), 3_000);
     expect(state.mission.stableMs).toBeGreaterThan(0);
-    state = applyBoothAction(state, { type: "set-control", control: "exhaustValve", value: 20 });
+    state = applyBoothAction(state, {
+      type: "set-control",
+      control: "exhaustValve",
+      value: 20,
+    });
     state = advance(state, 2_000);
     expect(state.alarms.pressure).toBe(true);
     expect(state.mission.stableMs).toBe(0);
@@ -104,11 +180,20 @@ describe("one coherent educational booth state", () => {
   });
 
   it("never awards success for reset, direct clear, or switching modes", () => {
-    for (const action of [{ type: "reset" } as const, { type: "clear-fault" } as const, { type: "set-mode", mode: "free" } as const]) {
-      const stopped = advance(applyBoothAction(advance(start(6), 1_000), action), 10_000);
+    for (const action of [
+      { type: "reset" } as const,
+      { type: "clear-fault" } as const,
+      { type: "set-mode", mode: "free" } as const,
+    ]) {
+      const stopped = advance(
+        applyBoothAction(advance(start(6), 1_000), action),
+        10_000
+      );
       expect(stopped.mission.status).toBe("cancelled");
       expect(stopped.mission.score).toBeNull();
-      expect(stopped.events.some(event => event.type === "success")).toBe(false);
+      expect(stopped.events.some(event => event.type === "success")).toBe(
+        false
+      );
     }
   });
 
@@ -117,25 +202,47 @@ describe("one coherent educational booth state", () => {
     expect(state.mission.status).toBe("failed");
     expect(state.mission.remainingMs).toBe(0);
     expect(state.mission.score).toBeNull();
-    expect(state.events.filter(event => event.type === "timeout")).toHaveLength(1);
+    expect(state.events.filter(event => event.type === "timeout")).toHaveLength(
+      1
+    );
   });
 
   it("awards a full stable interval at the exact deadline even when a timer tick crosses it", () => {
     const settled = advance(match(start(61)), 3_000);
-    const nearDeadline: BoothState = { ...settled, mission: { ...settled.mission,
-      status: "active", elapsedMs: 89_950, remainingMs: 50, stableMs: 4_950 } };
+    const nearDeadline: BoothState = {
+      ...settled,
+      mission: {
+        ...settled.mission,
+        status: "active",
+        elapsedMs: 89_950,
+        remainingMs: 50,
+        stableMs: 4_950,
+      },
+    };
     const finished = stepBoothState(nearDeadline, 100);
     expect(finished.mission.status).toBe("won");
     expect(finished.mission.elapsedMs).toBe(BOOTH_MISSION_DURATION_MS);
     expect(finished.mission.stableMs).toBe(5_000);
-    expect(finished.events.filter(event => event.type === "success")).toHaveLength(1);
-    expect(advance(finished, 2_000).events.filter(event => event.type === "success")).toHaveLength(1);
+    expect(
+      finished.events.filter(event => event.type === "success")
+    ).toHaveLength(1);
+    expect(
+      advance(finished, 2_000).events.filter(event => event.type === "success")
+    ).toHaveLength(1);
   });
 
   it("does not count stability earned after the deadline", () => {
     const settled = advance(match(start(62)), 3_000);
-    const nearDeadline: BoothState = { ...settled, mission: { ...settled.mission,
-      status: "active", elapsedMs: 89_950, remainingMs: 50, stableMs: 4_949 } };
+    const nearDeadline: BoothState = {
+      ...settled,
+      mission: {
+        ...settled.mission,
+        status: "active",
+        elapsedMs: 89_950,
+        remainingMs: 50,
+        stableMs: 4_949,
+      },
+    };
     const finished = stepBoothState(nearDeadline, 100);
     expect(finished.mission.status).toBe("failed");
     expect(finished.mission.elapsedMs).toBe(BOOTH_MISSION_DURATION_MS);
@@ -166,14 +273,26 @@ describe("one coherent educational booth state", () => {
     const won = advance(match(start(22)), 8_000);
     expect(won.mission.status).toBe("won");
     const free = applyBoothAction(won, { type: "set-mode", mode: "free" });
-    const changed = advance(applyBoothAction(free, { type: "set-control", control: "rfSetpoint", value: 300 }), 3_000);
+    const changed = advance(
+      applyBoothAction(free, {
+        type: "set-control",
+        control: "rfSetpoint",
+        value: 300,
+      }),
+      3_000
+    );
     expect(changed.alarms.rfPower).toBe(true);
-    const ready = applyBoothAction(changed, { type: "set-mode", mode: "mission" });
+    const ready = applyBoothAction(changed, {
+      type: "set-mode",
+      mode: "mission",
+    });
     expect(ready.mission.status).toBe("idle");
     expect(ready.mission.score).toBeNull();
     expect(ready.mission.remainingMs).toBe(BOOTH_MISSION_DURATION_MS);
     expect(getBoothSnapshot(ready).phase).toBe("fault");
-    expect(ready.events.filter(event => event.type === "success")).toHaveLength(1);
+    expect(ready.events.filter(event => event.type === "success")).toHaveLength(
+      1
+    );
     const retry = applyBoothAction(ready, { type: "start-mission" });
     expect(retry.mission.status).toBe("active");
     expect(retry.controls.rfSetpoint).toBe(500);
@@ -181,22 +300,41 @@ describe("one coherent educational booth state", () => {
 
   it("validates ticks/controls, clamps runaway ticks, and bounds replay memory", () => {
     const state = createBoothState(7);
-    for (const delta of [NaN, Infinity, -50, 0]) expect(stepBoothState(state, delta)).toBe(state);
+    for (const delta of [NaN, Infinity, -50, 0])
+      expect(stepBoothState(state, delta)).toBe(state);
     expect(stepBoothState(state, 1e9).elapsedMs).toBe(BOOTH_MAX_TICK_MS);
     expect(stepBoothState(state, 1_000)).toEqual(advance(state, 1_000));
-    expect(applyBoothAction(state, { type: "set-control", control: "rfSetpoint", value: NaN })).toBe(state);
-    expect(applyBoothAction(state, { type: "set-control", control: "rfSetpoint", value: 1e9 }).controls.rfSetpoint).toBe(700);
+    expect(
+      applyBoothAction(state, {
+        type: "set-control",
+        control: "rfSetpoint",
+        value: NaN,
+      })
+    ).toBe(state);
+    expect(
+      applyBoothAction(state, {
+        type: "set-control",
+        control: "rfSetpoint",
+        value: 1e9,
+      }).controls.rfSetpoint
+    ).toBe(700);
     let current = state;
     for (let n = 0; n < 150; n++) {
       current = stepBoothState(current, 400);
-      current = applyBoothAction(current, { type: "set-control", control: "gasSetpoint", value: n % 2 ? 100 : 101 });
+      current = applyBoothAction(current, {
+        type: "set-control",
+        control: "gasSetpoint",
+        value: n % 2 ? 100 : 101,
+      });
     }
     expect(current.events).toHaveLength(50);
     expect(current.events[49].id).toBeGreaterThan(current.events[0].id);
   });
 
   it("snapshot callers cannot mutate the engine's live values or timeline", () => {
-    const state = applyBoothAction(createBoothState(12), { type: "inject-fault" });
+    const state = applyBoothAction(createBoothState(12), {
+      type: "inject-fault",
+    });
     const shot = getBoothSnapshot(state);
     shot.values.rfPower = 10;
     shot.controls.matching = 0;
@@ -204,5 +342,265 @@ describe("one coherent educational booth state", () => {
     expect(state.values.rfPower).toBe(500);
     expect(state.controls.matching).toBe(50);
     expect(state.events[0].message).not.toBe("changed");
+  });
+
+  it("exposes scenario-specific briefs and timing without exposing hidden plant coefficients", () => {
+    const state = startScenario("combined", 71);
+    const shot = getBoothSnapshot(state);
+    expect(BOOTH_SCENARIOS).toHaveLength(4);
+    expect(shot.scenario.id).toBe("combined");
+    expect(shot.mission.scenarioId).toBe("combined");
+    expect(shot.mission.durationMs).toBe(120_000);
+    expect(shot.mission.remainingMs).toBe(120_000);
+    expect(shot.scenario.requiredControls).toEqual([
+      "gasSetpoint",
+      "exhaustValve",
+      "matching",
+    ]);
+    expect(shot).not.toHaveProperty("gasGain");
+    expect(shot).not.toHaveProperty("exhaustOffset");
+    expect(shot).not.toHaveProperty("matchingOptimum");
+    shot.scenario.title = "changed";
+    (shot.scenario.hints as string[])[0] = "changed";
+    expect(getBoothScenario("combined").title).not.toBe("changed");
+    expect(getBoothScenario("combined").hints[0]).not.toBe("changed");
+  });
+
+  it("cannot finish the combined case by correcting only RF matching and power", () => {
+    const initial = advance(startScenario("combined", 72), 2_000);
+    const rfOnly = advance(match(initial), 12_000);
+    expect(rfOnly.mission.status).toBe("active");
+    expect(rfOnly.mission.stableMs).toBe(0);
+    expect(rfOnly.alarms.gasFlow).toBe(true);
+    expect(getBoothSnapshot(rfOnly).recovery.gasDelivery).toBe(false);
+    expect(advance(rfOnly, 120_000).mission.status).toBe("failed");
+  });
+
+  it("separates restoring delivered gas from restoring pressure in the gas-balance case", () => {
+    const initial = advance(startScenario("gas-delivery", 73), 2_000);
+    expect(initial.values.gasFlow).toBeLessThan(85);
+    expect(initial.values.pressure).toBeLessThan(16);
+    const gasOnly = advance(
+      applyBoothAction(initial, {
+        type: "set-control",
+        control: "gasSetpoint",
+        value: Math.round(100 / initial.gasGain),
+      }),
+      8_000
+    );
+    expect(gasOnly.alarms.gasFlow).toBe(false);
+    expect(gasOnly.alarms.pressure).toBe(true);
+    expect(getBoothSnapshot(gasOnly).recovery.exhaust).toBe(false);
+    expect(gasOnly.mission.status).toBe("active");
+    const recovered = advance(recoverPlant(gasOnly), 10_000);
+    expect(recovered.mission.status).toBe("won");
+  });
+
+  it("keeps flow normal during pressure rise and requires exhaust correction instead of RF", () => {
+    const initial = advance(startScenario("exhaust-restriction", 74), 3_000);
+    expect(initial.alarms.gasFlow).toBe(false);
+    expect(initial.alarms.pressure).toBe(true);
+    const rfChanged = advance(
+      applyBoothAction(initial, {
+        type: "set-control",
+        control: "rfSetpoint",
+        value: 650,
+      }),
+      5_000
+    );
+    const untouched = advance(initial, 5_000);
+    expect(rfChanged.values.pressure).toBeCloseTo(untouched.values.pressure, 8);
+    expect(rfChanged.mission.status).toBe("active");
+    expect(advance(recoverPlant(initial), 10_000).mission.status).toBe("won");
+  });
+
+  it("makes every scenario solvable across different seeded plant parameters", () => {
+    for (const scenario of BOOTH_SCENARIOS) {
+      for (const seed of [1, 7, 31, 83, 999]) {
+        const initial = advance(startScenario(scenario.id, seed), 2_000);
+        const corrected = advance(recoverPlant(initial), 12_000);
+        expect(corrected.mission.status, scenario.id + ":" + seed).toBe("won");
+        expect(getBoothSnapshot(corrected).recovery.ready).toBe(true);
+        expect(corrected.mission.elapsedMs).toBeLessThan(scenario.durationMs);
+        const held = advance(corrected, 20_000);
+        expect(Object.values(held.alarms).some(Boolean)).toBe(false);
+        // Compensated plant coefficients persist after the success event.
+        expect(held.gasGain).toBe(corrected.gasGain);
+        expect(held.exhaustOffset).toBe(corrected.exhaustOffset);
+        expect(held.values.gasFlow).toBeGreaterThan(95);
+        expect(held.values.gasFlow).toBeLessThan(105);
+      }
+    }
+  });
+
+  it("accepts different stable gas/exhaust operating points instead of one exact slider answer", () => {
+    const initial = advance(startScenario("combined", 75), 2_000);
+    const lower = advance(recoverPlant(initial, 96), 12_000);
+    const higher = advance(recoverPlant(initial, 102), 12_000);
+    expect(lower.mission.status).toBe("won");
+    expect(higher.mission.status).toBe("won");
+    expect(lower.controls.gasSetpoint).not.toBe(higher.controls.gasSetpoint);
+    expect(lower.controls.exhaustValve).not.toBe(higher.controls.exhaustValve);
+    expect(lower.values.gasFlow).toBeLessThan(higher.values.gasFlow);
+  });
+
+  it("uses the combined deadline rather than the old ninety-second RF deadline", () => {
+    const active = advance(startScenario("combined", 76), 90_100);
+    expect(active.mission.status).toBe("active");
+    expect(active.mission.remainingMs).toBe(29_900);
+    const settled = advance(recoverPlant(active), 3_000);
+    const atEnd: BoothState = {
+      ...settled,
+      mission: {
+        ...settled.mission,
+        status: "active",
+        elapsedMs: 119_950,
+        remainingMs: 50,
+        stableMs: 4_950,
+      },
+    };
+    const finished = stepBoothState(atEnd, 100);
+    expect(finished.mission.status).toBe("won");
+    expect(finished.mission.elapsedMs).toBe(120_000);
+  });
+
+  it("captures exact deadline values when one delayed tick crosses the combined deadline", () => {
+    const initial = startScenario("combined", 81);
+    const nearDeadline: BoothState = {
+      ...initial,
+      elapsedMs: 119_950,
+      mission: {
+        ...initial.mission,
+        elapsedMs: 119_950,
+        remainingMs: 50,
+      },
+    };
+    const exact = stepBoothState(nearDeadline, 50);
+    const crossed = stepBoothState(nearDeadline, 1_000);
+    expect(crossed.mission.status).toBe("failed");
+    expect(crossed.elapsedMs).toBe(120_000);
+    expect(crossed.mission.elapsedMs).toBe(120_000);
+    expect(crossed.events.at(-1)?.atMs).toBe(120_000);
+    expect(crossed).toEqual(exact);
+  });
+
+  it("stops a delayed tick at a win while allowing explicit later plant observation", () => {
+    const settled = advance(recoverPlant(startScenario("combined", 82)), 3_000);
+    const nearWin: BoothState = {
+      ...settled,
+      elapsedMs: 10_000,
+      mission: {
+        ...settled.mission,
+        status: "active",
+        elapsedMs: 10_000,
+        remainingMs: 110_000,
+        stableMs: 4_900,
+      },
+    };
+    const exact = stepBoothState(nearWin, 100);
+    const crossed = stepBoothState(nearWin, 1_000);
+    expect(crossed.mission.status).toBe("won");
+    expect(crossed.elapsedMs).toBe(10_100);
+    expect(crossed.mission.elapsedMs).toBe(10_100);
+    expect(crossed.events.at(-1)?.atMs).toBe(10_100);
+    expect(crossed).toEqual(exact);
+    const observed = stepBoothState(crossed, 1_000);
+    expect(observed.elapsedMs).toBe(11_100);
+    expect(observed.mission.elapsedMs).toBe(10_100);
+    expect(
+      observed.events.filter(event => event.type === "success")
+    ).toHaveLength(1);
+  });
+
+  it("does not award score for switching scenarios or resetting the new plant", () => {
+    const active = advance(startScenario("combined", 77), 1_000);
+    const changed = applyBoothAction(active, {
+      type: "set-scenario",
+      scenario: "gas-delivery",
+    });
+    expect(changed.mission.status).toBe("cancelled");
+    expect(changed.mission.score).toBeNull();
+    expect(changed.gasGain).toBe(1);
+    expect(changed.exhaustOffset).toBe(0);
+    const reset = applyBoothAction(active, { type: "reset" });
+    expect(reset.selectedScenario).toBe("combined");
+    expect(reset.mission.durationMs).toBe(120_000);
+    expect(reset.mission.status).toBe("cancelled");
+    expect(reset.gasGain).toBe(1);
+    expect(reset.exhaustOffset).toBe(0);
+    expect(
+      advance(reset, 8_000).events.some(event => event.type === "success")
+    ).toBe(false);
+  });
+
+  it("allows recovery using only displayed feedback, without reading hidden fault answers", () => {
+    for (const seed of [5, 91, 999]) {
+      let state = advance(startScenario("combined", seed), 2_000);
+      // A learner first compares commanded and displayed flow, then pressure.
+      for (let pass = 0; pass < 3; pass++) {
+        let visible = getBoothSnapshot(state);
+        state = applyBoothAction(state, {
+          type: "set-control",
+          control: "gasSetpoint",
+          value: Math.round(
+            (visible.controls.gasSetpoint * 100) / visible.values.gasFlow
+          ),
+        });
+        state = advance(state, 2_000);
+        visible = getBoothSnapshot(state);
+        state = applyBoothAction(state, {
+          type: "set-control",
+          control: "exhaustValve",
+          value: Math.round(
+            visible.controls.exhaustValve + (visible.values.pressure - 20) * 1.5
+          ),
+        });
+        state = advance(state, 2_000);
+      }
+      // Compare RF means across equal two-cycle observation windows; neither
+      // matchingOptimum nor the gain/offset is available to this operator.
+      const observeMatching = (value: number) => {
+        state = applyBoothAction(state, {
+          type: "set-control",
+          control: "matching",
+          value,
+        });
+        state = advance(state, 500);
+        let sum = 0;
+        for (let tick = 0; tick < 20; tick++) {
+          state = stepBoothState(state, 100);
+          sum += getBoothSnapshot(state).values.rfPower;
+        }
+        return sum / 20;
+      };
+      let best = { matching: 0, rf: -1 };
+      for (
+        let setting = 0;
+        setting <= 100 && state.mission.status === "active";
+        setting += 10
+      ) {
+        const rf = observeMatching(setting);
+        if (rf > best.rf) best = { matching: setting, rf };
+      }
+      for (
+        let setting = Math.max(0, best.matching - 8);
+        setting <= Math.min(100, best.matching + 8) &&
+        state.mission.status === "active";
+        setting += 2
+      ) {
+        const rf = observeMatching(setting);
+        if (rf > best.rf) best = { matching: setting, rf };
+      }
+      if (state.mission.status === "active") {
+        state = applyBoothAction(state, {
+          type: "set-control",
+          control: "matching",
+          value: best.matching,
+        });
+        state = advance(state, 8_000);
+      }
+      expect(state.mission.status, "visible feedback seed " + seed).toBe("won");
+      expect(state.mission.elapsedMs).toBeLessThan(120_000);
+    }
   });
 });

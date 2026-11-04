@@ -23,3 +23,4 @@
 .bm-completion-banner p{margin:0!important;font-size:12px}
 .bm-completion-banner button{min-height:32px;padding:5px 9px;font-size:11px}
 @media(max-width:560px){.bm-completion-banner{padding:10px 12px}.bm-completion-banner h2{font-size:15px}.bm-completion-banner>button{flex:0 1 auto}.bm-completion-banner>div{flex-basis:calc(100% - 40px)}.bm-guide-compact{padding:0}.bm-compact-meta{font-size:10px}}
+.bm-recovery-checks{display:flex;flex-wrap:wrap;gap:6px;margin:7px 0;font-size:11px}.bm-recovery-checks>span{padding:3px 7px;border:1px solid #796a42;border-radius:4px;background:#3b3422;color:#ddc48f}.bm-recovery-checks>span[data-ready=true]{border-color:#66825a;background:#2b4029;color:#c5e1b2}

@@ -38,8 +38,17 @@ function isTrueAttribute(node: ts.JsxOpeningLikeElement, name: string) {
   const item = attr(node, name);
   return Boolean(item && (!item.initializer || attributeValue(node, name)?.kind === ts.SyntaxKind.TrueKeyword));
 }
+const compact = (node: ts.Node | undefined) => node?.getText().replace(/\s+/g, "");
+function expectVisible(node: ts.Node) {
+  expect(detailsFor(node), "Core dashboard content must stay outside disclosures").toHaveLength(0);
+  expect(ancestors(node).some(item => ts.isConditionalExpression(item) ||
+    (ts.isBinaryExpression(item) && item.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)),
+  "Core dashboard content must remain mounted through briefing, exercise and review").toBe(false);
+  const elements = ancestors(node).filter((item): item is ts.JsxElement => ts.isJsxElement(item));
+  expect(elements.some(item => Boolean(attr(item.openingElement, "hidden") || attr(item.openingElement, "inert")))).toBe(false);
+}
 
-describe("essential booth experience layout", () => {
+describe("booth dashboard and completed-run review", () => {
   it("keeps current values, targets and normal bands together outside collapsed content", () => {
     const page = parse("client/src/pages/EtchLive.tsx");
     const maps = nodes(page, ts.isCallExpression).filter(node => node.expression.getText() === "BOOTH_SIGNALS.map");
@@ -48,26 +57,76 @@ describe("essential booth experience layout", () => {
       return properties.includes("target") && properties.includes("normal") && properties.includes("values");
     });
     expect(valueMaps, "One visible source of the four live values and their targets").toHaveLength(1);
-    expect(detailsFor(valueMaps[0])).toHaveLength(0);
-    expect(ancestors(valueMaps[0]).some(node => ts.isConditionalExpression(node) ||
-      (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken))).toBe(false);
-    const enclosingElements = ancestors(valueMaps[0]).filter((item): item is ts.JsxElement => ts.isJsxElement(item));
-    expect(enclosingElements.some(item => isTrueAttribute(item.openingElement, "hidden") || isTrueAttribute(item.openingElement, "inert"))).toBe(false);
+    expectVisible(valueMaps[0]);
   });
 
-  it("keeps the main RF matching control visible and secondary controls and charts opt-in", () => {
+  it("exposes all four process controls and all four trend cards on the dashboard", () => {
     const page = parse("client/src/pages/EtchLive.tsx");
-    const sliders = openings(page, "input").filter(node => literalAttribute(node, "type", "range"));
-    const primary = sliders.filter(node => detailsFor(node).length === 0);
-    expect(primary).toHaveLength(1);
-    expect(literalAttribute(primary[0], "id", "live-control-matching")).toBe(true);
-    const charts = openings(page, "LineChart");
-    expect(charts.length).toBeGreaterThan(0);
-    for (const node of [...sliders.filter(item => detailsFor(item).length > 0), ...charts]) {
-      const disclosure = detailsFor(node)[0];
-      expect(disclosure, "Secondary tools must be in a disclosure").toBeDefined();
-      expect(attr(disclosure.openingElement, "open"), "Secondary tools must start closed").toBeUndefined();
+    const controls = nodes(page, ts.isVariableDeclaration).find(node => node.name.getText() === "CONTROLS")?.initializer;
+    expect(controls && ts.isArrayLiteralExpression(controls)).toBe(true);
+    if (controls && ts.isArrayLiteralExpression(controls)) {
+      expect(controls.elements.map(item => ts.isStringLiteral(item) ? item.text : "").sort())
+        .toEqual(["exhaustValve", "gasSetpoint", "matching", "rfSetpoint"]);
     }
+    const controlMaps = nodes(page, ts.isCallExpression).filter(node => node.expression.getText() === "CONTROLS.map");
+    expect(controlMaps).toHaveLength(1);
+    expectVisible(controlMaps[0]);
+    const sliders = openings(page, "input").filter(node => literalAttribute(node, "type", "range"));
+    expect(sliders).toHaveLength(1); // The template is repeated for each of the four controls above.
+    expect(ancestors(sliders[0])).toContain(controlMaps[0]);
+    expect(compact(attributeValue(sliders[0], "value"))).toBe("displaySnapshot.controls[control]");
+    expect(compact(attributeValue(sliders[0], "disabled"))).toBe('stage!=="experience"');
+    for (const bound of ["min", "max", "step"]) {
+      expect(compact(attributeValue(sliders[0], bound))).toBe(`limits.${bound}`);
+    }
+    const chartMaps = nodes(page, ts.isCallExpression).filter(node =>
+      node.expression.getText() === "BOOTH_SIGNALS.map" && openings(node, "LineChart").length > 0);
+    expect(chartMaps).toHaveLength(1);
+    expectVisible(chartMaps[0]);
+    const chart = openings(chartMaps[0], "LineChart")[0];
+    expect(compact(attributeValue(chart, "data"))).toBe("[...chartPoints]");
+    expect(detailsFor(chart)).toHaveLength(0);
+    const line = openings(chartMaps[0], "Line")[0];
+    expect(compact(attributeValue(line, "dataKey"))).toBe("signal.key");
+  });
+
+  it("starts with the combined challenge and keeps scenario selection available before a run", () => {
+    const page = parse("client/src/pages/EtchLive.tsx");
+    const initialEngine = nodes(page, ts.isFunctionDeclaration).find(node => node.name?.text === "initialEngine");
+    expect(initialEngine).toBeDefined();
+    expect(compact(initialEngine?.parameters[0].initializer)).toBe('"combined"');
+    const selector = openings(page, "select").find(node => literalAttribute(node, "id", "booth-scenario"));
+    expect(selector).toBeDefined();
+    expect(compact(attributeValue(selector!, "disabled"))).toBe('stage!=="brief"');
+    expect(nodes(page, ts.isIdentifier).some(node => node.text === "BOOTH_SCENARIOS")).toBe(true);
+  });
+
+  it("opens reflection only for a completed attempt and keeps recorded graphs and actions together", () => {
+    const page = parse("client/src/pages/EtchLive.tsx");
+    const reflection = openings(page, "BoothReflection");
+    expect(reflection).toHaveLength(1);
+    expect(compact(attributeValue(reflection[0], "attempt"))).toBe("completedAttempt");
+    const wrapper = ancestors(reflection[0]).find((node): node is ts.JsxElement =>
+      ts.isJsxElement(node) && Boolean(attr(node.openingElement, "hidden")));
+    expect(wrapper).toBeDefined();
+    expect(compact(attributeValue(wrapper!.openingElement, "hidden"))).toBe('stage!=="review"');
+    const component = parse("client/src/components/BoothReflection.tsx");
+    expect(nodes(component, ts.isIfStatement).some(node => compact(node.expression) === "!attempt" &&
+      nodes(node.thenStatement, ts.isReturnStatement).some(statement => statement.expression?.kind === ts.SyntaxKind.NullKeyword))).toBe(true);
+
+    const declarations = nodes(page, ts.isVariableDeclaration);
+    for (const [name, evidence] of [["chartPoints", "samples"], ["runEvents", "events"]]) {
+      const expression = declarations.find(node => node.name.getText() === name)?.initializer;
+      expect(expression && ts.isConditionalExpression(expression)).toBe(true);
+      if (expression && ts.isConditionalExpression(expression)) {
+        expect(compact(expression.condition)).toBe('stage==="review"&&completedAttempt');
+        expect(compact(expression.whenTrue)).toBe(`completedAttempt.${evidence}`);
+      }
+    }
+    const capture = nodes(page, ts.isCallExpression).find(node => node.expression.getText() === "captureBoothAttempt");
+    expect(capture, "A completed run must capture immutable evidence before opening review").toBeDefined();
+    expect(nodes(page, ts.isCallExpression).some(node => node.expression.getText() === "setCompletedAttempt" &&
+      compact(node.arguments[0]) === "attempt")).toBe(true);
   });
 
   it("preserves continuous completion feedback and strict module-only camera capture", () => {

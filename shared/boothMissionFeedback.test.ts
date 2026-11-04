@@ -97,4 +97,19 @@ describe("normal-value guidance", () => {
       expect(details).toContain(`${BOOTH_RECOVERY_RANGES[signal.key][0]}–${BOOTH_RECOVERY_RANGES[signal.key][1]} ${signal.unit}`);
     }
   });
+
+  it("guides a gas and exhaust challenge without asking for an unrelated RF adjustment", () => {
+    const state = applyBoothAction(createBoothState(43), { type: "set-scenario", scenario: "gas-delivery" });
+    const snapshot = getBoothSnapshot(applyBoothAction(state, { type: "start-mission" }));
+    snapshot.alarms = { pressure: false, gasFlow: false, rfPower: false, chamberAmbientTemp: false };
+    snapshot.recovery = { ...snapshot.recovery, gasDelivery: false, exhaust: false, ready: false };
+    expect(recoveryGuideStage(snapshot)).toBe("balancing");
+    const markup = renderToStaticMarkup(createElement(BoothNormalGuide, {
+      snapshot, language: "ko", onRecommended: () => {}, compact: true,
+    }));
+    expect(markup).toContain("유량과 배기 균형을 함께 확인해요");
+    expect(markup).not.toContain("RF 매칭을 안정화해요");
+    expect(markup).not.toContain("bm-compact-matching");
+    expect(markup).not.toContain("기본 운전값 맞추기");
+  });
 });
