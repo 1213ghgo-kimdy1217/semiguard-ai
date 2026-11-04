@@ -129,7 +129,11 @@ function ChamberInterior({
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <g data-concept-part="steady-white-fill-lights" stroke="#e7eddf" strokeWidth="4">
+      <g
+        data-concept-part="steady-white-fill-lights"
+        stroke="#e7eddf"
+        strokeWidth="4"
+      >
         <path d="M15 34l15 14" />
         <path d="M162 48l15-14" />
       </g>
@@ -204,9 +208,27 @@ function ChamberInterior({
           opacity={rf ? 0.17 : 0.04}
         />
       </g>
-      <g data-concept-part="purple-plasma-lamp" data-lamp-brightness={Math.round(active ? lampBrightness : 0)}>
-        <ellipse cx="96" cy="106" rx="35" ry="19" fill="#bb83ed" opacity={light * .2} />
-        <rect x="72" y="103" width="48" height="7" rx="3.5" fill="#d2a2ff" opacity={.04 + light * .86} />
+      <g
+        data-concept-part="purple-plasma-lamp"
+        data-lamp-brightness={Math.round(active ? lampBrightness : 0)}
+      >
+        <ellipse
+          cx="96"
+          cy="106"
+          rx="35"
+          ry="19"
+          fill="#bb83ed"
+          opacity={light * 0.2}
+        />
+        <rect
+          x="72"
+          y="103"
+          width="48"
+          height="7"
+          rx="3.5"
+          fill="#d2a2ff"
+          opacity={0.04 + light * 0.86}
+        />
       </g>
       <g data-concept-part="wafer-support">
         <rect x="62" y="131" width="68" height="3" rx="1" fill="#dbe4d8" />
@@ -258,9 +280,12 @@ export default function KiyoEquipmentView({
   onSelectSignal?: (signal: KiyoSignal) => void;
 }) {
   const id = useId().replace(/:/g, "");
-  const brightness = typeof lampBrightness === "number" && Number.isFinite(lampBrightness)
-    ? Math.max(0, Math.min(255, lampBrightness))
-    : ledOn ? 255 : 0;
+  const brightness =
+    typeof lampBrightness === "number" && Number.isFinite(lampBrightness)
+      ? Math.max(0, Math.min(255, lampBrightness))
+      : ledOn
+        ? 255
+        : 0;
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const inside = view === "cutaway";
   const reduceMotion = useReducedMotion();
@@ -272,7 +297,7 @@ export default function KiyoEquipmentView({
   const selected = selectedSignal ?? localSignal;
   const interiorReady = progress === 1 && doorProgress === 1;
   const interiorVisible = doorProgress > 0;
-  const showGuide = demo && inside;
+  const showGuide = (demo || compact) && inside;
   const showSignals = showGuide && interiorReady;
   const viewPhase = inside
     ? progress < 1
@@ -383,6 +408,7 @@ export default function KiyoEquipmentView({
   return (
     <div
       className="kev-equipment"
+      data-compact={String(compact)}
       data-equipment-view={view}
       data-view-phase={viewPhase}
       data-door-progress={doorProgress.toFixed(3)}
@@ -642,14 +668,22 @@ export default function KiyoEquipmentView({
               <path d="M166 94v20" stroke="#5f7858" strokeWidth="4" />
             ) : null}
           </g>
-          {showSignals ? (
-            <g className="kev-screen-markers">
+          {showGuide ? (
+            <g
+              className="kev-screen-markers"
+              visibility={interiorReady ? "visible" : "hidden"}
+              data-ready={String(interiorReady)}
+            >
               {SIGNALS.map(item => {
                 const [x, y] = project(
                   windowPoint(item.position[0], item.position[1])
                 );
                 return (
-                  <g key={item.id} data-signal-marker={item.id} data-alarm={String(Boolean(signalAlarms?.[item.id]))}>
+                  <g
+                    key={item.id}
+                    data-signal-marker={item.id}
+                    data-alarm={String(Boolean(signalAlarms?.[item.id]))}
+                  >
                     <circle
                       cx={x}
                       cy={y}
@@ -677,6 +711,43 @@ export default function KiyoEquipmentView({
             </g>
           ) : null}
         </svg>
+        {compact && (
+          <div
+            className="kev-compact-callouts"
+            role="group"
+            aria-label={l(
+              "모형의 공정값",
+              "Model process values",
+              "模型のプロセス値"
+            )}
+          >
+            {SIGNALS.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                className="kev-compact-callout"
+                data-signal={item.id}
+                data-alarm={String(Boolean(signalAlarms?.[item.id]))}
+                aria-pressed={selected === item.id}
+                onClick={() => select(item.id)}
+                style={{ "--kev-signal": item.color } as CSSProperties}
+              >
+                <span className="kev-callout-number">{item.number}</span>
+                <span className="kev-callout-name">
+                  {l(item.name[0], item.name[1], item.name[2])}
+                </span>
+                <span className="kev-callout-value">
+                  {valueLabel(item.id)} <small>{item.unit}</small>
+                </span>
+                <span className="kev-callout-status">
+                  {signalAlarms?.[item.id]
+                    ? l("복구 필요", "Recover", "復旧必要")
+                    : l("정상", "Normal", "正常")}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {showGuide && !compact ? (
         <div

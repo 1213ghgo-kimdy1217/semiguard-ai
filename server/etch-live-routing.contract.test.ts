@@ -66,14 +66,19 @@ describe("live observation integration", () => {
   });
   it("keeps the existing model-preview entry on the same integrated screen", () => {
     const html = readFileSync("client/model-preview.html", "utf8");
-    const module = html.match(/<script\b[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/)?.[1];
-    expect(module).toBeDefined();
-    const entry = ts.createSourceFile("model-preview.js", module!, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+    const module = html.match(/<script\b[^>]*type="module"[^>]*src="([^"]+)"/)?.[1];
+    expect(module).toBe("/src/model-preview-main.tsx");
+    const entry = parse("client/src/model-preview-main.tsx");
     const importedPage = nodes(entry, ts.isImportDeclaration).find(item =>
-      ts.isStringLiteral(item.moduleSpecifier) && item.moduleSpecifier.text.endsWith("/pages/EtchLive.tsx"));
+      ts.isStringLiteral(item.moduleSpecifier) && /\/pages\/EtchLive(?:\.tsx)?$/.test(item.moduleSpecifier.text));
     expect(importedPage?.importClause?.name?.text).toBe("EtchLive");
-    const mount = call(entry, "React.createElement");
-    expect(mount?.arguments[0].getText()).toBe("EtchLive");
+    const mount = opening(entry, "EtchLive");
+    expect(mount).toBeDefined();
+    const wrappers = ancestors(mount!).filter((node): node is ts.JsxElement => ts.isJsxElement(node))
+      .map(node => node.openingElement.tagName.getText());
+    expect(wrappers).toEqual(expect.arrayContaining(["AccountSessionProvider", "QueryClientProvider", "trpc.Provider"]));
+    expect(nodes(entry, ts.isPropertyAssignment).some(node => node.name.getText() === "url" &&
+      ts.isStringLiteral(node.initializer) && node.initializer.text === "/api/trpc")).toBe(true);
     expect(html).not.toContain("experience-preview.html");
     expect(html).not.toContain("chatgpt.site");
   });
@@ -123,6 +128,17 @@ describe("live observation integration", () => {
     visitDependencies(values.get("cameraActive"));
     expect(dependencies.has("pageVisible")).toBe(true);
     expect(dependencies.has("device")).toBe(false);
+  });
+  it("keeps contextual questions available while observing and passes only the displayed snapshot", () => {
+    const page = parse("client/src/pages/EtchLive.tsx");
+    const assistants = nodes(page, ts.isJsxSelfClosingElement).filter(node => node.tagName.getText() === "BoothLearningAssistant");
+    expect(assistants).toHaveLength(1);
+    const assistant = assistants[0];
+    expect(compact(attribute(assistant, "snapshot"))).toBe("displaySnapshot");
+    expect(compact(attribute(assistant, "stage"))).toBe("stage");
+    expect(ancestors(assistant).some(node => ts.isJsxElement(node) && Boolean(attribute(node.openingElement, "hidden")))).toBe(false);
+    expect(ancestors(assistant).some(node => ts.isConditionalExpression(node) ||
+      (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken))).toBe(false);
   });
   it("keeps a 100ms USB heartbeat using live lamp state during a run and explicit OFF otherwise", () => {
     const page = parse("client/src/pages/EtchLive.tsx");

@@ -11,16 +11,6 @@
   <body>
     <div id="root"></div>
     <noscript>모형 대시보드를 보려면 JavaScript를 켜 주세요.</noscript>
-    <script type="module">
-      import React from "react";
-      import { createRoot } from "react-dom/client";
-      import EtchLive from "/src/pages/EtchLive.tsx";
-      import "/src/index.css";
-
-      // Review the isolated model workspace without mounting authentication,
-      // account providers, or the application's protected /live route.
-      const root = document.getElementById("root");
-      if (root) createRoot(root).render(React.createElement(EtchLive));
-    </script>
+    <script type="module" src="/src/model-preview-main.tsx"></script>
   </body>
 </html>

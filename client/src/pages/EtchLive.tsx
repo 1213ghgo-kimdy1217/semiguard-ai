@@ -25,6 +25,7 @@ import BoothMissionFeedback, {
   BoothNormalGuide,
 } from "../components/BoothMissionFeedback";
 import BoothReflection from "../components/BoothReflection";
+import { BoothLearningAssistant } from "../components/LearningAssistant";
 import ProductLanguageSelect from "../components/ProductLanguageSelect";
 import { useBoothDevice } from "../hooks/useBoothDevice";
 import {
@@ -1072,6 +1073,11 @@ export default function EtchLive() {
               language={language}
               onRecommended={applyStartingSettings}
               disabled={stage !== "experience"}
+            />
+            <BoothLearningAssistant
+              key={`${completedAttempt?.id || runIdRef.current || "brief"}:${displaySnapshot.selectedScenario}:${displaySnapshot.mode}`}
+              snapshot={displaySnapshot}
+              stage={stage}
             />
             {stage === "experience" && (
               <div className="kp-exercise-actions">

@@ -21,7 +21,7 @@ import * as db from "./db";
 import { sdk } from "./_core/sdk";
 import { getTrainingAttempt, getTrainingAttempts, getTrainingProgress, saveTrainingAttempt } from "./trainingRecords";
 import { learningQuestionSchema } from "../shared/learningAssistant";
-import { requestLearningAnswer } from "./learningAssistant";
+import { getLearningAssistantStatus, requestLearningAnswer } from "./learningAssistant";
 import { getOgqLearningGuide } from "./ogqLearningGuide";
 import { requestJudgmentCoach } from "./judgmentCoach";
 import { judgmentCoachRequestSchema } from "../shared/judgmentCoach";
@@ -146,6 +146,7 @@ export const appRouter = router({
     qaStatus: protectedProcedure.query(({ ctx }) => getOwnMeasurementQaStatus(ctx.req)),
   }),
   learning: router({
+    status: publicProcedure.query(() => getLearningAssistantStatus()),
     ask: protectedProcedure.input(learningQuestionSchema)
       .mutation(({ ctx, input }) => requestLearningAnswer(ctx.user.id, input)),
     guide: protectedProcedure.query(() => getOgqLearningGuide()),
