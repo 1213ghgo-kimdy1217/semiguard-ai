@@ -87,6 +87,27 @@ export function validateLearningAnswer(
   return answer;
 }
 
+function describeBoothSignalComparisons(context: BoothLearningContext) {
+  const position = (value: number, range: readonly [number, number]) =>
+    value < range[0] ? "below" : value > range[1] ? "above" : "within";
+  return BOOTH_SIGNALS.map(signal => ({
+    key: signal.key,
+    number: signal.number,
+    label: signal.label,
+    unit: signal.unit,
+    value: context.values[signal.key],
+    target: signal.target,
+    normalRange: signal.normal,
+    normalPosition: position(context.values[signal.key], signal.normal),
+    recoveryRange: BOOTH_RECOVERY_RANGES[signal.key],
+    recoveryPosition: position(
+      context.values[signal.key],
+      BOOTH_RECOVERY_RANGES[signal.key]
+    ),
+    alarmActive: context.alarms[signal.key],
+  }));
+}
+
 /** Only authored catalog data is trusted; submitted numbers remain unverified screen data. */
 function boothGuide(context: BoothLearningContext) {
   const scenario = getBoothScenario(context.scenarioId);
@@ -94,6 +115,10 @@ function boothGuide(context: BoothLearningContext) {
 Stage brief means the experiment has not started; do not infer a current fault from the scenario description. Stage experience means a running screen experiment. Stage review means frozen end-of-run values and disabled controls; discuss the completed run and next attempt, not a live adjustment now. Each answer uses the snapshot attached to that question; values may have changed since then.
 For THIS model dashboard, the generic live description below is supplemented by optional recovery missions with authored engine completion rules, plus free experiments and post-run observation/debrief writing. These are not the prepared eight-process choice exercises, AI grading or account-saved essays. Its completion score is from the simulation engine, not an AI competence assessment. The observation/debrief draft is browser-local and is not supplied to you.
 You MAY suggest one or two small adjustments to the on-screen virtual gas supply, exhaust valve, RF matching or RF demand and ask the learner to compare the displayed response. In every actionable sentence explicitly say screen, simulation, virtual, or the equivalent in the answer language. Never transfer these steps to real equipment, wiring, lamps, Arduino, RF hardware or process recipes. No tools/actions can change settings. Never invent exact hidden target settings, matching optimum, loss coefficients or a guaranteed solution. Prefer observation and one-setting-at-a-time hints; do not reduce the combined scenario to RF-only tuning. The temperature is a delayed observation, not a user-adjustable control. Gas delivery and exhaust affect pressure, and gas/pressure also affect simulated RF.
+Simulator timing fact: the displayed RF response is fast, gas flow and pressure settle more slowly, and ambient temperature is deliberately much slower and follows RF changes. Never say that RF responds more slowly than ambient temperature. This describes this educational simulator only, not a real etch tool. A single question snapshot does not establish which signal changed first in the learner's run; do not invent a past sequence without a supplied timeline.
+The server has already compared each submitted screen value with the authored ranges below. Use normalPosition and recoveryPosition exactly: below means less than the lower bound, above means greater than the upper bound, and within includes both bounds. A value below its target can still be within the normal range. Do not infer high/low direction from scenario hints, other signals, or an alarm color, and never contradict these computed positions. Two abnormal signals need not point in the same direction. alarmActive is separate: a value may already be within the normal range while its recovery hold keeps the alarm active. Any on-screen adjustment hint must respect the computed pressure direction rather than assuming gas flow and pressure are both low. These comparisons classify only the attached virtual values, not real equipment.
+Explain the comparisons in ordinary words in the requested language (for Korean: 정상보다 높음, 정상보다 낮음, 정상 범위 안). Do not expose internal JSON field names such as normalPosition, recoveryPosition, alarmActive, or key in the learner's answer.
+Server-computed screen comparisons: ${JSON.stringify(describeBoothSignalComparisons(context))}
 Trusted authored model reference: ${JSON.stringify({
     scenario: {
       id: scenario.id,

@@ -352,6 +352,105 @@ describe("learning assistant", () => {
     expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
+  it("grounds the observed high-pressure and low-flow counterexample before asking the model", async () => {
+    const snapshot = getBoothSnapshot(createBoothState(91));
+    snapshot.values = {
+      pressure: 24.7,
+      gasFlow: 83.9,
+      rfPower: 176.6,
+      chamberAmbientTemp: 34.9,
+    };
+    snapshot.alarms = {
+      pressure: true,
+      gasFlow: true,
+      rfPower: true,
+      chamberAmbientTemp: false,
+    };
+    const boothContext = createBoothLearningContext(snapshot, "brief");
+    await createLearningAssistant()(12, { ...request, boothContext });
+    const system: string = mocks.invoke.mock.calls[0][0].messages[0].content;
+    const comparisons = JSON.parse(
+      system.match(/^Server-computed screen comparisons: (.+)$/m)![1]
+    );
+    expect(comparisons).toMatchObject([
+      {
+        key: "pressure",
+        value: 24.7,
+        normalRange: [17, 23],
+        normalPosition: "above",
+        recoveryPosition: "above",
+        alarmActive: true,
+      },
+      {
+        key: "gasFlow",
+        value: 83.9,
+        normalPosition: "below",
+        recoveryPosition: "below",
+        alarmActive: true,
+      },
+      {
+        key: "rfPower",
+        value: 176.6,
+        normalPosition: "below",
+        recoveryPosition: "below",
+        alarmActive: true,
+      },
+      {
+        key: "chamberAmbientTemp",
+        value: 34.9,
+        normalPosition: "within",
+        recoveryPosition: "within",
+        alarmActive: false,
+      },
+    ]);
+    expect(system).toContain(
+      "Two abnormal signals need not point in the same direction"
+    );
+    // Only the explicitly supplied public state goes into the user message.
+    expect(
+      JSON.parse(mocks.invoke.mock.calls[0][0].messages[1].content)
+    ).toEqual({ question: request.question, boothContext });
+  });
+
+  it("keeps inclusive normal boundaries separate from recovery bands, targets and active alarms", async () => {
+    const snapshot = getBoothSnapshot(createBoothState(92));
+    snapshot.values = {
+      pressure: 17,
+      gasFlow: 110,
+      rfPower: 440,
+      chamberAmbientTemp: 39,
+    };
+    snapshot.alarms = {
+      pressure: true,
+      gasFlow: true,
+      rfPower: true,
+      chamberAmbientTemp: true,
+    };
+    const boothContext = createBoothLearningContext(snapshot, "brief");
+    await createLearningAssistant()(13, { ...request, boothContext });
+    const system: string = mocks.invoke.mock.calls[0][0].messages[0].content;
+    const comparisons = JSON.parse(
+      system.match(/^Server-computed screen comparisons: (.+)$/m)![1]
+    );
+    expect(
+      comparisons.map((item: { normalPosition: string }) => item.normalPosition)
+    ).toEqual(["within", "within", "within", "within"]);
+    expect(
+      comparisons.map(
+        (item: { recoveryPosition: string }) => item.recoveryPosition
+      )
+    ).toEqual(["below", "above", "below", "above"]);
+    expect(
+      comparisons.every((item: { alarmActive: boolean }) => item.alarmActive)
+    ).toBe(true);
+    expect(system).toContain(
+      "A value below its target can still be within the normal range"
+    );
+    expect(system).toContain(
+      "a value may already be within the normal range while its recovery hold keeps the alarm active"
+    );
+  });
+
   it("still requires auth and consent and shares the existing cooldown for contextual questions", async () => {
     const boothContext = createBoothLearningContext(
       getBoothSnapshot(createBoothState()),
