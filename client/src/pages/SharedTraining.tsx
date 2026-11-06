@@ -14,12 +14,13 @@ export default function SharedTraining() {
   useEffect(() => { document.title = l("SemiGuard — 공유된 판단 결과", "SemiGuard — Shared reasoning", "SemiGuard — 共有された判断結果"); }, [language]);
   const valid = token.length >= 100 && token.length <= 3000;
   const query = trpc.training.shared.useQuery({ token }, { enabled: valid, retry: false, staleTime: 0 });
+  const signInRequired = query.error?.data?.code === "UNAUTHORIZED";
   const record = query.data?.record;
   const scenario = record ? getProcessScenario(record.scenarioId) : undefined;
   const signalName = record && scenario ? record.signal === "none" ? l("차이 없음", "No deviation", "差異なし") : scenario.processId === "etch" ? etchSignalName(language, record.signal as "pressure" | "flow" | "rf" | "temperature") : l(...scenario.signals.find(s => s.id === record.signal)!.name) : "";
   return <div className="et-app"><main className="et-main">
     <p className="et-eyebrow">SHARED CHOICES / READ ONLY</p><h1>{l("공유된 판단 결과", "Shared reasoning result", "共有された判断結果")}</h1>
-    {!valid || query.isError ? <p role="alert">{l("유효하지 않거나 만료된 공유 링크입니다.", "This share link is invalid or expired.", "共有リンクが無効か、有効期限が切れています。")}</p> : query.isLoading ? <p role="status">{l("불러오는 중…", "Loading…", "読み込み中…")}</p> : record && scenario ? <section className="et-panel"><h2>{l(...scenario.title)}</h2>
+    {signInRequired ? <p role="alert">{l("공유 기록을 보려면 다시 로그인한 뒤 이 링크를 열어주세요.", "Sign in again, then reopen this link to view the shared record.", "共有記録を見るには再ログインし、このリンクをもう一度開いてください。")} <Link href="/login">{l("로그인", "Sign in", "ログイン")}</Link></p> : !valid || query.isError ? <p role="alert">{l("유효하지 않거나 만료된 공유 링크입니다.", "This share link is invalid or expired.", "共有リンクが無効か、有効期限が切れています。")}</p> : query.isLoading ? <p role="status">{l("불러오는 중…", "Loading…", "読み込み中…")}</p> : record && scenario ? <section className="et-panel"><h2>{l(...scenario.title)}</h2>
       <dl><dt>{l("선택한 관측 항목", "Chosen observation", "選択した観測項目")}</dt><dd>{signalName}</dd><dt>{l("판단한 변화 시작", "Estimated onset", "判断した変化開始")}</dt><dd>{record.onset < 0 ? l("해당 없음", "Not applicable", "該当なし") : `${record.onset}${l("초", "s", "秒")}`}</dd>
         <dt>{l("선택한 표시 시점", "Selected marker", "選択した印の時点")}</dt><dd>{record.marker === null ? l("없음", "None", "なし") : `${record.marker}${l("초", "s", "秒")}`}</dd>
         <dt>{l("비교 기준", "Comparison basis", "比較基準")}</dt><dd>{record.comparison === "whole-run" ? l("전체 기록", "Whole record", "全体の記録") : l("같은 단계·조건의 정상 참고", "Same-phase/condition normal reference", "同じ段階・条件の正常参照")}</dd>

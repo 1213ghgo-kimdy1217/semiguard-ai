@@ -37,7 +37,7 @@ describe("first-use practice guidance", () => {
     const guidance = source("client/src/components/PracticeFirstStep.tsx");
     expect(guidance).not.toMatch(/useState|useEffect|fetch\(|onClick|localStorage|sessionStorage|scenario\.expected|processSample|etchSample/);
     for (const path of ["ProcessTraining", "EtchTraining"]) {
-      expect(source(`client/src/pages/${path}.tsx`)).toContain('{stage === "observe" ? <PracticeFirstStep language={language} /> : null}');
+      expect(source(`client/src/pages/${path}.tsx`)).toMatch(/\{stage === "observe" \? <details className="pv-time-tools"><summary>[^]*?<\/summary><PracticeFirstStep language=\{language\} \/><\/details> : null\}/);
     }
     const live = source("client/src/pages/EtchLive.tsx");
     expect(live).toContain('<PracticeFirstStep language={language} mode="free" />');

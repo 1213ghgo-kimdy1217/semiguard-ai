@@ -75,35 +75,6 @@ const dashboardLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
   },
 };
 
-const authLoadingCopy: Record<LoadingLanguage, LoadingCopy> = {
-  ko: {
-    title: "보안 로그인 상태를 확인하고 있습니다.",
-    description: "세션 정보를 안전하게 불러오는 중입니다…",
-    slowDescription:
-      "확인이 평소보다 오래 걸리고 있습니다. 계속되면 새로고침하거나 로그인 화면으로 이동해 주세요.",
-    retry: "지금 새로고침",
-    login: "로그인 화면으로 이동",
-    context: "반도체 장비 센서 판단 교육·점검 보조",
-  },
-  en: {
-    title: "Verifying your secure sign-in…",
-    description: "Loading your session safely…",
-    slowDescription:
-      "Verification is taking longer than usual. Refresh or go to the login page.",
-    retry: "Refresh now",
-    login: "Go to login",
-    context: "Semiconductor sensor reasoning and inspection aid",
-  },
-  ja: {
-    title: "安全なログイン状態を確認しています。",
-    description: "セッション情報を安全に読み込み中です…",
-    slowDescription:
-      "確認に通常より時間がかかっています。更新するか、ログイン画面へ移動してください。",
-    retry: "今すぐ更新",
-    login: "ログイン画面へ",
-    context: "半導体装置の信号判断学習・点検支援",
-  },
-};
 
 function getDashboardLoadingLanguage(): LoadingLanguage {
   try {
@@ -188,80 +159,7 @@ function DashboardModuleLoading() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const [, setLocation] = useLocation();
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isSlowLoading, setIsSlowLoading] = useState(false);
-  const authCopy = authLoadingCopy[getDashboardLoadingLanguage()];
-
-  useEffect(() => {
-    if (!loading) {
-      setIsInitialized(true);
-    }
-  }, [loading]);
-
-  useEffect(() => {
-    if (isInitialized && !user) {
-      setLocation("/login");
-    }
-  }, [isInitialized, user, setLocation]);
-
-  useEffect(() => {
-    if (!loading && isInitialized) {
-      setIsSlowLoading(false);
-      return;
-    }
-    const timeoutId = window.setTimeout(() => setIsSlowLoading(true), 8000);
-    return () => window.clearTimeout(timeoutId);
-  }, [loading, isInitialized]);
-
-  if (loading || !isInitialized) {
-    return (
-      <div
-        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-950 to-slate-800 px-6 text-center"
-        aria-busy="true"
-      >
-        <div role="status" aria-live="polite" aria-atomic="true">
-          <LoadingBrand context={authCopy.context} />
-          <div
-            aria-hidden="true"
-            className="h-10 w-10 animate-spin motion-reduce:animate-none rounded-full border-2 border-cyan-300 border-t-transparent"
-          />
-          <p className="text-sm font-semibold text-slate-100">
-            {authCopy.title}
-          </p>
-          <p className="text-xs text-slate-400">{authCopy.description}</p>
-        </div>
-        {isSlowLoading && (
-          <div className="mt-2 flex flex-col items-center gap-3">
-            <p className="max-w-sm text-xs text-slate-300">
-              {authCopy.slowDescription}
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="rounded-lg border border-cyan-300/60 bg-cyan-300/10 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-300/20 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:ring-offset-2 focus:ring-offset-slate-900"
-            >
-              {authCopy.retry}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLocation("/login")}
-              className="rounded-lg border border-slate-500/70 bg-slate-800/70 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-200 focus:ring-offset-2 focus:ring-offset-slate-900"
-            >
-              {authCopy.login}
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  return <>{children}</>;
+  return <PracticeAccess>{children}</PracticeAccess>;
 }
 
 function TrainingModuleLoading() {
@@ -290,22 +188,22 @@ function Router() {
       <Route path="/account/closed"><Suspense fallback={<TrainingModuleLoading />}><AccountClosed /></Suspense></Route>
       <Route path="/account"><ProtectedRoute><Suspense fallback={<TrainingModuleLoading />}><AccountSettings /></Suspense></ProtectedRoute></Route>
       <Route path={"/training/metrics"}>
-        <Suspense fallback={<TrainingModuleLoading />}><PracticeMetrics /></Suspense>
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><PracticeMetrics /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/preview"}>
-        <TrainingPreview />
+        <PracticeAccess><TrainingPreview /></PracticeAccess>
       </Route>
       <Route path={"/live"}>
         <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><EtchLive /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/learn"}>
-        <Suspense fallback={<TrainingModuleLoading />}><LearningHub /></Suspense>
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><LearningHub /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/training/history/:attemptId"}>
         {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><TrainingHistory attemptId={params.attemptId} /></Suspense></PracticeAccess>}
       </Route>
       <Route path={"/training/shared"}>
-        <Suspense fallback={<TrainingModuleLoading />}><SharedTraining /></Suspense>
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><SharedTraining /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/training/process/:processId"}>
         {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><ProcessTraining processId={params.processId} /></Suspense></PracticeAccess>}

@@ -154,7 +154,7 @@ export const appRouter = router({
   training: router({
     share: protectedProcedure.input(z.object({ id: z.number().int().positive(), consent: z.literal(true) }).strict())
       .mutation(({ ctx, input }) => shareTrainingAttempt(ctx.user.id, input.id)),
-    shared: publicProcedure.input(z.object({ token: z.string().min(100).max(3000) }).strict())
+    shared: protectedProcedure.input(z.object({ token: z.string().min(100).max(3000) }).strict())
       .query(({ input }) => readSharedChoices(input.token)),
     draftStorage: protectedProcedure.query(() => inspectDraftStorage()),
     drafts: protectedProcedure.query(async ({ ctx }) => ({ userId: ctx.user.id, drafts: await getTrainingDrafts(ctx.user.id) })),

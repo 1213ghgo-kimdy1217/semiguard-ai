@@ -1,3 +1,4 @@
+import ProcessObservationScene from "../components/ProcessObservationScene";
 import { getSiteHeaderHeight } from "../lib/siteNavigation";
 import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
@@ -137,6 +138,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
   const [reviewReturnTarget, setReviewReturnTarget] = useState<"criteria" | "timeline" | null>(null);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   const reviewGraph = useRef<HTMLDetailsElement>(null);
+  const observationTools = useRef<HTMLDetailsElement>(null);
 
   const criteriaHeading = useRef<HTMLHeadingElement>(null);
   const timelineHeading = useRef<HTMLHeadingElement>(null);
@@ -150,6 +152,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
     if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
     coachReturn.current = null; setCoachReviewActive(false);
     setReviewReturnTarget(source); setSignalId(processReviewSignal(scenario, signal)); setReviewTime(time);
+    if (observationTools.current) observationTools.current.open = true;
     if (reviewGraph.current) reviewGraph.current.open = true;
     reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
     alignReviewHeading(reviewHeading.current);
@@ -162,6 +165,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
   const reviewCoachPoint = (time: number, returnToQuestion: () => void) => {
     if (!attempt.submitted || stage !== "review" || !Number.isInteger(time) || time < 0 || time > scenario.duration) return;
     setReviewReturnTarget(null); coachReturn.current = returnToQuestion; setSignalId(processReviewSignal(scenario, answer.signal)); setReviewTime(time); setCoachReviewActive(true);
+    if (observationTools.current) observationTools.current.open = true;
     if (reviewGraph.current) reviewGraph.current.open = true;
     reviewHeading.current?.focus({ preventScroll: true }); reviewHeading.current?.scrollIntoView({ block: "start", behavior: "auto" });
     alignReviewHeading(reviewHeading.current);
@@ -276,6 +280,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
       <details className="studio-detail"><summary>{l("학습 순서와 기록의 범위", "Learning sequence and record scope", "学習順序と記録の範囲")}</summary><p className="et-caption">{l("이 과정은 학습 순서입니다. 실제 반도체 제조에서는 공정이 여러 번 반복됩니다.", "This is a learning sequence. Real semiconductor manufacturing repeats processes many times.", "これは学習の順序です。実際の半導体製造では工程を何度も繰り返します。")}</p></details>
       {storageWarning ? <p className="et-alert" role="status">{l("이 브라우저에서 임시 저장을 사용할 수 없습니다. 새로고침하면 미제출 답안이 사라질 수 있습니다.", "Temporary browser storage is unavailable. Refreshing may erase this draft.", "このブラウザーでは一時保存を使えません。更新すると未提出の回答が消える場合があります。")}</p> : null}
       <p className="et-notice" role="status" aria-live="polite">{notice}</p>
+      <details className="pv-session-tools" open={stage !== "observe"}><summary>{l("중간 저장·불러오기·다시 시작", "Save, restore or restart", "途中保存・読み込み・やり直し")}</summary>
       <TrainingCheckpoint userId={userId} language={language} scenarioId={scenario.id} resumeOnly={attempt.submitted} disabled={saveStatus === "saving"}
         capture={() => toTrainingDraft(scenario.id, attempt, stage as "brief" | "observe" | "decision")}
         restore={draft => { currentSaveKey.current = undefined; setRetryRevision(revision => revision + 1); setRunning(false); setAttempt(restoreTrainingDraft(draft)); setInspectionSelection(null); setSaveStatus("idle"); move(draft.stage); }} />
@@ -283,6 +288,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
       <TrainingRetry key={`${storageKey}:${attempt.saveKey ?? "draft"}:${retryRevision}`} language={language}
         hasWork={attempt.elapsed > 0 || attempt.marker !== null || attempt.submitted || Object.values(answer).some(value => value.trim().length > 0)}
         disabled={saveStatus === "saving"} onPause={() => setRunning(false)} onRestart={reset} />
+      </details>
 
       {stage === "brief" ? <>
         {scenario.processId === "wafer" ? <WaferInspectionBrief language={language} /> : null}
@@ -305,23 +311,17 @@ function ProcessTrainingSession({ scenario, userId, language }: {
         </details>
       </> : null}
 
-      {stage === "observe" ? <PracticeFirstStep language={language} /> : null}
+      {stage === "observe" ? <details className="pv-time-tools"><summary>{l("처음 관찰한다면 · 사용 방법", "First observation · help", "初めての観察・使い方")}</summary><PracticeFirstStep language={language} /></details> : null}
       {stage === "observe" || stage === "review" ? <section className="et-monitor">
         <div className="et-workhead"><div><p className="et-eyebrow">{stage === "review" ? "TIMELINE REVIEW" : "VIRTUAL RECORD OBSERVATION"}</p><h2>{localize(selectedSignal.name, language)}</h2></div>
           <div className="et-clock"><strong>{clock(shownTime)}</strong><span>{l("가상 경과", "Virtual elapsed", "仮想経過")} / {clock(scenario.duration)}</span></div></div>
-        <div className="et-sensors pt-sensors">{scenario.signals.map(signal => {
-          const sample = processSample(scenario, signal.id, shownTime);
-          return <button type="button" className="et-sensor" key={signal.id} aria-pressed={signal.id === signalId} onClick={() => { pauseObservationView(); setSignalId(signal.id); }}>
-            <span>{localize(signal.name, language)}</span><strong>{sample.value.toFixed(1)} <small>{l("상대지수", "relative index", "相対指数")}</small></strong>
-            <small>{l("정상 참고", "Normal reference", "正常参照")} {sample.reference.toFixed(1)}</small>
-          </button>;
-        })}</div>
+
 
         {stage === "observe" ? <>
           <div className="et-actions"><Button className="et-primary" disabled={attempt.elapsed >= scenario.duration} onClick={() => { setRunning(current => !current); setInspectionSelection(null); setNotice(""); }}>{isRunning ? <Pause size={16} /> : <Play size={16} />}{isRunning ? l("일시정지", "Pause", "一時停止") : attempt.elapsed > 0 ? l("재개", "Resume", "再開") : l("재생", "Play", "再生")}</Button>
             <label className="pt-speed">{l("가상 기록 재생 속도", "Virtual-record playback speed", "仮想記録の再生速度")}<select value={speed} onChange={event => setSpeed(event.target.value === "3" ? 3 : 1)}><option value="1">1×</option><option value="3">3×</option></select></label>
           </div><p className="et-caption">{l("3배는 교육용 기록을 빠르게 재생합니다. 실제 설비의 실시간 수집 속도를 의미하지 않습니다.", "3× speeds up teaching-record playback; it is not a real equipment sampling rate.", "3倍は教育用記録の高速再生で、実装置のリアルタイム収集速度ではありません。")}</p>
-          <div className="et-marker-picker">
+          <details className="pv-time-tools"><summary>{l("시점 직접 입력·발견 표시", "Exact time and discovery markers", "時点の直接入力・発見の印")}</summary><div className="et-marker-picker">
             <label htmlFor="process-inspection-time">{l("이미 관측한 시점 선택", "Select an observed time", "観測済みの時点を選ぶ")} · {clock(inspectionTime)}</label>
             <input id="process-inspection-time" type="range" min={0} max={attempt.elapsed} step={1} value={inspectionTime} onChange={event => setInspectionSelection(Number(event.target.value))} />
             <label htmlFor="process-inspection-seconds">{l("시점 직접 입력 (초)", "Enter a time (seconds)", "時点を直接入力（秒）")}</label>
@@ -333,8 +333,10 @@ function ProcessTrainingSession({ scenario, userId, language }: {
             </div><p>{attempt.marker === null ? l("발견 기록은 아직 없습니다. 이상이 확인되지 않았다면 억지로 표시하지 않아도 됩니다.", "No discovery marker yet. You do not have to mark an anomaly you cannot establish.", "発見記録はまだありません。異常を確認できなければ、無理に印を付ける必要はありません。") : l(`내 발견 기록: ${clock(attempt.marker)}. 다른 시점을 기록하면 교체하고, 같은 버튼을 다시 누르면 취소합니다.`, `Your discovery marker: ${clock(attempt.marker)}. Marking another time replaces it; pressing the same button removes it.`, `自分の発見記録：${clock(attempt.marker)}。別の時点を記録すると置き換え、同じボタンを再度押すと取り消します。`)}</p>
             <p className="et-caption">{l("표시는 내가 선택한 가상 기록의 시점입니다. 실제로 그 순간에 발견했다는 뜻이나 발견 속도 평가가 아닙니다.", "This marker represents a virtual-record time you selected, not when you actually discovered it or a discovery-speed assessment.", "この印は選択した仮想記録の時点です。その瞬間に実際に発見したという意味や、発見速度の評価ではありません。")}</p>
             </details>
-          </div>
+          </div></details>
         </> : <div className="et-marker-picker"><label htmlFor="process-review-time">{l("복기할 시점", "Review time", "振り返る時点")} · {clock(reviewTime)}</label><input id="process-review-time" type="range" min={0} max={scenario.duration} step={1} value={reviewTime} onChange={event => setReviewTime(Number(event.target.value))} /></div>}
+        <ProcessObservationScene scenario={scenario} time={shownTime} observedUntil={stage === "review" ? scenario.duration : attempt.elapsed} language={language} selectedSignal={signalId} running={isRunning} onSignalChange={signal => { pauseObservationView(); setSignalId(signal); }} onTimeChange={time => { setRunning(false); if (stage === "review") setReviewTime(time); else setInspectionSelection(time); }} />
+        <details className="pv-extra-tools" ref={observationTools} open={stage === "review"}><summary>{l("그래프·기록표·심화 비교 도구 펼치기", "Open charts, records and comparison tools", "グラフ・記録表・比較ツールを開く")}</summary>
         {scenario.processId === "oxidation" ? <OxidationWorkspace language={language} time={shownTime} reference={oxidationReference}
           onReferenceChange={reference => { pauseObservationView(); setOxidationReference(reference); }} /> : null}
         {scenario.processId === "photo" ? <PhotoWorkspace language={language} time={shownTime} signal={signalId === "shape" ? "shape" : "position"} pinnedTime={photoPinnedTime} overlay={photoOverlay}
@@ -352,6 +354,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
           time={shownTime} observedUntil={attempt.elapsed} language={language} {...comparisonView} onInteraction={pauseObservationView} />
         <details className="pt-reference" ref={reviewGraph}><summary>{scenario.processId === "wafer" ? l("A3 구역의 기존 시계열 비교 · 제출 기준", "Existing A3 time-series comparison · submission reference", "A3区画の既存時系列比較・提出基準") : scenario.processId === "eds" || scenario.processId === "packaging" ? l("선택 신호의 전체 그래프", "Full chart for the selected signal", "選択信号の全体グラフ") : l("선택 신호의 시계열도 함께 보기", "Also view the selected signal\'s time series", "選択信号の時系列も確認する")}</summary><h3 ref={reviewHeading} tabIndex={-1}>{scenario.processId === "wafer" ? "A3 · " : ""}{localize(selectedSignal.name, language)} · {clock(shownTime)}</h3>{recordChart}</details>
         {scenario.processId !== "wafer" ? <ProcessSnapshot scenario={scenario} time={shownTime} language={language} /> : null}
+        </details>
         {stage === "review" && reviewReturnTarget ? <Button variant="outline" className="pt-review-return" onClick={returnToReview}>{reviewReturnTarget === "criteria" ? l("선택형 피드백으로 돌아가기", "Return to choice feedback", "選択基準のフィードバックに戻る") : l("타임라인 설명으로 돌아가기", "Return to timeline notes", "タイムラインの説明に戻る")}</Button> : null}
         {stage === "review" && coachReviewActive ? <Button variant="outline" onClick={() => coachReturn.current?.()}>{l("읽던 AI 질문으로 돌아가기", "Return to the AI question", "読んでいたAIの問いに戻る")}</Button> : null}
         {stage === "observe" ? <div className="et-actions"><Button onClick={() => move("brief")}><ArrowLeft size={16} />{l("상황 다시 보기", "Revisit briefing", "状況を再確認")}</Button><Button className="et-primary" onClick={() => move("decision")}>{l("내 판단 작성하기", "Write your reasoning", "自分の判断を記録")} <ArrowRight size={16} /></Button></div> : null}

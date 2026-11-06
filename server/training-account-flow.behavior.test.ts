@@ -128,9 +128,10 @@ describe("account practice flow through independent request contexts", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("requires owner consent to create a link, then lets a guest review only choices until the exact expiry", async () => {
+  it("requires owner consent, then signed-in recipients with the valid link can review only choices until the exact expiry", async () => {
     const storage = memoryStorage();
-    const owner = caller(41, "owner"); const stranger = caller(42, "stranger"); const guest = caller(null, "recipient");
+    const owner = caller(41, "owner"); const stranger = caller(42, "stranger"); const guest = caller(null, "guest-recipient");
+    const recipient = caller(42, "signed-in-recipient");
     await owner.training.saveAttempt({ attemptKey: "22222222-2222-4222-8222-222222222222", attempt: {
       elapsed: 180, submitted: true, marker: 82, signal: "pressure", onset: 70, comparison: "same-phase", certainty: "uncertain",
     } });
@@ -142,7 +143,8 @@ describe("account practice flow through independent request contexts", () => {
     expect(Object.keys(decodeJwt(link.token).choices as object).sort()).toEqual([
       "certainty", "comparison", "marker", "onset", "scenarioId", "signal",
     ]);
-    const recipientView = await guest.training.shared({ token: link.token });
+    await expect(guest.training.shared({ token: link.token })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    const recipientView = await recipient.training.shared({ token: link.token });
     expect(recipientView.record).toMatchObject({ scenarioId: "etch-chamber-a-01", signal: "pressure", onset: 70,
       signalMatched: 1, comparisonMatched: 1, certaintyMatched: 1 });
     for (const field of ["userId", "id", "createdAt", "name", "email", "facts", "checks", "feedback"]) {
@@ -150,9 +152,9 @@ describe("account practice flow through independent request contexts", () => {
     }
     await expect(guest.training.detail({ id })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     vi.setSystemTime(new Date(new Date(link.expiresAt).getTime() - 1_000));
-    await expect(guest.training.shared({ token: link.token })).resolves.toEqual(recipientView);
+    await expect(recipient.training.shared({ token: link.token })).resolves.toEqual(recipientView);
     vi.setSystemTime(new Date(link.expiresAt));
-    await expect(guest.training.shared({ token: link.token })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(recipient.training.shared({ token: link.token })).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(storage.attempts.size).toBe(1); expect(fetch).not.toHaveBeenCalled();
   });
 });

@@ -32,6 +32,13 @@ const isTemporaryTransportResponse = (error: unknown) =>
 
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
+    const path = event.query.queryKey?.[0];
+    if (Array.isArray(path) && path.length === 2 && path[0] === "training" && path[1] === "shared") {
+      // The shared-record view owns its sign-in/invalid-link recovery. Its
+      // transport error may retain the bearer link; never log that object.
+      console.warn("[Shared Training] Record could not be loaded.");
+      return;
+    }
     const error = event.query.state.error;
     redirectToLoginIfUnauthorized(error);
     if (isTemporaryTransportResponse(error)) {

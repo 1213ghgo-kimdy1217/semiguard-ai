@@ -35,11 +35,11 @@ export function TrainingPreviewContent({ language, authenticated, index, setInde
     <a className="et-skip" href="#preview-main">{l("샘플로 이동", "Skip to sample", "サンプルへ移動")}</a>
     <main className="et-main" id="preview-main">
       <PracticeMeasurementConsent />
-      <div className="et-meta"><span>GUEST PREVIEW / 30-SECOND SAMPLE</span><span>{l("교육용 가상 값 · 실제 제어 없음", "Synthetic teaching values · no physical control", "教育用仮想値 · 実際の制御なし")}</span></div>
+      <div className="et-meta"><span>SIGNED-IN SAMPLE / 30-SECOND SAMPLE</span><span>{l("교육용 가상 값 · 실제 제어 없음", "Synthetic teaching values · no physical control", "教育用仮想値 · 実際の制御なし")}</span></div>
       <section className="tp-intro" aria-labelledby="preview-title">
-        <p className="et-eyebrow">OBSERVE FIRST. PRACTISE AFTER SIGN-IN.</p>
+        <p className="et-eyebrow">SAMPLE OBSERVATION / BEFORE FULL PRACTICE</p>
         <h1 id="preview-title">{l("장비를 이해하고, 신호를 먼저 살펴보세요.", "Meet the equipment. Explore a sample signal.", "装置を理解し、まず信号を見てみましょう。")}</h1>
-        <p className="et-lead">{l("로그인 없이 보는 장비 소개와 30초 샘플입니다. 본 훈련·판단 제출·복기는 로그인 후 시작합니다.", "An equipment introduction and 30-second sample without sign-in. Full practice, reasoning submission, and review begin after sign-in.", "ログインなしで装置紹介と30秒のサンプルを見られます。本訓練・判断の提出・振り返りはログイン後に始めます。")}</p>
+        <p className="et-lead">{l("로그인 후 이용하는 장비 소개와 30초 샘플입니다. 본 훈련에 들어가기 전에 신호와 정상 참고를 살펴보세요.", "A signed-in equipment introduction and 30-second sample. Explore the signals and normal reference before full practice.", "ログイン後に利用する装置紹介と30秒のサンプルです。本訓練の前に信号と正常参照を確認してください。")}</p>
         <div className="et-actions"><Link className="et-linkbutton" href={authenticated ? "/training" : "/login"}>{l(authenticated ? "연습 방식 선택하기" : "로그인하고 본 훈련 시작", authenticated ? "Choose a practice mode" : "Log in to start full practice", authenticated ? "練習方法を選ぶ" : "ログインして本訓練を始める")} <span aria-hidden="true">→</span></Link>{!authenticated ? <Link href="/signup">{l("계정 만들기", "Create an account", "アカウントを作成")}</Link> : null}</div>
       </section>
       <div className="tp-observation">

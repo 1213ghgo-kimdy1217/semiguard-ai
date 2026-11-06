@@ -1,37 +1,39 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-
 const source = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
-describe("sample-only guest entry policy", () => {
-  it.each(["/live", "/training/history/:attemptId", "/training/process/:processId", "/training/etch", "/training", "/demo"])("gates full workspace %s before mounting it", route => {
+describe("signed-in learning workspace entry policy", () => {
+  it.each(["/preview", "/learn", "/training/shared", "/training/metrics", "/live", "/training/history/:attemptId", "/training/process/:processId", "/training/etch", "/training", "/demo"])("gates workspace %s before mounting it", route => {
     const app = source("client/src/App.tsx");
     const block = app.split(`<Route path={"${route}"}>`)[1]?.split("</Route>")[0];
     expect(block).toBeTruthy();
     expect(block).toContain("<PracticeAccess>");
     expect(block).toContain("</PracticeAccess>");
   });
-  it("keeps the sample, concept learning, and deliberate read-only result sharing public", () => {
+  it("keeps introduction and account recovery outside the workspace boundary", () => {
     const app = source("client/src/App.tsx");
-    expect(app).toContain('<Route path={"/preview"}>');
-    for (const route of ["/preview", "/learn", "/training/shared"]) {
-      expect(app.split(`<Route path={"${route}"}>`)[1]?.split("</Route>")[0]).not.toContain("<PracticeAccess>");
-    }
+    for (const route of ['<Route path={"/"} component={Welcome} />', '<Route path={"/welcome"} component={Welcome} />', '<Route path={"/login"} component={Login} />', '<Route path={"/signup"} component={Signup} />']) expect(app).toContain(route);
+    const recovery = app.split('<Route path="/account/recovery/reset">')[1].split("</Route>")[0];
+    expect(recovery).toContain("<AccountRecovery");
+    expect(recovery).not.toContain("<PracticeAccess>");
+    expect(app).toContain('return <PracticeAccess>{children}</PracticeAccess>;');
   });
-  it("routes public preview entry points to the bounded sample, not full training", () => {
-    expect(source("client/src/pages/Welcome.tsx")).toContain('href="/preview">{t.preview}');
-    expect(source("client/src/pages/Welcome.tsx")).toContain('href="/preview">{t.follow}');
+  it("makes even the separate model entry wait for the same signed-in identity", () => {
+    const entry = source("client/src/model-preview-main.tsx");
+    expect(entry).toContain("<PracticeAccess fullNavigation><EtchLive /></PracticeAccess>");
+    expect(entry).toContain("<AccountSessionProvider>");
+    expect(entry).toContain('url: "/api/trpc"');
+  });
+  it("labels public entry calls to action as requiring sign-in", () => {
+    const welcome = source("client/src/pages/Welcome.tsx");
     const login = source("client/src/pages/Login.tsx");
+    const signup = source("client/src/pages/Signup.tsx");
+    expect(welcome).toContain('href="/preview">{t.preview}');
+    for (const copy of ["로그인하고 샘플 살펴보기", "Sign in to explore the sample", "ログインしてサンプルを見る"]) expect(welcome).toContain(copy);
     expect(login).toContain('onClick={() => setLocation("/preview")}');
-    expect(login).toContain('judgeDemoHint: "장비 소개 · 샘플 관찰만"');
-    const signup = source("client/src/pages/Signup.tsx");
-    expect(signup).toContain('setLocation("/preview")');
-    expect(signup).toContain('trainingLink: "가입 없이 장비·샘플 미리보기"');
+    expect(login).toContain('judgeDemoHint: "로그인 후 이용"');
+    for (const copy of ["공정 학습과 샘플 관찰도 로그인이 필요합니다.", "Process learning and sample observation also require sign-in.", "工程学習とサンプル観察にもログインが必要です。"]) expect(signup).toContain(copy);
+    expect(signup).not.toContain("가입 없이 장비·샘플 미리보기");
     expect(login).toContain('window.location.href = "/training";');
-  });
-  it("does not promise account-free full practice on the signup introduction in any locale", () => {
-    const signup = source("client/src/pages/Signup.tsx");
-    for (const sampleOnly of ["로그인 전에는 장비 소개와 30초 샘플만", "Before sign-in, explore equipment introductions and a 30-second sample only", "ログイン前は装置紹介と30秒のサンプルだけ"]) expect(signup).toContain(sampleOnly);
-    for (const outdated of ["시나리오와 자유 관찰은 가입 없이도", "Scenario and free observation are available without an account", "シナリオと自由観察は登録せずに"]) expect(signup).not.toContain(outdated);
   });
 });

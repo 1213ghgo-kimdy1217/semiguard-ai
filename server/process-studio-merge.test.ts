@@ -64,18 +64,43 @@ describe("merge BAZE workspaces with prompt-only missing connections", () => {
       }
     }
   });
-  it("places original workspaces before optional full graph; does not mount EDS/package twice", () => {
+  it("places the diagram before folded original workspaces and preserves selection and review connections", () => {
     const page = read("client/src/pages/ProcessTraining.tsx");
-    expect(page.indexOf('<OxidationWorkspace language=')).toBeLessThan(page.indexOf('>{recordChart}</details>'));
+    const scene = page.indexOf('<ProcessObservationScene scenario=');
+    const advancedTools = page.indexOf('<details className="pv-extra-tools"');
+    const oxidation = page.indexOf('<OxidationWorkspace language=');
+    const fullGraph = page.indexOf('>{recordChart}</details>');
+    expect(scene).toBeGreaterThan(-1);
+    expect(advancedTools).toBeGreaterThan(scene);
+    expect(oxidation).toBeGreaterThan(advancedTools);
+    expect(fullGraph).toBeGreaterThan(oxidation);
+    expect(page).toContain('ref={observationTools} open={stage === "review"}');
     expect(page).toContain('scenario.processId === "oxidation" ? <ProcessRecordContext');
     expect(page).toContain('onInteraction={pauseObservationView} selectedSignal={signalId}');
     expect(page).toContain('setInspectionSelection(Math.min(time, attempt.elapsed))');
     const etch = read("client/src/pages/EtchTraining.tsx");
-    expect(etch).toContain('signal={selected} onSignalChange={signal => { setRunning(false); setSelected(signal); }}');
+    expect(etch).toContain('selectedSignal={selected} running={isRunning} onSignalChange={signal => { setRunning(false); setSelected(signal as EtchSignal); }}');
+    expect(etch.indexOf('<ProcessObservationScene scenario=')).toBeLessThan(etch.indexOf('<details className="pv-extra-tools"'));
     expect(etch).toContain('signal={reviewSignal} until={reviewTime}');
     expect(etch).toContain('setSelected("pressure"); setReviewSignal("pressure");');
     expect(etch).toContain('setReviewSignal("pressure"); setReviewTime(time);');
     expect(etch).toContain('ETCH_DURATION');
+  });
+  it("keeps diagram rewind, exact marker selection and the saved marker on the same paused observation", () => {
+    const etch = read("client/src/pages/EtchTraining.tsx");
+    const scene = etch.match(/<ProcessObservationScene\b[^]*?\/>/)?.[0];
+    expect(scene).toBeDefined();
+    expect(scene).toContain('onTimeChange={time => { setRunning(false); setObservationTime(time); setInspectionTime(time); }}');
+    const markerSlider = etch.match(/<input\b[^>]*id="etch-marker-time"[^]*?\/>/)?.[0];
+    expect(markerSlider).toBeDefined();
+    expect(markerSlider).toContain('max={attempt.elapsed}');
+    expect(markerSlider).toContain('value={inspectedTime}');
+    expect(markerSlider).toContain('onChange={e => { setRunning(false); setInspectionTime(Number(e.target.value)); setObservationTime(Number(e.target.value)); }}');
+    expect(etch).toContain('const inspectedTime = Math.min(inspectionTime, attempt.elapsed);');
+    const displayedMarker = etch.match(/<Button\b(?:(?!<\/Button>)[^])*?"Mark the displayed point"(?:(?!<\/Button>)[^])*?<\/Button>/)?.[0];
+    expect(displayedMarker).toBeDefined();
+    expect(displayedMarker).toContain('setAttempt(a => setEtchMarker(a, shownTime));');
+    expect(displayedMarker).not.toContain('setEtchMarker(a, inspectedTime)');
   });
   it("keeps view state out of persistence, scoring and AI contracts", () => {
     for (const file of ["RecordBand", "EdsObservationWorkspace", "PackagingObservationWorkspace", "MetalLayerConcept", "EtchChamberConcept"]) {

@@ -9,6 +9,7 @@ import { AccountSessionProvider } from "./components/AccountSession";
 import SiteHeader from "./components/SiteHeader";
 import { SiteNavigationProvider } from "./lib/siteNavigation";
 import EtchLive from "./pages/EtchLive";
+import PracticeAccess from "./components/PracticeAccess";
 import "./index.css";
 
 /** The preview shares the site's authenticated API; it never grants /live access. */
@@ -48,7 +49,7 @@ function ModelPreview() {
     <trpc.Provider client={client} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <AccountSessionProvider>
-          <SiteNavigationProvider><SiteHeader fullNavigation /><div id="site-content" tabIndex={-1}><EtchLive /></div></SiteNavigationProvider>
+          <SiteNavigationProvider><SiteHeader fullNavigation /><div id="site-content" tabIndex={-1}><PracticeAccess fullNavigation><EtchLive /></PracticeAccess></div></SiteNavigationProvider>
         </AccountSessionProvider>
       </QueryClientProvider>
     </trpc.Provider>

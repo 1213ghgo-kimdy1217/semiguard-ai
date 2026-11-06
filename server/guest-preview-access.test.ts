@@ -23,24 +23,27 @@ const props = (language: ProductLanguage = "ko", authenticated = false) => ({ la
 
 describe("full practice identity boundary", () => {
   beforeEach(() => { auth.user = null; auth.loading = false; auth.error = null; auth.isAuthenticated = false; auth.refresh.mockClear(); mounted.mockClear(); });
-  it("does not mount full training for a guest, and renders only the bounded sample", () => {
+  it("requires sign-in without mounting training or a sample for a resolved guest", () => {
     const html = boundary();
     expect(mounted).not.toHaveBeenCalled(); expect(html).not.toContain("PRIVATE_FULL_TRAINING");
-    expect(html).toContain("30-SECOND SAMPLE"); expect(html).toContain('href="/login"'); expect(html).not.toContain('href="/training"');
+    expect(html).toContain("로그인 후 학습 공간을 이용할 수 있어요."); expect(html).not.toContain("30-SECOND SAMPLE"); expect(html).toContain('href="/login"'); expect(html).toContain('href="/signup"'); expect(html).not.toContain('href="/training"');
   });
   it("does not mount training or pretend the user is a guest while session resolution is pending", () => {
     auth.loading = true;
     const html = boundary(); expect(mounted).not.toHaveBeenCalled();
     expect(html).toContain('role="status"'); expect(html).toContain('aria-busy="true"'); expect(html).not.toContain("30-SECOND SAMPLE");
+    expect(html).toContain('aria-atomic="true"'); expect(html).toContain("SemiGuard AI");
+    expect(html).toContain("반도체 장비 센서 판단 교육·점검 보조");
+    expect(html).toContain("animate-spin motion-reduce:animate-none");
   });
   it("hides cached training during a pending logout as well", () => {
     auth.user = { id: 7 }; auth.loading = true; auth.isAuthenticated = true;
     expect(boundary()).not.toContain("PRIVATE_FULL_TRAINING"); expect(mounted).not.toHaveBeenCalled();
   });
-  it("shows explicit safe retry and preview recovery when session lookup fails", () => {
+  it("shows retry and sign-in recovery without opening another protected workspace", () => {
     auth.error = new Error("PRIVATE_INTERNAL_ERROR");
     const html = boundary(); expect(mounted).not.toHaveBeenCalled();
-    expect(html).toContain('role="alert"'); expect(html).toContain("다시 확인"); expect(html).toContain('href="/preview"');
+    expect(html).toContain('role="alert"'); expect(html).toContain("다시 확인"); expect(html).toContain('href="/welcome"'); expect(html).not.toContain('href="/preview"');
     expect(html).not.toContain("PRIVATE_INTERNAL_ERROR"); expect(html).not.toContain("PRIVATE_FULL_TRAINING");
   });
   it("mounts the existing full workspace only after a resolved signed-in identity", () => {
