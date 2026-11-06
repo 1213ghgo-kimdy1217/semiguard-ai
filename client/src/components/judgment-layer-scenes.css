@@ -1,0 +1,55 @@
+.jl-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family:
+    Inter, "Malgun Gothic", "Noto Sans KR", "Noto Sans JP", sans-serif;
+  overflow: visible;
+}
+.jl-value-trace,
+.jl-film-layer,
+.jl-appearance-stripe,
+.jl-package-surface {
+  transition: all 0.28s ease;
+}
+.jl-route-flow,
+.jl-optical-rays {
+  animation: jl-record-flow 1.4s linear infinite;
+  animation-play-state: paused;
+}
+.jl-scene[data-running="true"] .jl-route-flow,
+.jl-scene[data-running="true"] .jl-optical-rays {
+  animation-play-state: running;
+}
+.jl-inspection-light,
+.jl-surface-scan {
+  transition: transform 0.2s linear;
+}
+.jl-scene text {
+  user-select: none;
+}
+.jl-scene .jl-reading text {
+  font-variant-numeric: tabular-nums;
+}
+@keyframes jl-record-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jl-scene * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.jl-reading[role="button"] {
+  cursor: pointer;
+  outline: none;
+}
+.jl-reading[role="button"]:hover > rect {
+  stroke: #f6d69a;
+}
+.jl-reading[role="button"]:focus-visible > rect {
+  stroke: #ffe1a6;
+  stroke-width: 3;
+}

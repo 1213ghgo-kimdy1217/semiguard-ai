@@ -108,9 +108,11 @@ function Step({
 export default function ProcessHandsOnLab({
   language = "ko",
   initialProcess = "etch",
+  embedded = false,
 }: {
   language?: ProductLanguage;
   initialProcess?: ProcessId;
+  embedded?: boolean;
 }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const [module, setModule] = useState<ProcessId>(initialProcess);
@@ -284,18 +286,20 @@ export default function ProcessHandsOnLab({
                     "Your mask alignment is now visible in the pattern.",
                     "合わせたマスク位置がパターンに表れました。"
                   );
+  const Shell = embedded ? "div" : "main";
+  const Title = embedded ? "h3" : "h1";
   return (
-    <main className="ho-lab">
+    <Shell className={`ho-lab${embedded ? " ho-lab--embedded" : ""}`}>
       <header className="ho-intro">
         <div>
           <p>SEMIGUARD / HANDS-ON CONCEPT LAB</p>
-          <h1>
+          <Title>
             {l(
               "직접 움직여, 공정을 만들어보세요.",
               "Build the process with your own actions.",
               "自分で動かして工程を作ってみましょう。"
             )}
-          </h1>
+          </Title>
         </div>
         <span>
           {l(
@@ -305,24 +309,26 @@ export default function ProcessHandsOnLab({
           )}
         </span>
       </header>
-      <div
-        className="ho-module-tabs"
-        role="group"
-        aria-label={l("체험할 공정", "Process to try", "体験する工程")}
-      >
-        {processOrder.map((id, index) => (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={module === id}
-            data-module={id}
-            onClick={() => selectProcess(id)}
-          >
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            {l(...processNames[id])}
-          </button>
-        ))}
-      </div>
+      {!embedded ? (
+        <div
+          className="ho-module-tabs"
+          role="group"
+          aria-label={l("체험할 공정", "Process to try", "体験する工程")}
+        >
+          {processOrder.map((id, index) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={module === id}
+              data-module={id}
+              onClick={() => selectProcess(id)}
+            >
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              {l(...processNames[id])}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <section
         className="ho-experience"
         data-module={module}
@@ -764,116 +770,120 @@ export default function ProcessHandsOnLab({
           "公開原理を簡略化した概念体験です。実際の装置設定・物理量・工程時間を再現せず、装置を制御しません。"
         )}
       </p>
-      <section className="ho-equipment">
-        <div>
-          <p>
-            {l(
-              "체험에서 원문으로",
-              "FROM EXPERIENCE TO THE SOURCE",
-              "体験から原文へ"
-            )}
-          </p>
-          <h2>
-            {l(
-              "이 조작은 어떤 장비와 연결되나요?",
-              "Which equipment does this relate to?",
-              "この操作はどの装置に関係しますか？"
-            )}
-          </h2>
-          <strong>{equipment.name}</strong>
-          <p>{l(...equipment.context)}</p>
-          {module === "photo" ? (
-            <p>
-              {l(
-                "마스크 정렬·노광은 노광 장비와, 현상은 후속 공정의 개념과 연결해 구분합니다.",
-                "Mask alignment and exposure relate to the scanner; development is a distinct subsequent process.",
-                "マスク位置合わせ・露光は露光装置、現像は別の後続工程として区別します。"
-              )}
-            </p>
-          ) : null}
-        </div>
-        <div className="ho-source-links">
-          {equipment.sources.map(source => (
-            <a
-              key={source.url}
-              href={source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {source.name} ·{" "}
-              {l("회사 원문", "Manufacturer source", "メーカー原文")} ↗
-            </a>
-          ))}
-          <a href={lesson.source} target="_blank" rel="noopener noreferrer">
-            {l(
-              "삼성반도체 · 공정 원리 원문",
-              "Samsung · process concept source",
-              "Samsung・工程原理の原文"
-            )}{" "}
-            ↗
-          </a>
-        </div>
-        <details>
-          <summary>
-            {l(
-              "원문과 이 체험의 연결 범위",
-              "How the source relates to this experience",
-              "原文と体験の関係"
-            )}
-          </summary>
-          <p>
-            {l(
-              "회사 원문은 장비 유형과 공정 역할을 이해하기 위한 자료입니다. 체험의 조작 순서·상대적인 세기·그림은 학습을 위해 단순화했으며, 해당 제품의 조작 화면이나 제조사 검증을 의미하지 않습니다.",
-              "Manufacturer sources explain equipment types and process roles. Controls, relative levels and diagrams are simplified for learning; they are not the product's operator interface or manufacturer validation.",
-              "メーカー原文は装置の種類と工程の役割を理解する資料です。操作順序・相対強度・図は学習用に簡略化しており、製品の操作画面やメーカー検証を意味しません。"
-            )}
-          </p>
-        </details>
-      </section>
-      <details className="ho-all-equipment">
-        <summary>
-          {l(
-            "8대 공정의 장비 회사 원문 함께 보기",
-            "Explore equipment sources for all eight processes",
-            "8大工程の装置メーカー原文を見る"
-          )}
-        </summary>
-        <div>
-          {(Object.keys(processEquipment) as ProcessId[]).map(id => (
-            <article key={id}>
-              <span>{l(...processNames[id])}</span>
-              <strong>{processEquipment[id].name}</strong>
-              {id === "wafer" ? (
-                <small>
+      {!embedded ? (
+        <>
+          <section className="ho-equipment">
+            <div>
+              <p>
+                {l(
+                  "체험에서 원문으로",
+                  "FROM EXPERIENCE TO THE SOURCE",
+                  "体験から原文へ"
+                )}
+              </p>
+              <h2>
+                {l(
+                  "이 조작은 어떤 장비와 연결되나요?",
+                  "Which equipment does this relate to?",
+                  "この操作はどの装置に関係しますか？"
+                )}
+              </h2>
+              <strong>{equipment.name}</strong>
+              <p>{l(...equipment.context)}</p>
+              {module === "photo" ? (
+                <p>
                   {l(
-                    "표면 검사·형상 계측 사례",
-                    "Surface inspection / geometry metrology",
-                    "表面検査・形状計測の例"
+                    "마스크 정렬·노광은 노광 장비와, 현상은 후속 공정의 개념과 연결해 구분합니다.",
+                    "Mask alignment and exposure relate to the scanner; development is a distinct subsequent process.",
+                    "マスク位置合わせ・露光は露光装置、現像は別の後続工程として区別します。"
                   )}
-                </small>
-              ) : id === "eds" ? (
-                <small>
-                  {l(
-                    "테스트 시스템 · 프로버와 역할 구분",
-                    "Test system · distinct from a prober",
-                    "テストシステム・プローバーと役割を区別"
-                  )}
-                </small>
+                </p>
               ) : null}
-              {processEquipment[id].sources.map(source => (
+            </div>
+            <div className="ho-source-links">
+              {equipment.sources.map(source => (
                 <a
                   key={source.url}
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {source.name} ↗
+                  {source.name} ·{" "}
+                  {l("회사 원문", "Manufacturer source", "メーカー原文")} ↗
                 </a>
               ))}
-            </article>
-          ))}
-        </div>
-      </details>
-    </main>
+              <a href={lesson.source} target="_blank" rel="noopener noreferrer">
+                {l(
+                  "삼성반도체 · 공정 원리 원문",
+                  "Samsung · process concept source",
+                  "Samsung・工程原理の原文"
+                )}{" "}
+                ↗
+              </a>
+            </div>
+            <details>
+              <summary>
+                {l(
+                  "원문과 이 체험의 연결 범위",
+                  "How the source relates to this experience",
+                  "原文と体験の関係"
+                )}
+              </summary>
+              <p>
+                {l(
+                  "회사 원문은 장비 유형과 공정 역할을 이해하기 위한 자료입니다. 체험의 조작 순서·상대적인 세기·그림은 학습을 위해 단순화했으며, 해당 제품의 조작 화면이나 제조사 검증을 의미하지 않습니다.",
+                  "Manufacturer sources explain equipment types and process roles. Controls, relative levels and diagrams are simplified for learning; they are not the product's operator interface or manufacturer validation.",
+                  "メーカー原文は装置の種類と工程の役割を理解する資料です。操作順序・相対強度・図は学習用に簡略化しており、製品の操作画面やメーカー検証を意味しません。"
+                )}
+              </p>
+            </details>
+          </section>
+          <details className="ho-all-equipment">
+            <summary>
+              {l(
+                "8대 공정의 장비 회사 원문 함께 보기",
+                "Explore equipment sources for all eight processes",
+                "8大工程の装置メーカー原文を見る"
+              )}
+            </summary>
+            <div>
+              {(Object.keys(processEquipment) as ProcessId[]).map(id => (
+                <article key={id}>
+                  <span>{l(...processNames[id])}</span>
+                  <strong>{processEquipment[id].name}</strong>
+                  {id === "wafer" ? (
+                    <small>
+                      {l(
+                        "표면 검사·형상 계측 사례",
+                        "Surface inspection / geometry metrology",
+                        "表面検査・形状計測の例"
+                      )}
+                    </small>
+                  ) : id === "eds" ? (
+                    <small>
+                      {l(
+                        "테스트 시스템 · 프로버와 역할 구분",
+                        "Test system · distinct from a prober",
+                        "テストシステム・プローバーと役割を区別"
+                      )}
+                    </small>
+                  ) : null}
+                  {processEquipment[id].sources.map(source => (
+                    <a
+                      key={source.url}
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {source.name} ↗
+                    </a>
+                  ))}
+                </article>
+              ))}
+            </div>
+          </details>
+        </>
+      ) : null}
+    </Shell>
   );
 }

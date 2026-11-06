@@ -1,0 +1,63 @@
+.jd-review-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+  padding: 0 0 13px;
+  border-bottom: 1px solid #3c5948;
+}
+.jd-review-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  font-size: 12px;
+  color: #d6c397;
+  text-decoration: none;
+}
+.jd-review-links a:hover {
+  text-decoration: underline;
+}
+.jd-review-links a:last-child {
+  border: 1px solid #7f724b;
+  border-radius: 7px;
+  padding: 6px 11px;
+  background: #303b29;
+}
+.jd-review-links a:focus-visible {
+  outline: 3px solid #e4b36b;
+  outline-offset: 3px;
+}
+.jd-preparation > summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 9px 0;
+  color: #dbbf87;
+  font-size: 14px;
+  font-weight: 650;
+}
+.jd-preparation > summary:focus-visible {
+  outline: 3px solid #e2b670;
+  outline-offset: 4px;
+}
+.ho-lab--embedded {
+  padding: 8px 0 0;
+  max-width: none;
+}
+.ho-lab--embedded .ho-intro {
+  margin: 0 0 12px;
+}
+.ho-lab--embedded .ho-intro h3 {
+  font-size: 20px;
+  font-weight: 650;
+  margin: 0;
+}
+.ho-lab--embedded .ho-intro > span {
+  font-size: 10px;
+}
+.ho-lab--embedded .ho-experience {
+  margin-top: 12px;
+}
+.ho-lab--embedded .ho-intro p {
+  font-size: 9px;
+}

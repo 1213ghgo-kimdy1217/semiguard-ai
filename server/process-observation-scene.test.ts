@@ -7,22 +7,31 @@ import { readProcessScene } from "../shared/processScene";
 
 const languages = ["ko", "en", "ja"] as const;
 const languageIndex = { ko: 0, en: 1, ja: 2 } as const;
+const channelControls=(html:string)=>html.match(/<div class="jd-observation-picks"[^>]*>([\s\S]*?)<\/div>/)![1];
 
 describe("picture-first process observation", () => {
+  it("does not expose supplied review markers before the review stage", () => {
+    const html=renderToStaticMarkup(createElement(ProcessObservationScene,{scenario:getProcessScenario("wafer")!,time:19,observedUntil:19,language:"en",selectedSignal:"surface",onSignalChange:vi.fn(),onTimeChange:vi.fn(),markers:[{label:"SAVED_REVIEW_MARKER",time:18,signalId:"surface"}]}));
+    expect(html).not.toContain("SAVED_REVIEW_MARKER");
+  });
+  it("keeps review marker navigation inside the supplied observed interval", () => {
+    const html=renderToStaticMarkup(createElement(ProcessObservationScene,{scenario:getProcessScenario("wafer")!,time:19,observedUntil:19,language:"en",selectedSignal:"surface",onSignalChange:vi.fn(),onTimeChange:vi.fn(),review:true,markers:[{label:"VISIBLE_SAVED_POINT",time:18,signalId:"surface"},{label:"UNSEEN_FUTURE_POINT",time:30},{label:"INVALID_POINT",time:NaN}]}));
+    expect(html).toContain("VISIBLE_SAVED_POINT");expect(html).not.toMatch(/UNSEEN_FUTURE_POINT|INVALID_POINT|NaN/);
+  });
   it.each(processScenarios)("shows the original $processId readings as named diagram controls", scenario => {
     const scene = readProcessScene(scenario, 66, 66);
     const html = renderToStaticMarkup(createElement(ProcessObservationScene, {
       scenario, time: 66, observedUntil: 66, language: "ko",
       selectedSignal: scenario.signals[0].id, onSignalChange: vi.fn(), onTimeChange: vi.fn(),
     }));
-    expect(html).toContain('role="img"');
+    expect(html).toContain('role="group"');
     expect(html).toContain("<title");
     expect(html).not.toMatch(/NaN|Infinity|<iframe|<image|<img/);
     for (const channel of scene.channels) {
       expect(html).toContain(channel.name[0]);
       expect(html).toContain(channel.value.toFixed(1));
     }
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(channelControls(html).match(/aria-pressed="true"/g)).toHaveLength(1);
     expect(html).not.toMatch(/data-(?:answer|correct|expected|severity)=/);
     expect(html).not.toMatch(/changeTime|expectedSignal/);
   });
@@ -34,7 +43,7 @@ describe("picture-first process observation", () => {
         selectedSignal: scenario.signals.at(-1)!.id, onSignalChange: vi.fn(),
       }));
       for (const signal of scenario.signals) expect(html).toContain(signal.name[languageIndex[language]]);
-      expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+      expect(channelControls(html).match(/aria-pressed="true"/g)).toHaveLength(1);
       expect(html).toContain("<svg");
     }
   });
@@ -56,7 +65,7 @@ describe("picture-first process observation", () => {
     // React's generated accessibility IDs differ across renders; the visible
     // readings and range must still correspond to the same observed point.
     const values = (html: string) => {
-      const controls = html.match(/<div class="pv-measurements"[^>]*>([\s\S]*?)<\/div>/)![1];
+      const controls = channelControls(html);
       return Array.from(controls.matchAll(/data-value="([^"]+)"/g), match => match[1]);
     };
     expect(values(future)).toEqual(capped.channels.map(channel => channel.value.toFixed(1)));
@@ -83,7 +92,7 @@ describe("picture-first process observation", () => {
     const range = html.match(/<input\b[^>]*type="range"[^>]*>/)![0];
     expect(range).toContain('max="0"');
     expect(range).toContain('disabled=""');
-    const selected = html.match(/<button\b[^>]*aria-pressed="true"[^>]*>/g) ?? [];
+    const selected = channelControls(html).match(/<button\b[^>]*aria-pressed="true"[^>]*>/g) ?? [];
     expect(selected).toHaveLength(1);
     expect(selected[0]).toContain('data-signal="position"');
   });

@@ -30,6 +30,7 @@ const Training = lazy(() => import("./pages/EtchTraining"));
 const ProcessTraining = lazy(() => import("./pages/ProcessTraining"));
 const ProcessExperience = lazy(() => import("./pages/ProcessExperience"));
 const TrainingHistory = lazy(() => import("./pages/TrainingHistory"));
+const PracticeHistory = lazy(() => import("./pages/PracticeHistory"));
 const SharedTraining = lazy(() => import("./pages/SharedTraining"));
 const PracticeMetrics = lazy(() => import("./pages/PracticeMetrics"));
 const AccountSettings = lazy(() => import("./pages/AccountSettings"));
@@ -208,6 +209,9 @@ function Router() {
       </Route>
       <Route path={"/training/history/:attemptId"}>
         {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><TrainingHistory attemptId={params.attemptId} /></Suspense></PracticeAccess>}
+      </Route>
+      <Route path="/training/history">
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><PracticeHistory /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/training/shared"}>
         <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><SharedTraining /></Suspense></PracticeAccess>

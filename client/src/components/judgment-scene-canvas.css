@@ -1,0 +1,210 @@
+.jd-observation {
+  margin: 8px 20px 0;
+}
+.jd-toolbar {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0 0 12px;
+}
+.jd-observation-picks,
+.jd-comparison {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.jd-toolbar button {
+  border: 1px solid #4c7263;
+  background: #17382d;
+  border-radius: 7px;
+  color: #bfd7c9;
+  font: inherit;
+  font-size: 11px;
+  padding: 9px 12px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.jd-observation-picks button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+}
+.jd-observation-picks strong {
+  font-variant-numeric: tabular-nums;
+  color: #dfc691;
+  font-size: 15px;
+}
+.jd-toolbar button[aria-pressed="true"] {
+  border-color: #e1b568;
+  background: #343f2e;
+  color: #f3d49c;
+}
+.jd-toolbar button:focus-visible,
+.jd-structure > summary:focus-visible,
+.jd-stage svg [role="button"]:focus-visible {
+  outline: 3px solid #edbe73;
+  outline-offset: 3px;
+}
+.jd-stages {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.jd-stages--split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.jd-stage {
+  min-width: 0;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at center, #254f3d, #102c23 75%);
+  border: 1px solid #3d6955;
+}
+.jd-stage figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #c7dfcf;
+}
+.jd-stage figcaption > span {
+  font-size: 10px;
+  color: #dabc83;
+}
+.jd-stage > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 490px;
+  min-height: 0;
+}
+.jd-stage svg [role="button"] {
+  cursor: pointer;
+}
+.jd-reference {
+  border-color: #8c754b;
+}
+.jd-reference figcaption {
+  color: #e8c489;
+}
+.jd-stage svg text {
+  font-family: inherit;
+}
+.jd-structure {
+  margin: 12px 0 0;
+  border-top: 1px solid #395b4b;
+}
+.jd-structure > summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 0;
+  color: #a8c6b4;
+  font-size: 12px;
+}
+.jd-structure-diagram {
+  position: relative;
+  aspect-ratio: 800/440;
+  max-height: 450px;
+  background: #142e25;
+  overflow: hidden;
+}
+.jd-structure-diagram .pv-diagram {
+  position: absolute;
+  inset: 0;
+  transform: none;
+  width: 100%;
+  height: 100%;
+}
+.jd-equipment-source {
+  padding: 14px 0;
+  font-size: 12px;
+  color: #b3cbbd;
+  line-height: 1.8;
+}
+.jd-equipment-source strong {
+  color: #dfc18b;
+}
+.jd-equipment-source p {
+  font-size: 12px;
+  margin: 6px 0;
+}
+.jd-equipment-source a {
+  display: inline-block;
+  margin-right: 14px;
+  color: #c2dcc8;
+  text-decoration: underline;
+}
+.jd-review-markers {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 26px 0;
+}
+.jd-review-markers button {
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid #8c764f;
+  border-radius: 7px;
+  background: #353e2a;
+  color: #e6c992;
+  min-height: 38px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.jd-review-markers button:focus-visible {
+  outline: 3px solid #e4b86e;
+  outline-offset: 3px;
+}
+@media (max-width: 650px) {
+  .jd-observation {
+    margin: 7px 12px 0;
+  }
+  .jd-toolbar {
+    gap: 8px;
+  }
+  .jd-observation-picks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .jd-observation-picks button {
+    padding: 8px;
+    justify-content: space-between;
+    font-size: 10px;
+    gap: 5px;
+  }
+  .jd-observation-picks strong {
+    font-size: 14px;
+  }
+  .jd-toolbar button {
+    font-size: 10px;
+  }
+  .jd-stages--split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .jd-stage {
+    padding: 10px;
+  }
+  .jd-stage figcaption {
+    font-size: 11px;
+  }
+  .jd-stage figcaption > span {
+    font-size: 9px;
+  }
+  .jd-structure-diagram {
+    aspect-ratio: 800/540;
+  }
+  .jd-review-markers {
+    padding: 8px 16px 0;
+  }
+  .jd-review-markers button {
+    font-size: 10px;
+  }
+}

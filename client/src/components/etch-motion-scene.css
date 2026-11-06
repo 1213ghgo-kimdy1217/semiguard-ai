@@ -1,0 +1,130 @@
+.em-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.em-number {
+  font-variant-numeric: tabular-nums;
+}
+.em-reading {
+  isolation: isolate;
+}
+.em-reading--selected rect {
+  filter: drop-shadow(0 0 5px #8bdfcb25);
+}
+.em-gas-particle {
+  offset-distance: var(--em-progress);
+  offset-rotate: 0deg;
+  animation: em-gas-travel var(--em-duration) linear infinite;
+  animation-delay: var(--em-delay);
+}
+.em-inlet-stream,
+.em-outlet-stream {
+  animation: em-stream 1.3s linear infinite;
+}
+.em-gas-jet {
+  animation: em-stream 0.75s linear infinite;
+}
+.em-plasma-cloud {
+  transform-origin: 242px 160px;
+  animation: em-cloud-breathe 2.8s ease-in-out infinite;
+}
+.em-plasma-ribbon {
+  transform-origin: 242px 160px;
+  animation: em-ribbon-wave 2s ease-in-out infinite;
+}
+.em-plasma-ribbon--two {
+  animation-delay: -1s;
+  animation-direction: reverse;
+}
+.em-rf-wave {
+  animation: em-rf-scan 1.1s linear infinite;
+}
+.em-heat-band {
+  animation: em-heat-breathe 2.4s ease-in-out infinite;
+}
+.em-exhaust-rotor {
+  transform-origin: 453px 275px;
+  animation: em-rotor 3s linear infinite;
+}
+.em-scene[data-running="false"] .em-gas-particle,
+.em-scene[data-running="false"] .em-inlet-stream,
+.em-scene[data-running="false"] .em-outlet-stream,
+.em-scene[data-running="false"] .em-gas-jet,
+.em-scene[data-running="false"] .em-plasma-cloud,
+.em-scene[data-running="false"] .em-plasma-ribbon,
+.em-scene[data-running="false"] .em-rf-wave,
+.em-scene[data-running="false"] .em-heat-band,
+.em-scene[data-running="false"] .em-exhaust-rotor {
+  animation-play-state: paused;
+}
+@keyframes em-gas-travel {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+@keyframes em-stream {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -38;
+  }
+}
+@keyframes em-cloud-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035, 0.95);
+  }
+}
+@keyframes em-ribbon-wave {
+  0%,
+  100% {
+    transform: translateY(-4px);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+@keyframes em-rf-scan {
+  to {
+    stroke-dashoffset: -64;
+  }
+}
+@keyframes em-heat-breathe {
+  0%,
+  100% {
+    stroke-opacity: 0.55;
+  }
+  50% {
+    stroke-opacity: 1;
+  }
+}
+@keyframes em-rotor {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .em-scene .em-gas-particle,
+  .em-scene .em-inlet-stream,
+  .em-scene .em-outlet-stream,
+  .em-scene .em-gas-jet,
+  .em-scene .em-plasma-cloud,
+  .em-scene .em-plasma-ribbon,
+  .em-scene .em-rf-wave,
+  .em-scene .em-heat-band,
+  .em-scene .em-exhaust-rotor {
+    animation: none !important;
+  }
+  .em-scene .em-gas-particle {
+    offset-distance: var(--em-progress);
+  }
+}
