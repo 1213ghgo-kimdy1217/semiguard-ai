@@ -78,7 +78,8 @@ describe("process feedback reconnects choices to their evidence", () => {
     expect(returning).toContain('target?.focus({ preventScroll: true })');
     expect(returning).not.toContain("setReviewReturnTarget(null)");
     expect(returning).toContain("alignReviewHeading(target)");
-    expect(source).toContain("productHeader.current?.getBoundingClientRect().height");
-    expect(source).toContain('ref={productHeader}');
+    expect(source).toContain("getSiteHeaderHeight()");
+    const navigation = readFileSync("client/src/lib/siteNavigation.tsx", "utf8");
+    expect(navigation).toContain('document.getElementById("site-header")?.getBoundingClientRect().height');
   });
 });

@@ -31,15 +31,14 @@ describe("practice choice navigation", () => {
     expect(effect?.indexOf("return;")).toBeLessThan(effect!.indexOf("focusPracticeSection"));
   });
 
-  it("gives the header and brand an explicit same-screen action without resetting an answer", () => {
+  it("registers the shared practice tab's same-screen action without resetting an answer", () => {
     const action = page.match(/const openPracticeChoices = \(\) => \{([\s\S]*?)\n  \};/)?.[1];
     expect(action).toBeDefined();
     expect(action).toContain('historyReturn.current = false;');
     expect(action).toContain('if (stage === "home") focusPracticeSection(heading.current);');
     expect(action).toContain('move("home");');
     expect(action).not.toMatch(/setAttempt|reset|setConsent|mutate|sessionStorage/);
-    expect(page.match(/onClick=\{openPracticeChoices\}/g)).toHaveLength(2);
-    expect(page).toContain('l("연습 방식 선택", "Practice options", "練習方法を選ぶ")');
+    expect(page).toContain('useSiteNavigationAction("/training", openPracticeChoices)');
     expect(page).not.toContain('l("선택 화면",');
     expect(page).toContain('const openPracticeHistory = () => { historyReturn.current = true; move("home"); };');
     expect(page).toContain('if (next !== "observe" && next !== "decision") setRunning(false)');

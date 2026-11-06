@@ -20,12 +20,13 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ETCH_DURATION, ETCH_STORAGE_KEY, emptyEtchAttempt, etchEvidence, etchFeedback, etchPhase, etchSample, etchSamples, etchSignals, restoreEtchAttempt, setEtchMarker, validEtchAnswer, type EtchAnswer, type EtchSignal } from "../../../shared/etchScenario";
-import ProductLanguageSelect from "../components/ProductLanguageSelect";
-import AccountLogout from "../components/AccountSession";
+
+
 import { etchSignalLocation, etchSignalName } from "../lib/etchLanguage";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
 import { focusPracticeSection } from "../lib/practiceNavigation";
+import { useSiteNavigationAction } from "../lib/siteNavigation";
 import { toTrainingSubmission } from "../../../shared/trainingRecord";
 import "./etch-training.css";
 import "../components/process-studio.css";
@@ -87,7 +88,7 @@ export function EvidenceSnapshot({ time, observedUntil, sourceRows, language = "
 }
 
 export default function EtchTraining({ entry = "home" }: { entry?: "home" | "brief" } = {}) {
-  const [language, setLanguage] = useProductLanguage();
+  const [language] = useProductLanguage();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const [attempt, setAttempt] = useState(emptyEtchAttempt);
   const [storageKey, setStorageKey] = useState<string | null>(null);
@@ -165,6 +166,7 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
     if (stage === "home") focusPracticeSection(heading.current);
     move("home");
   };
+  useSiteNavigationAction("/training", openPracticeChoices);
   const openPracticeHistory = () => { historyReturn.current = true; move("home"); };
   const reset = () => {
     if (saveStatus === "saving") return;
@@ -202,7 +204,7 @@ export default function EtchTraining({ entry = "home" }: { entry?: "home" | "bri
   if (!expectedStorageKey || storageKey !== expectedStorageKey) return <div className="et-app"><main className="et-main" role="status">{l("훈련 작업 공간을 불러오는 중…", "Loading practice workspace…", "練習画面を読み込み中…")}</main></div>;
   return <div className="et-app">
     <a className="et-skip" href="#etch-main">{l("훈련 내용으로 이동", "Skip to training", "訓練内容へ移動")}</a>
-    <header className="et-header"><Link className="et-brand" href="/training" onClick={openPracticeChoices}><b>SG</b> SemiGuard <small>TRAINING LAB</small></Link><nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}><Link href="/learn">{l("8대 공정 학습", "Eight processes", "8大工程の学習")}</Link><Button variant="ghost" onClick={openPracticeChoices}>{l("연습 방식 선택", "Practice options", "練習方法を選ぶ")}</Button><Link href="/live">{l("실시간 자유 분석", "Free observation", "自由観察")}</Link><Link href="/welcome">{l("소개", "Introduction", "紹介")}</Link><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></nav></header>
+
     <main className="et-main" id="etch-main">
       {stage !== "home" ? <PracticeMeasurementConsent /> : null}
       {stage === "home" && auth.data?.role === "admin" ? <Link href="/training/metrics" className="et-linkbutton">{l("운영자 · 연습 이용 집계", "Admin · practice metrics", "管理者 · 練習利用の集計")}</Link> : null}

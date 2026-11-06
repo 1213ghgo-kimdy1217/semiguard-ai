@@ -7,15 +7,14 @@ import { etchSample, etchSignals } from "../../../shared/etchScenario";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import { etchSignalName } from "../lib/etchLanguage";
 import { trpc } from "../lib/trpc";
-import ProductLanguageSelect from "../components/ProductLanguageSelect";
-import AccountLogout from "../components/AccountSession";
+import { getSiteHeaderHeight } from "../lib/siteNavigation";
 import TrainingShareControls from "../components/TrainingShareControls";
 import ProcessEvidenceReview, { ProcessRecordContext } from "../components/ProcessEvidenceReview";
 import "./etch-training.css";
 import "./process-training.css";
 
 export default function TrainingHistory({ attemptId }: { attemptId: string }) {
-  const [language, setLanguage] = useProductLanguage();
+  const [language] = useProductLanguage();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const auth = trpc.auth.me.useQuery();
   const id = Number(attemptId);
@@ -28,12 +27,11 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
   const [comparisonTime, setComparisonTime] = useState<number | null>(null);
   const [selected, setSelected] = useState("");
   const replayHeading = useRef<HTMLHeadingElement>(null);
-  const historyHeader = useRef<HTMLElement>(null);
   const reviewEvidencePoint = (at: number) => {
     setComparisonTime(at);
     const heading = replayHeading.current;
     heading?.focus({ preventScroll: true });
-    if (heading) window.scrollTo({ top: Math.max(0, window.scrollY + heading.getBoundingClientRect().top - (historyHeader.current?.getBoundingClientRect().height ?? 80) - 20), behavior: "auto" });
+    if (heading) window.scrollTo({ top: Math.max(0, window.scrollY + heading.getBoundingClientRect().top - getSiteHeaderHeight() - 20), behavior: "auto" });
   };
   useEffect(() => { setComparisonTime(null); setSelected(""); }, [attemptId, auth.data?.id]);
   useEffect(() => { document.title = l("SemiGuard — 내 판단 기록", "SemiGuard — My reasoning record", "SemiGuard — 自分の判断記録"); }, [language]);
@@ -45,7 +43,7 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
   const sample = (signal: string, at: number) => isEtch ? etchSample(signal as typeof etchSignals[number]["id"], at) : processSample(scenario!, signal, at);
   const clock = (value: number) => `${Math.floor(value / 60).toString().padStart(2, "0")}:${(value % 60).toString().padStart(2, "0")}`;
   const chart = scenario && signalId ? Array.from({ length: duration + 1 }, (_, at) => sample(signalId, at)) : [];
-  return <div className="et-app"><header ref={historyHeader} className="et-header"><Link className="et-brand" href="/training"><b>SG</b> SemiGuard</Link><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></header>
+  return <div className="et-app">
     <main className="et-main"><p className="et-eyebrow">MY SAVED REASONING / READ ONLY</p><h1>{l("내 판단 기록", "My reasoning record", "自分の判断記録")}</h1><Link className="et-linkbutton" href="/training">{l("학습 기록 목록으로", "Back to practice history", "練習記録一覧へ")}</Link>
       {!validId ? <p role="alert">{l("올바르지 않은 기록 주소입니다.", "Invalid record address.", "記録のアドレスが正しくありません。")}</p>
         : auth.isLoading ? <p role="status">{l("로그인 확인 중…", "Checking sign-in…", "ログインを確認中…")}</p>

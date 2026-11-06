@@ -4,6 +4,8 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LearningAssistant from "./components/LearningAssistant";
+import SiteHeader from "./components/SiteHeader";
+import { SiteNavigationProvider } from "./lib/siteNavigation";
 import PracticeAccess from "./components/PracticeAccess";
 import { AccountSessionProvider } from "./components/AccountSession";
 import { PracticeMeasurementProvider } from "./components/PracticeMeasurement";
@@ -363,7 +365,7 @@ function App() {
           {RECOVERY_QA_BUILD && <RecoveryQaNotice />}
           <Toaster />
           <AccountSessionProvider><GoogleAnalyticsProvider>
-            <PracticeMeasurementProvider><Router /><MeasurementPreferences /></PracticeMeasurementProvider>
+            <PracticeMeasurementProvider><SiteNavigationProvider><SiteHeader /><div id="site-content" tabIndex={-1}><Router /></div><MeasurementPreferences /></SiteNavigationProvider></PracticeMeasurementProvider>
             <GoogleAnalyticsConsent />
           </GoogleAnalyticsProvider>
           <LearningAssistant /></AccountSessionProvider>

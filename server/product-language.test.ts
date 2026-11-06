@@ -40,8 +40,11 @@ describe("trilingual product language", () => {
     for (const route of ["Welcome", "EtchTraining", "EtchLive", "LearningHub", "EtchOperations"]) {
       const source = readFileSync(`client/src/pages/${route}.tsx`, "utf8");
       expect(source).toContain("useProductLanguage");
-      expect(source).toContain("ProductLanguageSelect");
     }
+    const header = readFileSync("client/src/components/SiteHeader.tsx", "utf8");
+    expect(header).toContain("useProductLanguage");
+    expect(header).toContain('<ProductLanguageSelect language={language} onChange={onLanguageChange} />');
+    expect(readFileSync("client/src/App.tsx", "utf8")).toContain("<SiteHeader />");
     const source = readFileSync("client/src/lib/productLanguage.ts", "utf8");
     expect(source).toContain('"semiguard_lang"');
     expect(source).toContain("document.documentElement.lang");

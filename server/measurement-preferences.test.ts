@@ -50,7 +50,10 @@ describe("visible, independent optional measurement choices", () => {
     expect(source).toContain("setDismissed(true)");
     expect(source).toContain("localStorage.setItem(MEASUREMENT_CHOICE_KEY, JSON.stringify({ expires:");
     expect(source).not.toMatch(/window\.location\s*=|navigate\(|\.track\(|userId|email:|answer:|required=/);
-    expect(readFileSync("client/src/App.tsx", "utf8")).toContain("<Router /><MeasurementPreferences />");
+    const app = readFileSync("client/src/App.tsx", "utf8");
+    const boundary = app.match(/<PracticeMeasurementProvider>([\s\S]*?)<\/PracticeMeasurementProvider>/)?.[1];
+    expect(boundary).toBeDefined();
+    expect(boundary).toMatch(/<Router\s*\/>[\s\S]*<MeasurementPreferences\s*\/>/);
     expect(readFileSync("client/src/components/GoogleAnalytics.tsx", "utf8")).toContain("localStorage.setItem(GA_CONSENT_KEY, JSON.stringify(next))");
   });
 });

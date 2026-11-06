@@ -13,7 +13,8 @@ describe("judge demo professional motion and evidence context contract", () => {
     expect(source).toContain("useScroll");
     expect(source).toContain("useSpring");
     expect(source).toContain("useReducedMotion");
-    expect(source).toContain("style={{ scaleX: smoothScrollProgress }}");
+    expect(source).toContain("scaleX: smoothScrollProgress");
+    expect(source).toContain('top: "var(--sg-site-header-height, 80px)"');
     expect(source).toContain('<AnimatePresence mode="wait" initial={false}>');
     expect(source).toContain("initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}");
   });
