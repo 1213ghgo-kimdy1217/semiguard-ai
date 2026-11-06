@@ -1,0 +1,73 @@
+.gfhs-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: Inter, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  overflow: visible;
+}
+.gfhs-zone {
+  outline: none;
+  user-select: none;
+}
+.gfhs-zone[aria-disabled="false"] {
+  cursor: pointer;
+}
+.gfhs-zone[aria-disabled="false"]:hover .gfhs-zone-outline {
+  stroke: #c5f3d5;
+  stroke-width: 2;
+}
+.gfhs-zone:focus-visible .gfhs-zone-outline {
+  stroke: #ffe0a4;
+  stroke-width: 3;
+}
+.gfhs-zone[aria-disabled="true"] {
+  cursor: default;
+}
+.gfhs-scene[data-running="true"] .gfhs-feed-mark path,
+.gfhs-scene[data-running="true"] .gfhs-growing-stream path,
+.gfhs-scene[data-running="true"] .gfhs-beam-to-silicon path,
+.gfhs-scene[data-running="true"] .gfhs-beam-path {
+  animation: gfhs-flow 0.8s linear infinite;
+}
+.gfhs-scene[data-running="true"] .gfhs-plasma,
+.gfhs-scene[data-running="true"] .gfhs-reaction {
+  animation: gfhs-source-pulse 1.2s ease-in-out infinite alternate;
+}
+.gfhs-scene[data-running="true"] .gfhs-source-particle {
+  animation: gfhs-material-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes gfhs-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+@keyframes gfhs-source-pulse {
+  from {
+    filter: brightness(0.85);
+  }
+  to {
+    filter: brightness(1.35);
+  }
+}
+@keyframes gfhs-material-pulse {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gfhs-scene .gfhs-feed-mark path,
+  .gfhs-scene .gfhs-growing-stream path,
+  .gfhs-scene .gfhs-beam-to-silicon path,
+  .gfhs-scene .gfhs-beam-path,
+  .gfhs-scene .gfhs-plasma,
+  .gfhs-scene .gfhs-reaction,
+  .gfhs-scene .gfhs-source-particle {
+    animation: none !important;
+  }
+}

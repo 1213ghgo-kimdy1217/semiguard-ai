@@ -1,0 +1,68 @@
+.phh-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: Inter, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  overflow: visible;
+}
+.phh-mask {
+  outline: none;
+  touch-action: none;
+  user-select: none;
+}
+.phh-mask[data-draggable="true"] {
+  cursor: grab;
+}
+.phh-mask[data-draggable="true"]:active {
+  cursor: grabbing;
+}
+.phh-mask[data-draggable="false"] {
+  cursor: default;
+}
+.phh-focus-ring {
+  opacity: 0;
+  pointer-events: none;
+}
+.phh-mask:focus-visible .phh-focus-ring {
+  opacity: 1;
+}
+.phh-scene[data-phase="exposing"] .phh-illumination {
+  animation: phh-light-pulse 0.85s ease-in-out infinite alternate;
+}
+.phh-scene[data-phase="exposing"] .phh-light-columns {
+  animation: phh-ray-pulse 1.1s ease-in-out infinite alternate;
+}
+.phh-scene[data-phase="developing"] .phh-developer {
+  animation: phh-developer-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes phh-light-pulse {
+  from {
+    filter: brightness(0.85);
+  }
+  to {
+    filter: brightness(1.3);
+  }
+}
+@keyframes phh-ray-pulse {
+  from {
+    filter: brightness(0.9);
+  }
+  to {
+    filter: brightness(1.2);
+  }
+}
+@keyframes phh-developer-pulse {
+  from {
+    opacity: 0.045;
+  }
+  to {
+    opacity: 0.11;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phh-scene .phh-illumination,
+  .phh-scene .phh-light-columns,
+  .phh-scene .phh-developer {
+    animation: none !important;
+  }
+}
