@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import ProcessObservationScene from "../components/ProcessObservationScene";
 import { trainingPracticeHref, trainingReplay } from "../../../shared/trainingReplay";
 import { Link } from "wouter";
 import { Line, LineChart, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
@@ -44,7 +45,7 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
   const clock = (value: number) => `${Math.floor(value / 60).toString().padStart(2, "0")}:${(value % 60).toString().padStart(2, "0")}`;
   const chart = scenario && signalId ? Array.from({ length: duration + 1 }, (_, at) => sample(signalId, at)) : [];
   return <div className="et-app">
-    <main className="et-main"><p className="et-eyebrow">MY SAVED REASONING / READ ONLY</p><h1>{l("내 판단 기록", "My reasoning record", "自分の判断記録")}</h1><Link className="et-linkbutton" href="/training">{l("학습 기록 목록으로", "Back to practice history", "練習記録一覧へ")}</Link>
+    <main className="et-main"><p className="et-eyebrow">MY SAVED REASONING / READ ONLY</p><h1>{l("내 판단 기록", "My reasoning record", "自分の判断記録")}</h1><Link className="et-linkbutton" href="/training/history">{l("학습 기록 목록으로", "Back to practice history", "練習記録一覧へ")}</Link>
       {!validId ? <p role="alert">{l("올바르지 않은 기록 주소입니다.", "Invalid record address.", "記録のアドレスが正しくありません。")}</p>
         : auth.isLoading ? <p role="status">{l("로그인 확인 중…", "Checking sign-in…", "ログインを確認中…")}</p>
         : !auth.data ? <Link className="et-linkbutton" href="/login">{l("본인 기록을 보려면 로그인하세요.", "Sign in to view your own record.", "自分の記録を見るにはログインしてください。")}</Link>
@@ -69,6 +70,7 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
           </div>
           <p className="et-caption">{l("내 시작 판단·내 표시 버튼은 저장된 관측 항목과 가상 시점으로 이동합니다. 아래 값은 선택한 비교 시점의 값이며, 저장된 답안을 바꾸지 않습니다.", "My onset and marker buttons open the saved signal and virtual time. Values below reflect the comparison time; your saved answer is unchanged.", "開始判断・印のボタンで保存した観測項目と仮想時点へ移動します。下の値は比較時点の値であり、保存済みの回答は変わりません。")}</p>
           <label htmlFor="history-time">{l("비교 시점", "Comparison time", "比較時点")} {clock(time)}</label><input id="history-time" type="range" min={0} max={duration} value={time} aria-valuetext={clock(time)} onChange={e => setComparisonTime(Number(e.target.value))} />
+          <ProcessObservationScene scenario={scenario} time={time} observedUntil={duration} language={language} selectedSignal={signalId ?? scenario.signals[0].id} onSignalChange={setSelected} onTimeChange={setComparisonTime} review markers={[...(record.marker===null?[]:[{label:l("내가 표시한 시점","My marker","自分の印"),time:record.marker,signalId:record.signal}]),...(record.onset<0?[]:[{label:l("내가 판단한 시작","My estimated onset","自分の開始判断"),time:record.onset,signalId:record.signal}])]} />
           <ProcessRecordContext scenario={scenario} time={time} language={language} />
           <div className="et-table"><table><caption aria-live="polite">{l(`비교 시점 ${clock(time)} · 모든 값은 교육용 상대지수`, `Comparison time ${clock(time)} · All values are educational relative indices`, `比較時点 ${clock(time)}・すべて教育用の相対指数`)}</caption><thead><tr><th>{l("항목", "Signal", "項目")}</th><th>{l("관측값", "Current", "観測値")}</th><th>{l("정상 참고", "Reference", "正常参照")}</th><th>{l("차이", "Difference", "差")}</th></tr></thead><tbody>{signals.map(s => { const p = sample(s.id, time); return <tr key={s.id} aria-current={s.id === signalId ? "true" : undefined}><th>{s.name}{s.id === signalId ? l(" · 그래프 표시", " · In graph", "・グラフ表示") : ""}</th><td>{p.value.toFixed(1)}</td><td>{p.reference.toFixed(1)}</td><td>{(p.value - p.reference).toFixed(1)}</td></tr>; })}</tbody></table></div>
           <h3>{l("저장된 선택형 비교 결과", "Saved choice-criteria results", "保存された選択基準との比較")}</h3>

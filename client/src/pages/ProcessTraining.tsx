@@ -1,4 +1,6 @@
+import JudgmentEquipmentPractice from "../components/JudgmentEquipmentPractice";
 import ProcessObservationScene from "../components/ProcessObservationScene";
+import JudgmentReviewLinks from "../components/JudgmentReviewLinks";
 import { getSiteHeaderHeight } from "../lib/siteNavigation";
 import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
@@ -271,6 +273,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
     <a className="et-skip" href="#process-main">{l("본문으로 건너뛰기", "Skip to content", "本文へスキップ")}</a>
 
     <main id="process-main" className="et-main">
+      <JudgmentReviewLinks language={language} processId={scenario.processId}/>
       <PracticeMeasurementConsent />
       <div className="et-meta"><span>PROCESS {String(scenario.order).padStart(2, "0")} / 08</span><span>{l("교육용 가상 기록 · 장비 제어 없음", "Synthetic learning records · no equipment control", "教育用仮想記録 · 装置制御なし")}</span></div>
       <h1 tabIndex={-1} ref={heading}>{localize(scenario.title, language)}</h1>
@@ -304,6 +307,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
           <p>{l("이번 기록과 같은 조건의 정상 참고를 비교하세요. 값이 바뀌었다는 사실과 고장이라는 추정은 다릅니다. 정상 참고와의 편차가 없는 기록도 있습니다.", "Compare the current record with a same-condition normal reference. A changing value is not itself a confirmed fault. Some records have no deviation from the normal reference.", "今回の記録と同じ条件の正常参照を比較してください。値の変化と故障の推測は異なります。正常参照からの偏差がない記録もあります。")}</p>
           <p className="et-caption">{l("90초 가상 타임라인 · 재생 속도 1배/3배 선택 · 재생·일시정지 가능", "90-second virtual timeline · 1× / 3× playback · pause and resume", "90秒の仮想タイムライン · 1倍 / 3倍再生 · 一時停止・再開可能")}</p>
         </section></div>
+        <JudgmentEquipmentPractice processId={scenario.processId} language={language}/>
         <ProcessEquipmentReference processId={scenario.processId} language={language} />
         <details className="et-panel pt-reference"><summary>{l("실제 공정과 연결되는 공개 자료", "Public references for the real process", "実際の工程につながる公開資料")}</summary>
           <p>{l("아래 자료는 공정 개념을 이해하기 위한 출처입니다. 이 훈련은 제조사 데이터나 실제 장비 모델의 성능을 재현하지 않습니다.", "The source below explains the process concept. This exercise does not reproduce manufacturer data or the performance of a real equipment model.", "以下は工程の概念を理解するための資料です。この訓練はメーカーのデータや実装置モデルの性能を再現しません。")}</p>
@@ -335,7 +339,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
             </details>
           </div></details>
         </> : <div className="et-marker-picker"><label htmlFor="process-review-time">{l("복기할 시점", "Review time", "振り返る時点")} · {clock(reviewTime)}</label><input id="process-review-time" type="range" min={0} max={scenario.duration} step={1} value={reviewTime} onChange={event => setReviewTime(Number(event.target.value))} /></div>}
-        <ProcessObservationScene scenario={scenario} time={shownTime} observedUntil={stage === "review" ? scenario.duration : attempt.elapsed} language={language} selectedSignal={signalId} running={isRunning} onSignalChange={signal => { pauseObservationView(); setSignalId(signal); }} onTimeChange={time => { setRunning(false); if (stage === "review") setReviewTime(time); else setInspectionSelection(time); }} />
+        <ProcessObservationScene scenario={scenario} time={shownTime} observedUntil={stage === "review" ? scenario.duration : attempt.elapsed} language={language} selectedSignal={signalId} running={isRunning} review={stage === "review"} markers={[...(attempt.marker===null?[]:[{label:l("내가 표시한 시점","My marker","自分の印"),time:attempt.marker,signalId:answer.signal}]),...(answer.onset==="none"?[]:[{label:l("내가 판단한 시작","My estimated onset","自分の開始判断"),time:Number(answer.onset),signalId:answer.signal}])]} onSignalChange={signal => { pauseObservationView(); setSignalId(signal); }} onTimeChange={time => { setRunning(false); if (stage === "review") setReviewTime(time); else setInspectionSelection(time); }} />
         <details className="pv-extra-tools" ref={observationTools} open={stage === "review"}><summary>{l("그래프·기록표·심화 비교 도구 펼치기", "Open charts, records and comparison tools", "グラフ・記録表・比較ツールを開く")}</summary>
         {scenario.processId === "oxidation" ? <OxidationWorkspace language={language} time={shownTime} reference={oxidationReference}
           onReferenceChange={reference => { pauseObservationView(); setOxidationReference(reference); }} /> : null}
