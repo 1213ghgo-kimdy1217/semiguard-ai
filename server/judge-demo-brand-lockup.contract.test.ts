@@ -8,14 +8,18 @@ const source = readFileSync(
 ).replace(/\r\n/g, "\n");
 
 describe("judge demo brand lockup contract", () => {
-  it("keeps a compact, noninteractive SemiGuard AI brand lockup before the demo badges", () => {
-    expect(source).toContain('className="mb-3 flex items-center gap-2.5" aria-label="SemiGuard AI"');
-    expect(source).toContain('className="flex h-8 w-8 shrink-0 items-center justify-center border border-amber-300/70');
-    expect(source).toContain(">\n                SG\n              </span>");
-    expect(source).toContain('brandConsole: "설비 이상 대응 가이드"');
-    expect(source).toContain('brandConsole: "Equipment anomaly response guide"');
-    expect(source).toContain('brandConsole: "設備異常対応ガイド"');
-    expect(source).toContain("{text.brandConsole}");
-    expect(source.indexOf('aria-label="SemiGuard AI"')).toBeLessThan(source.indexOf("{text.badge}"));
+  it("uses the shared compact site brand while preserving the demo's own title and badges", () => {
+    const header = readFileSync(resolve(process.cwd(), "client/src/components/SiteHeader.tsx"), "utf8");
+    const app = readFileSync(resolve(process.cwd(), "client/src/App.tsx"), "utf8");
+    expect(app).toContain("<SiteHeader />");
+    expect(header).toContain('className="sg-site-logo"');
+    expect(header).toContain('className="sg-site-symbol" aria-hidden="true">SG</span>');
+    expect(header).toContain('"SemiGuard AI 홈", "SemiGuard AI home", "SemiGuard AI ホーム"');
+    expect(source).not.toContain('aria-label="SemiGuard AI"');
+    expect(source).toContain("{text.badge}");
+    expect(source).toContain("{text.readOnly}");
+    expect(source).toMatch(/<h1[^>]*>\s*\{text\.title\}/);
+    expect(source).toContain("{text.subtitle}");
+    expect(source.indexOf("{text.badge}")).toBeLessThan(source.indexOf("{text.title}"));
   });
 });

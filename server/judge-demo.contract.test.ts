@@ -77,9 +77,11 @@ describe("read-only judge demo contract", () => {
 
   it("keeps the public demo localized in Korean, English, and Japanese", () => {
     expect(demoSource).toContain('type DemoLanguage = "ko" | "en" | "ja"');
-    expect(demoSource).toContain('value="ko"');
-    expect(demoSource).toContain('value="en"');
-    expect(demoSource).toContain('value="ja"');
+    const selectorSource = readFileSync(resolve(process.cwd(), "client/src/components/ProductLanguageSelect.tsx"), "utf8");
+    expect(selectorSource).toContain('value="ko"');
+    expect(selectorSource).toContain('value="en"');
+    expect(selectorSource).toContain('value="ja"');
+    expect(demoSource).toContain('window.addEventListener("semiguard-language-change", synchronize)');
     expect(demoSource).toContain('evidenceLabel: "센서 근거"');
     expect(demoSource).toContain('evidenceLabel: "Sensor evidence"');
     expect(demoSource).toContain('evidenceLabel: "センサー根拠"');

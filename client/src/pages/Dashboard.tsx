@@ -1111,11 +1111,21 @@ export default function Dashboard() {
   const wasMenuOpenRef = useRef(menuOpen);
 
   useEffect(() => {
+    const synchronize = (event: Event) => {
+      const language = (event as CustomEvent<Lang>).detail;
+      if (language === "ko" || language === "en" || language === "ja") setLang(language);
+    };
+    window.addEventListener("semiguard-language-change", synchronize);
+    return () => window.removeEventListener("semiguard-language-change", synchronize);
+  }, []);
+
+  useEffect(() => {
     try {
       localStorage.setItem("semiguard_lang", lang);
     } catch {
       // 저장 공간 제한 또는 개인정보 보호 모드에서는 기본 언어로 계속 동작한다.
     }
+    window.dispatchEvent(new CustomEvent("semiguard-language-change", { detail: lang }));
   }, [lang]);
 
   useEffect(() => {
@@ -3799,13 +3809,12 @@ export default function Dashboard() {
           </aside>
         </>
       )}
-      {/* ── 헤더 ── */}
-      <header className="sticky top-0 z-50 border-b flex items-center justify-between px-3 sm:px-5 py-3"
-        style={{ background: th.header, borderColor: th.border, transition: "background 0.3s ease" }}>
+      {/* Dashboard tools stay below the shared site navigation. */}
+      <div role="toolbar" aria-label={lang === "ko" ? "대시보드 도구" : lang === "ja" ? "ダッシュボードツール" : "Dashboard tools"} className="sticky z-30 border-b flex flex-wrap items-center justify-between gap-3 px-3 sm:px-5 py-3"
+        style={{ top: "var(--sg-site-header-height, 80px)", background: th.header, borderColor: th.border, transition: "background 0.3s ease" }}>
         <div className="flex items-center gap-3">
-          <a href="/welcome" aria-label={lang === "ko" ? "SemiGuard AI 홈페이지" : "SemiGuard AI home"} className="w-9 h-9 rounded-full border flex items-center justify-center text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4" style={{ borderColor: th.border2, color: th.accent }}>SG</a>
           <div>
-            <h1 className="text-sm font-bold tracking-wide">{t.appTitle}</h1>
+            <h1 className="text-sm font-bold tracking-wide">{lang === "ko" ? "4센서 대시보드" : lang === "ja" ? "4センサーダッシュボード" : "Four-sensor dashboard"}</h1>
             <h2 className="text-[10px] text-muted-foreground leading-tight m-0 font-normal">{t.appSubtitle}</h2>
           </div>
         </div>
@@ -3838,13 +3847,6 @@ export default function Dashboard() {
             <span className="hidden sm:inline">{lang === "ko" ? "메뉴" : lang === "ja" ? "メニュー" : "Menu"}</span>
           </button>
           {!isMobile && <div className="w-px h-5 bg-border" />}
-          <button type="button" onClick={() => setLang(l => l === "ko" ? "en" : l === "en" ? "ja" : "ko")}
-            aria-label={lang === "ko" ? "현재 언어: 한국어. 영어로 전환" : lang === "en" ? "Current language: English. Switch to Japanese" : "現在の言語: 日本語。韓国語に切替"}
-            className="hidden px-3 py-1.5 rounded-lg text-xs font-bold border transition-all duration-200 hover:opacity-80 active:scale-95"
-            style={{ borderColor: "oklch(0.65 0.18 200 / 0.4)", color: "oklch(0.65 0.18 200)", background: "oklch(0.65 0.18 200 / 0.08)" }}
-            title={lang === "ko" ? "영어로 전환" : lang === "en" ? "日本語に切替" : "한국어로 전환"}>
-            {lang === "ko" ? "EN" : lang === "en" ? "日本語" : "한국어"}
-          </button>
           {/* 다크/라이트 모드 전환 */}
           <button
             type="button"
@@ -3971,7 +3973,7 @@ export default function Dashboard() {
             {logoutMutation.isPending ? <span aria-hidden="true" style={{ display: "inline-block", width: 12, height: 12, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} /> : "🚪"} {logoutMutation.isPending ? (lang === "ko" ? "로그아웃 중…" : lang === "ja" ? "ログアウト中…" : "Logging out…") : (lang === "ko" ? "로그아웃" : lang === "ja" ? "ログアウト" : "Logout")}
           </button>
         </div>
-      </header>
+      </div>
 
       {/* ── AI 챗봇 대화창 모달 ── */}
       {isChatOpen && (

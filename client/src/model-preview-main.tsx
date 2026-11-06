@@ -6,6 +6,8 @@ import superjson from "superjson";
 import { COOKIE_NAME } from "@shared/const";
 import { trpc } from "./lib/trpc";
 import { AccountSessionProvider } from "./components/AccountSession";
+import SiteHeader from "./components/SiteHeader";
+import { SiteNavigationProvider } from "./lib/siteNavigation";
 import EtchLive from "./pages/EtchLive";
 import "./index.css";
 
@@ -46,7 +48,7 @@ function ModelPreview() {
     <trpc.Provider client={client} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <AccountSessionProvider>
-          <EtchLive />
+          <SiteNavigationProvider><SiteHeader fullNavigation /><div id="site-content" tabIndex={-1}><EtchLive /></div></SiteNavigationProvider>
         </AccountSessionProvider>
       </QueryClientProvider>
     </trpc.Provider>

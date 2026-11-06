@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { ArrowDown, ArrowRight, ArrowUpRight, Activity, Check, ScanLine } from "lucide-react";
-import ProductLanguageSelect from "../components/ProductLanguageSelect";
-import AccountLogout from "../components/AccountSession";
 import AppInstall from "../components/AppInstall";
 import PracticeMeasurementConsent from "../components/PracticeMeasurement";
 import { useProductLanguage, tr } from "../lib/productLanguage";
@@ -107,7 +105,7 @@ export default function Welcome() {
   const root = useRef<HTMLElement>(null);
   const [sensor, setSensor] = useState(0);
   const [step, setStep] = useState(0);
-  const [language, setLanguage] = useProductLanguage();
+  const [language] = useProductLanguage();
   const t = welcomeCopy[language];
   const orientation = orientationCopy[language];
   const localizedSensors = sensors.map((item, index) => language === "ko" ? item : { ...item, ...sensorCopy[language][index] });
@@ -138,11 +136,6 @@ export default function Welcome() {
   return (
     <main className="sg-site" ref={root}>
       <a className="sg-skip" href="#sg-content">{t.skip}</a>
-      <header className="sg-nav">
-        <Link href="/welcome" className="sg-brand" aria-label={tr(language, "SemiGuard AI 홈", "SemiGuard AI home", "SemiGuard AI ホーム")}><span className="sg-brand-symbol" aria-hidden="true">SG</span><span>SemiGuard<span className="sg-brand-ai"> AI</span></span></Link>
-        <nav aria-label={t.menu}><a href="#workflow">{t.workflow}</a><a href="#principles">{t.principles}</a><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /><Link href="/login" className="sg-nav-login">{t.login} <ArrowUpRight size={15} /></Link></nav>
-      </header>
-
       <section className="sg-hero" id="sg-content">
         <div className="sg-hero-copy">
           <p className="sg-audience"><span className="sg-dot" aria-hidden="true" />{orientation.audience}</p>
@@ -199,6 +192,7 @@ export default function Welcome() {
       </section>
 
       <section className="sg-workflow" id="workflow" data-reveal>
+        <p className="sg-quiet"><a href="#workflow">{t.workflow}</a><span aria-hidden="true"> · </span><a href="#principles">{t.principles}</a></p>
         <div className="sg-section-heading"><p className="sg-eyebrow">FROM SIGNAL TO NEXT CHECK</p><h2>{t.workflowTitle1}<br />{t.workflowTitle2}</h2><p>{t.workflowDetail}</p></div>
         <div className="sg-workflow-layout">
           <div className="sg-step-list" role="group" aria-label={t.chooseStep}>{localizedSteps.map((item, index) => <button key={index} type="button" onClick={() => setStep(index)} aria-pressed={step === index}><span className="sg-step-number">0{index + 1}</span><span><small>{item.subtitle}</small><strong>{item.title}</strong>{step === index && <p>{item.body}</p>}</span><ArrowUpRight size={21} /></button>)}</div>

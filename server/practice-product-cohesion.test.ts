@@ -27,12 +27,15 @@ describe("coherent practice product", () => {
     expect(read("shared/trainingRecord.ts")).toContain("etch-chamber-a-01");
     expect(read("server/judgmentCoach.ts")).not.toContain("Scenario 01");
   });
-  it("centres SG in welcome and login without the old vertical offset", () => {
-    for (const path of ["Welcome", "Login"]) {
-      const page = read(`client/src/pages/${path}.tsx`);
-      expect(page).toContain('className="sg-brand-symbol" aria-hidden="true">SG');
-      expect(page).not.toContain("S<span>G</span>");
-    }
+  it("centres SG in the shared site header and login without the old vertical offset", () => {
+    const header = read("client/src/components/SiteHeader.tsx");
+    expect(header).toContain('className="sg-site-symbol" aria-hidden="true">SG');
+    expect(header).not.toContain("S<span>G</span>");
+    expect(read("client/src/components/site-header.css")).toMatch(/\.sg-site-symbol\{[^}]*display:grid;place-items:center/);
+    expect(read("client/src/App.tsx")).toContain("<SiteHeader />");
+    const login = read("client/src/pages/Login.tsx");
+    expect(login).toContain('className="sg-brand-symbol" aria-hidden="true">SG');
+    expect(login).not.toContain("S<span>G</span>");
     const css = read("client/src/pages/welcome.css");
     expect(css).not.toContain("translateY(4px)");
     expect(css).toContain("justify-content: center; flex: 0 0 36px");

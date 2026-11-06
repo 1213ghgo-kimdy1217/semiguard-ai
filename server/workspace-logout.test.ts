@@ -87,9 +87,13 @@ describe("discoverable, localized account action", () => {
     expect(app).toContain("<AccountSessionProvider><GoogleAnalyticsProvider>");
     expect(app).toContain("<LearningAssistant /></AccountSessionProvider>");
   });
-  it.each(["Welcome", "EtchTraining", "ProcessTraining", "LearningHub", "TrainingHistory", "EtchLive", "EtchOperations", "SharedTraining", "TrainingPreview"])("puts logout in the %s header without changing the language selector", name => {
-    const source = readFileSync(`client/src/pages/${name}.tsx`, "utf8");
-    expect(source).toContain('<ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} />');
+  it("keeps one shared logout and language control above all routed workspaces", () => {
+    const app = readFileSync("client/src/App.tsx", "utf8");
+    const header = readFileSync("client/src/components/SiteHeader.tsx", "utf8");
+    expect(app).toMatch(/<SiteNavigationProvider><SiteHeader\s*\/><div id="site-content" tabIndex=\{-1\}><Router\s*\/>/);
+    expect(header).toContain('<AccountLogoutView language={language} signedIn pending={pending} failed={failed} onLogout={onLogout} />');
+    expect(header).toContain('<ProductLanguageSelect language={language} onChange={onLanguageChange} />');
+    expect(header).toContain('void session?.logout()');
   });
   it("keeps touch and keyboard affordances in a small scoped style sheet", () => {
     const css = readFileSync("client/src/components/account-session.css", "utf8");

@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "../lib/trpc";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
-import AccountLogout, { useAccountSession } from "../components/AccountSession";
-import ProductLanguageSelect from "../components/ProductLanguageSelect";
+import { useAccountSession } from "../components/AccountSession";
 import RecoveryEmailSettings from "../components/RecoveryEmailSettings";
 import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel } from "../components/ui/alert-dialog";
 import "./account-settings.css";
@@ -35,7 +34,7 @@ function withdrawalError(message: string, language: ProductLanguage) {
 }
 
 export default function AccountSettings() {
-  const [language, setLanguage] = useProductLanguage();
+  const [language] = useProductLanguage();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const session = useAccountSession();
   const auth = trpc.auth.me.useQuery();
@@ -67,7 +66,7 @@ export default function AccountSettings() {
       setConfirmOpen(false); setBusy(false); lock.current = false;
     }
   };
-  return <div className="sg-account-page"><header><Link href="/training">SemiGuard AI</Link><nav><ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} /></nav></header>
+  return <div className="sg-account-page">
     <main><p className="sg-account-eyebrow">ACCOUNT / PRIVACY</p><h1>{l("계정 관리", "Account settings", "アカウント管理")}</h1>
       <p>{l("학습 기록을 남겨두려면 로그아웃을, 계정과 연결된 자료를 지우려면 회원탈퇴를 선택하세요.", "Log out to keep your learning records. Delete your account to remove account-linked data.", "学習記録を残す場合はログアウト、アカウントに紐づく資料を削除する場合は退会を選んでください。")}</p>
       {auth.data?.name ? <p>{l("현재 로그인한 계정", "Currently signed in as", "現在ログイン中のアカウント")} · {auth.data.name}</p> : null}

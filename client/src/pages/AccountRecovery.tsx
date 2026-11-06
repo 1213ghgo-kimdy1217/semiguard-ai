@@ -1,6 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "wouter";
-import ProductLanguageSelect from "../components/ProductLanguageSelect";
 import { trpc } from "../lib/trpc";
 import { tr, useProductLanguage } from "../lib/productLanguage";
 import { recoveryFailure } from "../lib/recoveryMessages";
@@ -9,7 +8,7 @@ import "./account-recovery.css";
 type RecoveryView = "request" | "verify" | "reset";
 
 export default function AccountRecovery({ view = "request" }: { view?: RecoveryView }) {
-  const [language, setLanguage] = useProductLanguage();
+  const [language] = useProductLanguage();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const [purpose, setPurpose] = useState<"password" | "id">(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("purpose") === "id" ? "id" : "password");
   const [method, setMethod] = useState<"id" | "email">("id");
@@ -65,7 +64,7 @@ export default function AccountRecovery({ view = "request" }: { view?: RecoveryV
     } finally { request.reset(); reset.reset(); verify.reset(); lock.current = false; setBusy(false); }
   };
   const success = view === "verify" ? l("복구 이메일 인증이 완료되었습니다. 이제 이 이메일로 아이디 찾기와 비밀번호 재설정을 요청할 수 있습니다.", "Your recovery email is verified. You can now use it to find your ID or reset your password.", "復旧メールを確認しました。今後このメールでIDの確認やパスワードの再設定をリクエストできます。") : view === "reset" ? l("비밀번호를 변경했습니다. 이전 로그인은 해제됩니다. 새 비밀번호로 다시 로그인해 주세요.", "Your password has changed and previous sign-ins are no longer valid. Sign in with your new password.", "パスワードを変更しました。以前のログインは無効になります。新しいパスワードでログインしてください。") : l("일치하는 계정에 인증된 복구 이메일이 있으면 안내를 보냅니다. 받은편지함과 스팸함을 확인해 주세요. 계정 정보는 이 화면에 표시하지 않습니다.", "If a matching account has a verified recovery email, instructions will be sent there. Check your inbox and spam folder. Account details are not displayed here.", "一致するアカウントに確認済みの復旧メールがある場合、案内を送信します。受信箱と迷惑メールをご確認ください。この画面にはアカウント情報を表示しません。");
-  return <div className="sg-recovery-page"><header><Link href="/login">SemiGuard AI</Link><ProductLanguageSelect language={language} onChange={setLanguage} /></header>
+  return <div className="sg-recovery-page">
     <main className="sg-recovery-card">
       <p className="sg-recovery-eyebrow">ACCOUNT RECOVERY</p><h1>{title}</h1>
       <p>{view === "request" ? l("미리 인증한 복구 이메일로 안내를 받아 계정을 다시 이용하세요.", "Use your previously verified recovery email to regain access.", "事前に確認した復旧メールで案内を受け取り、再びログインできます。") : view === "verify" ? l("아래 버튼으로 이 이메일의 소유를 확인해 주세요.", "Confirm that this email address belongs to you.", "下のボタンで、このメールがご自身のものであることを確認してください。") : l("새 비밀번호를 입력해 주세요.", "Enter your new password.", "新しいパスワードを入力してください。")}</p>

@@ -1,3 +1,4 @@
+import { useSiteNavigationGuard } from "../lib/siteNavigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -18,7 +19,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import AccountLogout from "../components/AccountSession";
+
 import KiyoEquipmentView from "../components/KiyoEquipmentView";
 import BoothCameraOverlay from "../components/BoothCameraOverlay";
 import BoothMissionFeedback, {
@@ -26,7 +27,7 @@ import BoothMissionFeedback, {
 } from "../components/BoothMissionFeedback";
 import BoothReflection from "../components/BoothReflection";
 import { BoothLearningAssistant } from "../components/LearningAssistant";
-import ProductLanguageSelect from "../components/ProductLanguageSelect";
+
 import { useBoothDevice } from "../hooks/useBoothDevice";
 import {
   applyBoothAction,
@@ -170,7 +171,7 @@ const terminal = (snapshot: BoothSnapshot) =>
 
 /** One dashboard follows a run from briefing through an immutable observation record. */
 export default function EtchLive() {
-  const [language, setLanguage] = useProductLanguage();
+  const [language] = useProductLanguage();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const device = useBoothDevice();
   const [engine, setEngine] = useState(() => initialEngine());
@@ -339,6 +340,7 @@ export default function EtchLive() {
     engineRef.current = next;
     setEngine(next);
   }
+  useSiteNavigationGuard(() => canLeaveReview());
   function canLeaveReview() {
     if (stage !== "review" || !leaveGuardRef.current || leaveGuardRef.current())
       return true;
@@ -541,27 +543,7 @@ export default function EtchLive() {
       <a className="kp-skip" href="#prototype-main">
         {l("대시보드로 바로가기", "Skip to dashboard", "ダッシュボードへ移動")}
       </a>
-      <header className="kp-header">
-        <a className="kp-brand" href="/training">
-          <b>SG</b>
-          <span>
-            SemiGuard<small>ENGINEER WORKSPACE</small>
-          </span>
-        </a>
-        <nav aria-label={l("사이트 메뉴", "Site navigation", "サイトメニュー")}>
-          <a href="/training">
-            {l("엔지니어 훈련", "Engineer training", "エンジニア訓練")}
-          </a>
-          <a href="/learn">
-            {l("8대 공정 학습", "Eight processes", "8大工程の学習")}
-          </a>
-          <a href="/live" aria-current="page">
-            {l("실시간 자유 분석", "Free observation", "自由観察")}
-          </a>
-          <ProductLanguageSelect language={language} onChange={setLanguage} />
-          <AccountLogout language={language} />
-        </nav>
-      </header>
+
       <main className="kp-main" id="prototype-main">
         <div className="kp-breadcrumb">
           <a href="/training">WORKSPACE</a>

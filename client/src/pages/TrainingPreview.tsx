@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "../_core/hooks/useAuth";
-import ProductLanguageSelect from "../components/ProductLanguageSelect";
-import AccountLogout from "../components/AccountSession";
 import PracticeMeasurementConsent from "../components/PracticeMeasurement";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import { etchSample, etchSignals, type EtchSignal } from "../../../shared/etchScenario";
@@ -20,7 +18,6 @@ const clock = (seconds: number) => `00:${String(seconds).padStart(2, "0")}`;
 
 type PreviewProps = {
   language: ProductLanguage;
-  setLanguage: (language: ProductLanguage) => void;
   authenticated: boolean;
   index: number;
   setIndex: (index: number) => void;
@@ -28,7 +25,7 @@ type PreviewProps = {
   setSignal: (signal: EtchSignal) => void;
 };
 
-export function TrainingPreviewContent({ language, setLanguage, authenticated, index, setIndex, signal, setSignal }: PreviewProps) {
+export function TrainingPreviewContent({ language, authenticated, index, setIndex, signal, setSignal }: PreviewProps) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const time = PREVIEW_TIMES[index];
   const sample = etchSample(signal, time);
@@ -36,15 +33,6 @@ export function TrainingPreviewContent({ language, setLanguage, authenticated, i
   const points = PREVIEW_TIMES.map((t, i) => `${32 + i * 112},${140 - (etchSample(signal, t).value - 76) * 12}`).join(" ");
   return <div className="et-app tp-app">
     <a className="et-skip" href="#preview-main">{l("샘플로 이동", "Skip to sample", "サンプルへ移動")}</a>
-    <header className="et-header">
-      <Link className="et-brand" href="/welcome"><b>SG</b> SemiGuard <small>OBSERVATION PREVIEW</small></Link>
-      <nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}>
-        <Link href="/welcome">{l("소개", "Introduction", "紹介")}</Link>
-        <Link href="/learn">{l("공정 개념 읽기", "Read process concepts", "工程の概念を読む")}</Link>
-        <Link href={authenticated ? "/training" : "/login"}>{l(authenticated ? "내 학습 공간" : "로그인", authenticated ? "My workspace" : "Log in", authenticated ? "自分の学習画面" : "ログイン")}</Link>
-        <ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} />
-      </nav>
-    </header>
     <main className="et-main" id="preview-main">
       <PracticeMeasurementConsent />
       <div className="et-meta"><span>GUEST PREVIEW / 30-SECOND SAMPLE</span><span>{l("교육용 가상 값 · 실제 제어 없음", "Synthetic teaching values · no physical control", "教育用仮想値 · 実際の制御なし")}</span></div>
@@ -82,10 +70,10 @@ export function TrainingPreviewContent({ language, setLanguage, authenticated, i
 }
 
 export default function TrainingPreview() {
-  const [language, setLanguage] = useProductLanguage();
+  const [language] = useProductLanguage();
   const { isAuthenticated } = useAuth();
   const [index, setIndex] = useState(0);
   const [signal, setSignal] = useState<EtchSignal>("pressure");
   useEffect(() => { document.title = tr(language, "SemiGuard — 장비·샘플 미리보기", "SemiGuard — Equipment and sample preview", "SemiGuard — 装置・サンプルのプレビュー"); }, [language]);
-  return <TrainingPreviewContent language={language} setLanguage={setLanguage} authenticated={isAuthenticated} index={index} setIndex={setIndex} signal={signal} setSignal={setSignal} />;
+  return <TrainingPreviewContent language={language} authenticated={isAuthenticated} index={index} setIndex={setIndex} signal={signal} setSignal={setSignal} />;
 }

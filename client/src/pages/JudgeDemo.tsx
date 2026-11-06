@@ -393,9 +393,19 @@ export default function JudgeDemo() {
   );
 
   useEffect(() => {
+    const synchronize = (event: Event) => {
+      const language = (event as CustomEvent<DemoLanguage>).detail;
+      if (language === "ko" || language === "en" || language === "ja") setLang(language);
+    };
+    window.addEventListener("semiguard-language-change", synchronize);
+    return () => window.removeEventListener("semiguard-language-change", synchronize);
+  }, []);
+
+  useEffect(() => {
     try {
       localStorage.setItem("semiguard_lang", lang);
     } catch {}
+    window.dispatchEvent(new CustomEvent("semiguard-language-change", { detail: lang }));
     document.documentElement.lang =
       lang === "ko" ? "ko-KR" : lang === "ja" ? "ja-JP" : "en-US";
     document.title =
@@ -476,26 +486,17 @@ export default function JudgeDemo() {
     <main className="min-h-screen bg-[#0d1117] px-4 py-5 text-slate-100 sm:px-7 sm:py-8">
       <motion.div
         aria-hidden="true"
-        className="fixed inset-x-0 top-0 z-[70] h-0.5 origin-left bg-amber-300"
-        style={{ scaleX: smoothScrollProgress }}
+        className="fixed inset-x-0 z-[40] h-0.5 origin-left bg-amber-300"
+        style={{ top: "var(--sg-site-header-height, 80px)", scaleX: smoothScrollProgress }}
       />
       <div className="mx-auto max-w-5xl">
-        <motion.header
+        <motion.div
           initial={prefersReducedMotion ? false : { opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4, ease: "easeOut" }}
           className="mb-5 flex flex-col gap-4 border-b border-slate-700 pb-5 sm:flex-row sm:items-start sm:justify-between"
         >
           <div className="min-w-0">
-            <div className="mb-3 flex items-center gap-2.5" aria-label="SemiGuard AI">
-              <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center border border-amber-300/70 bg-amber-300/10 text-[10px] font-black tracking-tight text-amber-100">
-                SG
-              </span>
-              <span className="min-w-0 leading-none">
-                <span className="block text-[10px] font-black uppercase tracking-[0.16em] text-slate-100">SemiGuard AI</span>
-                <span className="mt-1 block text-[9px] font-semibold tracking-wide text-slate-400">{text.brandConsole}</span>
-              </span>
-            </div>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="border-l-2 border-amber-300 pl-2 text-[10px] font-bold tracking-wide text-amber-100">
                 {text.badge}
@@ -513,22 +514,9 @@ export default function JudgeDemo() {
           </div>
           <div
             className="flex shrink-0 items-center gap-2"
-            role="group"
-            aria-label={text.languageLabel}
+            role="toolbar"
+            aria-label={lang === "ko" ? "시연 도구" : lang === "ja" ? "デモツール" : "Demo tools"}
           >
-            <label className="sr-only" htmlFor="judge-demo-language">
-              {text.languageLabel}
-            </label>
-            <select
-              id="judge-demo-language"
-              value={lang}
-              onChange={event => setLang(event.target.value as DemoLanguage)}
-              className="h-9 rounded border border-slate-600 bg-[#151b23] px-2 text-xs font-bold text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300"
-            >
-              <option value="ko">한국어</option>
-              <option value="en">English</option>
-              <option value="ja">日本語</option>
-            </select>
             <button
               type="button"
               onClick={resetDemo}
@@ -562,16 +550,8 @@ export default function JudgeDemo() {
                 </span>
               </button>
             )}
-            <Link
-              href="/login"
-              aria-label={text.login}
-              className="flex h-9 items-center rounded border border-amber-300/70 bg-amber-300 px-3 text-xs font-black text-slate-950 transition hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-100"
-            >
-              <span className="sm:hidden">{text.loginShort}</span>
-              <span className="hidden sm:inline">{text.login}</span>
-            </Link>
           </div>
-        </motion.header>
+        </motion.div>
 
         {showDemoBanner && (
           <section

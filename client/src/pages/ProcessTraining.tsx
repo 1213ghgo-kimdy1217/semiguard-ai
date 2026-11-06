@@ -1,3 +1,4 @@
+import { getSiteHeaderHeight } from "../lib/siteNavigation";
 import { useEffect, useRef, useState } from "react";
 import { TrainingCheckpoint } from "../components/TrainingCheckpoint";
 import { TrainingRetry } from "../components/TrainingRetry";
@@ -19,8 +20,8 @@ import { Link } from "wouter";
 import { ArrowLeft, ArrowRight, Flag, Pause, Play } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Button } from "../components/ui/button";
-import ProductLanguageSelect from "../components/ProductLanguageSelect";
-import AccountLogout from "../components/AccountSession";
+
+
 import ScenarioJudgmentCoach from "../components/ScenarioJudgmentCoach";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
@@ -94,7 +95,7 @@ function ProcessSnapshot({ scenario, time, language }: { scenario: ProcessScenar
 }
 
 export default function ProcessTraining({ processId }: { processId: string }) {
-  const [language, setLanguage] = useProductLanguage();
+  const [language] = useProductLanguage();
   const auth = trpc.auth.me.useQuery();
   const scenario = getProcessScenario(processId);
   if (!scenario || scenario.processId === "etch") return <div className="et-app"><main className="et-main">
@@ -103,11 +104,11 @@ export default function ProcessTraining({ processId }: { processId: string }) {
   </main></div>;
   if (auth.isLoading) return <div className="et-app"><main className="et-main"><p role="status">{tr(language, "현재 계정의 훈련 기록을 준비하는 중…", "Preparing this account's exercise…", "現在のアカウントの訓練を準備中…")}</p></main></div>;
   const userId = auth.data?.id ?? null;
-  return <ProcessTrainingSession key={`${scenario.id}:${userId ?? "guest"}`} scenario={scenario} userId={userId} language={language} setLanguage={setLanguage} />;
+  return <ProcessTrainingSession key={`${scenario.id}:${userId ?? "guest"}`} scenario={scenario} userId={userId} language={language} />;
 }
 
-function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
-  scenario: ProcessScenario; userId: number | null; language: ProductLanguage; setLanguage: (language: ProductLanguage) => void;
+function ProcessTrainingSession({ scenario, userId, language }: {
+  scenario: ProcessScenario; userId: number | null; language: ProductLanguage;
 }) {
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const storageKey = `semiguard.process-training.v1.${scenario.id}.${userId ?? "guest"}`;
@@ -136,13 +137,13 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
   const [reviewReturnTarget, setReviewReturnTarget] = useState<"criteria" | "timeline" | null>(null);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   const reviewGraph = useRef<HTMLDetailsElement>(null);
-  const productHeader = useRef<HTMLElement>(null);
+
   const criteriaHeading = useRef<HTMLHeadingElement>(null);
   const timelineHeading = useRef<HTMLHeadingElement>(null);
   const coachReturn = useRef<(() => void) | null>(null);
   const alignReviewHeading = (target: HTMLElement | null) => {
     if (!target) return;
-    const offset = (productHeader.current?.getBoundingClientRect().height ?? 90) + 20;
+    const offset = getSiteHeaderHeight() + 20;
     window.scrollTo({ top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - offset), behavior: "auto" });
   };
   const reviewChoicePoint = (time: number, source: "criteria" | "timeline", signal?: string) => {
@@ -264,14 +265,7 @@ function ProcessTrainingSession({ scenario, userId, language, setLanguage }: {
 
   return <div className="et-app pt-app">
     <a className="et-skip" href="#process-main">{l("본문으로 건너뛰기", "Skip to content", "本文へスキップ")}</a>
-    <header className="et-header" ref={productHeader}><Link className="et-brand" href="/training"><b>SG</b> SemiGuard <small>JUDGMENT TRAINING</small></Link>
-      <nav aria-label={l("제품 메뉴", "Product navigation", "製品メニュー")}>
-        <Link href="/training">{l("학습·연습 선택", "Choose practice", "練習を選ぶ")}</Link>
-        <Link href="/learn">{l("8대 공정 학습", "Process learning", "8大工程学習")}</Link>
-        <Link href="/live">{l("자유 분석", "Free analysis", "自由分析")}</Link>
-        <ProductLanguageSelect language={language} onChange={setLanguage} /><AccountLogout language={language} />
-      </nav>
-    </header>
+
     <main id="process-main" className="et-main">
       <PracticeMeasurementConsent />
       <div className="et-meta"><span>PROCESS {String(scenario.order).padStart(2, "0")} / 08</span><span>{l("교육용 가상 기록 · 장비 제어 없음", "Synthetic learning records · no equipment control", "教育用仮想記録 · 装置制御なし")}</span></div>
