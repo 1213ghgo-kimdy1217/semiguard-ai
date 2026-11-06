@@ -434,15 +434,37 @@ export class PrototypeCameraController {
       deviceId = registeredId;
     }
     try {
-      const stream = await this.environment.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30 },
-        },
-      });
+      let stream: MediaStream;
+      try {
+        stream = await this.environment.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 },
+          },
+        });
+      } catch (error) {
+        const startupError = prototypeCameraError(error);
+        if (!deviceId || /^(?:default|communications)$/i.test(deviceId) ||
+          (startupError !== "device-busy" && startupError !== "constraints")) throw error;
+        if (!this.mounted || token !== this.generation) return;
+        if (this.environment.visibility?.hidden) { this.stop(true); return; }
+        if (this.snapshot.selectedDeviceId !== deviceId) { this.stop(); return; }
+        if (this.moduleOnly && (this.registration?.deviceId !== deviceId ||
+          !isRegisteredModuleCameraPresent(this.registration, this.snapshot.devices))) {
+          this.fail("no-device");
+          return;
+        }
+        // A UVC startup failure can depend on the requested capture format. Retry
+        // once without quality preferences, retaining the same exact device ID.
+        // A browser-default request must never open a different webcam here.
+        stream = await this.environment.mediaDevices.getUserMedia({
+          audio: false,
+          video: { deviceId: { exact: deviceId } },
+        });
+      }
       if (
         !this.mounted ||
         token !== this.generation ||
