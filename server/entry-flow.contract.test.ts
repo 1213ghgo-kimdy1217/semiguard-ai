@@ -21,7 +21,7 @@ describe("public introduction to login to training choice", () => {
     expect(social).toContain('res.redirect(302, `${origin}/training`);');
   });
 
-  it("offers the next step in each screen without removing public previews", () => {
+  it("offers sign-in before entering sample or full learning workspaces", () => {
     const welcome = source("client/src/pages/Welcome.tsx");
     const login = source("client/src/pages/Login.tsx");
     const dashboard = source("client/src/pages/Dashboard.tsx");

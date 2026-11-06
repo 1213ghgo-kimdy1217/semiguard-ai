@@ -18,9 +18,11 @@ describe("combined process concept wiring", () => {
     const text = readFileSync("client/src/components/ProcessEvidenceWorkspaces.tsx", "utf8");
     for (const token of ["<InspectionConceptRecord", "<MetalLayerConcept", "pe-classifier", "pe-window-grid", "onInteraction()", "onTimeChange(window.end)"]) expect(text).toContain(token);
   });
-  it("mounts etch only on observed/review record horizons", () => {
+  it("bounds the etch diagram and retained review detail to observed record horizons", () => {
     const text = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");
-    expect(text).toContain("<EtchChamberConcept time={shownTime} observedUntil={attempt.elapsed}");
+    expect(text).toContain('<ProcessObservationScene scenario={etchSceneScenario} time={shownTime} observedUntil={attempt.elapsed}');
+    expect(text).toContain('<ProcessObservationScene scenario={etchSceneScenario} time={reviewTime} observedUntil={attempt.elapsed}');
+    expect(text).toContain('Math.min(observationTime ?? attempt.elapsed, attempt.elapsed)');
     expect(text).toContain("<EtchChamberConcept time={reviewTime} observedUntil={attempt.elapsed}");
   });
 });

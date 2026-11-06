@@ -196,7 +196,7 @@ export function Login() {
         kakaoLogin: "Kakaoでログイン",
         socialLinkHint: "ソーシャルログインは、新規登録後にダッシュボードメニューからアカウントを連携して利用できます。",
         judgeDemo: "装置・サンプルをプレビュー",
-        judgeDemoHint: "装置紹介・サンプル観察のみ",
+        judgeDemoHint: "ログイン後に利用",
         terms: "ログインすると利用規約に同意したものとみなされます。",
       }
     : loginLanguage === "en"
@@ -225,7 +225,7 @@ export function Login() {
           kakaoLogin: "Continue with Kakao",
           socialLinkHint: "After signing up, link a social account from the dashboard menu to use social login.",
           judgeDemo: "Preview equipment and sample signals",
-          judgeDemoHint: "Introduction · Sample observation only",
+          judgeDemoHint: "Available after sign-in",
           terms: "By signing in, you agree to the Terms of Service.",
         }
       : {
@@ -253,7 +253,7 @@ export function Login() {
           kakaoLogin: "카카오로 로그인",
           socialLinkHint: "소셜 로그인은 회원가입 후 대시보드 메뉴에서 계정을 연결한 뒤 사용할 수 있습니다.",
           judgeDemo: "장비·샘플 미리보기",
-          judgeDemoHint: "장비 소개 · 샘플 관찰만",
+          judgeDemoHint: "로그인 후 이용",
           terms: "로그인하면 서비스 이용약관에 동의하는 것입니다.",
         };
   const isOauthEnabled = !import.meta.env.DEV && accountServiceReady !== false;

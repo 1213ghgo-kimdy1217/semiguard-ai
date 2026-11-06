@@ -76,7 +76,7 @@ describe("live observation integration", () => {
     expect(mount).toBeDefined();
     const wrappers = ancestors(mount!).filter((node): node is ts.JsxElement => ts.isJsxElement(node))
       .map(node => node.openingElement.tagName.getText());
-    expect(wrappers).toEqual(expect.arrayContaining(["AccountSessionProvider", "QueryClientProvider", "trpc.Provider"]));
+    expect(wrappers).toEqual(expect.arrayContaining(["PracticeAccess", "AccountSessionProvider", "QueryClientProvider", "trpc.Provider"]));
     expect(nodes(entry, ts.isPropertyAssignment).some(node => node.name.getText() === "url" &&
       ts.isStringLiteral(node.initializer) && node.initializer.text === "/api/trpc")).toBe(true);
     expect(html).not.toContain("experience-preview.html");

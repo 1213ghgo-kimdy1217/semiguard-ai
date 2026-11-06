@@ -10,7 +10,7 @@ describe("현재 학습 체험 진입 제어", () => {
     expect(loginSource).toContain('judgeDemo: "장비·샘플 미리보기"');
     expect(loginSource).toContain('judgeDemo: "Preview equipment and sample signals"');
     expect(loginSource).toContain('judgeDemo: "装置・サンプルをプレビュー"');
-    expect(loginSource).toContain('judgeDemoHint: "장비 소개 · 샘플 관찰만"');
+    expect(loginSource).toContain('judgeDemoHint: "로그인 후 이용"');
     expect(loginSource).toContain('setLocation("/training")');
   });
 });
