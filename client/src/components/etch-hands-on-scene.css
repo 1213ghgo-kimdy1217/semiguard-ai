@@ -1,0 +1,137 @@
+.eh-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.eh-valve {
+  transform-origin: 122px 30px;
+  transition: transform 0.3s ease;
+}
+.eh-load-wafer {
+  transition: transform 0.65s cubic-bezier(0.22, 0.7, 0.3, 1);
+}
+.eh-film-section {
+  transition: opacity 0.35s ease;
+}
+.eh-exposed-film {
+  transition:
+    y 0.12s linear,
+    height 0.12s linear;
+}
+.eh-gas-particle {
+  offset-rotate: 0deg;
+  offset-distance: var(--eh-gas-position);
+  animation: eh-gas-travel var(--eh-gas-duration) linear infinite;
+  animation-delay: var(--eh-gas-delay);
+}
+.eh-gas-line,
+.eh-gas-jet {
+  animation: eh-stream 1s linear infinite;
+}
+.eh-pump-flow {
+  animation: eh-stream 0.7s linear infinite;
+}
+.eh-pump-rotor {
+  transform-origin: 453px 207px;
+  animation: eh-pump-spin 1.1s linear infinite;
+}
+.eh-rf-wave {
+  animation: eh-rf-wave 1s linear infinite;
+}
+.eh-plasma {
+  transform-origin: 263px 157px;
+  animation: eh-plasma-breathe 1.8s ease-in-out infinite;
+}
+.eh-plasma-wave {
+  animation: eh-plasma-wave 1.2s ease-in-out infinite alternate;
+}
+.eh-etch-ion {
+  animation: eh-ions 0.55s linear infinite;
+}
+.eh-load-arrow {
+  animation: eh-arrow 1.3s ease-in-out infinite;
+}
+.eh-scene[data-gas="false"] .eh-gas-line,
+.eh-scene[data-gas="false"] .eh-gas-jet {
+  animation: none;
+}
+.eh-scene[data-plasma="false"] .eh-rf-wave {
+  animation: none;
+}
+.eh-scene[data-pump="off"] .eh-pump-flow {
+  animation: none;
+}
+.eh-scene[data-loaded="true"] .eh-load-arrow {
+  animation: none;
+}
+.eh-scene[data-etching="false"] .eh-exposed-film {
+  transition: none;
+}
+@keyframes eh-gas-travel {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+@keyframes eh-stream {
+  to {
+    stroke-dashoffset: -36;
+  }
+}
+@keyframes eh-pump-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes eh-rf-wave {
+  to {
+    stroke-dashoffset: -56;
+  }
+}
+@keyframes eh-plasma-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035, 0.97);
+  }
+}
+@keyframes eh-plasma-wave {
+  from {
+    transform: translateY(-3px);
+  }
+  to {
+    transform: translateY(4px);
+  }
+}
+@keyframes eh-ions {
+  to {
+    stroke-dashoffset: 22;
+  }
+}
+@keyframes eh-arrow {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eh-scene *,
+  .eh-scene *::before,
+  .eh-scene *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .eh-gas-particle {
+    offset-distance: var(--eh-gas-position);
+  }
+}

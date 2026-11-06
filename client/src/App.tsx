@@ -28,6 +28,7 @@ const LearningHub = lazy(() => import("./pages/LearningHub"));
 const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));
 const Training = lazy(() => import("./pages/EtchTraining"));
 const ProcessTraining = lazy(() => import("./pages/ProcessTraining"));
+const ProcessExperience = lazy(() => import("./pages/ProcessExperience"));
 const TrainingHistory = lazy(() => import("./pages/TrainingHistory"));
 const SharedTraining = lazy(() => import("./pages/SharedTraining"));
 const PracticeMetrics = lazy(() => import("./pages/PracticeMetrics"));
@@ -195,6 +196,12 @@ function Router() {
       </Route>
       <Route path={"/live"}>
         <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><EtchLive /></Suspense></PracticeAccess>
+      </Route>
+      <Route path="/learn/experience/:processId">
+        {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><ProcessExperience processId={params.processId} /></Suspense></PracticeAccess>}
+      </Route>
+      <Route path="/learn/experience">
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><ProcessExperience /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/learn"}>
         <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><LearningHub /></Suspense></PracticeAccess>

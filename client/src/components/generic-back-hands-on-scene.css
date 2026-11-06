@@ -1,0 +1,58 @@
+.gbh-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: Inter, "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+.gbh-picker {
+  outline: none;
+  touch-action: manipulation;
+  user-select: none;
+}
+.gbh-picker[data-enabled="true"] {
+  cursor: pointer;
+}
+.gbh-picker[data-enabled="false"] {
+  cursor: default;
+}
+.gbh-focus {
+  opacity: 0;
+  pointer-events: none;
+}
+.gbh-picker:focus-visible .gbh-focus {
+  opacity: 1;
+}
+.gbh-picker[data-enabled="true"]:hover > rect:not(.gbh-focus) {
+  filter: brightness(1.22);
+}
+.gbh-wafer,
+.gbh-chip {
+  transition:
+    transform 0.55s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.35s ease;
+}
+.gbh-signal-cable {
+  stroke-dasharray: 8 7;
+}
+.gbh-scene[data-running="true"] .gbh-signal-cable {
+  animation: gbh-signal-flow 0.8s linear infinite;
+}
+.gbh-capillary {
+  transition: transform 0.1s linear;
+  pointer-events: none;
+}
+.gbh-bond-wire {
+  transition: stroke-dashoffset 0.1s linear;
+}
+@keyframes gbh-signal-flow {
+  to {
+    stroke-dashoffset: -30;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gbh-scene * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

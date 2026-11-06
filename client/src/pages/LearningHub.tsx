@@ -29,11 +29,13 @@ export default function LearningHub() {
       <div className="et-panel"><h2>{l("필요한 만큼 읽고 관찰로 이동하세요.", "Read what you need, then start observing.", "必要なところを読み、観察へ進みましょう。")}</h2><p>{l("장비 운전 지침이 아닌 개념 학습입니다. 관찰 질문과 자가 확인은 SemiGuard가 구성한 학습 보조이며 실제 작업 자격이나 숙련도 평가가 아닙니다.", "This is concept learning, not operating instruction. SemiGuard's observation prompts and self-checks do not assess workplace qualifications or proficiency.", "装置の運転指示ではなく概念学習です。観察質問と自己確認はSemiGuardが作成した学習補助であり、実作業の資格や熟練度評価ではありません。")}</p><Link className="et-linkbutton" href="/training">{l("학습을 건너뛰고 8대 공정 판단 연습 선택 →", "Skip learning and choose a process exercise →", "学習を飛ばして工程の判断練習を選ぶ →")}</Link></div>
       <label className="lh-search">{l("공정·장비 검색", "Search processes and equipment", "工程・装置を検索")}<input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={l("예: 식각, Etch, 노광", "e.g., Etch, lithography", "例：エッチング、露光")} /></label>
       <OgqLearningGuide language={language} />
+      <section className="et-panel"><h2>{l("직접 움직이며 공정과 장비 이해하기", "Explore processes and equipment hands-on", "自分で動かして工程と装置を理解する")}</h2><p>{l("웨이퍼를 넣고, 마스크를 맞추고, 막과 와이어가 달라지는 모습을 살펴보세요. 각 체험에서 관련 장비 회사의 원문으로 이어집니다.", "Load a wafer, align a mask and watch film and wire structures change. Each experience links to related manufacturer sources.", "ウェーハの投入、マスクの位置合わせ、膜やワイヤの変化を体験します。各体験から関連メーカーの原文を開けます。")}</p><Link className="et-linkbutton" href="/learn/experience">{l("8대 공정 직접 체험 →", "Eight-process hands-on lab →", "8大工程の操作体験 →")}</Link></section>
       <p role="status">{lessons.length} {l("개 공정", "processes", "工程")}</p>
       <div className="lh-grid">{lessons.map(p => <article className="et-panel" key={p.id} id={p.id}>
         <p className="et-eyebrow">{String(p.order).padStart(2, "0")} / {p.english}</p>
         <h2>{p.title}</h2><p>{p.concept}</p>
         <ProcessConceptFigure processId={p.id} language={language} />
+        <Link className="et-linkbutton" href={`/learn/experience/${p.id}`}>{l("이 공정 직접 움직여보기 →", "Try this process hands-on →", "この工程を自分で動かす →")}</Link>
         <details><summary>{p.title} {l("더 알아보기", "details", "詳細を見る")}</summary>
           <h3>{l("공정의 앞뒤를 연결하기", "Connect the before and after", "工程の前後をつなぐ")}</h3>
           <div className="lh-flow" aria-label={l("공정 입력, 결과, 확인 근거", "Process input, result, and evidence", "工程の入力、結果、確認根拠")}>

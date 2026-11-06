@@ -49,6 +49,6 @@ export const processEquipment: Record<ProcessId, EquipmentContext> = {
     name: "ASMPT Eagle AERO",
     context: ["와이어 본딩은 칩과 외부 연결을 만드는 패키징 기술 중 하나입니다. Eagle AERO는 이를 이해하기 위한 장비 사례입니다.", "Wire bonding is one packaging technology for connecting a chip externally. Eagle AERO is a public equipment example.", "ワイヤーボンディングはチップと外部を接続するパッケージ技術の一つです。Eagle AEROはその装置例です。"],
     distinction: ["연결·외관 검사와 형성 장비의 상태는 같은 근거가 아닙니다. 연습 지수는 실제 본더의 신호나 설정값이 아닙니다.", "Connection and appearance inspection are distinct from equipment-state evidence. Exercise indices are not bonder signals or settings.", "接続・外観検査と形成装置の状態は同じ根拠ではありません。練習の指数は実際のボンダー信号や設定値ではありません。"],
-    sources: [{ name: "ASMPT · Eagle AERO", url: "https://semi.asmpt.com/en/products/icd/wb/ball-bonding/eagle-aero/" }],
+    sources: [{ name: "ASMPT · Eagle AERO", url: "https://semi.asmpt.com/en/news-center/press-releases/2024-08-21/" }],
   },
 };
