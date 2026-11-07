@@ -1,10 +1,24 @@
-import { useId } from "react";
+import { Component, lazy, Suspense, useId, type ReactNode } from "react";
 import { readProcessScene } from "../../../shared/processScene";
 import type { ProcessScenario } from "../../../shared/processScenarios";
 import { etchPhase } from "../../../shared/etchScenario";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
 import JudgmentSceneCanvas from "./JudgmentSceneCanvas";
 import "./process-observation-scene.css";
+
+const JudgmentStudioObservation = lazy(() => import("./judgment-studio/JudgmentStudioObservation"));
+
+class ObservationSceneBoundary extends Component<{ children: ReactNode; fallback: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
 
 const clock = (time: number) =>
   `${Math.floor(time / 60)
@@ -47,6 +61,15 @@ export default function ProcessObservationScene({
   const sliderId = useId();
   const l = (ko: string, en: string, ja: string) => tr(language, ko, en, ja);
   const name = (text: readonly [string, string, string]) => l(...text);
+  const diagram = (
+    <JudgmentSceneCanvas
+      scene={scene}
+      language={language}
+      running={running}
+      selectedSignal={selected.id}
+      onSignalChange={onSignalChange}
+    />
+  );
   const context =
     scenario.processId === "wafer"
       ? l(
@@ -89,9 +112,9 @@ export default function ProcessObservationScene({
       data-process={scenario.processId}
       data-time={scene.time}
       aria-label={l(
-        "그림으로 관찰하기",
-        "Observe in the diagram",
-        "図で観察する"
+        "장비와 검사 기록 관찰하기",
+        "Observe the equipment and inspection records",
+        "装置と検査記録を観察する"
       )}
     >
       <div className="pv-scene-heading">
@@ -121,21 +144,27 @@ export default function ProcessObservationScene({
       </div>
       <p className="pv-one-step">
         {l(
-          "그림 속 관측값을 눌러 살펴보세요. 같은 시점의 정상 참고와 비교할 수 있어요.",
-          "Select a reading in the diagram and compare it with the same-time reference.",
-          "図の観測値を選び、同じ時点の正常参照と比べてみましょう。"
+          "관측값을 눌러 같은 시점의 정상 참고와 비교해 보세요.",
+          "Select a reading to compare it with the same-time reference.",
+          "観測値を選び、同じ時点の正常参照と比べてみましょう。"
         )}
       </p>
       <p className="pv-record-context">
         {context} · {clock(scene.time)}
       </p>
-      <JudgmentSceneCanvas
-        scene={scene}
-        language={language}
-        running={running}
-        selectedSignal={selected.id}
-        onSignalChange={onSignalChange}
-      />
+      <ObservationSceneBoundary key={scenario.id} fallback={diagram}>
+        <Suspense fallback={diagram}>
+          <JudgmentStudioObservation
+            scene={scene}
+            language={language}
+            running={running}
+            review={review}
+            selectedSignal={selected.id}
+            onSignalChange={onSignalChange}
+            fallback={diagram}
+          />
+        </Suspense>
+      </ObservationSceneBoundary>
       <div className="pv-selected-reading">
         <div>
           <span>
@@ -222,9 +251,9 @@ export default function ProcessObservationScene({
       ) : null}
       <p className="pv-scope">
         {l(
-          "교육용 가상 기록을 그린 도식입니다. 그림의 크기·이동은 검사 지수의 비교 표현이며 실제 형상·치수·장비 상태를 재현하지 않습니다.",
-          "A diagram of synthetic training records. Shapes and movements encode index comparisons, not measured geometry, dimensions or equipment condition.",
-          "教育用仮想記録の模式図です。大きさや動きは指数の比較表現で、実測の形状・寸法・装置状態ではありません。"
+          "장비 모형은 공정 원리를 보여주고, 가상 검사 기록과 비교 도식은 같은 조건에서 관측값을 살펴보는 데 쓰여요.",
+          "The equipment model illustrates the process. Synthetic readings and diagrams support comparisons under the same conditions.",
+          "装置の模型は工程の原理を示します。仮想検査記録と比較図は、同じ条件の観測値を見比べるために使います。"
         )}
       </p>
     </section>
