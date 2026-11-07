@@ -181,7 +181,7 @@ describe("checkpoint recovery after submitting an exercise", () => {
     expect(restore).not.toHaveBeenCalled(); expect(capture).not.toHaveBeenCalled();
   });
 
-  it("keeps checkpoint recovery reachable in both engines and blocks it during result saving", () => {
+  it("keeps checkpoint recovery reachable in the studio and classic engines during ordinary use", () => {
     for (const page of ["EtchTraining", "ProcessTraining"]) {
       const source = readFileSync(`client/src/pages/${page}.tsx`, "utf8");
       expect(source).toContain("resumeOnly={attempt.submitted}");
@@ -189,6 +189,9 @@ describe("checkpoint recovery after submitting an exercise", () => {
       expect(source).not.toMatch(/!attempt\.submitted\s*\?\s*<TrainingCheckpoint/);
     }
     const etch = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");
-    expect(etch).toMatch(/SavedCheckpointList[^\n]+onEtch=\{\(\) => move\(attempt\.submitted \? "review" : "brief"\)\}/);
+    expect(etch).toMatch(/SavedCheckpointList[^\n]+onEtch=\{\(\) => navigate\("\/training\/etch"\)\}/);
+    const studio = readFileSync("client/src/components/judgment-studio/StudioApp.tsx", "utf8");
+    expect(studio).toContain("resumeOnly={a.submitted}");
+    expect(studio).toContain('disabled={saveStatus === "saving"}');
   });
 });

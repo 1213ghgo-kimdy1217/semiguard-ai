@@ -31,6 +31,7 @@ describe("portable API deployment", () => {
   });
 
   it("fails closed for login and OAuth when a deployment has no signing secret", async () => {
+    // Synthetic config values exercise the local readiness guard without connecting to a database.
     vi.stubEnv("DATABASE_URL", "mysql://test.invalid/example");
     vi.stubEnv("JWT_SECRET", "");
     vi.stubEnv("VITE_APP_ID", "semiguard-ai");
@@ -64,6 +65,7 @@ describe("portable API deployment", () => {
   });
 
   it("reports configured account services without exposing environment values", async () => {
+    // This fixture checks config presence only. It does not verify database connectivity.
     vi.stubEnv("DATABASE_URL", "mysql://test.invalid/example");
     vi.stubEnv("JWT_SECRET", "test-only-signing-secret");
     vi.stubEnv("VITE_APP_ID", "semiguard-ai");
