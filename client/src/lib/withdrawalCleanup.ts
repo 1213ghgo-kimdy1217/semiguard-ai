@@ -10,7 +10,8 @@ export function clearWithdrawnDrafts(storage: Pick<Storage, "length" | "key" | "
   for (let index = 0; index < storage.length; index++) {
     const key = storage.key(index);
     if (key === `semiguard.etch.scenario01.v1.${userId}`
-      || (key?.startsWith("semiguard.process-training.v1.") && key.endsWith(`.${userId}`))) keys.push(key);
+      || ((key?.startsWith("semiguard.process-training.v1.") || key?.startsWith("semiguard.judgment-studio.v1."))
+        && key.endsWith(`.${userId}`))) keys.push(key);
   }
   for (const key of keys) storage.removeItem(key);
 }

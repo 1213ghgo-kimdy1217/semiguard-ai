@@ -27,6 +27,7 @@ const EtchLive = lazy(() => import("./pages/EtchLive"));
 const LearningHub = lazy(() => import("./pages/LearningHub"));
 const JudgeDemo = lazy(() => import("./pages/JudgeDemo"));
 const Training = lazy(() => import("./pages/EtchTraining"));
+const JudgmentStudio = lazy(() => import("./pages/JudgmentStudio"));
 const ProcessTraining = lazy(() => import("./pages/ProcessTraining"));
 const ProcessExperience = lazy(() => import("./pages/ProcessExperience"));
 const TrainingHistory = lazy(() => import("./pages/TrainingHistory"));
@@ -216,11 +217,14 @@ function Router() {
       <Route path={"/training/shared"}>
         <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><SharedTraining /></Suspense></PracticeAccess>
       </Route>
+      <Route path={"/training/classic/:processId"}>
+        {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}>{params.processId === "etch" ? <Training key="etch-classic" entry="brief" /> : <ProcessTraining processId={params.processId} />}</Suspense></PracticeAccess>}
+      </Route>
       <Route path={"/training/process/:processId"}>
-        {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><ProcessTraining processId={params.processId} /></Suspense></PracticeAccess>}
+        {params => <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><JudgmentStudio processId={params.processId} /></Suspense></PracticeAccess>}
       </Route>
       <Route path={"/training/etch"}>
-        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><Training key="etch-direct" entry="brief" /></Suspense></PracticeAccess>
+        <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><JudgmentStudio processId="etch" /></Suspense></PracticeAccess>
       </Route>
       <Route path={"/training"}>
         <PracticeAccess><Suspense fallback={<TrainingModuleLoading />}><Training /></Suspense></PracticeAccess>

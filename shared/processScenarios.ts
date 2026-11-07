@@ -174,7 +174,7 @@ export function getProcessScenario(processIdOrScenarioId: string): ProcessScenar
 }
 
 export function scenarioHref(scenario: ProcessScenario): string {
-  return scenario.processId === "etch" ? "/training" : `/training/process/${scenario.processId}`;
+  return scenario.processId === "etch" ? "/training/etch" : `/training/process/${scenario.processId}`;
 }
 
 function boundedTime(scenario: ProcessScenario, time: number) {
