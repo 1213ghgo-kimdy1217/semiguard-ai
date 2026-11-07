@@ -1,0 +1,42 @@
+.studio-equipment-references {
+  margin-block: 24px;
+}
+
+.studio-equipment-references-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.studio-equipment-reference {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border: 1px solid #3a473e;
+  border-radius: 7px;
+  background: #141b1c;
+  overflow-wrap: anywhere;
+}
+
+.studio-equipment-reference h3 {
+  color: #edf0eb;
+  font-weight: 650;
+}
+
+.studio-equipment-followup {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #3a473e;
+}
+
+.studio-equipment-followup strong {
+  color: #b4c1b6;
+  font-size: 0.875rem;
+}
+
+.studio-equipment-reference a {
+  align-self: start;
+}

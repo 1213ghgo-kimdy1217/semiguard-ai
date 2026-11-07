@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ProcessObservationScene from "../components/ProcessObservationScene";
 import { trainingPracticeHref, trainingReplay } from "../../../shared/trainingReplay";
+import StudioEquipmentReferences from "../components/judgment-studio/StudioEquipmentReferences";
 import { Link } from "wouter";
 import { Line, LineChart, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { getProcessScenario, processSample } from "../../../shared/processScenarios";
@@ -77,7 +78,7 @@ export default function TrainingHistory({ attemptId }: { attemptId: string }) {
           <ul>{[record.signalMatched, record.onsetMatched, record.comparisonMatched, record.certaintyMatched].map((match, index) => <li key={index}>{[l("관측 항목", "Signal", "観測項目"), l("시작 시점", "Onset", "開始時点"), l("비교 기준", "Reference", "比較基準"), l("사실과 추정", "Fact versus inference", "事実と推測")][index]} · {match ? l("구성 기준 일치", "Matches teaching criterion", "構成基準と一致") : l("다시 비교", "Revisit", "再度比較")}</li>)}</ul>
           <p className="et-caption">{l("실제 현장 역량 점수가 아닙니다. 다시 보기로 저장된 답안이 바뀌지 않습니다.", "Not a workplace competency score. Replay does not change your saved answer.", "現場能力の点数ではありません。振り返っても保存済みの回答は変わりません。")}</p>
           <ProcessEvidenceReview scenario={scenario} language={language} onReviewPoint={reviewEvidencePoint} />
-        </section>{practiceHref ? <section className="et-panel"><h2>{l("복기한 모듈에서 다시 연습하기", "Practise the reviewed module again", "振り返ったモジュールで再練習")}</h2>
+        </section><StudioEquipmentReferences processId={scenario.processId} language={language} />{practiceHref ? <section className="et-panel"><h2>{l("복기한 모듈에서 다시 연습하기", "Practise the reviewed module again", "振り返ったモジュールで再練習")}</h2>
           <p>{l("같은 모듈을 열어도 저장된 완료 기록과 현재 탭 답안은 바뀌지 않습니다. 이어서 관찰하거나, 연습 화면에서 ‘새 시도로 다시 연습’을 선택해 확인 후 시작할 수 있습니다. 계정 중간 저장본은 별도로 불러올 수 있으며 서술형 답안은 복원되지 않습니다.", "Opening the same module does not change saved records or this tab\'s answer. Continue observing, or choose ‘Practice with a new attempt’ in the exercise and confirm. Account checkpoints can be loaded separately; written answers are not restored.", "同じモジュールを開いても保存済みの完了記録とこのタブの回答は変わりません。観察を続けるか、練習画面で「新しい試行で再練習」を選び、確認して開始できます。アカウントの中間保存は別途読み込めますが、記述回答は復元されません。")}</p>
           <Link className="et-linkbutton" href={practiceHref}>{l("이 모듈 다시 열기", "Open this module again", "このモジュールをもう一度開く")}</Link>
         </section> : null}</>}

@@ -1,0 +1,5 @@
+.st-stage-canvas { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.st-stage-canvas > canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+.st-stage-canvas > canvas:focus-visible { box-shadow: inset 0 0 0 3px #e4aa55; }
+.st-stage-status { position: absolute; inset: 0; display: grid; place-items: center; z-index: 8; background: #101918; color: #c6d5c9; padding: 2rem; text-align: center; }
+.st-part-label { position: absolute; z-index: 2; pointer-events: none; background: #14281ee8; border: 1px solid #86b49b66; color: #b4e5ca; padding: .5rem; border-radius: .35rem; font-size: .75rem; max-width: 10.5rem; display: none; }

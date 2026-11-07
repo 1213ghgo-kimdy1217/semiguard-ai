@@ -26,6 +26,7 @@ import { Button } from "../components/ui/button";
 
 
 import ScenarioJudgmentCoach from "../components/ScenarioJudgmentCoach";
+import StudioEquipmentReferences from "../components/judgment-studio/StudioEquipmentReferences";
 import { tr, useProductLanguage, type ProductLanguage } from "../lib/productLanguage";
 import { trpc } from "../lib/trpc";
 import { toProcessTrainingSubmission } from "../../../shared/trainingRecord";
@@ -294,6 +295,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
       </details>
 
       {stage === "brief" ? <>
+        <JudgmentEquipmentPractice processId={scenario.processId} language={language} onObserve={() => { move("observe"); setRunning(attempt.elapsed < scenario.duration); }} />
         {scenario.processId === "wafer" ? <WaferInspectionBrief language={language} /> : null}
         {scenario.processId === "oxidation" || scenario.processId === "photo" ? <ProcessObservationBrief processId={scenario.processId} language={language} /> : null}
         {scenario.processId === "deposition" || scenario.processId === "metal" ? <ProcessEvidenceBrief processId={scenario.processId} language={language} /> : null}
@@ -307,7 +309,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
           <p>{l("이번 기록과 같은 조건의 정상 참고를 비교하세요. 값이 바뀌었다는 사실과 고장이라는 추정은 다릅니다. 정상 참고와의 편차가 없는 기록도 있습니다.", "Compare the current record with a same-condition normal reference. A changing value is not itself a confirmed fault. Some records have no deviation from the normal reference.", "今回の記録と同じ条件の正常参照を比較してください。値の変化と故障の推測は異なります。正常参照からの偏差がない記録もあります。")}</p>
           <p className="et-caption">{l("90초 가상 타임라인 · 재생 속도 1배/3배 선택 · 재생·일시정지 가능", "90-second virtual timeline · 1× / 3× playback · pause and resume", "90秒の仮想タイムライン · 1倍 / 3倍再生 · 一時停止・再開可能")}</p>
         </section></div>
-        <JudgmentEquipmentPractice processId={scenario.processId} language={language}/>
+
         <ProcessEquipmentReference processId={scenario.processId} language={language} />
         <details className="et-panel pt-reference"><summary>{l("실제 공정과 연결되는 공개 자료", "Public references for the real process", "実際の工程につながる公開資料")}</summary>
           <p>{l("아래 자료는 공정 개념을 이해하기 위한 출처입니다. 이 훈련은 제조사 데이터나 실제 장비 모델의 성능을 재현하지 않습니다.", "The source below explains the process concept. This exercise does not reproduce manufacturer data or the performance of a real equipment model.", "以下は工程の概念を理解するための資料です。この訓練はメーカーのデータや実装置モデルの性能を再現しません。")}</p>
@@ -420,6 +422,7 @@ function ProcessTrainingSession({ scenario, userId, language }: {
             : saveStatus === "saving" ? <p role="status">{l("선택형 결과 저장 중…", "Saving choice results…", "選択結果を保存中…")}</p>
             : <><p className={saveStatus === "failed" ? "et-alert" : "et-caption"}>{saveStatus === "failed" ? l("계정 저장에 실패했습니다. 답안과 복기는 그대로 유지되며 같은 시도의 저장을 다시 요청할 수 있습니다.", "Account saving failed. Your answer and review remain available; retry saves the same attempt.", "アカウント保存に失敗しました。回答と振り返りは維持され、同じ試行の保存を再依頼できます。") : l("복원된 답안의 계정 저장 여부는 아직 확인하지 않았습니다. 저장 버튼은 동일한 시도를 중복 생성하지 않습니다.", "The account-save status of this restored answer has not been checked. Saving does not duplicate this attempt.", "復元した回答のアカウント保存状態はまだ確認していません。保存ボタンは同じ試行を重複作成しません。")}</p><Button onClick={() => void saveCompleted(attempt)}>{l("이 시도 저장 다시 요청", "Save this attempt again", "この試行の保存を再依頼")}</Button></>}
         </section>
+        <StudioEquipmentReferences processId={scenario.processId} language={language} />
         <ScenarioJudgmentCoach key={`${scenario.id}:${userId ?? "guest"}:${attempt.saveKey}:${language}`} processAttempt={attempt} scenario={scenario} language={language} userId={userId} onReviewPoint={reviewCoachPoint} />
         <section className="et-panel et-next"><h2>{l("다음 판단으로 연결합니다.", "Continue to the next reasoning task.", "次の判断につなげます。")}</h2><p>{l("공정은 순서대로 배울 수 있지만 어느 훈련이든 직접 선택할 수 있습니다. 모든 단계가 이상 신호를 포함하는 것은 아닙니다.", "Follow the learning order or choose any exercise directly. Not every stage contains an anomaly.", "工程を順に学ぶことも、どの訓練でも直接選ぶこともできます。すべての段階に異常があるわけではありません。")}</p>
           <div className="et-actions">{nextScenario ? <Link className="et-linkbutton" href={nextScenario.processId === "etch" ? "/training/etch" : scenarioHref(nextScenario)}>{l("다음 공정", "Next process", "次の工程")} · {localize(nextScenario.title, language)} <ArrowRight size={16} /></Link> : <Link className="et-linkbutton" href="/live">{l("8대 공정 이후 자유 분석으로", "Continue with free analysis", "8大工程の後は自由分析へ")} <ArrowRight size={16} /></Link>}
