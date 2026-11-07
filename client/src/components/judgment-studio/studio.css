@@ -347,7 +347,7 @@
   border-radius: 8px;
   overflow: hidden;
   min-width: 0;
-  scroll-margin-top: calc(var(--sg-site-header-height, 80px) + 40px);
+  scroll-margin-top: calc(var(--sg-site-header-height, 80px) + 70px);
   box-shadow: 0 20px 55px #0002;
 }
 

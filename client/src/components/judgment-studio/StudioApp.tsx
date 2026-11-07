@@ -1284,7 +1284,13 @@ export default function StudioApp({
                         "アカウントへの保存を確認できていません。"
                       )}{" "}
                   <button className="st-secondary" onClick={retrySave}>
-                    {t("retry")}
+                    {saveStatus === "failed"
+                      ? copy("저장 다시 시도", "Retry saving", "保存を再試行")
+                      : copy(
+                          "계정에 저장",
+                          "Save to account",
+                          "アカウントに保存"
+                        )}
                   </button>
                 </>
               ) : null}
