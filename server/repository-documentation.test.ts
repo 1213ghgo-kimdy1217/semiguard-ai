@@ -18,7 +18,7 @@ describe("current product documentation and historical archive", () => {
     for (const mode of ["8대 공정 학습", "8대 공정 판단 연습", "실시간 자유 분석", "4센서 대시보드"]) {
       expect(readme).toContain(mode);
     }
-    expect(readme).toContain("로그인 없는 30초 샘플");
+    expect(readme).toContain("30초 샘플 · 로그인 필요");
     expect(readme).toContain("선택 답안");
     expect(readme).toContain("7일 후 만료");
     expect(readme).not.toContain("현재 우선 제품은 가상 센서 데이터로 판단 과정을 연습하는 Scenario 01입니다");

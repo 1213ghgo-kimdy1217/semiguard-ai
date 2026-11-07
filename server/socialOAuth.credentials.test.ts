@@ -9,6 +9,7 @@ describe("Kakao OAuth credentials", () => {
   });
 
   it("constructs the configured client credential exchange without calling the live endpoint", async () => {
+    // The client credentials below are synthetic fixtures for the mocked request.
     vi.stubEnv("KAKAO_CLIENT_ID", "test-client-id");
     vi.stubEnv("KAKAO_CLIENT_SECRET", "test-client-secret");
     const clientId = process.env.KAKAO_CLIENT_ID;

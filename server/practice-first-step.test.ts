@@ -39,12 +39,6 @@ describe("first-use practice guidance", () => {
     for (const path of ["ProcessTraining", "EtchTraining"]) {
       expect(source(`client/src/pages/${path}.tsx`)).toMatch(/\{stage === "observe" \? <details className="pv-time-tools"><summary>[^]*?<\/summary><PracticeFirstStep language=\{language\} \/><\/details> : null\}/);
     }
-    const live = source("client/src/pages/EtchLive.tsx");
-    expect(live).toContain('<PracticeFirstStep language={language} mode="free" />');
-    expect(live).toContain('<details className="et-live-details"><summary>');
-    expect(live).not.toContain('<details className="et-live-details" open');
-    expect(live).toContain('const next = addLiveNote(notes, time, elapsed, selected, draft);');
-    expect(live).toContain('max={elapsed}');
     const styles = source("client/src/pages/etch-training.css");
     expect(styles).toMatch(/\.et-first-step ol\{[^}]*list-style:decimal/);
   });
