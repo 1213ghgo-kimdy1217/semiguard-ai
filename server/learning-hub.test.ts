@@ -37,7 +37,7 @@ describe("process learning guide", () => {
     for (const lesson of processLessons) {
       const scenario = getProcessScenario(lesson.id)!;
       expect(scenario).toBeDefined();
-      expect(scenarioHref(scenario)).toBe(lesson.id === "etch" ? "/training" : `/training/process/${lesson.id}`);
+      expect(scenarioHref(scenario)).toBe(lesson.id === "etch" ? "/training/etch" : `/training/process/${lesson.id}`);
     }
     expect(page).toContain("학습을 건너뛰고");
   });

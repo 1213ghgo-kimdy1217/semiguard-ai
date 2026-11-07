@@ -93,7 +93,7 @@ describe("parent wiring preserves current answers on navigation", () => {
   it("adds a direct etch entry without changing the default selection screen", () => {
     const app = readFileSync("client/src/App.tsx", "utf8");
     expect(app).toContain('path={"/training/etch"}');
-    expect(app).toContain('<Training key="etch-direct" entry="brief" />');
+    expect(app).toContain('<JudgmentStudio processId="etch" />');
     const etch = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");
     expect(etch).toContain('entry = "home"');
     expect(etch).toContain('entry === "brief" ? restored.submitted ? "review" : "brief" : "home"');

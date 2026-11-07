@@ -393,9 +393,9 @@ export const messages={
     "{n}文字・10文字以上"
   ],
   "privateNotes": [
-    "서술형은 이 시안의 현재 탭에만 있어요. 언어를 바꿔도 내가 작성한 원문은 번역하지 않아요.",
-    "Written answers stay in this preview tab. Changing the interface language does not translate your original writing.",
-    "記述回答はこの試作版の現在のタブ内だけに残ります。表示言語を変えても原文は翻訳しません。"
+    "서술형은 이 브라우저 탭에만 있어요. 언어를 바꿔도 내가 작성한 원문은 번역하지 않아요.",
+    "Written answers stay in this browser tab. Changing the interface language does not translate your original writing.",
+    "記述回答はこのブラウザーのタブ内だけに残ります。表示言語を変えても原文は翻訳しません。"
   ],
   "submit": [
     "판단 제출·복기",
@@ -508,9 +508,9 @@ export const messages={
     "この工程を最初から"
   ],
   "resetConfirm": [
-    "이 공정의 현재 시안 기록을 지우고 다시 시작할까요?",
-    "Clear this process's preview attempt and start again?",
-    "この工程の試作版の記録を消去し、最初からやり直しますか。"
+    "이 탭의 연습을 지우고 다시 시작할까요? 계정에 저장한 결과는 기록에서 볼 수 있어요.",
+    "Clear this tab's attempt and start again? Results saved to your account are available in your history.",
+    "このタブの練習を消去し、最初からやり直しますか。アカウントに保存した結果は練習記録で確認できます。"
   ],
   "more": [
     "어떤 부분인지 눌러보세요.",

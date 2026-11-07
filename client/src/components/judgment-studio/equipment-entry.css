@@ -1,0 +1,388 @@
+.st-app .st-viewport {
+  height: 600px;
+  background: radial-gradient(ellipse at 50% 80%,#293c2f55,transparent 70%);
+}
+
+.st-app .st-entry-mission {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+  min-height: 600px;
+}
+
+.st-app .st-entry-mission h3 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.55;
+}
+
+.st-app .st-entry-mission > p {
+  font-size: 14px;
+  line-height: 1.95;
+  color: #bdcbbd;
+}
+
+.st-app .st-entry-mission > .st-desktop-action > .st-primary {
+  width: 100%;
+  margin: 2px 0 6px;
+}
+
+.st-app .st-entry-focus {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  padding: 20px 0;
+  border-top: 1px solid #425348;
+  border-bottom: 1px solid #425348;
+  color: #b3c7a6;
+}
+
+.st-app .st-entry-focus > svg {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.st-app .st-entry-focus b {
+  font-size: 12px;
+  color: #e3c293;
+  font-weight: 550;
+}
+
+.st-app .st-entry-focus p {
+  font-size: 13px;
+  line-height: 1.95;
+  color: #bacbbb;
+  margin-top: 10px;
+}
+
+.st-app .st-entry-mission > small {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #95ad9a;
+}
+
+.st-app .st-entry-mission ol {
+  list-style: none;
+  counter-reset: entry;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.st-app .st-entry-mission li {
+  counter-increment: entry;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #b4c4b5;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.st-app .st-entry-mission li:before {
+  content: counter(entry,decimal-leading-zero);
+  font: 11px Consolas,monospace;
+  color: #d6b987;
+  width: 22px;
+}
+
+.st-app .st-entry-mission > .st-entry-note {
+  font-size: 10px;
+  color: #8fa294;
+  line-height: 1.95;
+  margin-top: 2px;
+  padding-top: 17px;
+  border-top: 1px solid #3d4f41;
+}
+
+.st-app .st-entry-status {
+  display: block;
+  font-size: 10px;
+  line-height: 1.9;
+  color: #8ba28f;
+  margin-top: auto;
+}
+
+.st-app .st-enter:disabled {
+  background: #37493b;
+  color: #a7b69f;
+  opacity: 1;
+}
+
+.st-app .st-exterior-return {
+  position: absolute;
+  right: 15px;
+  bottom: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  font-size: 10px;
+  line-height: 1.7;
+  background: #15251ee8;
+  color: #bad1ba;
+  border: 1px solid #6b85715c;
+  border-radius: 5px;
+  z-index: 4;
+}
+
+.st-app .st-exterior-return:hover {
+  border-color: #d4ae70;
+  color: #f1cf9d;
+}
+
+.st-app .st-reaction-progress {
+  bottom: 58px;
+}
+
+.st-app .st-principle-guide {
+  border-top: 1px solid #3a4d3e;
+  background: #14221a;
+  padding: 17px 20px;
+}
+
+.st-app .st-view-tools {
+  flex-wrap: wrap;
+}
+
+.st-app .st-process-guide {
+  display: grid;
+  gap: 10px;
+  padding: 15px 20px;
+  border-top: 1px solid #3a4d3e;
+  background: #19281f;
+  color: #e2eee3;
+}
+
+.st-app .st-process-guide > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 7px 15px;
+  flex-wrap: wrap;
+}
+
+.st-app .st-process-guide > div:first-child span,
+.st-app .st-process-guide > small {
+  font-size: 11px;
+  color: #a9bfae;
+}
+
+.st-app .st-process-guide strong {
+  font-size: 15px;
+  color: #f2d49c;
+}
+
+.st-app .st-process-guide > p {
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 0;
+  color: #d7e7d9;
+}
+
+.st-app .st-process-guide-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.st-app .st-process-guide-actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: start;
+  padding: 7px 9px;
+  border: 1px solid #566e5b;
+  border-radius: 4px;
+  background: #152219;
+  color: #dce9dc;
+  font: inherit;
+  font-size: 11px;
+  min-height: 34px;
+}
+
+.st-app .st-process-guide-actions button span {
+  color: #e8c183;
+  font-size: 10px;
+}
+
+.st-app .st-process-guide-actions button[aria-pressed=true] {
+  border-color: #d9a960;
+  background: #3d3421;
+}
+
+.st-app .st-process-guide-actions button:focus-visible {
+  outline: 2px solid #e8c183;
+  outline-offset: 2px;
+}
+
+@media (max-width:740px) {
+  .st-app .st-process-guide {
+    padding: 13px 14px;
+  }
+
+  .st-app .st-process-guide-actions button {
+    min-height: 40px;
+  }
+}
+
+.st-app .st-color-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 20px;
+  margin-bottom: 12px;
+}
+
+.st-app .st-color-key > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #c6d9c5;
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+.st-app .st-color-key i {
+  width: 7px;
+  height: 7px;
+  border: 1px solid #ffffff30;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #91a99a1a;
+  flex-shrink: 0;
+}
+
+.st-app .st-principle-guide > p {
+  font-size: 11px;
+  color: #b2c5b0;
+  line-height: 1.95;
+}
+
+.st-app .st-principle-guide > small {
+  display: block;
+  margin-top: 9px;
+  font-size: 9px;
+  color: #839c88;
+  line-height: 1.8;
+}
+
+.st-app .st-mission {
+  min-height: 690px;
+}
+
+.st-app .st-page-intro {
+  padding-top: 25px;
+  padding-bottom: 19px;
+}
+
+.st-app .st-page-intro h1 {
+  font-size: clamp(24px,2.2vw,32px);
+}
+
+.st-app .st-process-heading {
+  margin-top: 20px;
+  margin-bottom: 19px;
+}
+
+@media (max-width:740px) {
+  .st-app .st-viewport {
+    height: 490px;
+  }
+
+  .st-app .st-entry-mission {
+    min-height: 0;
+    gap: 17px;
+  }
+
+  .st-app .st-entry-mission h3 {
+    font-size: 23px;
+  }
+
+  .st-app .st-entry-mission > p {
+    font-size: 13px;
+  }
+
+  .st-app .st-entry-focus {
+    padding: 17px 0;
+  }
+
+  .st-app .st-entry-focus p {
+    font-size: 13px;
+    line-height: 1.95;
+  }
+
+  .st-app .st-entry-mission > .st-entry-note {
+    font-size: 10px;
+    margin-top: 0;
+  }
+
+  .st-app .st-entry-mission > small {
+    font-size: 11px;
+  }
+
+  .st-app .st-entry-mission li {
+    font-size: 12px;
+  }
+
+  .st-app .st-entry-status {
+    margin-top: 4px;
+  }
+
+  .st-app .st-mission {
+    min-height: 0;
+  }
+
+  .st-app .st-exterior-return {
+    bottom: 97px;
+    right: 13px;
+    max-width: 215px;
+    font-size: 9px;
+    padding: 6px 9px;
+  }
+
+  .st-app .st-reaction-progress {
+    bottom: 137px;
+    max-width: 150px;
+  }
+
+  .st-app .st-principle-guide {
+    padding: 16px 14px;
+  }
+
+  .st-app .st-color-key {
+    gap: 9px 13px;
+  }
+
+  .st-app .st-color-key > span {
+    font-size: 10px;
+  }
+
+  .st-app .st-principle-guide > p {
+    font-size: 11px;
+  }
+
+  .st-app .st-principle-guide > small {
+    font-size: 9px;
+  }
+
+  .st-app .st-mobile-action > .st-enter {
+    font-size: 12px;
+    min-height: 48px;
+  }
+
+  .st-app .st-page-intro {
+    padding-top: 21px;
+    padding-bottom: 18px;
+  }
+
+  .st-app .st-page-intro h1 {
+    font-size: 25px;
+  }
+
+  .st-app .st-process-heading {
+    margin-top: 23px;
+  }
+
+  .st-app .st-scene-helper {
+    max-width: 230px;
+  }
+}
