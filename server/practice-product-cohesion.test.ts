@@ -62,7 +62,7 @@ describe("coherent practice product", () => {
   it("requires an explicit share choice, uses a fragment and does not auto-send", () => {
     const source = read("client/src/components/TrainingShareControls.tsx");
     expect(source).toContain("consent: true"); expect(source).toContain("disabled={!consent");
-    expect(source).toContain("/training/shared#"); expect(source).toContain("자동으로 친구에게 보내지 않습니다");
+    expect(source).toContain("/training/shared#"); expect(source).toContain("링크는 직접 전달해야 합니다.");
     expect(read("client/src/pages/SharedTraining.tsx")).not.toContain("useMutation");
   });
 });

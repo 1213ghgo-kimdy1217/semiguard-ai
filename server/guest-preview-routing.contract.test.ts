@@ -24,14 +24,14 @@ describe("signed-in learning workspace entry policy", () => {
     expect(entry).toContain("<AccountSessionProvider>");
     expect(entry).toContain('url: "/api/trpc"');
   });
-  it("labels public entry calls to action as requiring sign-in", () => {
+  it("separates the public Studio introduction from the signed-in sample", () => {
     const welcome = source("client/src/pages/Welcome.tsx");
     const login = source("client/src/pages/Login.tsx");
     const signup = source("client/src/pages/Signup.tsx");
-    expect(welcome).toContain('href="/preview">{t.preview}');
+    expect(welcome).toContain('href="/preview">{sampleLabel}');
     for (const copy of ["로그인하고 샘플 살펴보기", "Sign in to explore the sample", "ログインしてサンプルを見る"]) expect(welcome).toContain(copy);
-    expect(login).toContain('onClick={() => setLocation("/preview")}');
-    expect(login).toContain('judgeDemoHint: "로그인 후 이용"');
+    expect(login).toContain('onClick={() => setLocation("/welcome#studio-preview")}');
+    expect(login).toContain('judgeDemoHint: "로그인 없이 보기"');
     for (const copy of ["공정 학습과 샘플 관찰도 로그인이 필요합니다.", "Process learning and sample observation also require sign-in.", "工程学習とサンプル観察にもログインが必要です。"]) expect(signup).toContain(copy);
     expect(signup).not.toContain("가입 없이 장비·샘플 미리보기");
     expect(login).toContain('window.location.href = "/training";');

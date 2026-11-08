@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
-import { processEquipment } from "../../../shared/processEquipment";
 import { processScenarios, scenarioHref } from "../../../shared/processScenarios";
 import { processProgress } from "../../../shared/processProgress";
 import { tr, type ProductLanguage } from "../lib/productLanguage";
@@ -22,7 +21,7 @@ export default function ProcessScenarioPath({ language, userId, onEtch, onHistor
       <p className="et-eyebrow">EIGHT PROCESSES / EIGHT JUDGMENT TASKS</p>
       <h2 id="process-path-heading">{l("8개 공정을 따라 판단을 연습하세요.", "Practice judgment across eight processes.", "8つの工程で判断を練習しましょう。")}</h2>
     </div>{saved ? <p className="process-path-count">{saved.completed}/{saved.total} <span>{l("공정 제출 완료", "processes submitted", "工程を提出済み")}</span></p> : null}</div>
-    <p>{l("‘8대 공정’은 반도체를 만드는 8가지 핵심 공정을 뜻해요. 아래에서 한 공정을 골라 기록을 관찰하고 판단해 보세요.", "The eight major processes are key stages of semiconductor manufacturing. Choose one below to observe its records and practise your judgment.", "「8大工程」は半導体を作る8つの主要工程です。下から一つ選び、記録を観察して判断を練習しましょう。")}</p>
+    <p>{l("‘8대 공정’은 반도체를 만드는 8가지 핵심 공정을 뜻해요. 한 공정을 고르고 3D 장비를 열어 기록을 관찰해 보세요.", "The eight major processes are key stages of semiconductor manufacturing. Choose a process and open its 3D equipment to observe the records.", "「8大工程」は半導体を作る8つの主要工程です。工程を一つ選び、3D装置を開いて記録を観察しましょう。")}</p>
     <details className="process-path-scope"><summary>{l("학습 순서와 실제 제조의 차이", "Learning order versus real manufacturing", "学習順序と実際の製造の違い")}</summary>
       <p>{l("순서대로 배우거나 필요한 공정부터 선택할 수 있습니다. 모든 단계가 고장 상황인 것은 아닙니다. 실제 제조는 여러 공정을 반복하며, 아래 순서는 입문용 학습 경로입니다.", "Follow the order or choose any process. Not every task is a fault situation. Real manufacturing repeats processes; this is an introductory learning path.", "順番に学ぶことも、必要な工程から選ぶこともできます。すべてが故障の状況ではありません。実際の製造では工程が繰り返され、この順序は入門用の学習経路です。")}</p>
     </details>
@@ -41,11 +40,9 @@ export default function ProcessScenarioPath({ language, userId, onEtch, onHistor
     <ol id="process-path-modules" className="process-path-grid">{visible.map(scenario => <li className="et-panel process-path-card" key={scenario.id}>
       <div className="process-path-number"><span>{String(scenario.order).padStart(2, "0")}</span><span>{saved ? saved.scenarioIds.includes(scenario.id) ? l("제출 완료", "Submitted", "提出済み") : l("미제출", "Unsubmitted", "未提出") : l("자유 선택", "Open to choose", "自由に選択")}</span></div>
       <h3>{l(...scenario.title)}</h3><p className="et-caption">{l(...scenario.equipment)}</p><p>{l(...scenario.objective)}</p>
-      <p className="et-caption">{l("공개 장비 사례", "Public equipment example", "公開装置の例")} · {processEquipment[scenario.processId].name}</p>
       {scenario.processId === "etch" ? <button className="et-linkbutton" type="button" onClick={onEtch}>{l("공정 훈련 열기 →", "Open process training →", "工程訓練へ →")}</button> : <Link className="et-linkbutton" href={scenarioHref(scenario)}>{l("공정 훈련 열기 →", "Open process training →", "工程訓練へ →")}</Link>}
     </li>)}</ol>
     {saved && pendingOnly && !visible.length ? <p>{l("미제출 공정이 없습니다. ‘모든 공정’을 선택하면 원하는 연습을 다시 열 수 있습니다.", "No unsubmitted processes remain. Select All processes to reopen any exercise.", "未提出の工程はありません。「すべての工程」を選ぶと好きな練習を開き直せます。")}</p> : null}
     <p className="et-caption">{l("제출 완료는 학습 기록일 뿐 현장 역량 인증이 아닙니다. 데이터·참고 범위·시간축은 SemiGuard가 만든 교육용 가상 기록입니다.", "Submission is a learning record, not professional certification. Data, reference ranges and timelines are synthetic teaching records created by SemiGuard.", "提出完了は学習記録であり、現場能力の認定ではありません。データ、参照範囲、時間軸はSemiGuardが作成した教育用仮想記録です。")}</p>
-    {userId === null ? <p className="et-caption">{l("비로그인 상태에서도 훈련할 수 있습니다. 계정별 완료 기록은 로그인 후 제출한 훈련만 저장됩니다.", "You can practice as a guest. Account completion records include only exercises submitted while signed in.", "ログインせずに練習できます。アカウントの完了記録にはログイン中に提出した訓練のみ保存します。")}</p> : null}
   </section>;
 }

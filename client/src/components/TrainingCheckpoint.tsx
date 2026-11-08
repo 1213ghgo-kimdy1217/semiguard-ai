@@ -41,14 +41,14 @@ export function TrainingCheckpoint({ userId, language, scenarioId, capture, rest
       const snapshot = capture();
       await mutation.mutateAsync(snapshot);
       if (owner.current !== currentOwner) return;
-      setNotice(l("선택 답안과 재생 시점을 저장했습니다. 계속 관찰할 수 있습니다.", "Choices and playback position saved. You can continue observing.", "選択回答と再生時点を保存しました。観察を続けられます。"));
+      setNotice(l("지금까지 관찰한 범위와 선택 답안을 저장했습니다. 관찰을 이어갈 수 있습니다.", "Your observation progress and choices are saved. You can continue observing.", "観察の進み具合と選択回答を保存しました。観察を続けられます。"));
       void query.refetch();
     } catch { if (owner.current === currentOwner) setNotice(l("중간 저장에 실패했습니다. 현재 탭의 답안은 유지됩니다.", "Checkpoint saving failed. Your answers remain in this tab.", "中間保存に失敗しました。このタブの回答は保持されます。")); }
   };
   if (resumeOnly && !userId) return null;
   return <details className="et-panel et-checkpoint"><summary>{resumeOnly ? l("저장한 연습 이어하기", "Resume a saved exercise", "保存した練習を再開") : l("중간 저장 · 이어하기", "Save · resume a checkpoint", "中間保存・再開")}{saved ? <span>{l("저장본 있음", "Checkpoint available", "保存内容あり")} · {saved.elapsed}{l("초", "s", "秒")}</span> : null}</summary><div className="et-checkpoint-content">
-    {resumeOnly ? <p>{l("중간 저장본을 불러와 새 연습으로 이어갈 수 있습니다. 계정에 저장된 제출 기록은 바뀌지 않습니다. 아직 계정에 저장하지 않은 완료 답안은 이 탭에서 교체되므로, 필요하다면 먼저 아래에서 완료 기록을 저장하세요.", "Load a checkpoint to continue as a new exercise. Submitted records saved to your account remain unchanged. A completed answer not yet saved to your account will be replaced in this tab; save it below first if needed.", "中間保存した内容から新しい練習を再開できます。アカウントに保存した提出記録は変わりません。まだアカウントに保存していない完了回答はこのタブで置き換わるため、必要なら先に下で完了記録を保存してください。")}</p> : null}
-    <p className="et-caption">{l("재생 시점·발견 표시·선택 답안만 저장합니다. 서술형은 이 탭에만 남으며, 저장본을 불러오면 현재 답안을 바꾸고 서술형 입력을 비웁니다. 자동 재생은 하지 않습니다.", "Saves position, marker, and choices only. Written answers stay in this tab. Loading replaces current answers and clears written text; playback remains paused.", "再生時点・印・選択回答だけ保存します。記述回答はこのタブのみです。保存内容を読み込むと現在の回答を置き換え、記述を空にし、再生は停止したままです。")}</p>
+    {resumeOnly ? <p>{l("중간 저장본을 불러와 연습을 이어갈 수 있습니다. 계정에 저장된 제출 기록은 바뀌지 않습니다. 아직 계정에 저장하지 않은 완료 답안은 이 탭에서 교체됩니다. 필요하다면 완료 기록을 먼저 저장하세요.", "Load a checkpoint to resume the exercise. Submitted records saved to your account remain unchanged. Loading replaces any completed answer you have not saved to your account. Save it first if you want to keep it.", "中間保存した内容を読み込んで練習を続けられます。アカウントに保存した提出記録は変わりません。まだアカウントに保存していない完了回答は、このタブで置き換わります。残したい場合は先に保存してください。")}</p> : null}
+    <p className="et-caption">{l("관찰한 마지막 시점, 마지막으로 남긴 표시 한 개, 선택 답안을 저장합니다. 불러오면 저장한 시점에서 일시정지된 상태로 열립니다. 이 탭의 기존 답안은 교체되며 서술형은 다시 작성해야 합니다.", "The checkpoint saves how far you observed, your most recent marker, and your choices. It opens paused at that saved point. Loading replaces the answers in this tab, so you will need to re-enter written answers.", "どこまで観察したか、最後に付けた印1件、選択回答を保存します。読み込むと保存した時点で一時停止した状態になります。このタブの回答は置き換わり、記述回答は入力し直す必要があります。")}</p>
     {!userId ? <Link className="et-linkbutton" href="/login">{l("로그인하고 계정에 저장", "Sign in for account checkpoints", "ログインして保存")}</Link>
       : readiness.isLoading ? <p role="status">{l("저장소 확인 중…", "Checking storage…", "保存先を確認中…")}</p>
       : !readiness.data?.ready ? <p role="status">{l("계정 중간 저장소를 사용할 수 없습니다. 현재 탭의 임시 저장은 유지됩니다.", "Account checkpoint storage is unavailable. Temporary tab storage remains available.", "アカウントの中間保存先を利用できません。このタブの一時保存は継続します。")}</p>
@@ -56,7 +56,7 @@ export function TrainingCheckpoint({ userId, language, scenarioId, capture, rest
         {saved ? <button ref={opener} className="et-linkbutton" type="button" disabled={busy} aria-expanded={replace} aria-controls={replace ? confirmationId : undefined} onClick={() => { if (!busy) setReplace(true); }}>{l("저장본 불러오기", "Load checkpoint", "保存内容を読み込む")}</button> : null}</div>
         {disabled ? <p role="status">{l("완료 기록을 저장하는 중입니다. 저장 후 이어하기를 선택하세요.", "Saving the completed record. Resume after saving finishes.", "完了記録を保存中です。保存後に再開を選んでください。")}</p> : null}
         {saved ? <p>{l("마지막 저장", "Last saved", "最終保存")} · {new Date(saved.updatedAt).toLocaleString(language)} · {saved.elapsed}{l("초", "s", "秒")}</p> : null}
-        {query.isLoading ? <p role="status">{l("저장본을 확인하는 중…", "Checking checkpoints…", "保存内容を確認中…")}</p> : resumeOnly && !saved && !query.isError ? <p>{l("이 공정의 중간 저장본이 없습니다. 새로 연습하려면 아래의 새 연습 버튼을 이용하세요.", "No checkpoint for this process. Use the new-attempt button below to practise again.", "この工程の中間保存はありません。再練習するには下の新しい試行ボタンを使ってください。")}</p> : null}
+        {query.isLoading ? <p role="status">{l("저장본을 확인하는 중…", "Checking checkpoints…", "保存内容を確認中…")}</p> : resumeOnly && !saved && !query.isError ? <p>{l("이 공정에 불러올 중간 저장본이 없습니다.", "There is no saved checkpoint for this process.", "この工程には読み込める中間保存がありません。")}</p> : null}
         {query.isError ? <p role="status">{l("저장본 목록을 불러오지 못했습니다.", "Could not load checkpoints.", "保存内容を読み込めませんでした。")}</p> : null}
         {replace && saved ? <div className="et-alert" id={confirmationId} role="alertdialog" aria-modal={false} aria-labelledby={`${confirmationId}-title`}
           onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); closeConfirmation(); } }}>

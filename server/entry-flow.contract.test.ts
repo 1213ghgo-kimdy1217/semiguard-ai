@@ -26,9 +26,9 @@ describe("public introduction to login to training choice", () => {
     const login = source("client/src/pages/Login.tsx");
     const dashboard = source("client/src/pages/Dashboard.tsx");
     const training = source("client/src/pages/EtchTraining.tsx");
-    expect(welcome).toContain('href="/login">{t.start}');
+    expect(welcome).toContain('const practiceHref = signedIn ? "/training" : "/login"');
     expect(welcome).not.toContain('href="/dashboard"');
-    expect(welcome).toContain('href="/preview">{t.preview}');
+    expect(welcome).toContain('href="/preview">{sampleLabel}');
     expect(login).toContain('isAuthenticated &&');
     // The normal entry remains training; only the explicit recovery QA build uses account settings.
     // The real button and successful-login callbacks are exercised in account-recovery-qa-ui.test.ts.
