@@ -1506,6 +1506,12 @@
   margin-top: 30px;
 }
 
+.st-app .st-review-restart {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
 .st-app .st-ai-coach > header {
   display: flex;
   align-items: center;
