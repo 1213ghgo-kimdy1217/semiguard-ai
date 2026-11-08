@@ -226,7 +226,7 @@ export default function StudioStage({state,onPart,onReady,onLoadProgress,entered
      settleUntil = now + 650;
    }
    if (rendered && current === lastState && !invalid && !tween && !entryMoving && !wasMoving &&
-       !changed && !down && !current.running && now >= settleUntil &&
+       !changed && !down && !current.running && !model.settling && now >= settleUntil &&
        lastDrawWasInterior === (entryProgress > .5)) return;
    lastState = current;
    invalid = false;
@@ -248,7 +248,8 @@ export default function StudioStage({state,onPart,onReady,onLoadProgress,entered
     // can occlude its center; it must not become a see-through click target.
     let found=false;for(const y of[0,.35,-.35]){for(const x of[0,-.35,.35]){for(const z of[0,.35,-.35]){project.set(loadHit.position.x+hitSize.x*x,loadHit.position.y+hitSize.y*y,loadHit.position.z+hitSize.z*z).project(camera);const px=(project.x+1)/2,py=(1-project.y)/2;if(px>.04&&px<.96&&py>.12&&py<.88&&pickAt(px,py)==="load"){host.current?.setAttribute("data-load-x",(px*renderer.domElement.clientWidth).toFixed(1));host.current?.setAttribute("data-load-y",(py*renderer.domElement.clientHeight).toFixed(1));found=true;break;}}if(found)break;}if(found)break;}host.current?.setAttribute("data-load-visible",String(found));}
    const selected=visiblePart(hover??current.selected);selection.visible=interiorReady&&!!selected;if(selected)selection.box.setFromObject(selected.object);
-   const target=visiblePart(hover??(current.phase==="prepare"?current.setup===0?"load":current.setup===1?"process":"inspect":null));
+   const contactFocus = process === "wafer" && current.setup === 2 && current.focus === "detail";
+   const target=visiblePart(hover??(current.phase==="prepare"?current.setup===0?"load":current.setup===1?"process":contactFocus?null:"inspect":null));
    if(label.current){if(target&&interiorReady){labelBounds.setFromObject(target.object).getCenter(project);project.project(camera);const w=renderer.domElement.clientWidth,hh=renderer.domElement.clientHeight,x=(project.x+1)*w/2,y=(1-project.y)*hh/2;label.current.textContent=local(studioContent[current.process].parts.find(p=>p.id===target.id)?.name??target.label,current.language);label.current.style.left=`${Math.max(12,Math.min(w-155,x+12))}px`;label.current.style.top=`${Math.max(65,Math.min(hh-75,y-26))}px`;label.current.style.display="block";host.current?.setAttribute("data-part-x",x.toFixed(1));host.current?.setAttribute("data-part-y",y.toFixed(1));host.current?.setAttribute("data-part",target.id);}else label.current.style.display="none";}
    try {
      if (!warmed) {
