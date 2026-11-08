@@ -25,8 +25,12 @@ GA4 property and web stream were created on 2026-10-16 with the owner's explicit
 
 QA/team opt-in adds `debug_mode: true` and `traffic_type: internal`. Before reporting participant metrics, exclude these records using a verified active developer/internal data filter or an explicit report filter. Merely setting a parameter does not prove a filter is active. QA events and actual recruited users must never be combined.
 
+The last recorded admin check on 2026-10-16 showed the Internal Traffic filter in **Testing**. On 2026-10-17, DebugView received one practice start and one completion from a QA browser. The inspected completion showed `traffic_type: internal`. That check established receipt for the QA run. The filter's current state and QA exclusion from a participant report still need confirmation. The separate first-party report selects consenting participant IDs with a `p-` prefix and reports `qa-` counts separately.
+
 ## Verification and release
 
 Run TypeScript, full Vitest and the production build in that order. Then verify on the canonical site: default/decline, explicit QA opt-in, actual GA DebugView reception, fresh practice start and completion, no new events after withdrawal. The owner declined access to protected Vercel previews; do not bypass their protection. Keep local checks, deployment readiness, actual receiving and user results as distinct statuses. No historic users/retention should be invented from this setup.
+
+For the next pilot, give students from another year or an instructor the practice task with no walkthrough. Record the first action, where help was needed, and whether they submitted and reviewed a judgment. Keep anonymous observations apart from analytics totals. For analytics, save an aggregate export that records the date range, report filter, consenting visit/start/completion denominators, and QA exclusion. Compare this export with the observation notes without treating browsers as distinct people.
 
 Official references: [configuration](https://developers.google.com/analytics/devguides/collection/ga4/reference/config), [disable/privacy controls](https://developers.google.com/tag-platform/security/guides/privacy), [SPA measurement](https://developers.google.com/analytics/devguides/collection/ga4/single-page-applications), [Google processing information](https://policies.google.com/technologies/partner-sites).

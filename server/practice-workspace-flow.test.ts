@@ -29,10 +29,10 @@ describe("practice workspace flow", () => {
   });
   it("keeps Q&A floating, opt-in, non-persistent and account/language separated", () => {
     const page = read("client/src/components/LearningAssistant.tsx");
-    expect(read("client/src/components/learning-assistant.css")).toContain("position:fixed");
+    expect(read("client/src/components/learning-assistant.css")).toMatch(/position:\s*fixed/);
     expect(page).toContain('key={`${auth.data?.id ?? "guest"}:${language}`}');
-    expect(page).toContain('if (!userId || !consent || waiting');
-    expect(page).toContain("ask.mutateAsync({ consent: true, language, question: text })");
+    expect(page).toMatch(/serviceState !== "ready"\s*\|\|\s*!userId\s*\|\|\s*!consent\s*\|\|\s*waiting/);
+    expect(page).toMatch(/ask\.mutateAsync\(\{\s*consent: true,\s*language,\s*question: text,/);
     expect(page).toContain("generation.current !== sequence");
     expect(page).not.toMatch(/localStorage|sessionStorage|dangerouslySetInnerHTML/);
   });

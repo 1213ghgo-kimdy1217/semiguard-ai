@@ -6,16 +6,21 @@
 
 | 확인할 내용 | 구현 근거 |
 | --- | --- |
-| 화면과 접근 경계 | [라우팅](../client/src/App.tsx), [로그인 없는 샘플](../client/src/pages/TrainingPreview.tsx) |
-| 8개 판단 연습·장비 출처 | [가상 기록과 기준](../shared/processScenarios.ts), [장비 사례](../shared/processEquipment.ts) |
+| 화면과 접근 경계 | [라우팅](../client/src/App.tsx), [로그인 후 샘플](../client/src/pages/TrainingPreview.tsx) |
+| 8개 판단 연습·장비 출처 | [3D 판단 연습](../client/src/components/judgment-studio/StudioApp.tsx), [가상 기록과 기준](../shared/processScenarios.ts), [복기 장비 사례](../client/src/components/judgment-studio/studio-content.ts) |
 | 학습 시각 설명 | [공정 개념 그림](../shared/processVisuals.ts), [Learning Hub](../client/src/pages/LearningHub.tsx) |
 | AI 코칭·학습 질문 | [판단 코치](../server/judgmentCoach.ts), [학습 도우미](../server/learningAssistant.ts) |
 | 로그인 계정의 저장 범위 | [제출 기록](../server/trainingRecords.ts), [중간 저장](../server/trainingDrafts.ts), [선택 답안 공유](../server/trainingShare.ts) |
+| 선택형 이용 측정과 테스트 기록 | [Google Analytics 측정 범위](google-analytics.md), [자체 집계 로직](../server/practiceMeasurement.ts) |
 | 실행·배포 | [스크립트](../package.json), [Vercel 설정](../vercel.json), [환경변수 이름](../server/_core/env.ts) |
 
 소스의 존재는 운영 성공을 증명하지 않습니다. 공개 사이트의 로그인·저장·AI 흐름은 실제 배포 환경에서 따로 확인해야 합니다. 비밀값과 사용자 원문은 문서·검증 기록에 넣지 않습니다.
 
-최신 보완: [본선 심사 후 점검 · 2026-10-22](FINALIST_REVIEW_2026-10-22.md).
+[최종 점검 · 2026-11-09](FINAL_SITE_CHECK_2026-11-09.md)는 공유 링크의 로그인 복귀, AI 코칭의 범위 검증, 실제 참가자 관찰의 기록 방법을 다룹니다.
+
+[심사 의견 반영과 운영 코칭 점검 · 2026-10-22](FINALIST_REVIEW_2026-10-22.md)는 당시 운영 코칭 검증의 성공·미확인 범위를 기록합니다. [최종 3D 판단 연습 · PR #113](https://github.com/1213ghgo-kimdy1217/semiguard-ai/pull/113)의 산화·식각 제출과 기록 복기는 로컬 가상 계정으로 검증했습니다. 최신 운영 화면에서 실제 AI 응답과 두 기기 사이의 이어하기는 추가 확인 항목입니다.
+
+[식각 중간 저장·제출·복기 회귀 검사](../server/judgment-studio.behavior.test.ts)는 기존 중간 저장을 복원하고, 관찰을 끝낸 뒤 제출할 수 있으며, 복기 시점을 바꿔도 제출 당시 근거와 시도 ID가 유지되는지 확인합니다.
 
 ## 과거 기록
 

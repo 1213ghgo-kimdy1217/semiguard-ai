@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 describe("combined process concept wiring", () => {
-  it("continues photo review into the existing direct etch briefing, not the chooser", () => {
+  it("continues photo review into the direct etch studio", () => {
     const page = readFileSync("client/src/pages/ProcessTraining.tsx", "utf8");
     const app = readFileSync("client/src/App.tsx", "utf8");
     expect(page).toContain('href={nextScenario.processId === "etch" ? "/training/etch" : scenarioHref(nextScenario)}');
     expect(app).toContain('<Route path={"/training/etch"}>');
-    expect(app).toContain('key="etch-direct" entry="brief"');
+    expect(app).toContain('<JudgmentStudio processId="etch" />');
     expect(page).toContain('toProcessTrainingSubmission(completed)');
   });
   it("preserves EDS and packaging context mounts", () => {

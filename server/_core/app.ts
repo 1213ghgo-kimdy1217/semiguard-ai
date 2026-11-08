@@ -52,6 +52,12 @@ export function createApp() {
     res.set("Cache-Control", "no-store");
     res.status(200).json({ status: "ok", capabilities: { accounts: accountServicesConfigured() } });
   });
+  // The shared result is a query, but its link credential belongs in a request
+  // body. Accept POST for this one procedure and preserve the existing GET API.
+  app.post("/api/trpc/training.shared", (_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  }, createExpressMiddleware({ router: appRouter, createContext, allowMethodOverride: true }));
   app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
   return app;
 }

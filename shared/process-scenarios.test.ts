@@ -29,7 +29,7 @@ describe("eight-process scenario catalogue", () => {
     expect(processScenarios.map(scenario => scenario.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(new Set(processScenarios.map(scenario => scenario.id)).size).toBe(8);
     expect(get("etch")).toMatchObject({ id: ETCH_SCENARIO_ID, order: 4, duration: 180 });
-    expect(scenarioHref(get("etch"))).toBe("/training");
+    expect(scenarioHref(get("etch"))).toBe("/training/etch");
     for (const scenario of newScenarios) {
       expect(getProcessScenario(scenario.id)).toBe(scenario);
       expect(scenario.duration).toBe(90);

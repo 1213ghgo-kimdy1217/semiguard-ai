@@ -4,17 +4,18 @@ describe("learning navigation safeguards", () => {
   it("sets a distinct learning title", () => {
     expect(readFileSync("client/src/pages/LearningHub.tsx", "utf8")).toContain('document.title = l("SemiGuard — 8대 공정 학습"');
   });
-  it("warns on an unfinished draft while saved notes survive same-tab navigation", () => {
-    const source = readFileSync("client/src/pages/EtchLive.tsx", "utf8");
-    expect(source).toContain('<a href="/learn">');
-    expect(source).not.toContain("<Link");
-    expect(source).toContain('window.addEventListener("beforeunload", warn)');
-    expect(source).toContain("if (draft.trim())");
-    expect(source).toContain("sessionStorage.setItem(STORAGE_KEY");
+  it("connects the model review to the shared navigation guard and local storage", () => {
+    const live = readFileSync("client/src/pages/EtchLive.tsx", "utf8");
+    const reflection = readFileSync("client/src/components/BoothReflection.tsx", "utf8");
+    expect(live).toContain("useSiteNavigationGuard(() => canLeaveReview())");
+    expect(live).toContain("registerLeaveGuard={registerLeaveGuard}");
+    expect(reflection).toContain("registerLeaveGuard(attempt ? canLeave : null)");
+    expect(reflection).toContain("loadBoothReflections(storage)");
+    expect(reflection).toContain("saveBoothReflection(storage, record)");
   });
-  it("only subscribes to auto-pause during an active run", () => {
+  it("skips model ticks outside visible active runs and pauses classic observations", () => {
     const source = readFileSync("client/src/pages/EtchLive.tsx", "utf8");
-    expect(source).toMatch(/if \(!active\) return;\s+const pause/);
+    expect(source).toContain("if (document.hidden || !runningRef.current) return;");
     const training = readFileSync("client/src/pages/EtchTraining.tsx", "utf8");
     expect(training).toMatch(/if \(!running \|\| attempt.submitted \|\| attempt.elapsed >= ETCH_DURATION\) return;\s+const pause/);
   });
