@@ -101,22 +101,23 @@ function waferScene(h: SceneHelpers): SceneModel {
   const wetMat = slurryMat.clone(); wetMat.opacity = .34;
   const waferMaterial = siliconWaferMaterial(h.wafer);
   const sampleMaterial = h.material(0x5e7887, .18, .66);
+  const waferRadius = 1.06, padRadius = 1.29;
+  const padX = -1.15, headX = padX, headZ = -.16, shaftTop = 2.59;
 
   // Rotary surface-finishing station with visible pad, carrier, supply and arm.
-  stand(-1.15, 0, 3.5, 3.15);
-  const pad = new THREE.Group(); pad.position.set(-1.15, .8, 0); root.add(pad);
+  stand(-2.22, .09, 5.64, 3.55);
+  const pad = new THREE.Group(); pad.position.set(padX, .8, 0); root.add(pad);
   cylinder(1.37, .26, h.steel, [0, -.08, 0], pad);
-  const padFace = cylinder(1.29, .105, padMat, [0, .1, 0], pad);
+  const padFace = cylinder(padRadius, .105, padMat, [0, .1, 0], pad);
   ring(1.32, .045, ceramic, [0, .1, 0], pad);
   for (let r = .2; r < 1.23; r += .17) ring(r, .002, pale, [0, .1515, 0], pad);
   for (let i = 0; i < 12; i++) {
     const a = i / 12 * Math.PI * 2;
     const groove = box(1.17, .002, .012, pale, [Math.cos(a) * .65, .152, Math.sin(a) * .65], pad); groove.rotation.y = -a;
   }
-  cylinder(.31, .25, h.dark, [-1.15, .67, 0]);
-  box(.25, 2.88, .31, h.steel, [-2.54, 1.9, -.9]);
-  box(1.85, .20, .58, h.steel, [-1.76, 3.2, -.76]);
-  const headX = -1.15, headZ = -.6, shaftTop = 2.59;
+  cylinder(.31, .25, h.dark, [padX, .67, 0]);
+  box(.30, 2.88, .20, h.steel, [headX, 1.9, -1.47]);
+  box(.48, .20, 1.62, h.steel, [headX, 3.2, -.76]);
   const raisedHeadY = 2.02, waferOffset = .155, waferThickness = .009;
   const raisedWaferY = raisedHeadY - waferOffset;
   const contactHeadY = .9525 + waferOffset + waferThickness / 2;
@@ -127,49 +128,70 @@ function waferScene(h: SceneHelpers): SceneModel {
   const driveShaft = cylinder(.106, 1, pale, [headX, 0, headZ]);
   driveShaft.name = "polishing-telescoping-drive-shaft";
   const carrier = new THREE.Group(); carrier.name = "polishing-head"; root.add(carrier);
-  cylinder(.66, .24, h.dark, [0, 0, 0], carrier);
-  cylinder(.49, .19, h.steel, [0, .19, 0], carrier);
+  const headShell = h.dark.clone(), headCap = h.steel.clone();
+  const headRim = h.gold.clone(), headBolts = pale.clone();
+  const cutawayMaterials = [
+    { material: headShell, opacity: .2 },
+    { material: headCap, opacity: .28 },
+    { material: headRim, opacity: .46 },
+    { material: headBolts, opacity: .5 },
+  ];
+  cylinder(waferRadius + .048, .24, headShell, [0, 0, 0], carrier);
+  cylinder(waferRadius * .77, .19, headCap, [0, .19, 0], carrier);
   const backingThickness = .034;
-  cylinder(.607, backingThickness, h.dark, [0, -waferOffset + (waferThickness + backingThickness) / 2, 0], carrier);
+  cylinder(waferRadius - .005, backingThickness, headShell, [0, -waferOffset + (waferThickness + backingThickness) / 2, 0], carrier);
+  ring(waferRadius + .028, .032, headRim, [0, -.092, 0], carrier);
+  const boltRadius = waferRadius - .045;
+  for (let i = 0; i < 8; i++) {
+    const angle = i / 8 * Math.PI * 2;
+    cylinder(.027, .025, headBolts, [Math.cos(angle) * boltRadius, .13, Math.sin(angle) * boltRadius], carrier);
+  }
+  const cutawayParts = [...carrier.children];
   const spindleCollar = cylinder(.18, .066, h.dark, [0, .313, 0], carrier);
   spindleCollar.name = "polishing-head-spindle-collar";
-  ring(.64, .032, h.gold, [0, -.092, 0], carrier);
-  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; cylinder(.027, .025, pale, [Math.cos(a) * .57, .13, Math.sin(a) * .57], carrier); }
-  const waferGeometry = siliconWaferGeometry(.612, waferThickness);
+  const waferGeometry = siliconWaferGeometry(waferRadius, waferThickness);
   const rawWafer = mesh(waferGeometry, waferMaterial);
   rawWafer.name = "wafer-on-polishing-carrier";
+  const edgeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x65ffdf, transparent: true, opacity: 0, depthWrite: false, toneMapped: false,
+  });
+  const contactMarker = ring(waferRadius - .015, .013, edgeMaterial, [0, waferThickness / 2 + .002, 0], rawWafer);
+  contactMarker.name = "wafer-contact-highlight";
+  contactMarker.renderOrder = 3;
+  contactMarker.castShadow = contactMarker.receiveShadow = false;
 
-  const rackX = -2.83, rackZ = .91, forkY = raisedWaferY - (waferThickness + .055) / 2;
+  const rackX = -3.68, rackZ = .76, forkY = raisedWaferY - (waferThickness + .055) / 2;
   const forkReturnX = rackX - .42, forkReturnZ = .65;
-  const forkParkX = -3.22, forkParkZ = -.55;
-  box(.76, .55, .84, h.dark, [rackX, .86, rackZ]);
-  box(1.38, .08, 1.43, h.steel, [rackX, 1.17, rackZ]);
-  for (const x of [rackX - .66, rackX + .66]) {
-    box(.07, .56, 1.24, h.dark, [x, 1.48, rackZ]);
-    for (let i = 0; i < 5; i++) box(.12, .036, 1.14, h.steel, [x, 1.27 + i * .11, rackZ]);
+  const forkParkX = rackX - .34, forkParkZ = -.5, forkBackZ = -.98;
+  const waferDiameter = waferRadius * 2, rackSide = waferRadius + .048;
+  box(1.24, .55, 1.24, h.dark, [rackX, .86, rackZ]);
+  box(waferDiameter + .20, .08, waferDiameter + .08, h.steel, [rackX, 1.17, rackZ]);
+  for (const x of [rackX - rackSide, rackX + rackSide]) {
+    box(.07, .56, waferDiameter - .08, h.dark, [x, 1.48, rackZ]);
+    for (let i = 0; i < 5; i++) box(.16, .036, waferDiameter - .18, h.steel, [x, 1.27 + i * .11, rackZ]);
   }
   for (let i = 0; i < 5; i++) {
     const wafer = mesh(waferGeometry, waferMaterial);
     wafer.position.set(rackX, 1.288 + waferThickness / 2 + i * .11, rackZ);
   }
   const fork = new THREE.Group(); fork.name = "wafer-transfer-fork"; root.add(fork);
-  for (const x of [-.27, .27]) box(.11, .055, 1.18, h.steel, [x, 0, -.04], fork);
-  box(.66, .066, .12, h.dark, [0, 0, -.64], fork);
-  const transferPivotX = -2.83, transferPivotZ = -.35;
+  for (const x of [-.45, .45]) box(.11, .055, 1.84, h.steel, [x, 0, -.04], fork);
+  box(1.02, .066, .12, h.dark, [0, 0, forkBackZ], fork);
+  const transferPivotX = rackX, transferPivotZ = -.69;
   cylinder(.18, .94, h.dark, [transferPivotX, 1.06, transferPivotZ]);
   cylinder(.135, .31, h.steel, [transferPivotX, 1.675, transferPivotZ]);
   const transferArm = box(.15, .062, 1, h.steel, [0, forkY, 0]);
   transferArm.name = "wafer-transfer-arm";
 
   // An example dispense location on the exposed pad, clear of the offset carrier.
-  const dispenseX = -1.15, dispenseZ = .2, nozzleBottom = 1.48, padSurface = .966;
+  const dispenseX = padX, dispenseZ = padRadius - .185, nozzleBottom = 1.48, padSurface = .966;
   const pumpX = .13, pumpZ = 1.14;
   const pump = box(.58, .57, .62, h.dark, [pumpX, .875, pumpZ]);
   pump.name = "slurry-supply-pump";
   box(.46, .13, .04, h.steel, [pumpX, .99, pumpZ + .325]);
   cylinder(.155, .34, h.steel, [pumpX, 1.305, pumpZ]);
   ring(.155, .021, h.gold, [pumpX, 1.375, pumpZ]);
-  const slurryLine = tube([[pumpX, 1.46, pumpZ], [pumpX, 1.72, pumpZ], [-.30, 1.75, .81], [-.77, 1.75, .49], [dispenseX, 1.63, dispenseZ]], .043, h.cyan);
+  const slurryLine = tube([[pumpX, 1.46, pumpZ], [pumpX, 1.72, pumpZ], [-.30, 1.75, 1.26], [-.77, 1.75, 1.23], [dispenseX, 1.63, dispenseZ]], .043, h.cyan);
   slurryLine.name = "slurry-supply-line";
   cylinder(.073, .18, h.gold, [dispenseX, nozzleBottom + .09, dispenseZ]);
   cylinder(.039, .05, h.dark, [dispenseX, nozzleBottom + .009, dispenseZ]);
@@ -229,8 +251,12 @@ function waferScene(h: SceneHelpers): SceneModel {
   target.name = "surface-inspection-target";
   const dicingTape = createDicingExample(h, root);
   let load = 0, headY = raisedHeadY, lastSurfaceProgress = -1, lastScanX = NaN, lastScanProgress = -1;
+  let targetLoad = load, targetHeadY = headY, cutawayVisible = false;
   return {
     root,
+    get settling() {
+      return load !== targetLoad || headY !== targetHeadY;
+    },
     hotspots: [
       { id: "load", object: rawWafer, label: ["웨이퍼 이송과 연마 헤드", "Wafer transfer and polishing head", "ウェーハ搬送と研磨ヘッド"] },
       { id: "process", object: padFace, label: ["회전 연마 패드", "Rotating polishing pad", "回転研磨パッド"] },
@@ -238,18 +264,39 @@ function waferScene(h: SceneHelpers): SceneModel {
       { id: "dicing", object: dicingTape, label: ["후공정 예시 · 절단한 다이", "Later example · separated dies", "後工程の例・分割したダイ"] },
     ],
     views: {
-      overview: { position: [6.6, 5.5, 9.1], target: [.15, 1.48, .4] },
-      detail: { position: [5.84, 4.75, 8.35], target: [.32, 1.39, .62] },
+      overview: { position: [5.95, 5.5, 9.4], target: [-.50, 1.48, .4] },
+      detail: { position: [4.95, 3.85, 4.02], target: [headX, 1.40, headZ] },
       inspection: { position: [2.68, 3.82, 5.02], target: [2.02, 1.48, .20] },
       dicing: { position: [2.65, 3.55, 5.69], target: [2, .57, 2.43] },
     },
     update(state, seconds, time) {
-      load = lerp(load, loadingTarget(state), seconds, state.reducedMotion);
+      targetLoad = loadingTarget(state);
+      load = lerp(load, targetLoad, seconds, state.reducedMotion);
+      if (Math.abs(load - targetLoad) < .001) load = targetLoad;
       const prepared = state.setup >= 2;
       const lowerAfterTransfer = prepared ? unit((load - .94) / .06) : 0;
-      const nextHeadY = THREE.MathUtils.lerp(raisedHeadY, contactHeadY, lowerAfterTransfer);
-      headY = lerp(headY, nextHeadY, seconds, state.reducedMotion || state.phase !== "prepare");
+      targetHeadY = THREE.MathUtils.lerp(raisedHeadY, contactHeadY, lowerAfterTransfer);
+      headY = lerp(headY, targetHeadY, seconds, state.reducedMotion || state.phase !== "prepare");
+      if (Math.abs(headY - targetHeadY) < .001) headY = targetHeadY;
       carrier.position.set(headX, headY, headZ);
+      // Make the contact readable without changing the wafer or pad geometry.
+      const contactView = state.phase === "prepare" || state.phase === "react";
+      const reveal = contactView ? THREE.MathUtils.smoothstep(raisedHeadY - headY, .025, .58) : 0;
+      const showCutaway = reveal > 0;
+      if (showCutaway !== cutawayVisible) {
+        cutawayVisible = showCutaway;
+        for (const { material } of cutawayMaterials) {
+          material.transparent = showCutaway;
+          material.depthWrite = !showCutaway;
+          material.needsUpdate = true;
+        }
+        for (const part of cutawayParts) part.castShadow = !showCutaway;
+      }
+      for (const { material, opacity } of cutawayMaterials) {
+        material.opacity = THREE.MathUtils.lerp(1, opacity, reveal);
+      }
+      contactMarker.visible = showCutaway;
+      edgeMaterial.opacity = .92 * reveal;
       const shaftBottom = headY + .333;
       driveShaft.position.y = (shaftTop + shaftBottom) / 2;
       driveShaft.scale.y = shaftTop - shaftBottom;
@@ -258,7 +305,7 @@ function waferScene(h: SceneHelpers): SceneModel {
       const forkX = THREE.MathUtils.lerp(THREE.MathUtils.lerp(rackX, headX, travel), forkReturnX, returnPoint);
       const forkZ = THREE.MathUtils.lerp(THREE.MathUtils.lerp(rackZ, headZ, travel), forkReturnZ, returnPoint);
       fork.position.set(THREE.MathUtils.lerp(forkX, forkParkX, parkPoint), forkY, THREE.MathUtils.lerp(forkZ, forkParkZ, parkPoint));
-      const armX = fork.position.x - transferPivotX, armZ = fork.position.z - .64 - transferPivotZ;
+      const armX = fork.position.x - transferPivotX, armZ = fork.position.z + forkBackZ - transferPivotZ;
       transferArm.position.set(transferPivotX + armX / 2, forkY, transferPivotZ + armZ / 2);
       transferArm.rotation.y = Math.atan2(armX, armZ);
       transferArm.scale.z = Math.hypot(armX, armZ);
@@ -284,12 +331,12 @@ function waferScene(h: SceneHelpers): SceneModel {
       });
       slurryTraces.forEach((trace, i) => {
         const spread = (t * .75 + i / slurryTraces.length) % 1;
-        const angle = Math.PI / 2 - spread * 3.9 + (i % 3 - 1) * .18;
-        const radius = .2 + spread * .87;
+        const angle = spread * 1.6;
+        const radius = dispenseZ + spread * .07 + (i % 3 - 1) * .035;
         trace.visible = slurryStream.visible;
-        trace.position.set(dispenseX + Math.cos(angle) * radius, padSurface + .006, Math.sin(angle) * radius);
+        trace.position.set(padX + Math.sin(angle) * radius, padSurface + .006, Math.cos(angle) * radius);
+        trace.rotation.y = angle;
         trace.scale.set(1.55 + spread * 2, .18, .7 + spread);
-        trace.rotation.y = -angle;
       });
       const scanX = THREE.MathUtils.lerp(1.01, 2.99, unit(state.parameter));
       const spotHeight = heightAt(scanX, scanZ, p);

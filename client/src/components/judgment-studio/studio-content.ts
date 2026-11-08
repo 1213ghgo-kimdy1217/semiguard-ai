@@ -20,9 +20,9 @@ export const studioContent:Record<ProcessId,ProcessContent>={
       "表面が滑らかに見えれば、厚さも均一でしょうか？"
     ],
     "objective": [
-      "이번 체험에서는 웨이퍼 표면을 다듬는 원리와, 표면·두께 검사의 서로 다른 역할을 알아봐요.",
-      "Explore surface polishing and the different roles of surface and thickness inspection.",
-      "表面を磨く原理と、表面検査・厚さ検査の役割の違いを学びます。"
+      "회로를 만들기 전 웨이퍼 표면을 연마하는 원리와 표면·두께 검사의 서로 다른 역할을 살펴봐요.",
+      "Explore how a bare wafer is polished before circuits are made, and how surface and thickness checks serve different purposes.",
+      "回路を形成する前のウェーハを研磨する原理と、表面検査と厚さ測定の役割の違いを学びます。"
     ],
     "steps": [
       [
@@ -62,9 +62,9 @@ export const studioContent:Record<ProcessId,ProcessContent>={
       "同じ位置の表面記録と厚さ記録を、それぞれの参照と比べてください。二つの記録が同じ観察を裏付けるかも確認しましょう。"
     ],
     "lesson": [
-      "연마는 표면의 요철을 줄이는 과정이에요. 표면이 평탄한지, 결함이 보이는지, 두께가 어떤지는 서로 다른 검사로 확인해요.",
-      "Polishing reduces surface unevenness. Surface flatness, defects, and thickness require different types of inspection.",
-      "研磨は表面の凹凸を小さくする工程です。平坦さ、見える欠陥、厚さは、それぞれ異なる検査項目です。"
+      "연마 후 남은 연마액과 입자를 씻어내고 웨이퍼를 말려요. 일부 장비는 이때 웨이퍼를 돌려 헹구고 건조해요. 포토 공정의 스핀 코터는 회전으로 감광액을 펴 발라요. 이 모형에서는 연마와 검사를 볼 수 있어요.",
+      "After polishing, the wafer is cleaned to remove slurry and particles, then dried. Some tools spin the wafer during rinsing and drying. In lithography, a spin coater uses rotation to spread photoresist. This model shows polishing and inspection.",
+      "研磨後は、残ったスラリーや粒子を洗い流し、ウェーハを乾燥させます。一部の装置では、回転させながらすすぎと乾燥を行います。フォト工程のスピンコーターは、回転で感光剤を均一に塗布します。この模型では研磨と検査を観察できます。"
     ],
     "review": [
       "이 기록에서는 표면 쪽 추세가 참고와 달라지는 동안 두께 기록은 참고 띠 안에 있어요. 표면의 변화만으로 두께 이상이나 특정 장비 고장을 함께 확정할 수는 없어요.",
@@ -93,9 +93,9 @@ export const studioContent:Record<ProcessId,ProcessContent>={
           "研磨ヘッドとパッド"
         ],
         "description": [
-          "구동축이 연마 헤드를 돌리고, 헤드 아래 웨이퍼가 회전 패드에 맞닿아요. 이 모형에서는 별도 공급부에서 노즐로 연마액을 보내 패드 중앙 가까이에 떨어뜨려요.",
-          "The drive shaft turns the polishing head, and the wafer held beneath it contacts the rotating pad. Here, a separate supply feeds the nozzle, which dispenses slurry near the center of the pad.",
-          "駆動軸が研磨ヘッドを回し、その下に保持されたウェーハが回転するパッドに接します。この模型では、別の供給部からノズルへスラリーを送り、パッドの中心付近に滴下します。"
+          "구동축이 연마 헤드를 돌리고, 헤드 아래 웨이퍼가 회전 패드에 맞닿아요. 이 모형에서는 노즐이 헤드 밖으로 드러난 패드 가장자리에 연마액을 떨어뜨려요.",
+          "The drive shaft turns the polishing head, and the wafer held beneath it contacts the rotating pad. In this model, the nozzle dispenses slurry near the exposed edge of the pad.",
+          "駆動軸が研磨ヘッドを回し、その下に保持されたウェーハが回転するパッドに接します。この模型では、ヘッドの外側に見えるパッドの縁付近にノズルからスラリーを滴下します。"
         ]
       },
       {
@@ -125,9 +125,9 @@ export const studioContent:Record<ProcessId,ProcessContent>={
       {
         "name": "EBARA F-REX",
         "role": [
-          "웨이퍼 표면을 화학적·기계적으로 연마하는 CMP 장비 사례예요. 웨이퍼 제조 전체를 대표하는 장비는 아니에요.",
-          "An example of a CMP system that polishes wafer surfaces using chemical and mechanical action. It does not represent the entire wafer-manufacturing process.",
-          "ウェーハ表面を化学的・機械的に研磨するCMP装置の例です。ウェーハ製造の全工程を代表するものではありません。"
+          "웨이퍼 표면을 화학적·기계적으로 연마하는 CMP 장비 사례예요. F-REX는 장비 안에서 연마 후 다단 세정과 건조까지 진행할 수 있어요.",
+          "An example of a chemical mechanical polishing (CMP) system for wafer surfaces. The F-REX can perform multistep cleaning and drying after polishing within the same system.",
+          "ウェーハ表面を化学的・機械的に研磨するCMP装置の例です。F-REXは、研磨後の多段洗浄と乾燥まで同じ装置内で行えます。"
         ],
         "question": [
           "어느 표면을 다듬었고, 결과를 어떤 위치에서 검사했는지 확인해보세요.",

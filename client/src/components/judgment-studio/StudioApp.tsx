@@ -367,6 +367,12 @@ export default function StudioApp({
         disabled={!ready}
         onClick={() => {
           dispatch({ type: "setup" });
+          if (state.active === "wafer" && a.setup === 1) {
+            setFocus("detail");
+            setViewRevision(n => n + 1);
+            setSelected(null);
+            return;
+          }
           setSelected(
             a.setup === 0 ? "load" : a.setup === 1 ? "process" : "inspect"
           );
@@ -588,6 +594,20 @@ export default function StudioApp({
                             : content.observe
                         : entry.shape
                     )}
+                {inside &&
+                  state.active === "wafer" &&
+                  a.setup >= 2 &&
+                  (a.phase === "prepare" || a.phase === "react") &&
+                  (focus === "overview" || focus === "detail") && (
+                    <>
+                      <br />
+                      {l([
+                        "헤드를 투명하게 표시했어요. 청록색 테두리 안의 웨이퍼가 회전 패드에 닿는 위치를 보세요.",
+                        "The polishing head is translucent in this view. Follow the teal outline to see where the wafer meets the rotating pad.",
+                        "ヘッドを透過表示しています。青緑色の輪郭で示したウェーハが回転パッドに接する位置を確認しましょう。",
+                      ])}
+                    </>
+                  )}
               </p>
               {!ready && (
                 <div className="st-footer-actions">
