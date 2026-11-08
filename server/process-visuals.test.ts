@@ -60,10 +60,10 @@ describe("original process concept illustrations", () => {
     const page = readFileSync("client/src/pages/Welcome.tsx", "utf8");
     expect(page).toContain('반도체 신입 엔지니어를 위한');
     expect(page).toContain('판단 훈련 플랫폼');
-    expect(page).toContain('가상 데이터를 관찰하고, 내 판단과 근거를 기록하세요.');
-    expect(page).toContain('sg-training-preview');
-    expect(page).toContain('교육용 시뮬레이션 · 실제 장비 연결 없음');
-    expect(page).toContain('AI 코칭과 타임라인');
+    expect(page).toContain('3D 장비를 열고, 가상 검사 기록에서 판단의 근거를 찾아보세요.');
+    expect(page).toContain('<WelcomeStudioShowcase');
+    expect(page).toContain('교육용 시뮬레이션 · 가상 공정 기록');
+    expect(page).toContain('제출한 판단은 장비 장면과 타임라인에서');
     expect(page).not.toContain('href="/dashboard"');
   });
 });
