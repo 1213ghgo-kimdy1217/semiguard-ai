@@ -2421,6 +2421,10 @@
   font-size: 13px;
 }
 
+.st-app .st-inspection-controls > .st-secondary {
+  margin-top: 8px;
+}
+
 .st-app .studio-inspection-overlay {
   max-width: 100%;
   height: auto;

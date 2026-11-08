@@ -1151,7 +1151,18 @@ export default function StudioApp({
                 <p>{l(content.observe)}</p>
                 <small>{t("indexNote")}</small>
                 {a.phase === "observe" && (
-                  <div className="st-inspection-controls">{phaseAction}</div>
+                  <div className="st-inspection-controls">
+                    {phaseAction}
+                    <button
+                      type="button"
+                      className="st-secondary"
+                      disabled={saveStatus === "saving"}
+                      onClick={restartAttempt}
+                    >
+                      <RotateCcw size={15} aria-hidden="true" />
+                      {t("newAttempt")}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
