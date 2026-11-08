@@ -507,6 +507,11 @@ export const messages={
     "Restart this process",
     "この工程を最初から"
   ],
+  "newAttempt": [
+    "새 시도로 다시 연습",
+    "Start a new attempt",
+    "新しい試行で再練習"
+  ],
   "resetConfirm": [
     "이 탭의 연습을 지우고 다시 시작할까요? 계정에 저장한 결과는 기록에서 볼 수 있어요.",
     "Clear this tab's attempt and start again? Results saved to your account are available in your history.",

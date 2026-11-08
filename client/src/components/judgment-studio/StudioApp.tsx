@@ -327,6 +327,16 @@ export default function StudioApp({
     showTime(time);
     coachReturn.current = returnToQuestion;
   };
+  const restartAttempt = () => {
+    if (saveStatus === "saving" || !window.confirm(t("resetConfirm"))) return;
+    dispatch({ type: "reset" });
+    setReady(false);
+    setEntryReady(false);
+    setEntered(previous => ({ ...previous, [state.active]: false }));
+    setStageKey(key => key + 1);
+    sceneHeading.current?.focus({ preventScroll: true });
+    sceneHeading.current?.scrollIntoView({ block: "center", behavior: "auto" });
+  };
   const onPart = (id: string) => {
     setSelected(id);
     if (id === "inspect" || id === "process" || id === "dicing") {
@@ -493,6 +503,7 @@ export default function StudioApp({
             className="st-scene"
             ref={sceneHeading}
             aria-label={t("modelNote")}
+            tabIndex={-1}
           >
             <div className="st-scene-top">
               <span>
@@ -1114,19 +1125,10 @@ export default function StudioApp({
                 <div className="st-mission-footer">
                   <small>{t("modelNote")}</small>
                   <button
+                    type="button"
                     aria-label={t("reset")}
-                    onClick={() => {
-                      if (confirm(t("resetConfirm"))) {
-                        dispatch({ type: "reset" });
-                        setReady(false);
-                        setEntryReady(false);
-                        setEntered(previous => ({
-                          ...previous,
-                          [state.active]: false,
-                        }));
-                        setStageKey(k => k + 1);
-                      }
-                    }}
+                    disabled={saveStatus === "saving"}
+                    onClick={restartAttempt}
                   >
                     <RotateCcw size={15} />
                   </button>
@@ -1381,6 +1383,17 @@ export default function StudioApp({
                   />
                 ))}
             </section>
+            <div className="st-review-restart">
+              <button
+                type="button"
+                className="st-primary"
+                disabled={saveStatus === "saving"}
+                onClick={restartAttempt}
+              >
+                <RotateCcw size={15} aria-hidden="true" />
+                {t("newAttempt")}
+              </button>
+            </div>
           </section>
         )}
         <TrainingCheckpoint
