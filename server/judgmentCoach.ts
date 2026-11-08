@@ -53,16 +53,36 @@ const sourceMetadata = {
   facts: { dimension: "reference", evidenceId: "phase-reference" },
   checks: { dimension: "checks", evidenceId: "record-comparison" },
 } as const;
-const questionTerms = [
+const technicalTerms = [
   [/\bonset(?: time)?\b/gi, "변화 시작 시점", "変化の開始時点"],
   [/\boscillations?\b/gi, "반복 변동", "繰り返す変動"],
   [/\bbaselines?\b/gi, "정상 참고", "正常参照"],
   [/\btrends?\b/gi, "추세", "傾向"],
   [/\brevisions?\b/gi, "판단 수정", "判断の見直し"],
 ] as const;
-function localizeQuestionTerms(question: string, language: "ko" | "en" | "ja") {
-  if (language === "en") return question;
-  return questionTerms.reduce((text, [term, ko, ja]) => text.replace(term, language === "ko" ? ko : ja), question);
+const learnerTerms = {
+  ko: { learnerAnswer: "작성한 답안", facts: "관찰 근거", checks: "다음 비교 계획",
+    "same-condition": "같은 조건", "same-phase": "같은 단계", "whole-run": "전체 기록" },
+  en: { learnerAnswer: "the written answer", facts: "observation entry", checks: "next comparison plan",
+    "same-condition": "matching conditions", "same-phase": "the same phase", "whole-run": "the full record" },
+  ja: { learnerAnswer: "記述した回答", facts: "観察の根拠", checks: "次の比較計画",
+    "same-condition": "同じ条件", "same-phase": "同じ段階", "whole-run": "全記録" },
+} as const;
+
+function localizeCoachProse(prose: string, language: "ko" | "en" | "ja") {
+  const labels = learnerTerms[language];
+  const fieldLabel = (_: string, name: string) => labels[name.toLowerCase() === "facts" ? "facts" : "checks"];
+  // Replace complete field references first so the surrounding prose reads
+  // naturally. Raw answer excerpts and the actual JSON keys stay untouched.
+  let text = prose
+    .replace(/`?\blearnerAnswer\b`?(?:\s*(?:\.|['’]s|의|の)\s*|\s+)`?(facts|checks)\b`?(?:\s*(?:field\b|필드|항목|フィールド|欄|項目))?/gi, fieldLabel)
+    .replace(/`?\b(facts|checks)\b`?\s*(?:field\b|필드|항목|フィールド|欄|項目)/gi, fieldLabel)
+    .replace(/(?:\bthe\s+)?`?\blearnerAnswer\b`?/gi, labels.learnerAnswer)
+    .replace(/`?\b(same-condition|same-phase|whole-run)\b`?/gi,
+      (_, term: "same-condition" | "same-phase" | "whole-run") => labels[term.toLowerCase() as typeof term]);
+  if (language === "en") return text;
+  text = text.replace(/`?\b(facts|checks)\b`?/gi, fieldLabel);
+  return technicalTerms.reduce((value, [term, ko, ja]) => value.replace(term, language === "ko" ? ko : ja), text);
 }
 const supportedStrengths = (answer: JudgmentCoachRequest["answer"], scenarioId = "etch-chamber-a-01") => {
   if (scenarioId !== "etch-chamber-a-01") {
@@ -191,8 +211,8 @@ export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["a
   return judgmentCoachFeedbackSchema.parse({ strengths: supportedStrengths(answer, scenarioId).slice(0, 2),
     // Raw safety/language checks above apply to analysis too. Quotes remain untouched.
     reflections: feedback.reflections.map(({ answerSource, ...item }) => ({ ...item, ...sourceMetadata[answerSource],
-      analysis: localizeQuestionTerms(item.analysis, language),
-      question: localizeQuestionTerms(item.question, language), answerQuote: answer[answerSource] })) });
+      analysis: localizeCoachProse(item.analysis, language),
+      question: localizeCoachProse(item.question, language), answerQuote: answer[answerSource] })) });
 }
 
 // Per-warm-instance backpressure. Store IDs/timestamps only, never answers/results.
@@ -227,6 +247,7 @@ export function createJudgmentCoach() {
 Reply only in natural ${request.language === "ko" ? "Korean" : request.language === "ja" ? "Japanese" : "English"}. In Korean/Japanese, translate terms such as onset and oscillation rather than mixing in English. Return a JSON object with only reflections, containing exactly two distinct reflections: one addressing facts and one addressing checks.
 Use these Korean/Japanese terms: onset = 변화 시작 시점 / 変化の開始時点; oscillation = 반복 변동 / 繰り返す変動; baseline = 정상 참고 / 正常参照; trend = 추세 / 傾向. Preserve signal abbreviations such as RF. Do not copy English terminology from a learner's answer into Korean/Japanese questions.
 For each signal, use its trusted displayName exactly as written in analysis and question. These are the names the learner sees; do not invent synonyms or mistranslate index as support. displayLocation describes its virtual observation position. These labels are terminology only, not prewritten feedback. Write plain sentences without numbered lists or numeric headings.
+Speak directly to the learner in analysis and question. Use learner-facing terms for observation notes and next comparison plans. Never mention JSON field names, learnerAnswer, enum codes such as same-condition, or the input structure in your prose. Keep the required literal answerSource values and verbatim focusQuote.
 Check rangeEvidence for each named signal before writing analysis or a question. Its flags are derived from the full one-second virtual chart, not selected answers or sampled endpoints. If hasReferenceRangeExcursion is false, that signal never left its condition-matched reference range in this exercise: never ask when it left or returned to that range. Ask for evidence about whether/how it stayed within the matching range instead. A changing value or normal stage transition does not itself establish range excursion. If an earlier excursion exists but endsWithinReferenceRange is true, preserve both facts; do not imply it never differed or that a fault was fixed. These qualitative flags are not an exact onset answer key or proof of real equipment health. A question must not assume an event merely because another signal changed or the learner claimed it happened.
 Use rangeEvidence.patterns to distinguish a signal that stays within its reference, a single excursion followed by a return, repeated excursions, and a signal still outside at the end. Check excursionDirection before calling a signal high or low. If a learner mentions a final in-range reading, distinguish that reading from the earlier record. If they compare an equipment signal with an inspection result, explain what each can support and ask which result from the same recorded time or position would change their conclusion. Do not treat an excursion as proof of cause or a within-reference signal as constant.
 The model output has only reflections. Each reflection has exactly four keys: answerSource, focusQuote, analysis, question. Do not output dimension, evidenceId, strengths, answerQuote, hidden reasoning or any other fields. Only the server computes the fixed choice-criterion labels, adds display/review metadata and the original learner quote after validation. These display categories do not constrain your feedback: address the actual evidence, including timing, multiple signals or uncertainty when relevant.

@@ -464,6 +464,28 @@ describe("scenario judgment coach", () => {
     const ko = output(); ko.reflections[0].question = "onsetter 항목과 기준을 어떻게 비교하나요?";
     expect(validateCoachOutput(JSON.stringify(ko), input().answer).reflections[0].question).toContain("onsetter");
   });
+  it.each([
+    ["ko", "제공된 learnerAnswer의 facts 필드는 읽을 수 없는 문자열입니다.", "어떤 same-condition 비교 기록을 근거로 적을 수 있나요?", "제공된 관찰 근거는", "같은 조건 비교"],
+    ["en", "The learnerAnswer's facts field does not describe a recorded observation.", "Which record would support a comparison under `same-condition`?", "The observation entry does", "matching conditions"],
+    ["ja", "learnerAnswerのfactsフィールドからは観察した内容を読み取れません。", "same-conditionでどの仮想記録を比較できますか？", "観察の根拠からは", "同じ条件で"],
+  ] as const)("translates internal identifiers only in generated %s coaching", (language, analysis, question, expectedAnalysis, expectedQuestion) => {
+    const answer = { ...input().answer, facts: "learnerAnswer의 facts 필드와 same-condition은 내가 쓴 원문입니다." };
+    const data = output(language);
+    data.reflections[0].focusQuote = "learnerAnswer의 facts 필드";
+    data.reflections[0].analysis = analysis;
+    data.reflections[0].question = question;
+    data.reflections[1].analysis = language === "ko"
+      ? "제공된 learnerAnswer의 checks 필드도 읽을 수 없는 문자열입니다."
+      : language === "en" ? "The checks field does not describe an existing-record comparison."
+        : "learnerAnswerのchecksフィールドにも比較する記録が書かれていません。";
+    const { reflections } = validateCoachOutput(JSON.stringify(data), answer, language);
+    expect(reflections[0]).toMatchObject({ focusQuote: data.reflections[0].focusQuote, answerQuote: answer.facts });
+    expect(reflections[0].analysis).toContain(expectedAnalysis);
+    expect(reflections[0].question).toContain(expectedQuestion);
+    for (const item of reflections) {
+      expect(item.analysis + item.question).not.toMatch(/learnerAnswer|\b(?:facts|checks)\b|same-condition/i);
+    }
+  });
   it("checks raw safety and secret constraints before glossary replacement and retains the output bound", () => {
     for (const question of ["onset 기준으로 장비를 분해하나요?", "어떤 onset에서 synthetic-private-key를 보나요?", "어떤 기록에서 " + "onset ".repeat(45) + "를 보나요?"]) {
       const data = output(); data.reflections[0].question = question;
