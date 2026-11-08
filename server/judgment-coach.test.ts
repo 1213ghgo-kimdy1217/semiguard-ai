@@ -267,6 +267,13 @@ describe("scenario judgment coach", () => {
     await createJudgmentCoach()(27, processInput(scenario));
     const payload = JSON.parse(fetchMock.mock.calls[0][1].body);
     const context = JSON.parse(payload.messages[0].content.split("Trusted scenario context: ")[1].split("\n")[0]);
+    expect(context.rangeEvidence.patterns).toContainEqual({
+      id: "position", excursionDirection: "above", pattern: "returns-to-reference",
+    });
+    expect(context.rangeEvidence.patterns).toContainEqual({
+      id: "shape", excursionDirection: "none", pattern: "within-reference",
+    });
+    expect(context.samples[0].signals[0]).not.toHaveProperty("phase");
     const position = (time: number) => context.samples.find((row: { time: number }) => row.time === time).signals.find((signal: { id: string }) => signal.id === "position");
     for (const time of [30, 45, 90]) {
       const sample = position(time);

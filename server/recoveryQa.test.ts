@@ -168,7 +168,7 @@ describe("six-attempt durable QA mail reservation", () => {
   });
   it("counts failed provider attempts before dispatch and blocks a seventh attempt", async () => {
     for (const [key, value] of Object.entries(qaEnvironment())) vi.stubEnv(key, value);
-    vi.stubEnv("SEMIGUARD_ACCOUNT_RECOVERY_ENABLED", "1"); vi.stubEnv("RECOVERY_MAIL_API_KEY", "synthetic-key");
+    vi.stubEnv("SEMIGUARD_ACCOUNT_RECOVERY_ENABLED", "1"); vi.stubEnv("RECOVERY_MAIL_API_KEY", "synthetic-recovery-mail-key");
     vi.stubEnv("RECOVERY_MAIL_FROM", "sender@example.invalid"); vi.stubEnv("RECOVERY_PUBLIC_ORIGIN", "https://example.invalid");
     const f = budgetDatabase(); mockedDb.open.mockResolvedValue(f.database);
     const provider = vi.fn().mockImplementation(async () => { expect(f.hits()).toBeGreaterThan(0); return new Response("private-detail", { status: 503 }); });
@@ -181,7 +181,7 @@ describe("six-attempt durable QA mail reservation", () => {
   });
   it("rejects a different recipient before DB reservation or a provider call", async () => {
     for (const [key, value] of Object.entries(qaEnvironment())) vi.stubEnv(key, value);
-    vi.stubEnv("SEMIGUARD_ACCOUNT_RECOVERY_ENABLED", "1"); vi.stubEnv("RECOVERY_MAIL_API_KEY", "synthetic-key");
+    vi.stubEnv("SEMIGUARD_ACCOUNT_RECOVERY_ENABLED", "1"); vi.stubEnv("RECOVERY_MAIL_API_KEY", "synthetic-recovery-mail-key");
     vi.stubEnv("RECOVERY_MAIL_FROM", "sender@example.invalid"); vi.stubEnv("RECOVERY_PUBLIC_ORIGIN", "https://example.invalid");
     const provider = vi.fn(); vi.stubGlobal("fetch", provider);
     await expect(sendRecoveryMail({ to: "another@example.invalid", language: "ko", kind: "id", loginId: "synthetic" })).rejects.toThrow(/^RECOVERY_QA_MAIL_BLOCKED$/);

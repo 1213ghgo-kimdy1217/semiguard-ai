@@ -64,6 +64,7 @@ let server: Server | undefined;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Synthetic config values reach the mocked DB and SDK branches in this test only.
   vi.stubEnv("SEMIGUARD_DB_MAINTENANCE", "");
   vi.stubEnv("DATABASE_URL", "mysql://test.invalid/example");
   vi.stubEnv("JWT_SECRET", "test-only-signing-secret");

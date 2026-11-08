@@ -41,7 +41,7 @@ describe("visible practice options and four-sensor entry briefing", () => {
     expect(page).toContain('headingRef={heading} onBack={() => move("home")}');
     expect(page.indexOf("<PracticeLearningOptions")).toBeLessThan(page.indexOf('className="et-panel et-history"'));
     expect(page).toContain('href="/live"');
-    expect(page).toContain('attempt.elapsed > 0 ? "observe" : "brief"');
+    expect(page).toMatch(/ProcessScenarioPath[^\n]+onEtch=\{\(\) => navigate\("\/training\/etch"\)\}/);
     expect(page).toContain('stage === "home" && historyReturn.current ? historyHeading.current : heading.current');
     expect(page).toContain('focusPracticeSection(target)');
     const navigation = readFileSync("client/src/lib/practiceNavigation.ts", "utf8");

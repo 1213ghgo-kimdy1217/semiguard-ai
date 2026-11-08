@@ -60,6 +60,14 @@ describe("full virtual record range evidence and question premises", () => {
     expect(coachRangeEvidence(getProcessScenario("etch")!.id).signals.find(signal => signal.id === "flow"))
       .toMatchObject({ hasReferenceRangeExcursion: false, endsWithinReferenceRange: true });
   });
+  it("distinguishes matched reference changes, a return, recurring excursions and sustained deviations without answer times", () => {
+    const pattern = (process: string, id: string) =>
+      coachRangeEvidence(getProcessScenario(process)!.id).patterns.find(signal => signal.id === id);
+    expect(pattern("oxidation", "film")).toEqual({ id: "film", excursionDirection: "none", pattern: "within-reference" });
+    expect(pattern("photo", "position")).toEqual({ id: "position", excursionDirection: "above", pattern: "returns-to-reference" });
+    expect(pattern("metal", "connection")).toEqual({ id: "connection", excursionDirection: "above", pattern: "repeated-excursions" });
+    expect(pattern("deposition", "film")).toEqual({ id: "film", excursionDirection: "below", pattern: "outside-at-end" });
+  });
   it.each(["ko", "en", "ja"] as const)("sends factual range flags in %s without changing original answers or adding model answer templates", async language => {
     const input = request("wafer", language); const before = structuredClone(input);
     const question = language === "en" ? "What reference comparison supports your observation?"
@@ -82,11 +90,14 @@ describe("full virtual record range evidence and question premises", () => {
     ["ko", "표면 편차 지수가 정상 참고보다 높아진 시점과 두께 검사 지수가 참고 범위 밖으로 벗어난 시점은 각각 언제인가요?"],
     ["ko", "두께 검사 지수는 언제 참고 범위를 벗어났나요?"],
     ["ko", "두께 검사 지수가 참고 띠로 복귀한 시점은 언제인가요?"],
+    ["ko", "두께 검사 지수가 정상 참고 범위를 벗어난 구간을 어떤 가상 기록으로 확인할 수 있나요?"],
     ["en", "When did Thickness inspection index leave the reference range?"],
     ["en", "When did Surface deviation index cross the reference band and Thickness inspection index leave the reference range?"],
     ["en", "At what point did Thickness inspection index return to the normal band?"],
+    ["en", "During which interval did Thickness inspection index leave the reference range?"],
     ["ja", "厚さ検査指数が基準帯から外れた時点はいつですか？"],
     ["ja", "厚さ検査指数はいつ参考範囲を超えたのですか？"],
+    ["ja", "厚さ検査指数が正常参照範囲から外れた区間はどこですか？"],
   ] as const)("rejects the unsupported %s excursion-time question instead of displaying or rewriting it: %s", async (language, question) => {
     const input = request("wafer", language); const before = structuredClone(input);
     const data = feedback(input, question);
@@ -97,6 +108,42 @@ describe("full virtual record range evidence and question premises", () => {
     expect(invokeLLM).toHaveBeenCalledTimes(1);
     expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category: "range-premise" })]]);
     expect(input).toEqual(before);
+  });
+  it.each([
+    ["ko", "두께 검사 지수가 정상 참고 범위를 벗어났습니다. 표면 편차 지수와 같은 조건의 가상 기록에서 확인됩니다."],
+    ["ko", "두께 검사 지수가 정상 참고 띠로 복귀했습니다."],
+    ["en", "The Thickness inspection index left the matching reference range."],
+    ["en", "Thickness inspection index returned to the normal reference band."],
+    ["ja", "厚さ検査指数は正常参照範囲から外れました。"],
+    ["ja", "厚さ検査指数は基準帯に戻りました。同じ条件の仮想記録を比較できます。"],
+  ] as const)("rejects a false %s affirmative analysis while keeping a valid next question: %s", async (language, analysis) => {
+    const input = request("wafer", language); const before = structuredClone(input);
+    const data = feedback(input, language === "ko" ? "어떤 가상 기록에서 결과를 비교하나요?"
+      : language === "en" ? "Which virtual record supports the observation?" : "どの仮想記録が観察の根拠になりますか？");
+    data.reflections[0].analysis = analysis;
+    expect(() => validateCoachOutput(JSON.stringify(data), input.answer, language, input.scenarioId)).toThrow("Unsupported range premise");
+    vi.mocked(invokeLLM).mockResolvedValue({ provider: "nvidia", model: "nvidia/qa", choices: [{ message: { content: JSON.stringify(data) } }] } as never);
+    expect(await createJudgmentCoach()(27, input)).toEqual({ status: "unavailable", reason: "invalid-response" });
+    expect(invokeLLM).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(console.warn).mock.calls).toEqual([[JSON.stringify({ event: "judgment_coach_unavailable", reason: "invalid-response", category: "range-premise" })]]);
+    expect(input).toEqual(before);
+  });
+  it.each([
+    ["ko", "두께 검사 지수가 정상 참고 범위를 벗어나지 않았습니다."],
+    ["ko", "두께 검사 지수가 정상 참고 범위를 벗어났는지는 가상 기록을 비교해서 확인해야 합니다."],
+    ["ko", "‘두께 검사 지수가 정상 참고 범위를 벗어났습니다.’라는 주장에는 같은 조건의 관찰 근거가 필요합니다."],
+    ["ko", "두께 검사 지수와 달리 표면 편차 지수는 정상 참고 범위를 벗어났습니다."],
+    ["en", "Thickness inspection index did not leave the reference range."],
+    ["en", "If Thickness inspection index left the reference range, compare it against its matching virtual reference."],
+    ["en", "The claim “Thickness inspection index left the reference range.” needs evidence from the matching virtual record."],
+    ["ja", "厚さ検査指数は基準帯から外れていません。"],
+    ["ja", "厚さ検査指数が参考範囲から外れたかは同じ条件の仮想記録を比較してください。"],
+  ] as const)("preserves %s negation, uncertainty, attributed quotations and genuine other-signal events: %s", (language, analysis) => {
+    const input = request("wafer", language);
+    const data = feedback(input, language === "ko" ? "어떤 가상 기록에서 결과를 비교하나요?"
+      : language === "en" ? "Which virtual record supports the observation?" : "どの仮想記録が観察の根拠になりますか？");
+    data.reflections[0].analysis = analysis;
+    expect(validateCoachOutput(JSON.stringify(data), input.answer, language, input.scenarioId).reflections[0].analysis).toBe(analysis);
   });
   it.each([
     ["ko", "두께 검사 지수가 같은 조건의 참고 범위 안에 유지되는지 어떤 가상 기록으로 확인하나요?"],

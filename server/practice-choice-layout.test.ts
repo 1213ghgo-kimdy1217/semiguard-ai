@@ -48,7 +48,7 @@ describe("clear signed-in practice choices", () => {
     expect(html).toContain(item.language === "ko" ? "서술형 원문은 계정에 저장하지" : item.language === "en" ? "Written answers are not stored" : "記述回答は保存しない");
   });
 
-  it("links to real home targets and keeps both original entry handlers and record owner gating", () => {
+  it("links to real home targets and keeps the practice entries and record owner gating", () => {
     const page = read("client/src/pages/EtchTraining.tsx");
     expect(page).toContain("<PracticeWorkspaceNav language={language} />");
     expect(page).toContain('id="practice-options"');
@@ -59,7 +59,7 @@ describe("clear signed-in practice choices", () => {
     expect(page).toContain('onSensorBrief={() => move("sensor-brief")}');
     expect(page).toContain('href="/live"');
     expect(page).toContain('history.data?.userId === auth.data?.id');
-    expect(page).toContain('attempt.submitted ? "review" : "brief"');
+    expect(page).toContain('onEtch={() => navigate("/training/etch")}');
     expect(page).not.toContain("scroll-behavior:smooth");
   });
 

@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { COOKIE_NAME, UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink, httpLink, splitLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
@@ -51,11 +51,17 @@ queryClient.getQueryCache().subscribe(event => {
 
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
+    const key = event.mutation.options.mutationKey;
+    if (Array.isArray(key?.[0]) && key[0][0] === "training" && key[0][1] === "coach") {
+      // The coach handles an expired session inline so the learner can keep
+      // the current review and sign in separately. Do not log answer context.
+      console.warn("[Judgment Coach] Request could not be completed.");
+      return;
+    }
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
     // Recovery failures can involve a one-time credential. Never print the
     // transport error object, which can contain request context, to the console.
-    const key = event.mutation.options.mutationKey;
     if (Array.isArray(key?.[0]) && key[0][0] === "accountRecovery") {
       console.warn("[Account Recovery] Request could not be completed.");
       return;
@@ -68,37 +74,39 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+const rpcTransport = {
+  url: "/api/trpc",
+  transformer: superjson,
+  headers(): Record<string, string> {
+    // Preview auto-login fallback: when the browser blocks iframe cookies
+    // (Safari ITP / private browsing / WebView), the runtime mirrors the
+    // session into sessionStorage so we can forward it as a Bearer token.
+    // The regular OAuth cookie flow keeps working and takes priority server-side.
+    try {
+      const raw = sessionStorage.getItem("manus-cookie");
+      if (raw) {
+        const prefix = `${COOKIE_NAME}=`;
+        const pair = raw.split(";").find(s => s.trim().startsWith(prefix));
+        const token = pair?.trim().slice(prefix.length);
+        if (token) return { Authorization: `Bearer ${token}` };
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+    return {};
+  },
+  fetch(input: RequestInfo | URL, init?: RequestInit) {
+    return globalThis.fetch(input, { ...init, credentials: "include" });
+  },
+};
+
 const trpcClient = trpc.createClient({
   links: [
-    httpBatchLink({
-      url: "/api/trpc",
-      transformer: superjson,
-      headers() {
-        // Preview auto-login fallback: when the browser blocks iframe cookies
-        // (Safari ITP / private browsing / WebView), the runtime mirrors the
-        // session into sessionStorage so we can forward it as a Bearer token.
-        // The regular OAuth cookie flow keeps working and takes priority server-side.
-        try {
-          const raw = sessionStorage.getItem("manus-cookie");
-          if (raw) {
-            const prefix = `${COOKIE_NAME}=`;
-            const pair = raw.split(";").find(s => s.trim().startsWith(prefix));
-            const token = pair?.trim().slice(prefix.length);
-            if (token) {
-              return { Authorization: `Bearer ${token}` };
-            }
-          }
-        } catch {
-          // sessionStorage unavailable
-        }
-        return {};
-      },
-      fetch(input, init) {
-        return globalThis.fetch(input, {
-          ...(init ?? {}),
-          credentials: "include",
-        });
-      },
+    splitLink({
+      condition: op => op.path === "training.shared",
+      // Carry the share credential in the request body, away from URL logs.
+      true: httpLink({ ...rpcTransport, methodOverride: "POST" }),
+      false: httpBatchLink(rpcTransport),
     }),
   ],
 });
