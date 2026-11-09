@@ -1746,6 +1746,26 @@
   }
 }
 
+@media (min-width:741px) and (max-width:900px) and (orientation:portrait) {
+  .st-app .st-workspace {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .st-app .st-scene .st-viewport {
+    height: clamp(440px,62vw,500px);
+  }
+
+  .st-app .st-workspace > .st-mission {
+    min-height: 0;
+  }
+}
+
+@media (max-width:390px) and (orientation:portrait) {
+  .st-app .st-scene .st-viewport {
+    height: clamp(390px,115vw,445px);
+  }
+}
+
 @media (max-width:740px) {
   .st-app main {
     padding: 0 15px;
