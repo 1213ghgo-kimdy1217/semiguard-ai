@@ -227,8 +227,8 @@
 .sg-section-heading { position: relative; }
 .sg-section-heading h2, .sg-principles h2 { font-size: clamp(28px, 3vw, 44px); line-height: 1.4; letter-spacing: -2px; font-weight: 550; margin-top: 20px; }
 .sg-section-heading > p:last-child { position: absolute; right: 0; bottom: 5px; font-size: 13px; line-height: 1.8; color: #5a6b60; }
-.sg-workflow-layout { margin-top: 60px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 80px; align-items: center; }
-.sg-step-list button { width: 100%; display: grid; grid-template-columns: 30px 1fr 24px; text-align: left; gap: 18px; padding: 23px 0; border-top: 1px solid #b6c0b7; cursor: pointer; }
+.sg-workflow-layout { margin-top: 60px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 80px; align-items: center; }
+.sg-step-list button { width: 100%; display: grid; grid-template-columns: 30px minmax(0, 1fr) 24px; text-align: left; gap: 18px; padding: 23px 0; border-top: 1px solid #b6c0b7; cursor: pointer; overflow-wrap: anywhere; }
 .sg-step-list button:last-child { border-bottom: 1px solid #b6c0b7; }
 .sg-step-list button[aria-pressed="true"] { border-top-color: #304939; }
 .sg-step-number { padding-top: 5px; font: 13px "JetBrains Mono", monospace; color: #6b7d70; }
@@ -238,6 +238,8 @@
 .sg-step-preview { min-height: 325px; padding: 34px; background: #dae1d7; border: 1px solid #bbc6ba; border-radius: 4px; position: relative; }
 .sg-step-preview > svg { margin: 35px 0 22px; color: #436651; }
 .sg-step-preview h3 { font-size: 20px; max-width: 280px; line-height: 1.65; font-weight: 500; word-break: keep-all; }
+.sg-step-list p:lang(ja), .sg-step-preview h3:lang(ja) { word-break: normal; }
+.sg-step-preview { overflow-wrap: anywhere; }
 .sg-note-rule { width: 42px; height: 2px; background: #5e7b62; margin: 20px 0; }
 .sg-step-preview > p:not(.sg-eyebrow) { font-size: 11px; line-height: 1.8; color: #576b5b; }
 .sg-preview-foot { display: block; margin-top: 24px; font: 8px "JetBrains Mono", monospace; letter-spacing: 1px; color: #6c8070; }
@@ -279,7 +281,7 @@
   .sg-nav { height: 70px; padding: 0 20px; }.sg-brand { font-size: 17px; }.sg-nav nav { gap: 8px; }.sg-nav nav > a:not(.sg-nav-login) { display: none; }.sg-nav-login { padding: 8px 12px; font-size: 11px; }.sg-language-select span { display:none; }
   .sg-hero { display: flex; flex-direction: column; padding: 36px 24px 35px; gap: 30px; align-items: stretch; }.sg-hero h1 { font-size: clamp(32px, 8.5vw, 46px); margin-top: 20px; }.sg-eyebrow { font-size: 8px; letter-spacing: 1.2px; }.sg-intro { font-size: 14px; }.sg-hero-actions { gap: 20px; }.sg-button { padding: 15px 18px; gap: 16px; font-size: 12px; }.sg-quiet { font-size: 11px; }.sg-hero-visual { min-height: 320px; max-width: 470px; margin: 0 auto; width: 100%; }.sg-wafer-label { top: 25%; }.sg-visual-index { font-size: 7px; }.sg-visual-caption { font-size: 6px; }.sg-audience { font-size: 13px; }
   .sg-sensor-console { padding: 0 20px; margin-bottom: 60px; }.sg-console-heading { align-items: start; flex-direction: column; gap: 12px; }.sg-console-heading h2 { font-size: 21px; }.sg-console-grid { display: block; }.sg-sensor-tabs { border-right: 0; border-bottom: 1px solid #37413c; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px; }.sg-sensor-tabs button { padding: 11px 8px; grid-template-columns: 1fr auto; gap: 5px; font-size: 11px; }.sg-sensor-tabs button > .sg-mono, .sg-sensor-tabs button > svg { display: none; }.sg-sensor-detail { padding: 22px; }.sg-score-summary { padding: 22px; gap: 14px; }.sg-score-summary .sg-eyebrow { width: 100%; }.sg-score-summary > p:not(.sg-eyebrow) { max-width: none; width: 100%; }
-  .sg-workflow { padding: 60px 24px; }.sg-section-heading h2, .sg-principles h2 { font-size: 31px; letter-spacing: -1.6px; }.sg-section-heading > p:last-child { font-size: 12px; }.sg-workflow-layout { grid-template-columns: 1fr; margin-top: 35px; gap: 30px; }.sg-step-preview { min-height: 290px; padding: 28px; }.sg-step-list strong { font-size: 19px; }
+  .sg-workflow { padding: 60px 24px; }.sg-section-heading h2, .sg-principles h2 { font-size: 31px; letter-spacing: -1.6px; }.sg-section-heading > p:last-child { font-size: 12px; }.sg-workflow-layout { grid-template-columns: minmax(0, 1fr); margin-top: 35px; gap: 30px; }.sg-step-preview { min-height: 290px; padding: 28px; }.sg-step-list strong { font-size: 19px; }
   .sg-principles { padding: 60px 24px; grid-template-columns: 1fr; gap: 30px; }.sg-principle-list article { gap: 15px; }.sg-final-cta { padding: 65px 24px; }.sg-footer { flex-wrap: wrap; padding: 25px 24px; gap: 14px; }.sg-footer > p { width: 100%; order: 3; }.sg-footer a { font-size: 10px; }.sg-mobile-break { display: block; }
   .sg-login { display: flex; flex-direction: column; padding: 25px 20px 40px; gap: 25px; }.sg-login-intro { align-self: auto; width: 100%; max-width: 470px; }.sg-login-intro .sg-brand { margin-bottom: 30px; }.sg-login-intro h2 { font-size: 32px; letter-spacing: -1.5px; }.sg-login-intro .sg-wafer, .sg-login-intro > p:last-child { display: none; }.sg-login-card { padding: 24px; }
 }
