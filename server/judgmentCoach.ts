@@ -3,8 +3,8 @@ import { getProcessScenario, processCriteria, processSample } from "../shared/pr
 import { coachInputIssues, judgmentCoachFeedbackSchema, judgmentCoachModelFeedbackSchema, judgmentCoachRequestSchema,
   type JudgmentCoachRequest, type JudgmentCoachResult } from "../shared/judgmentCoach";
 import { ENV } from "./_core/env";
-import { invokeLLM } from "./_core/llm";
-import { ZodError } from "zod";
+import { invokeLLM, type InvokeParams } from "./_core/llm";
+import { ZodError, z } from "zod";
 import { coachRangeEvidence, hasUnsupportedRangePremise } from "./coachRangeEvidence";
 
 type CoachDiagnostic = "configuration" | "pending" | "cooldown" | "capacity" | "metadata" | "json" | "schema" | "safety" | "causal-exclusion" | "range-premise" | "numeric-claim" | "evidence" | "language" | "output-shape" | "validation" | "timeout" | "authentication" | "rate-limit" | "http" | "incomplete" | "connection";
@@ -59,6 +59,7 @@ const technicalTerms = [
   [/\bbaselines?\b/gi, "정상 참고", "正常参照"],
   [/\btrends?\b/gi, "추세", "傾向"],
   [/\brevisions?\b/gi, "판단 수정", "判断の見直し"],
+  [/\bexcursions?\b/gi, "기준 범위 이탈", "基準範囲からの逸脱"],
 ] as const;
 const learnerTerms = {
   ko: { learnerAnswer: "작성한 답안", facts: "관찰 근거", checks: "다음 비교 계획",
@@ -169,20 +170,36 @@ function coachModelContext(request: JudgmentCoachRequest) {
   };
 }
 
+function qualitativeDraft(text: string, language: JudgmentCoachRequest["language"]) {
+  const labels = {
+    ko: { time: "그때", value: "관찰 수치" },
+    en: { time: "the selected time", value: "the stated value" },
+    ja: { time: "該当時点", value: "該当値" },
+  }[language];
+  return text
+    .replace(/[0-9０-９]+(?:[.,~～–−-][0-9０-９]+)*\s*(?:초|秒|seconds?\b|ms\b|s\b)/gi, labels.time)
+    .replace(/[0-9０-９]+(?:[.,~～–−-][0-9０-９]+)*/g, labels.value)
+    .replace(/관찰 수치으로/g, "관찰 수치로");
+}
+
 // A backstop in addition to the prompt/schema; not a general-purpose safety guarantee.
 const unsafeOutput = /https?:\/\/|<[^>]+>|ogqc_[a-f0-9]{32,}|nvapi[-_]|%|\b(?:repair|replace|disassemble|shutdown|restart|reboot|setpoint|interlock|diagnosed|definitely|guaranteed|score|grade|probability|competency)\b|점수|평점|숙련도|고장\s*확률|정비|교체|분해|설비\s*정지|장비\s*(?:중지|정지|조작)|가스\s*(?:주입|조절)|고장\s*(?:확정|진단)|확실한\s*원인|断定|修理|交換|分解|熟練度|確率|採点|装置.*(?:停止|操作)|設定値.*変更|インターロック/i;
 // This exercise cannot establish causal exclusion either. Reject known misleading
 // exclusion phrasing in generated feedback; original learner quotes are not rewritten.
 const unsupportedExclusion = /(?:인과\s*관계|원인|고장)[^?？.!。]{0,60}(?:배제|아니라고\s*(?:확인|판단|결론))|(?:rule[ds]?\s*out|ruling\s*out|exclud(?:e[ds]?|ing)|eliminat(?:e[ds]?|ing))[^?？.!。]{0,60}(?:caus(?:e|al)|fault)|(?:因果関係|原因|故障)[^?？.!。]{0,60}(?:除外|否定|排除)/i;
 
-export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["answer"], language: JudgmentCoachRequest["language"] = "ko", scenarioId = "etch-chamber-a-01") {
+function parseCoachOutput(raw: string) {
   // Plain completion may wrap an otherwise valid object in one JSON fence.
   // Accept only a whole-response wrapper, never mixed prose, multiple blocks,
   // repaired JSON or a replacement answer. All semantic checks below still run.
   const trimmed = raw.trim();
   const fenced = /^```json[ \t]*\r?\n([\s\S]*?)\r?\n```$/i.exec(trimmed);
   const json = fenced && !fenced[1].includes("```") ? fenced[1] : trimmed;
-  const feedback = judgmentCoachModelFeedbackSchema.parse(JSON.parse(json));
+  return judgmentCoachModelFeedbackSchema.parse(JSON.parse(json));
+}
+
+export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["answer"], language: JudgmentCoachRequest["language"] = "ko", scenarioId = "etch-chamber-a-01") {
+  const feedback = parseCoachOutput(raw);
   const text = JSON.stringify(feedback);
   // Distinguishing (구분해) is not disassembly (분해). Only normalize the standalone
   // grammar form; compounds such as 기구분해/도구분해 must still be rejected.
@@ -197,9 +214,9 @@ export function validateCoachOutput(raw: string, answer: JudgmentCoachRequest["a
   if (feedback.reflections.some(item => hasUnsupportedRangePremise(item, language, scenarioId))) throw new Error("Unsupported range premise");
   // Exact numbers/times belong to the server-owned charts and criteria, not
   // unverified model prose. Original learner excerpts are still unchanged.
-  if (/[0-9０-９]/.test(generatedText)) throw new Error("Unsupported numeric claim");
   if (feedback.reflections.length !== 2 || new Set(feedback.reflections.map(item => item.answerSource)).size !== 2
     || feedback.reflections.some(item => !answer[item.answerSource].includes(item.focusQuote))) throw new Error("Invalid answer excerpt");
+  if (/[0-9０-９]/.test(generatedText)) throw new Error("Unsupported numeric claim");
   const hangul = /[\uac00-\ud7a3]/; const kana = /[\u3040-\u30ff]/; const han = /[\u4e00-\u9fff]/;
   if (feedback.reflections.some(({ analysis, question }) => [analysis, question].some(text => language === "en" ? hangul.test(text) || kana.test(text) || han.test(text)
     : language === "ja" ? hangul.test(text) || !kana.test(text) : !hangul.test(text) || kana.test(text)))) throw new Error("Unexpected coaching language");
@@ -242,7 +259,12 @@ export function createJudgmentCoach() {
     try {
       // Do not let a selected timestamp masquerade as observed evidence.
       const { onset: _selectedOnset, ...learnerAnswer } = request.answer;
-      const result = await invokeLLM({ max_tokens: 1800, temperature: 0.1,
+      const proseRules = request.language === "ko"
+        ? "analysis와 question에는 숫자나 수치, 시각, 범위를 쓰거나 답안에서 옮겨 적지 마세요. 해당 구간, 정상 참고와의 차이, 같은 시점처럼 정성적으로 설명하세요. 숫자는 원문 그대로의 focusQuote에만 둘 수 있습니다. 한국어 존댓말로 짧게 설명하고 질문하세요."
+        : request.language === "ja"
+          ? "analysisとquestionには数字、数値、時刻、範囲を記載せず、回答からも転載しないでください。同じ時点、参照との差など定性的に述べてください。数字は原文どおりのfocusQuoteにだけ残せます。丁寧な日本語で簡潔に説明して質問してください。"
+          : "Use no digits, quantities, timestamps or numerical ranges in analysis or question, including values copied from the answer. Refer qualitatively to the same time, the observed interval and differences from the reference. Digits may appear only in the verbatim focusQuote.";
+      const params: InvokeParams = { max_tokens: 1800, temperature: 0.1, signal: AbortSignal.timeout(30_000),
         messages: [{ role: "system", content: `You are SemiGuard's AI Judgment Coach, reviewing a completed synthetic educational exercise, not diagnosing equipment or assessing workplace qualifications.
 Reply only in natural ${request.language === "ko" ? "Korean" : request.language === "ja" ? "Japanese" : "English"}. In Korean/Japanese, translate terms such as onset and oscillation rather than mixing in English. Return a JSON object with only reflections, containing exactly two distinct reflections: one addressing facts and one addressing checks.
 Use these Korean/Japanese terms: onset = 변화 시작 시점 / 変化の開始時点; oscillation = 반복 변동 / 繰り返す変動; baseline = 정상 참고 / 正常参照; trend = 추세 / 傾向. Preserve signal abbreviations such as RF. Do not copy English terminology from a learner's answer into Korean/Japanese questions.
@@ -268,6 +290,7 @@ Trusted scenario context: ${JSON.stringify(coachModelContext(request))}` },
         { role: "user", content: JSON.stringify({ learnerAnswer,
           responseLanguage: request.language === "ko" ? "Korean" : request.language === "ja" ? "Japanese" : "English",
           responseInstructions: "Write analysis and question exclusively in responseLanguage. Return only reflections; never output strengths or praise. Each reflection must have EXACTLY answerSource, focusQuote, analysis, question. Never add answerQuote, dimension, evidenceId or any extra field. focusQuote must be an unchanged excerpt from the selected field, not a translation. The server verifies this excerpt and provides the unchanged full original answer. Do not let the learner's language determine analysis or question language. Return only the JSON object.",
+          proseRules,
           outputCount: "Exactly two reflections. Address facts once and checks once as assigned below. answerSource must be the literal facts or checks, never translated or renamed. Generate your own brief analysis and follow-up question about the actual evidence; no prewritten answer is supplied.",
           reflectionFields: ["answerSource", "focusQuote", "analysis", "question"],
           reflectionAssignments: [
@@ -282,24 +305,57 @@ Trusted scenario context: ${JSON.stringify(coachModelContext(request))}` },
         }) }],
         // Lightning's hosted JSON mode has stalled in live checks. Use its plain
         // completion path, with the same JSON instructions and strict application
-        // validation; never retry or substitute a prewritten coaching answer.
+        // validation. A bounded numeric-format correction below must pass the
+        // same complete validation before it can be displayed.
         // Keep the existing JSON mode for other configured NVIDIA models.
         response_format: ENV.nvidiaModel === "nvidia/nemotron-3.5-lightning-30b-a3b"
           ? undefined : { type: "json_object" },
-      });
-      if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || !/^[a-zA-Z0-9._/-]{1,120}$/.test(result.model)) {
-        logCoachFailure("invalid-response", "metadata");
-        return { status: "unavailable", reason: "invalid-response" };
+      };
+      let numericDraft: ReturnType<typeof parseCoachOutput> | null = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+          const result = await invokeLLM(attempt === 0 ? params : {
+            ...params,
+            // The first call is capped at 30s. One correction gets at most 20s,
+            // keeping both provider reads inside the existing 60s function budget.
+            signal: AbortSignal.timeout(20_000),
+            messages: [
+              { role: "system", content: `Rewrite two short passages of educational feedback in ${request.language === "ko" ? "Korean" : request.language === "ja" ? "Japanese" : "English"}. This is a wording correction, not a new assessment. Preserve uncertainty and the comparison of existing virtual records. Remove all references to quantities, timestamps and numerical ranges, including numeric placeholders, rather than spelling numbers as words. Never confirm an exact event, a cause, a grade or a repair. Use respectful language addressed directly to the learner. Return only JSON with reflections containing facts and checks once each. Each reflection must have exactly answerSource, analysis and question. analysis must be one or two short sentences, 20 to 450 characters. question must be one question, 8 to 300 characters. Use the requested language, translating phase, pressure, reference and excursion when needed, but keep RF. ${proseRules}` },
+              { role: "user", content: JSON.stringify({
+                rangeEvidence: coachRangeEvidence(request.scenarioId),
+                signalDefinitions: scenarioCoachContext(request).signalDefinitions.map(({ id, displayName }) => ({ id, displayName })),
+                reflections: numericDraft!.reflections.map(({ answerSource, analysis, question }) => ({
+                answerSource,
+                analysis: qualitativeDraft(analysis, request.language),
+                question: qualitativeDraft(question, request.language),
+              })) }) },
+            ],
+          });
+          if (result.provider !== "nvidia" || result.model !== ENV.nvidiaModel || !/^[a-zA-Z0-9._/-]{1,120}$/.test(result.model)) {
+            logCoachFailure("invalid-response", "metadata");
+            return { status: "unavailable", reason: "invalid-response" };
+          }
+          try {
+            let content = result.choices[0]?.message.content;
+            if (typeof content !== "string" || content.length > 7000) throw new Error("Invalid output");
+            if (attempt === 1) {
+              const repaired = z.object({ reflections: z.array(judgmentCoachModelFeedbackSchema.shape.reflections.element.omit({ focusQuote: true })).length(2) }).strict().parse(JSON.parse(content));
+              content = JSON.stringify({ reflections: repaired.reflections.map(item => ({ ...item,
+                focusQuote: numericDraft!.reflections.find(original => original.answerSource === item.answerSource)?.focusQuote,
+              })) });
+            }
+            return { status: "ready", provider: "nvidia", model: result.model, language: request.language, feedback: validateCoachOutput(content, request.answer, request.language, request.scenarioId) };
+          } catch (error) {
+            if (attempt === 0 && validationCategory(error) === "numeric-claim") {
+              numericDraft = parseCoachOutput(result.choices[0].message.content as string);
+              console.warn(JSON.stringify({ event: "judgment_coach_repair", category: "numeric-claim" }));
+              continue;
+            }
+            logSchemaFailure(error);
+            logCoachFailure("invalid-response", validationCategory(error));
+            return { status: "unavailable", reason: "invalid-response" };
+          }
       }
-      try {
-        const content = result.choices[0]?.message.content;
-        if (typeof content !== "string" || content.length > 7000) throw new Error("Invalid output");
-        return { status: "ready", provider: "nvidia", model: result.model, language: request.language, feedback: validateCoachOutput(content, request.answer, request.language, request.scenarioId) };
-      } catch (error) {
-        logSchemaFailure(error);
-        logCoachFailure("invalid-response", validationCategory(error));
-        return { status: "unavailable", reason: "invalid-response" };
-      }
+      return { status: "unavailable", reason: "invalid-response" };
     } catch (error) {
       logCoachFailure("provider-error", providerCategory(error));
       return { status: "unavailable", reason: "provider-error" };

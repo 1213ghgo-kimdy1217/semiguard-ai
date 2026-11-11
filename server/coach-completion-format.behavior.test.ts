@@ -31,7 +31,7 @@ beforeEach(() => {
 afterEach(() => { Object.assign(ENV, original); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 async function run(content: string) {
-  fetchMock.mockResolvedValue(new Response(JSON.stringify({ id: "synthetic-format-response", created: 1,
+  fetchMock.mockImplementation(async () => new Response(JSON.stringify({ id: "synthetic-format-response", created: 1,
     model: syntheticModel, choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }],
   }), { status: 200 }));
   return createJudgmentCoach()(900001, structuredClone(request));
@@ -64,7 +64,7 @@ describe("plain completion formatting through the real coach/provider boundary",
     if (failure === "third-reflection") data.reflections.push({ ...data.reflections[0] });
     if (failure === "range-premise") data.reflections[0].question = `${getProcessScenario("etch")!.signals.find(signal => signal.id === "flow")!.name[0]}가 정상 참고 범위를 벗어난 때는 언제인가요?`;
     expect(await run(fence(JSON.stringify(data)))).toEqual({ status: "unavailable", reason: "invalid-response" });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(failure === "numeric-claim" ? 2 : 1);
     const logs = JSON.stringify(vi.mocked(console.warn).mock.calls);
     expect(logs).not.toContain(request.answer.facts);
     expect(logs).not.toContain(data.reflections[0].question);

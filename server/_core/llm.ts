@@ -56,6 +56,7 @@ export type ToolChoice =
   | ToolChoiceExplicit;
 
 export type InvokeParams = {
+  signal?: AbortSignal;
   messages: Message[];
   tools?: Tool[];
   toolChoice?: ToolChoice;
@@ -365,7 +366,8 @@ const fetchWithBackoff = async (
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   const config = resolveProvider();
   // Budget includes response-body reading; stay below the 60s function limit.
-  const signal = AbortSignal.timeout(40_000);
+  const timeout = AbortSignal.timeout(40_000);
+  const signal = params.signal ? AbortSignal.any([timeout, params.signal]) : timeout;
 
   const {
     messages,
